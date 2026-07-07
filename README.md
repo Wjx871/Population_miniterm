@@ -7,24 +7,61 @@
 - JDK 17+
 - MySQL 8+
 
-## 运行方式
+## 小组开发数据库约定
 
-先创建数据库：
+平时开发时，每个人连接自己的本地 MySQL 数据库。大家共享项目代码和 SQL 文件，不共享某一个人的数据库。
 
-```sql
-CREATE DATABASE population_miniterm DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+统一数据库名：
+
+```text
+population_miniterm
 ```
 
-设置数据库连接信息后启动：
+数据库初始化脚本：
+
+```text
+doc/database/population_miniterm.sql
+```
+
+每位组员拿到项目后，先在自己的 MySQL 中执行该 SQL 文件，然后按自己的本机账号密码启动项目。
+
+## 启动方式
+
+PowerShell 示例：
 
 ```powershell
-$env:DB_URL="jdbc:mysql://localhost:3306/population_miniterm?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai"
+$env:JAVA_HOME="D:\ASUS"
+$env:Path="$env:JAVA_HOME\bin;C:\Windows\System32\WindowsPowerShell\v1.0;$env:Path"
 $env:DB_USERNAME="root"
-$env:DB_PASSWORD="你的数据库密码"
+$env:DB_PASSWORD="你的MySQL密码"
 .\mvnw.cmd spring-boot:run
 ```
 
-默认服务地址为 `http://localhost:8080`。
+如果你的数据库名、地址或端口不同，可以额外设置：
+
+```powershell
+$env:DB_URL="jdbc:mysql://localhost:3306/population_miniterm?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai"
+```
+
+默认服务地址为：
+
+```text
+http://localhost:8080
+```
+
+## IDEA 配置
+
+打开运行配置 `PopulationMinitermApplication`，在 Environment variables 中填入：
+
+```text
+DB_USERNAME=root;DB_PASSWORD=你的MySQL密码
+```
+
+如果 IDEA 找不到 JDK，在 Project SDK 中选择：
+
+```text
+D:\ASUS
+```
 
 ## 居民人口接口
 
