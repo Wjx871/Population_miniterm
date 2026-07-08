@@ -1,3 +1,57 @@
+:root {
+  /* ================== DESIGN TOKENS ================== */
+  
+  /* Colors */
+  --color-accent: #1e40af; /* 权威政务蓝 */
+  --color-accent-hover: #1d4ed8;
+  --color-accent-light: #eff6ff;
+  --color-ink: #0f172a; /* 深岩黑，用于主要阅读文本 */
+  --color-ink-muted: #64748b; /* 板岩灰，用于次级信息 */
+  --color-surface: #ffffff; /* 卡片/面板底色 */
+  --color-surface-muted: #f8fafc; /* 全局底层背景色，降低对比疲劳 */
+  --color-border: #e2e8f0;
+  --color-border-hover: #cbd5e1;
+  
+  /* State Colors */
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+
+  /* Typography */
+  --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+  
+  /* Shape & Depth */
+  --radius-base: 6px; /* 克制的直角倾向，体现严谨 */
+  --radius-large: 12px;
+  --shadow-subtle: 0 4px 20px rgba(15, 23, 42, 0.05); /* 极弱阴影，仅区分层级 */
+  --shadow-elevated: 0 10px 40px rgba(15, 23, 42, 0.1);
+  --shadow-focus: 0 0 0 3px rgba(30, 64, 175, 0.15); /* 无障碍焦点环 */
+
+  /* Motion */
+  --transition-base: 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* 快速、干脆 */
+
+  /* ================== Element Plus 变量底层覆盖 ================== */
+  --el-color-primary: var(--color-accent);
+  --el-color-primary-light-3: #3b82f6;
+  --el-color-primary-light-5: #60a5fa;
+  --el-color-primary-light-7: #93c5fd;
+  --el-color-primary-light-8: #bfdbfe;
+  --el-color-primary-light-9: var(--color-accent-light);
+  --el-color-primary-dark-2: #1e3a8a;
+  
+  --el-border-radius-base: var(--radius-base);
+  --el-border-radius-round: 20px;
+  --el-border-radius-circle: 100%;
+  
+  --el-font-family: var(--font-system);
+  --el-text-color-primary: var(--color-ink);
+  --el-text-color-regular: var(--color-ink);
+  --el-text-color-secondary: var(--color-ink-muted);
+  --el-border-color: var(--color-border);
+  --el-border-color-hover: var(--color-border-hover);
+  --el-box-shadow-light: var(--shadow-subtle);
+}
+
 html,
 body,
 #app {
@@ -15,10 +69,31 @@ body,
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-family: var(--font-system);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f7fa;
-  color: #303133;
+  background-color: var(--color-surface-muted);
+  color: var(--color-ink);
+  line-height: 1.5;
 }
 
+/* Base resets */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition-base);
+}
+
+a:hover {
+  color: var(--color-accent-hover);
+}

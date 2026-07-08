@@ -1,64 +1,101 @@
 <template>
   <div class="home-container">
-    <!-- 顶部导航栏 -->
+    <!-- 顶部导航栏: 严谨的深蓝政务顶栏 -->
     <header class="navbar">
       <div class="logo-area">
         <el-icon class="logo-icon"><Platform /></el-icon>
         <span class="system-title">人口数据库管理系统</span>
       </div>
       <div class="user-area" v-if="username">
-        <el-avatar size="small" class="user-avatar">{{ username.charAt(0).toUpperCase() }}</el-avatar>
-        <span class="username">{{ username }} ({{ role }})</span>
-        <el-button type="danger" size="small" plain @click="handleLogout">退出登录</el-button>
+        <span class="username">{{ username }} <span class="role-badge">{{ role }}</span></span>
+        <el-button class="logout-btn" text @click="handleLogout">退出</el-button>
       </div>
     </header>
 
-    <!-- 主体内容区 -->
-    <main class="main-content">
-      <el-card class="welcome-card" shadow="hover">
-        <template #header>
-          <div class="card-header">
-            <span>系统公告</span>
-          </div>
-        </template>
-        <div class="welcome-text">
-          <h1>欢迎使用人口数据库管理系统</h1>
-          <p class="subtitle">Population Database Management System</p>
-          <p class="desc">
-            本系统致力于提供高效、安全的人口与户籍数据管理服务。包含人口管理、户口管理、迁入迁出管理、证件管理、流动人口管理、重点人口管理及数据大屏等功能。
-          </p>
+    <div class="main-layout">
+      <!-- 侧边栏: 可扩展的模块导航 -->
+      <aside class="sidebar">
+        <nav class="side-nav">
+          <a href="#" class="nav-item active">
+            <el-icon><DataBoard /></el-icon> 工作台
+          </a>
+          <a href="#" class="nav-item">
+            <el-icon><User /></el-icon> 人口管理
+          </a>
+          <a href="#" class="nav-item">
+            <el-icon><HomeFilled /></el-icon> 户籍系统
+          </a>
+          <a href="#" class="nav-item">
+            <el-icon><Setting /></el-icon> 系统设置
+          </a>
+        </nav>
+      </aside>
+
+      <!-- 主体内容区 -->
+      <main class="main-content">
+        <div class="page-header">
+          <h1>工作台</h1>
+          <p class="subtitle">欢迎使用人口数据库管理系统，今日系统运行状态良好。</p>
         </div>
+
+        <!-- 核心业务网格 -->
         <div class="features-grid">
-          <div class="feature-item">
-            <el-icon class="feature-icon"><User /></el-icon>
-            <h4>人口信息管理</h4>
+          <div class="feature-card">
+            <div class="card-icon"><el-icon><User /></el-icon></div>
+            <div class="card-info">
+              <h3>人口信息管理</h3>
+              <p>人口基础信息录入与维护</p>
+            </div>
+            <el-icon class="arrow"><ArrowRight /></el-icon>
           </div>
-          <div class="feature-item">
-            <el-icon class="feature-icon"><HomeFilled /></el-icon>
-            <h4>户口管理</h4>
+          
+          <div class="feature-card">
+            <div class="card-icon"><el-icon><HomeFilled /></el-icon></div>
+            <div class="card-info">
+              <h3>户口管理</h3>
+              <p>家庭户籍档案与变更登记</p>
+            </div>
+            <el-icon class="arrow"><ArrowRight /></el-icon>
           </div>
-          <div class="feature-item">
-            <el-icon class="feature-icon"><Switch /></el-icon>
-            <h4>迁入迁出管理</h4>
+          
+          <div class="feature-card">
+            <div class="card-icon"><el-icon><Switch /></el-icon></div>
+            <div class="card-info">
+              <h3>迁入迁出管理</h3>
+              <p>户口迁移流转审批与记录</p>
+            </div>
+            <el-icon class="arrow"><ArrowRight /></el-icon>
           </div>
-          <div class="feature-item">
-            <el-icon class="feature-icon"><Postcard /></el-icon>
-            <h4>证件管理</h4>
+          
+          <div class="feature-card">
+            <div class="card-icon"><el-icon><Postcard /></el-icon></div>
+            <div class="card-info">
+              <h3>证件管理</h3>
+              <p>身份证明及相关证件挂失补办</p>
+            </div>
+            <el-icon class="arrow"><ArrowRight /></el-icon>
           </div>
-          <div class="feature-item">
-            <el-icon class="feature-icon"><TrendCharts /></el-icon>
-            <h4>数据统计分析</h4>
+          
+          <div class="feature-card">
+            <div class="card-icon"><el-icon><TrendCharts /></el-icon></div>
+            <div class="card-info">
+              <h3>数据统计分析</h3>
+              <p>人口结构宏观统计与图表展示</p>
+            </div>
+            <el-icon class="arrow"><ArrowRight /></el-icon>
           </div>
         </div>
-      </el-card>
-    </main>
+      </main>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { Platform, User, HomeFilled, Switch, Postcard, TrendCharts } from '@element-plus/icons-vue';
+import { 
+  Platform, User, HomeFilled, Switch, Postcard, TrendCharts, DataBoard, Setting, ArrowRight 
+} from '@element-plus/icons-vue';
 import { ElMessageBox, ElMessage } from 'element-plus';
 
 const router = useRouter();
@@ -71,19 +108,17 @@ onMounted(() => {
 });
 
 const handleLogout = () => {
-  ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-    confirmButtonText: '确定',
+  ElMessageBox.confirm('确定要退出登录吗？', '系统提示', {
+    confirmButtonText: '确定退出',
     cancelButtonText: '取消',
     type: 'warning',
   })
     .then(() => {
-      // 清除本地存储的登录状态
       localStorage.removeItem('token');
       localStorage.removeItem('username');
       localStorage.removeItem('role');
-      // 路由跳转
       router.push('/login');
-      ElMessage.success('已退出登录');
+      ElMessage.success('已安全退出系统');
     })
     .catch(() => {});
 };
@@ -91,140 +126,181 @@ const handleLogout = () => {
 
 <style scoped>
 .home-container {
-  min-height: 100vh;
-  background-color: #f5f7fa;
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--color-surface-muted);
+  overflow: hidden;
 }
 
+/* 顶部严谨深蓝导航 */
 .navbar {
-  height: 60px;
-  background-color: #fff;
-  border-bottom: 1px solid #e6e6e6;
+  height: 56px;
+  background-color: var(--color-accent);
+  color: #ffffff;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 20px;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  padding: 0 24px;
+  box-shadow: var(--shadow-subtle);
+  z-index: 10;
 }
 
 .logo-area {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .logo-icon {
-  font-size: 24px;
-  color: #409eff;
+  font-size: 20px;
+  color: #ffffff;
 }
 
 .system-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 1px;
 }
 
 .user-area {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.user-avatar {
-  background-color: #409eff;
-}
-
-.username {
+  gap: 16px;
   font-size: 14px;
-  color: #606266;
-  margin-right: 10px;
 }
 
-.main-content {
-  flex: 1;
-  padding: 40px 20px;
+.role-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.logout-btn {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+.logout-btn:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 主体骨架 */
+.main-layout {
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  flex: 1;
+  overflow: hidden;
 }
 
-.welcome-card {
-  width: 100%;
-  max-width: 800px;
-  background-color: #fff;
-}
-
-.card-header {
-  font-weight: bold;
-  color: #303133;
-}
-
-.welcome-text {
-  text-align: center;
-  padding: 20px 0;
-}
-
-.welcome-text h1 {
-  font-size: 28px;
-  color: #303133;
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-.welcome-text .subtitle {
-  font-size: 16px;
-  color: #909399;
-  margin-bottom: 30px;
-  letter-spacing: 1px;
-}
-
-.welcome-text .desc {
-  font-size: 15px;
-  color: #606266;
-  line-height: 1.8;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 20px;
-  margin-top: 40px;
-  padding: 20px;
-  background-color: #f8fafc;
-  border-radius: 8px;
-}
-
-.feature-item {
+/* 侧边栏 */
+.sidebar {
+  width: 240px;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  padding: 16px 0;
   display: flex;
   flex-direction: column;
+}
+.side-nav {
+  display: flex;
+  flex-direction: column;
+}
+.nav-item {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 15px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  transition: all 0.3s;
+  gap: 12px;
+  padding: 14px 24px;
+  color: var(--color-ink);
+  font-size: 14px;
+  border-left: 3px solid transparent;
 }
-
-.feature-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border-color: #409eff;
+.nav-item:hover {
+  background: var(--color-surface-muted);
 }
-
-.feature-icon {
-  font-size: 24px;
-  color: #409eff;
-  margin-bottom: 10px;
-}
-
-.feature-item h4 {
-  font-size: 13px;
-  color: #334155;
-  margin: 0;
+.nav-item.active {
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  border-left-color: var(--color-accent);
   font-weight: 500;
+}
+.nav-item .el-icon {
+  font-size: 18px;
+}
+
+/* 右侧内容区 */
+.main-content {
+  flex: 1;
+  padding: 32px 40px;
+  overflow-y: auto;
+}
+
+.page-header {
+  margin-bottom: 32px;
+}
+.page-header h1 {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+.page-header .subtitle {
+  color: var(--color-ink-muted);
+  font-size: 14px;
+}
+
+/* 特性卡片网格 - 严谨直白 */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.feature-card {
+  display: flex;
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  padding: 24px;
+  cursor: pointer;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.feature-card:hover {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-subtle);
+}
+
+.card-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  border-radius: var(--radius-base);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  margin-right: 16px;
+}
+
+.card-info {
+  flex: 1;
+}
+.card-info h3 {
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.card-info p {
+  font-size: 13px;
+  color: var(--color-ink-muted);
+}
+
+.arrow {
+  color: var(--color-border-hover);
+  transition: transform var(--transition-base), color var(--transition-base);
+}
+.feature-card:hover .arrow {
+  color: var(--color-accent);
+  transform: translateX(4px);
 }
 </style>
