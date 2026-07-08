@@ -67,15 +67,7 @@
         <div class="login-card fade-in-up">
           <!-- 顶部加盖深蓝色官方象征徽章 -->
           <div class="badge-container">
-            <svg class="emblem-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="50" cy="50" r="45" fill="none" stroke="#1e40af" stroke-width="3" stroke-dasharray="2,2"/>
-              <circle cx="50" cy="50" r="40" fill="none" stroke="#1e40af" stroke-width="1.5"/>
-              <path d="M50,22 L70,32 L70,55 C70,68 62,76 50,80 C38,76 30,68 30,55 L30,32 Z" fill="#1e40af" opacity="0.1"/>
-              <path d="M50,22 L70,32 L70,55 C70,68 62,76 50,80 C38,76 30,68 30,55 L30,32 Z" fill="none" stroke="#1e40af" stroke-width="3"/>
-              <path d="M50,30 L53,38 L62,38 L55,43 L57,51 L50,46 L43,51 L45,43 L38,38 L47,38 Z" fill="#1e40af"/>
-              <path d="M38,55 Q50,62 62,55" fill="none" stroke="#1e40af" stroke-width="2"/>
-              <path d="M38,62 Q50,69 62,62" fill="none" stroke="#1e40af" stroke-width="2"/>
-            </svg>
+            <img class="emblem-img" src="../assets/images/login-badge.png" alt="徽章" />
           </div>
 
           <div class="card-header">
@@ -416,9 +408,10 @@ const handleLoginSubmit = () => {
   justify-content: center;
   margin-bottom: 16px;
 }
-.emblem-svg {
-  width: 68px;
-  height: 68px;
+.emblem-img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
 }
 
 .card-header {
