@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wjx871.population.stats.StatisticsMapper">
+
+    <select id="countActivePersons" resultType="long">
+        SELECT COUNT(*)
+        FROM person
+        WHERE status != '已注销'
+    </select>
+
+    <select id="countFloatingPopulation" resultType="long">
+        SELECT COUNT(*)
+        FROM floating_population
+        WHERE status = '有效'
+    </select>
+
+    <select id="countKeyPopulation" resultType="long">
+        SELECT COUNT(*)
+        FROM key_population
+        WHERE status = '有效'
+    </select>
+
+    <select id="countHouseholds" resultType="long">
+        SELECT COUNT(*)
+        FROM household
+        WHERE status = '正常'
+    </select>
+
+    <select id="countKeyPopulationByType" resultType="map">
+        SELECT key_type as name, COUNT(*) as value
+        FROM key_population
+        WHERE status = '有效'
+        GROUP BY key_type
+    </select>
+
+    <select id="countCertificateByStatus" resultType="map">
+        SELECT status as name, COUNT(*) as value
+        FROM certificate
+        GROUP BY status
+    </select>
+
+    <select id="countRecentMigrationIn" resultType="map">
+        SELECT DATE_FORMAT(in_date, '%m-%d') as date, COUNT(*) as count
+        FROM migration_in
+        WHERE in_date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+        GROUP BY DATE_FORMAT(in_date, '%m-%d')
+        ORDER BY date ASC
+    </select>
+
+    <select id="countRecentMigrationOut" resultType="map">
+        SELECT DATE_FORMAT(out_date, '%m-%d') as date, COUNT(*) as count
+        FROM migration_out
+        WHERE out_date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+        GROUP BY DATE_FORMAT(out_date, '%m-%d')
+        ORDER BY date ASC
+    </select>
+
+    <select id="selectRecentLogs" resultType="map">
+        SELECT 
+            l.log_id as id,
+            u.username as operator,
+            l.operation_type as type,
+            l.target_table as targetTable,
+            l.operation_result as result,
+            DATE_FORMAT(l.operation_time, '%Y-%m-%d %H:%i:%s') as time,
+            l.detail as detail
+        FROM operation_log l
+        LEFT JOIN sys_user u ON l.user_id = u.user_id
+        ORDER BY l.operation_time DESC
+        LIMIT 10
+    </select>
+
+</mapper>
