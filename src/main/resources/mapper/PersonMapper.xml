@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wjx871.population.person.PersonMapper">
+
+    <resultMap id="PersonResultMap" type="com.wjx871.population.person.Person">
+        <id property="personId" column="person_id"/>
+        <result property="name" column="name"/>
+        <result property="gender" column="gender"/>
+        <result property="idCard" column="id_card"/>
+        <result property="birthDate" column="birth_date"/>
+        <result property="ethnicity" column="ethnicity"/>
+        <result property="phone" column="phone"/>
+        <result property="currentAddress" column="current_address"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="PersonColumns">
+        person_id, name, gender, id_card, birth_date, ethnicity, phone,
+        current_address, status, created_at, updated_at
+    </sql>
+
+    <select id="selectById" resultMap="PersonResultMap">
+        SELECT
+        <include refid="PersonColumns"/>
+        FROM person
+        WHERE person_id = #{personId}
+    </select>
+
+    <select id="selectByIdCard" resultMap="PersonResultMap">
+        SELECT
+        <include refid="PersonColumns"/>
+        FROM person
+        WHERE id_card = #{idCard}
+    </select>
+
+    <select id="countByIdCard" resultType="long">
+        SELECT COUNT(*)
+        FROM person
+        WHERE id_card = #{idCard}
+    </select>
+
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM person
+        <where>
+            <if test="name != null">
+                AND LOWER(name) LIKE LOWER(CONCAT('%', #{name}, '%'))
+            </if>
+            <if test="idCard != null">
+                AND id_card LIKE CONCAT('%', #{idCard}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectListByCondition" resultMap="PersonResultMap">
+        SELECT
+        <include refid="PersonColumns"/>
+        FROM person
+        <where>
+            <if test="name != null">
+                AND LOWER(name) LIKE LOWER(CONCAT('%', #{name}, '%'))
+            </if>
+            <if test="idCard != null">
+                AND id_card LIKE CONCAT('%', #{idCard}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY person_id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <insert id="insertPerson" parameterType="com.wjx871.population.person.Person"
+            useGeneratedKeys="true" keyProperty="personId">
+        INSERT INTO person (
+            name, gender, id_card, birth_date, ethnicity, phone,
+            current_address, status, created_at, updated_at
+        ) VALUES (
+            #{name}, #{gender}, #{idCard}, #{birthDate}, #{ethnicity}, #{phone},
+            #{currentAddress}, #{status}, #{createdAt}, #{updatedAt}
+        )
+    </insert>
+
+    <update id="updatePerson" parameterType="com.wjx871.population.person.Person">
+        UPDATE person
+        SET name = #{name},
+            gender = #{gender},
+            id_card = #{idCard},
+            birth_date = #{birthDate},
+            ethnicity = #{ethnicity},
+            phone = #{phone},
+            current_address = #{currentAddress},
+            status = #{status},
+            updated_at = #{updatedAt}
+        WHERE person_id = #{personId}
+    </update>
+
+    <update id="updateStatusToDeleted">
+        UPDATE person
+        SET status = #{status},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE person_id = #{personId}
+    </update>
+</mapper>
