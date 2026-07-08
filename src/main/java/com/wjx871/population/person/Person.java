@@ -5,6 +5,12 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * 人口基础信息实体。
+ *
+ * @author Wjx871
+ * @date 2026/07/08
+ */
 @Getter
 @Setter
 public class Person {

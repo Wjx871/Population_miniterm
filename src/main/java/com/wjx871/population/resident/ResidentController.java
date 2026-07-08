@@ -17,6 +17,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 居民演示模块接口控制器。
+ *
+ * @author Wjx871
+ * @date 2026/07/08
+ */
 @RestController
 @RequestMapping("/api/residents")
 @RequiredArgsConstructor

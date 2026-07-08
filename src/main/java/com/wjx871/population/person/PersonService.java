@@ -13,6 +13,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 人口基础信息业务服务。
+ *
+ * @author Wjx871
+ * @date 2026/07/08
+ */
 @Service
 @RequiredArgsConstructor
 public class PersonService {

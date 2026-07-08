@@ -5,6 +5,12 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
+/**
+ * 人口基础信息新增和修改请求。
+ *
+ * @author Wjx871
+ * @date 2026/07/08
+ */
 public record PersonRequest(
         @NotBlank @Size(max = 50) String name,
         @NotBlank @Size(max = 1) String gender,

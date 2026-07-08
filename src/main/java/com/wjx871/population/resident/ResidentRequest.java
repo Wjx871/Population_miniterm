@@ -6,6 +6,12 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
+/**
+ * 居民演示模块新增和修改请求。
+ *
+ * @author Wjx871
+ * @date 2026/07/08
+ */
 public record ResidentRequest(
         @NotBlank @Size(max = 50) String name,
         @NotNull Gender gender,

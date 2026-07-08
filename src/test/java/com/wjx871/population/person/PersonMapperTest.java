@@ -11,8 +11,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+/**
+ * 人口基础信息 Mapper 单元测试。
+ *
+ * @author Wjx871
+ * @date 2026/07/08
+ */
 @SpringBootTest
-class PersonMapperTests {
+class PersonMapperTest {
 
     @Autowired
     private PersonMapper personMapper;
