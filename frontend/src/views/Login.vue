@@ -1,6 +1,6 @@
 <template>
   <div class="login-wrapper">
-    <!-- 视频背景层 -->
+    <!-- 全屏背景视频层 -->
     <video
       class="tech-bg-video"
       autoplay
@@ -12,53 +12,72 @@
       <source src="../assets/videos/login-bg.mp4" type="video/mp4" />
     </video>
 
-    <!-- 全屏背景图与深蓝遮罩，彻底消除左右割裂感 -->
+    <!-- 背景图片(作为fallback)与遮罩层 -->
     <div class="tech-bg"></div>
     <div class="tech-overlay"></div>
     <div class="card-safe-overlay"></div>
 
     <div class="login-main">
-      <!-- 左侧：悬浮的系统介绍与特色区 -->
+      <!-- 左侧：系统介绍与功能复刻网格 -->
       <div class="login-left">
         <div class="left-content fade-in">
           <div class="brand-header">
             <h1 class="brand-title-cn">人口数据库管理系统</h1>
             <p class="brand-title-en">Population Database Management System</p>
+            <div class="sub-title-line"></div>
           </div>
 
           <div class="sub-title-wrapper slide-in">
             <h2>基层人口信息统一管理与分析平台</h2>
-            <div class="sub-title-line"></div>
           </div>
 
+          <!-- 3列网格功能卡片，完美复刻参考图 -->
           <div class="feature-grid">
-            <div class="feature-item delay-1">
-              <el-icon class="feature-icon"><UserFilled /></el-icon>
-              <span>人口信息管理</span>
+            <div class="feature-card delay-1">
+              <el-icon class="feature-icon"><User /></el-icon>
+              <div class="feature-title">人口信息管理</div>
+              <div class="feature-desc">统一管理人口基础信息</div>
             </div>
-            <div class="feature-item delay-2">
+            <div class="feature-card delay-2">
               <el-icon class="feature-icon"><HomeFilled /></el-icon>
-              <span>户口管理</span>
+              <div class="feature-title">户口管理</div>
+              <div class="feature-desc">户籍信息全流程管理</div>
             </div>
-            <div class="feature-item delay-3">
-              <el-icon class="feature-icon"><Sort /></el-icon>
-              <span>迁入迁出管理</span>
+            <div class="feature-card delay-3">
+              <el-icon class="feature-icon"><Switch /></el-icon>
+              <div class="feature-title">迁入迁出管理</div>
+              <div class="feature-desc">人口流动动态管理</div>
             </div>
-            <div class="feature-item delay-4">
+            <div class="feature-card delay-4">
               <el-icon class="feature-icon"><Postcard /></el-icon>
-              <span>证件管理</span>
+              <div class="feature-title">证件管理</div>
+              <div class="feature-desc">证件信息集中管理</div>
             </div>
-            <div class="feature-item delay-5">
-              <el-icon class="feature-icon"><DataAnalysis /></el-icon>
-              <span>数据统计分析</span>
+            <div class="feature-card delay-5">
+              <el-icon class="feature-icon"><TrendCharts /></el-icon>
+              <div class="feature-title">数据统计分析</div>
+              <div class="feature-desc">多维数据分析与可视化</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 右侧：悬浮在背景上的纯白表单卡片 -->
+      <!-- 右侧：悬浮在背景上的纯白登录卡片 -->
       <div class="login-right">
         <div class="login-card fade-in-up">
+          <!-- 顶部加盖深蓝色官方象征徽章 -->
+          <div class="badge-container">
+            <svg class="emblem-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="45" fill="none" stroke="#1e40af" stroke-width="3" stroke-dasharray="2,2"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#1e40af" stroke-width="1.5"/>
+              <path d="M50,22 L70,32 L70,55 C70,68 62,76 50,80 C38,76 30,68 30,55 L30,32 Z" fill="#1e40af" opacity="0.1"/>
+              <path d="M50,22 L70,32 L70,55 C70,68 62,76 50,80 C38,76 30,68 30,55 L30,32 Z" fill="none" stroke="#1e40af" stroke-width="3"/>
+              <path d="M50,30 L53,38 L62,38 L55,43 L57,51 L50,46 L43,51 L45,43 L38,38 L47,38 Z" fill="#1e40af"/>
+              <path d="M38,55 Q50,62 62,55" fill="none" stroke="#1e40af" stroke-width="2"/>
+              <path d="M38,62 Q50,69 62,62" fill="none" stroke="#1e40af" stroke-width="2"/>
+            </svg>
+          </div>
+
           <div class="card-header">
             <h2>欢迎登录</h2>
             <p>请使用账号密码登录系统</p>
@@ -131,20 +150,20 @@
     <!-- 底部统一 Footer -->
     <footer class="login-footer">
       <div class="footer-left">
-        <el-icon><StarFilled /></el-icon> 依法管理人口信息 &nbsp; 服务社会治理现代化
+        <el-icon><CircleCheck /></el-icon> 依法管理人口信息 &nbsp; 服务社会治理现代化
       </div>
       <div class="footer-right">
-        © 2026 Population Database Management System <span class="divider">|</span> 版权所有
+        © 2026 Population Database Management System 版权所有
       </div>
     </footer>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
-  User, Lock, Warning, StarFilled, UserFilled, HomeFilled, Sort, Postcard, DataAnalysis, CircleCheck
+  User, Lock, Warning, StarFilled, UserFilled, HomeFilled, Switch, Postcard, TrendCharts, CircleCheck
 } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { login } from '../api/auth';
@@ -235,7 +254,6 @@ const handleLoginSubmit = () => {
   height: 100%;
   object-fit: cover;
   z-index: 1;
-  /* 恢复原版视频，利用 CSS 巧妙缩放并把右下角（水印位置）挤出屏幕可视区，保留原视频广阔视野 */
   transform-origin: top left;
   transform: scale(1.12);
 }
@@ -273,9 +291,9 @@ const handleLoginSubmit = () => {
   flex: 1;
   display: flex;
   position: relative;
-  z-index: 10; /* 在背景图之上 */
+  z-index: 10;
   width: 100%;
-  max-width: 1400px;
+  max-width: 1300px;
   margin: 0 auto;
 }
 
@@ -289,78 +307,88 @@ const handleLoginSubmit = () => {
   color: #ffffff;
 }
 .left-content {
-  max-width: 600px;
+  max-width: 720px;
 }
 
 .brand-header {
-  margin-bottom: 40px;
+  margin-bottom: 24px;
 }
 .brand-title-cn {
-  font-size: 40px;
+  font-size: 42px;
   font-weight: 700;
-  letter-spacing: 2px;
-  margin: 0 0 8px 0;
+  letter-spacing: 3px;
+  margin: 0 0 10px 0;
   color: #ffffff;
 }
 .brand-title-en {
-  font-size: 14px;
+  font-size: 13px;
   font-family: var(--font-system);
-  color: rgba(255, 255, 255, 0.7);
-  letter-spacing: 1.5px;
-  margin: 0;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 1.8px;
+  margin: 0 0 16px 0;
   text-transform: uppercase;
+}
+.sub-title-line {
+  width: 44px;
+  height: 3px;
+  background-color: #2563eb; 
 }
 
 .sub-title-wrapper {
-  margin-bottom: 50px;
+  margin-bottom: 40px;
 }
 .sub-title-wrapper h2 {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 500;
-  letter-spacing: 1.5px;
-  margin: 0 0 16px 0;
+  letter-spacing: 2px;
+  margin: 0;
   color: #ffffff;
-}
-.sub-title-line {
-  width: 40px;
-  height: 4px;
-  background-color: #60a5fa; 
 }
 
-/* 功能网格 */
+/* 功能网格 - 复刻参考图3列网格 */
 .feature-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+  max-width: 660px;
 }
-.feature-item {
+.feature-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 16px 20px;
-  background: rgba(15, 23, 42, 0.65); /* 改用深色半透明底色，强制压暗背后的视频 */
-  border: 1px solid rgba(96, 165, 250, 0.3); /* 淡蓝色边框勾勒轮廓 */
-  border-radius: var(--radius-base);
-  backdrop-filter: blur(12px); /* 强化毛玻璃 */
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* 增加阴影，让组件浮出来 */
+  justify-content: center;
+  padding: 24px 16px;
+  background: rgba(15, 23, 42, 0.4); 
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   transition: all var(--transition-base);
+  text-align: center;
 }
-.feature-item:hover {
-  background: rgba(15, 23, 42, 0.85); /* hover 时更实心 */
-  border-color: rgba(96, 165, 250, 0.7);
+.feature-card:hover {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(96, 165, 250, 0.5);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 .feature-icon {
-  font-size: 20px;
-  color: #93c5fd;
+  font-size: 28px;
+  color: #3b82f6; 
+  margin-bottom: 12px;
 }
-.feature-item span {
+.feature-title {
   font-size: 14px;
-  letter-spacing: 1px;
+  font-weight: 600;
   color: #ffffff;
-  font-weight: 500;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+.feature-desc {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
 }
 
 /* ================= 右侧：悬浮卡片区 ================= */
@@ -369,30 +397,43 @@ const handleLoginSubmit = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-right: 60px;
+  padding-right: 40px;
 }
 
 /* 登录表单区 - 悬浮在背景之上 */
 .login-card {
   width: 100%;
-  max-width: 420px;
-  background: var(--color-surface); 
-  padding: 48px 40px;
-  border-radius: var(--radius-large);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  max-width: 410px;
+  background: #ffffff; 
+  padding: 44px 38px;
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+
+/* 顶部标志徽章 */
+.badge-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.emblem-svg {
+  width: 68px;
+  height: 68px;
 }
 
 .card-header {
-  margin-bottom: 36px;
+  margin-bottom: 30px;
+  text-align: center;
 }
 .card-header h2 {
-  font-size: 26px;
+  font-size: 25px;
   color: var(--color-ink);
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
   font-weight: 700;
+  letter-spacing: 1px;
 }
 .card-header p {
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--color-ink-muted);
   margin: 0;
 }
@@ -407,12 +448,13 @@ const handleLoginSubmit = () => {
   color: var(--color-danger);
   padding: 12px 16px;
   border-radius: var(--radius-base);
-  margin-bottom: 24px;
-  font-size: 14px;
+  margin-bottom: 20px;
+  font-size: 13.5px;
 }
 
 :deep(.el-input__wrapper) {
-  padding: 8px 12px;
+  padding: 8px 14px;
+  border-radius: 6px;
 }
 :deep(.el-input__inner) {
   height: 32px;
@@ -422,20 +464,27 @@ const handleLoginSubmit = () => {
   display: flex;
   justify-content: flex-start;
   margin-bottom: 24px;
-  margin-top: -8px;
+  margin-top: -6px;
 }
 
 .login-button {
   width: 100%;
-  height: 48px;
+  height: 46px;
   font-size: 16px;
-  letter-spacing: 4px;
+  letter-spacing: 6px;
   font-weight: 600;
+  background-color: #1e40af;
+  border-color: #1e40af;
+  border-radius: 6px;
+}
+.login-button:hover {
+  background-color: #1d4ed8;
+  border-color: #1d4ed8;
 }
 
 .mock-tip {
-  margin-top: 32px;
-  padding-top: 20px;
+  margin-top: 28px;
+  padding-top: 18px;
   border-top: 1px solid var(--color-border);
   color: var(--color-ink-muted);
   font-size: 13px;
@@ -447,14 +496,13 @@ const handleLoginSubmit = () => {
 /* ================= 底部区域 ================= */
 .login-footer {
   height: 48px;
-  position: relative;
   background: transparent;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.6);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 40px;
+  padding: 0 50px;
   font-size: 13px;
   z-index: 20;
 }
@@ -463,9 +511,9 @@ const handleLoginSubmit = () => {
   align-items: center;
   gap: 6px;
 }
-.divider {
-  margin: 0 8px;
-  color: rgba(255, 255, 255, 0.2);
+.footer-left .el-icon {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .fade-in { animation: fadeIn 0.6s ease forwards; }
@@ -473,16 +521,14 @@ const handleLoginSubmit = () => {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
 .delay-1 { animation: fadeIn 0.4s ease 0.1s forwards; opacity: 0; }
-.delay-2 { animation: fadeIn 0.4s ease 0.15s forwards; opacity: 0; }
-.delay-3 { animation: fadeIn 0.4s ease 0.2s forwards; opacity: 0; }
-.delay-4 { animation: fadeIn 0.4s ease 0.25s forwards; opacity: 0; }
-.delay-5 { animation: fadeIn 0.4s ease 0.3s forwards; opacity: 0; }
+.delay-2 { animation: fadeIn 0.4s ease 0.14s forwards; opacity: 0; }
+.delay-3 { animation: fadeIn 0.4s ease 0.18s forwards; opacity: 0; }
+.delay-4 { animation: fadeIn 0.4s ease 0.22s forwards; opacity: 0; }
+.delay-5 { animation: fadeIn 0.4s ease 0.26s forwards; opacity: 0; }
 
-@media (max-width: 1024px), (prefers-reduced-motion: reduce) {
-  .tech-bg-video {
-    display: none;
-  }
+@media (max-width: 1024px) {
   .login-left { display: none; }
   .login-right { flex: 1; padding: 0 20px; }
+  .login-footer { padding: 0 20px; }
 }
 </style>
