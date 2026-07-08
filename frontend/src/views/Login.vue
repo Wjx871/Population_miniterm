@@ -1,8 +1,21 @@
 <template>
   <div class="login-wrapper">
+    <!-- 视频背景层 -->
+    <video
+      class="tech-bg-video"
+      autoplay
+      muted
+      loop
+      playsinline
+      poster="../assets/images/login-bg.png"
+    >
+      <source src="../assets/videos/login-bg.mp4" type="video/mp4" />
+    </video>
+
     <!-- 全屏背景图与深蓝遮罩，彻底消除左右割裂感 -->
     <div class="tech-bg"></div>
     <div class="tech-overlay"></div>
+    <div class="card-safe-overlay"></div>
 
     <div class="login-main">
       <!-- 左侧：悬浮的系统介绍与特色区 -->
@@ -214,27 +227,45 @@ const handleLoginSubmit = () => {
   position: relative;
 }
 
+/* 视频背景层 */
+.tech-bg-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+  /* 恢复原版视频，利用 CSS 巧妙缩放并把右下角（水印位置）挤出屏幕可视区，保留原视频广阔视野 */
+  transform-origin: top left;
+  transform: scale(1.12);
+}
+
 /* 全屏背景图与遮罩 */
 .tech-bg {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   background-image: url('../assets/images/login-bg.png');
   background-size: cover;
   background-position: center;
-  z-index: 1;
+  z-index: 0;
 }
 .tech-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  /* 深邃的皇家蓝渐变，覆盖全屏 */
-  background: linear-gradient(135deg, rgba(30, 64, 175, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+  inset: 0;
+  background:
+    radial-gradient(circle at 24% 32%, rgba(96, 165, 250, 0.14), transparent 32%),
+    linear-gradient(135deg, rgba(30, 64, 175, 0.2) 0%, rgba(15, 23, 42, 0.45) 100%);
   z-index: 2;
+}
+.card-safe-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(15, 23, 42, 0.12) 52%, rgba(15, 23, 42, 0.36) 100%);
+  z-index: 3;
+  pointer-events: none;
 }
 
 /* 主容器 */
@@ -307,14 +338,19 @@ const handleLoginSubmit = () => {
   align-items: center;
   gap: 12px;
   padding: 16px 20px;
-  background: rgba(255, 255, 255, 0.06); 
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(15, 23, 42, 0.65); /* 改用深色半透明底色，强制压暗背后的视频 */
+  border: 1px solid rgba(96, 165, 250, 0.3); /* 淡蓝色边框勾勒轮廓 */
   border-radius: var(--radius-base);
-  transition: background var(--transition-base), border-color var(--transition-base);
+  backdrop-filter: blur(12px); /* 强化毛玻璃 */
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* 增加阴影，让组件浮出来 */
+  transition: all var(--transition-base);
 }
 .feature-item:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(15, 23, 42, 0.85); /* hover 时更实心 */
+  border-color: rgba(96, 165, 250, 0.7);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 .feature-icon {
   font-size: 20px;
@@ -323,7 +359,8 @@ const handleLoginSubmit = () => {
 .feature-item span {
   font-size: 14px;
   letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.95);
+  color: #ffffff;
+  font-weight: 500;
 }
 
 /* ================= 右侧：悬浮卡片区 ================= */
@@ -342,7 +379,7 @@ const handleLoginSubmit = () => {
   background: var(--color-surface); 
   padding: 48px 40px;
   border-radius: var(--radius-large);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3); /* 强烈的阴影让白色卡片立体感十足，不再是死板的拼接 */
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
 }
 
 .card-header {
@@ -410,7 +447,8 @@ const handleLoginSubmit = () => {
 /* ================= 底部区域 ================= */
 .login-footer {
   height: 48px;
-  background: transparent; /* 背景透明，融入全屏底色 */
+  position: relative;
+  background: transparent;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.6);
   display: flex;
@@ -440,7 +478,10 @@ const handleLoginSubmit = () => {
 .delay-4 { animation: fadeIn 0.4s ease 0.25s forwards; opacity: 0; }
 .delay-5 { animation: fadeIn 0.4s ease 0.3s forwards; opacity: 0; }
 
-@media (max-width: 1024px) {
+@media (max-width: 1024px), (prefers-reduced-motion: reduce) {
+  .tech-bg-video {
+    display: none;
+  }
   .login-left { display: none; }
   .login-right { flex: 1; padding: 0 20px; }
 }
