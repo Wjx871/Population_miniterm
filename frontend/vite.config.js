@@ -6,6 +6,12 @@ export default defineConfig({
   plugins: [vue()],
   server: {
     port: 5180,
-    strictPort: true // 如果端口被占用则直接退出，而不是尝试下一个端口
+    strictPort: false, // 如果端口被占用则直接退出，而不是尝试下一个端口
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8080',
+        changeOrigin: true,
+      },
+    },
   }
 })

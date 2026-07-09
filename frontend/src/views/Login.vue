@@ -158,9 +158,10 @@ import {
   User, Lock, Warning, StarFilled, UserFilled, HomeFilled, Switch, Postcard, TrendCharts, CircleCheck
 } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import { login } from '../api/auth';
+import { useUserStore } from '../stores/user';
 
 const router = useRouter();
+const userStore = useUserStore();
 const loginFormRef = ref(null);
 const loading = ref(false);
 const errorMessage = ref('');
@@ -198,25 +199,19 @@ const handleLoginSubmit = () => {
     errorMessage.value = '';
 
     try {
-      const response = await login({
+      await userStore.login({
         username: loginForm.username,
         password: loginForm.password,
       });
 
-      if (response.code === 200) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('username', response.data.username);
-        localStorage.setItem('role', response.data.role);
-
-        if (rememberMe.value) {
-          localStorage.setItem('saved_username', loginForm.username);
-        } else {
-          localStorage.removeItem('saved_username');
-        }
-
-        ElMessage.success({ message: '登录成功', duration: 1500 });
-        router.push('/home');
+      if (rememberMe.value) {
+        localStorage.setItem('saved_username', loginForm.username);
+      } else {
+        localStorage.removeItem('saved_username');
       }
+
+      ElMessage.success({ message: '登录成功', duration: 1500 });
+      router.push('/home');
     } catch (error) {
       errorMessage.value = error.message || '账号或密码验证失败';
     } finally {
