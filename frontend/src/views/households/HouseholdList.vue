@@ -15,8 +15,8 @@
         <el-form-item label="户籍编号">
           <el-input v-model="query.householdNo" placeholder="请输入户籍号" clearable />
         </el-form-item>
-        <el-form-item label="家庭住址">
-          <el-input v-model="query.address" placeholder="请输入住址" clearable />
+        <el-form-item label="户主姓名">
+          <el-input v-model="query.headPersonName" placeholder="请输入户主姓名" clearable />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="query.status" placeholder="全部" clearable style="width: 120px;">
@@ -125,7 +125,7 @@ const total = ref(0);
 
 const query = reactive({
   householdNo: '',
-  address: '',
+  headPersonName: '',
   status: '',
   current: 1,
   size: 10
@@ -146,7 +146,7 @@ const fetchList = async () => {
 
 const resetQuery = () => {
   query.householdNo = '';
-  query.address = '';
+  query.headPersonName = '';
   query.status = '';
   query.current = 1;
   fetchList();

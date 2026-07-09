@@ -12,11 +12,12 @@
 
     <SearchPanel @search="fetchList" @reset="resetQuery">
       <el-form :inline="true" :model="query" size="default">
-        <el-form-item label="人员姓名">
-          <el-input v-model="query.name" placeholder="请输入姓名" clearable />
-        </el-form-item>
-        <el-form-item label="证件号">
-          <el-input v-model="query.certNo" placeholder="请输入证件号" clearable />
+        <el-form-item label="证件类型">
+          <el-select v-model="query.certificateType" placeholder="请选择证件类型" clearable style="width: 150px;">
+            <el-option label="居民身份证" value="居民身份证" />
+            <el-option label="居住证" value="居住证" />
+            <el-option label="临时居住证" value="临时居住证" />
+          </el-select>
         </el-form-item>
         <el-form-item label="证件状态">
           <el-select v-model="query.status" placeholder="全部" clearable style="width: 120px;">
@@ -31,8 +32,8 @@
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
         <el-table-column prop="personName" label="持有者姓名" width="120" align="center" fixed />
-        <el-table-column prop="certType" label="证件类型" width="130" align="center" />
-        <el-table-column prop="certNo" label="证件编号" width="200" align="center" />
+        <el-table-column prop="certificateType" label="证件类型" width="130" align="center" />
+        <el-table-column prop="certificateNo" label="证件编号" width="200" align="center" />
         <el-table-column prop="issueDate" label="签发日期" width="120" align="center">
           <template #default="{ row }">{{ formatDate(row.issueDate) }}</template>
         </el-table-column>
@@ -85,15 +86,15 @@
         <el-form-item label="持有人" v-else>
           <el-input v-model="form.personName" disabled />
         </el-form-item>
-        <el-form-item label="证件类型" prop="certType">
-          <el-select v-model="form.certType" style="width: 100%;">
+        <el-form-item label="证件类型" prop="certificateType">
+          <el-select v-model="form.certificateType" style="width: 100%;">
             <el-option label="居民身份证" value="居民身份证" />
             <el-option label="居住证" value="居住证" />
             <el-option label="临时居住证" value="临时居住证" />
           </el-select>
         </el-form-item>
-        <el-form-item label="证件编号" prop="certNo">
-          <el-input v-model="form.certNo" placeholder="请输入证件编号" />
+        <el-form-item label="证件编号" prop="certificateNo">
+          <el-input v-model="form.certificateNo" placeholder="请输入证件编号" />
         </el-form-item>
         <el-form-item label="签发日期" prop="issueDate">
           <el-date-picker 
@@ -142,8 +143,7 @@ const tableData = ref([]);
 const total = ref(0);
 
 const query = reactive({
-  name: '',
-  certNo: '',
+  certificateType: '',
   status: '',
   current: 1,
   size: 10
@@ -163,8 +163,7 @@ const fetchList = async () => {
 };
 
 const resetQuery = () => {
-  query.name = '';
-  query.certNo = '';
+  query.certificateType = '';
   query.status = '';
   query.current = 1;
   fetchList();
@@ -184,8 +183,8 @@ const form = reactive({
   id: null,
   personId: null,
   personName: '',
-  certType: '居民身份证',
-  certNo: '',
+  certificateType: '居民身份证',
+  certificateNo: '',
   issueDate: '',
   expireDate: '',
   status: '有效'
@@ -193,8 +192,8 @@ const form = reactive({
 
 const rules = {
   personId: [{ required: true, message: '请选择持有人', trigger: 'change' }],
-  certType: [{ required: true, message: '请选择证件类型', trigger: 'change' }],
-  certNo: [{ required: true, message: '请输入证件编号', trigger: 'blur' }],
+  certificateType: [{ required: true, message: '请选择证件类型', trigger: 'change' }],
+  certificateNo: [{ required: true, message: '请输入证件编号', trigger: 'blur' }],
   issueDate: [{ required: true, message: '请选择签发日期', trigger: 'change' }],
   expireDate: [{ required: true, message: '请选择到期日期', trigger: 'change' }],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }]
@@ -206,8 +205,8 @@ const openCreateDialog = () => {
     id: null,
     personId: null,
     personName: '',
-    certType: '居民身份证',
-    certNo: '',
+    certificateType: '居民身份证',
+    certificateNo: '',
     issueDate: '',
     expireDate: '',
     status: '有效'
@@ -219,11 +218,11 @@ const openCreateDialog = () => {
 const openEditDialog = (row) => {
   isEdit.value = true;
   Object.assign(form, {
-    id: row.id || row.certId,
+    id: row.id || row.certificateId,
     personId: row.personId,
     personName: row.personName,
-    certType: row.certType,
-    certNo: row.certNo,
+    certificateType: row.certificateType,
+    certificateNo: row.certificateNo,
     issueDate: formatDate(row.issueDate),
     expireDate: formatDate(row.expireDate),
     status: row.status
@@ -258,7 +257,7 @@ const submitForm = () => {
 };
 
 const handleDelete = (row) => {
-  const id = row.id || row.certId;
+  const id = row.id || row.certificateId;
   ElMessageBox.confirm(`确定要作废该证件吗？`, '警告', {
     confirmButtonText: '确定作废',
     cancelButtonText: '取消',

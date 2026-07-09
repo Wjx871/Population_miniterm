@@ -237,14 +237,14 @@ const submitForm = () => {
           personId: form.personId,
           inDate: form.inDate,
           fromAddress: form.fromAddress,
-          toHouseholdId: form.toHouseholdId,
+          toHouseholdId: form.toHouseholdId || null,
           reason: form.reason
         });
       } else {
         await createMigrationOut({
           personId: form.personId,
           outDate: form.outDate,
-          fromHouseholdId: form.fromHouseholdId,
+          fromHouseholdId: form.fromHouseholdId || null,
           toAddress: form.toAddress,
           reason: form.reason
         });

@@ -35,7 +35,7 @@
       <el-card shadow="hover" class="stat-card">
         <template #header>
           <div class="card-header">
-            <span>本月迁入登记</span>
+            <span>迁入登记总数</span>
             <el-icon class="icon-warning"><Switch /></el-icon>
           </div>
         </template>
