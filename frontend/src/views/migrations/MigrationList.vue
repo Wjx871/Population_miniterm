@@ -14,11 +14,17 @@
 
     <SearchPanel @search="fetchList" @reset="resetQuery">
       <el-form :inline="true" :model="query" size="default">
-        <el-form-item label="人员姓名">
-          <el-input v-model="query.name" placeholder="请输入姓名" clearable />
-        </el-form-item>
-        <el-form-item label="身份证号">
-          <el-input v-model="query.idCard" placeholder="请输入身份证号" clearable />
+        <el-form-item label="办理时间">
+          <el-date-picker
+            v-model="dateRange"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            value-format="YYYY-MM-DD"
+            @change="handleDateChange"
+            clearable
+          />
         </el-form-item>
       </el-form>
     </SearchPanel>
@@ -76,7 +82,7 @@
             <el-input v-model="form.fromAddress" placeholder="省、市、区及详细住址" />
           </el-form-item>
           <el-form-item label="迁入户籍ID" prop="toHouseholdId">
-            <el-input v-model="form.toHouseholdId" placeholder="请输入迁入的户籍ID（选填）" />
+            <el-input v-model.number="form.toHouseholdId" type="number" placeholder="请输入迁入的户籍ID（选填）" />
           </el-form-item>
         </template>
         
@@ -85,7 +91,7 @@
             <el-date-picker v-model="form.outDate" type="date" placeholder="请选择日期" value-format="YYYY-MM-DD" style="width: 100%;" />
           </el-form-item>
           <el-form-item label="原户籍ID" prop="fromHouseholdId">
-            <el-input v-model="form.fromHouseholdId" placeholder="请输入原户籍ID（选填）" />
+            <el-input v-model.number="form.fromHouseholdId" type="number" placeholder="请输入原户籍ID（选填）" />
           </el-form-item>
           <el-form-item label="迁往住址" prop="toAddress">
             <el-input v-model="form.toAddress" placeholder="省、市、区及详细住址" />
@@ -124,11 +130,23 @@ const tableData = ref([]);
 const total = ref(0);
 
 const query = reactive({
-  name: '',
-  idCard: '',
+  startDate: '',
+  endDate: '',
   current: 1,
   size: 10
 });
+
+const dateRange = ref([]);
+
+const handleDateChange = (val) => {
+  if (val && val.length === 2) {
+    query.startDate = val[0];
+    query.endDate = val[1];
+  } else {
+    query.startDate = '';
+    query.endDate = '';
+  }
+};
 
 watch(isMigrationIn, () => {
   resetQuery();
@@ -149,8 +167,9 @@ const fetchList = async () => {
 };
 
 const resetQuery = () => {
-  query.name = '';
-  query.idCard = '';
+  dateRange.value = [];
+  query.startDate = '';
+  query.endDate = '';
   query.current = 1;
   fetchList();
 };

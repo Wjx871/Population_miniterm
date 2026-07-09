@@ -91,14 +91,14 @@ onMounted(async () => {
 
   try {
     const res = await getMigrationsInStatistics();
-    migrationsIn.value = res?.monthTotal !== undefined ? res.monthTotal : '暂无数据';
+    migrationsIn.value = res?.total !== undefined ? res.total : '暂无数据';
   } catch (e) {
     migrationsIn.value = '暂无数据';
   }
 
   try {
     const res = await getCertificatesExpireSoon();
-    expireSoon.value = res?.count !== undefined ? res.count : '暂无数据';
+    expireSoon.value = res?.total !== undefined ? res.total : '暂无数据';
   } catch (e) {
     expireSoon.value = '暂无数据';
   }

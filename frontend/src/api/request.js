@@ -53,8 +53,7 @@ request.interceptors.response.use(
       ElMessage.error('登录状态已失效，请重新登录')
       router.replace('/login')
     } else if (error.response?.status === 404) {
-      // 临时隐藏 404 报错，避免因后端接口未实现而频繁弹窗影响体验
-      console.warn(`请求的接口不存在 (404): ${error.config?.url}`);
+      ElMessage.error(`请求的接口不存在 (404): ${error.config?.url}`)
     } else {
       ElMessage.error(error.response?.data?.message || '网络异常，请检查后端服务是否启动')
     }
