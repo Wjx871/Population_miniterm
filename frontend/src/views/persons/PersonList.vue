@@ -21,7 +21,8 @@
         <el-form-item label="状态">
           <el-select v-model="query.status" placeholder="全部" clearable style="width: 120px;">
             <el-option label="正常" value="正常" />
-            <el-option label="已注销" value="已注销" />
+            <el-option label="死亡" value="死亡" />
+            <el-option label="迁出" value="迁出" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -50,7 +51,7 @@
               size="small" 
               type="danger" 
               link 
-              :disabled="row.status === '已注销'"
+              :disabled="row.status === '死亡' || row.status === '迁出'"
               @click="handleDelete(row)"
             >
               删除
@@ -112,7 +113,8 @@
         <el-form-item label="状态" prop="status">
           <el-select v-model="form.status" style="width: 100%;">
             <el-option label="正常" value="正常" />
-            <el-option label="已注销" value="已注销" />
+            <el-option label="死亡" value="死亡" />
+            <el-option label="迁出" value="迁出" />
           </el-select>
         </el-form-item>
       </el-form>

@@ -15,7 +15,9 @@
             <el-icon class="icon-success"><CircleCheck /></el-icon>
           </div>
         </template>
-        <div class="stat-value text-success">正常运行</div>
+        <div class="stat-value" :class="{'text-success': health === '正常运行', 'text-placeholder': health === '暂无数据'}">
+          {{ health }}
+        </div>
       </el-card>
       
       <el-card shadow="hover" class="stat-card">
@@ -25,7 +27,9 @@
             <el-icon class="icon-primary"><User /></el-icon>
           </div>
         </template>
-        <div class="stat-value">---</div>
+        <div class="stat-value" :class="{'text-placeholder': totalPersons === '暂无数据'}">
+          {{ totalPersons }}
+        </div>
       </el-card>
 
       <el-card shadow="hover" class="stat-card">
@@ -35,7 +39,9 @@
             <el-icon class="icon-warning"><Switch /></el-icon>
           </div>
         </template>
-        <div class="stat-value">---</div>
+        <div class="stat-value" :class="{'text-placeholder': migrationsIn === '暂无数据'}">
+          {{ migrationsIn }}
+        </div>
       </el-card>
 
       <el-card shadow="hover" class="stat-card">
@@ -45,14 +51,58 @@
             <el-icon class="icon-danger"><Warning /></el-icon>
           </div>
         </template>
-        <div class="stat-value">---</div>
+        <div class="stat-value" :class="{'text-placeholder': expireSoon === '暂无数据'}">
+          {{ expireSoon }}
+        </div>
       </el-card>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue';
 import { CircleCheck, User, Switch, Warning } from '@element-plus/icons-vue';
+import { 
+  getSystemHealth, 
+  getPersonsStatistics, 
+  getMigrationsInStatistics, 
+  getCertificatesExpireSoon 
+} from '../../api/dashboard';
+
+const health = ref('检查中...');
+const totalPersons = ref('加载中...');
+const migrationsIn = ref('加载中...');
+const expireSoon = ref('加载中...');
+
+onMounted(async () => {
+  try {
+    const res = await getSystemHealth();
+    health.value = res?.status || '正常运行';
+  } catch (e) {
+    health.value = '暂无数据';
+  }
+
+  try {
+    const res = await getPersonsStatistics();
+    totalPersons.value = res?.total !== undefined ? res.total : '暂无数据';
+  } catch (e) {
+    totalPersons.value = '暂无数据';
+  }
+
+  try {
+    const res = await getMigrationsInStatistics();
+    migrationsIn.value = res?.monthTotal !== undefined ? res.monthTotal : '暂无数据';
+  } catch (e) {
+    migrationsIn.value = '暂无数据';
+  }
+
+  try {
+    const res = await getCertificatesExpireSoon();
+    expireSoon.value = res?.count !== undefined ? res.count : '暂无数据';
+  } catch (e) {
+    expireSoon.value = '暂无数据';
+  }
+});
 </script>
 
 <style scoped>
@@ -94,6 +144,7 @@ import { CircleCheck, User, Switch, Warning } from '@element-plus/icons-vue';
   margin-top: 10px;
 }
 .text-success { color: var(--color-success); }
+.text-placeholder { color: var(--color-ink-lighter); font-size: 20px; font-weight: normal; }
 .icon-success { color: var(--color-success); font-size: 18px; }
 .icon-primary { color: var(--color-primary); font-size: 18px; }
 .icon-warning { color: var(--color-warning); font-size: 18px; }

@@ -40,7 +40,6 @@
         <el-table-column label="操作" width="200" align="center" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
-            <el-button size="small" type="warning" link @click="handleResetPassword(row)">重置密码</el-button>
             <el-button 
               size="small" 
               type="danger" 
@@ -102,7 +101,7 @@ import SearchPanel from '../../components/common/SearchPanel.vue';
 import AppPagination from '../../components/common/AppPagination.vue';
 import FormDialog from '../../components/common/FormDialog.vue';
 import StatusTag from '../../components/common/StatusTag.vue';
-import { getUserPage, createUser, updateUser, deleteUser, resetPassword } from '../../api/users';
+import { getUserPage, createUser, updateUser, deleteUser } from '../../api/users';
 
 const loading = ref(false);
 const tableData = ref([]);
@@ -226,23 +225,6 @@ const handleDelete = (row) => {
       fetchList();
     } catch (error) {
       console.error(error);
-    }
-  }).catch(() => {});
-};
-
-const handleResetPassword = (row) => {
-  const id = row.id || row.userId;
-  ElMessageBox.confirm(`确定要将用户 [${row.username}] 的密码重置为 123456 吗？`, '警告', {
-    confirmButtonText: '确定重置',
-    cancelButtonText: '取消',
-    type: 'warning',
-  }).then(async () => {
-    try {
-      await resetPassword(id);
-      ElMessage.success('密码已重置为 123456');
-    } catch (error) {
-      console.error(error);
-      ElMessage.error('重置密码失败，可能是接口尚未实现');
     }
   }).catch(() => {});
 };

@@ -1,24 +1,47 @@
 import request from './request'
 
-export function getMigrationPage(params) {
+export function getMigrationInPage(params) {
   return request({
-    url: '/migrations',
+    url: '/migrations/in',
     method: 'get',
     params,
   })
 }
 
-export function createMigration(data) {
+export function createMigrationIn(data) {
   return request({
-    url: '/migrations',
+    url: '/migrations/in',
     method: 'post',
     data,
   })
 }
 
-export function deleteMigration(id) {
+export function deleteMigrationIn(id) {
   return request({
-    url: `/migrations/${id}`,
+    url: `/migrations/in/${id}`,
+    method: 'delete',
+  })
+}
+
+export function getMigrationOutPage(params) {
+  return request({
+    url: '/migrations/out',
+    method: 'get',
+    params,
+  })
+}
+
+export function createMigrationOut(data) {
+  return request({
+    url: '/migrations/out',
+    method: 'post',
+    data,
+  })
+}
+
+export function deleteMigrationOut(id) {
+  return request({
+    url: `/migrations/out/${id}`,
     method: 'delete',
   })
 }

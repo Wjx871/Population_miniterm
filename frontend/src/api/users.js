@@ -31,10 +31,3 @@ export function deleteUser(id) {
   })
 }
 
-// 可选：重置密码接口
-export function resetPassword(id) {
-  return request({
-    url: `/users/${id}/password/reset`,
-    method: 'put',
-  })
-}

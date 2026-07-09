@@ -26,15 +26,23 @@ request.interceptors.response.use(
   (response) => {
     const result = response.data
 
-    if (!result || typeof result.success === 'undefined') {
+    if (!result || typeof result.code === 'undefined') {
       return result
     }
 
-    if (result.success) {
+    if (result.code === 200) {
       return result.data
     }
 
-    // 后端如果直接在返回体中标记失败
+    if (result.code === 401) {
+      const userStore = useUserStore()
+      userStore.logout()
+      ElMessage.error('登录状态已失效，请重新登录')
+      router.replace('/login')
+      return Promise.reject(new Error(result.message || '未授权'))
+    }
+
+    // 其他业务错误
     ElMessage.error(result.message || '操作失败')
     return Promise.reject(result)
   },
