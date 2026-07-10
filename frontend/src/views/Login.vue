@@ -58,6 +58,11 @@
               <div class="feature-title">数据统计分析</div>
               <div class="feature-desc">多维数据分析与可视化</div>
             </div>
+            <div class="feature-card delay-6">
+              <el-icon class="feature-icon"><Setting /></el-icon>
+              <div class="feature-title">系统管理</div>
+              <div class="feature-desc">系统设置与权限分配</div>
+            </div>
           </div>
         </div>
       </div>
@@ -155,7 +160,7 @@
 import { ref, reactive, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
-  User, Lock, Warning, StarFilled, UserFilled, HomeFilled, Switch, Postcard, TrendCharts, CircleCheck
+  User, Lock, Warning, StarFilled, UserFilled, HomeFilled, Switch, Postcard, TrendCharts, CircleCheck, Setting
 } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { useUserStore } from '../stores/user';
@@ -345,7 +350,7 @@ const handleLoginSubmit = () => {
   align-items: center;
   justify-content: center;
   padding: 24px 16px;
-  background: rgba(15, 23, 42, 0.4); 
+  background: rgba(15, 23, 42, 0.65); 
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   backdrop-filter: blur(10px);
@@ -355,7 +360,7 @@ const handleLoginSubmit = () => {
   text-align: center;
 }
 .feature-card:hover {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.85);
   border-color: rgba(96, 165, 250, 0.5);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
@@ -513,6 +518,7 @@ const handleLoginSubmit = () => {
 .delay-3 { animation: fadeIn 0.4s ease 0.18s forwards; opacity: 0; }
 .delay-4 { animation: fadeIn 0.4s ease 0.22s forwards; opacity: 0; }
 .delay-5 { animation: fadeIn 0.4s ease 0.26s forwards; opacity: 0; }
+.delay-6 { animation: fadeIn 0.4s ease 0.30s forwards; opacity: 0; }
 
 @media (max-width: 1024px) {
   .login-left { display: none; }
