@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { login as loginApi } from '../api/auth'
+import { login as loginApi, logout as logoutApi } from '../api/auth'
 
 const STORAGE_KEY = 'population_user'
 
@@ -21,6 +21,12 @@ export const useUserStore = defineStore('user', {
       username: saved.username || '',
       realName: saved.realName || '',
       roleName: saved.roleName || '',
+      roleCode: saved.roleCode || '',
+      roleLevel: saved.roleLevel || '',
+      dataScope: saved.dataScope || '',
+      departmentId: saved.departmentId || null,
+      departmentName: saved.departmentName || '',
+      permissions: saved.permissions || [],
     }
   },
 
@@ -31,21 +37,20 @@ export const useUserStore = defineStore('user', {
 
   actions: {
     setLoginInfo(loginVO) {
-      this.accessToken = loginVO.accessToken
+      const user = loginVO.user || {}
+      this.accessToken = loginVO.token
       this.tokenType = loginVO.tokenType || 'Bearer'
-      this.userId = loginVO.userId
-      this.username = loginVO.username
-      this.realName = loginVO.realName
-      this.roleName = loginVO.roleName
-
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        accessToken: this.accessToken,
-        tokenType: this.tokenType,
-        userId: this.userId,
-        username: this.username,
-        realName: this.realName,
-        roleName: this.roleName,
-      }))
+      this.userId = user.userId
+      this.username = user.username
+      this.realName = user.realName
+      this.roleName = user.roleName
+      this.roleCode = user.roleCode
+      this.roleLevel = user.roleLevel
+      this.dataScope = user.dataScope
+      this.departmentId = user.departmentId
+      this.departmentName = user.departmentName
+      this.permissions = user.permissions || []
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.$state))
     },
 
     async login(form) {
@@ -54,14 +59,17 @@ export const useUserStore = defineStore('user', {
       return loginVO
     },
 
-    logout() {
-      this.accessToken = ''
-      this.tokenType = 'Bearer'
-      this.userId = null
-      this.username = ''
-      this.realName = ''
-      this.roleName = ''
+    clearAuth() {
       localStorage.removeItem(STORAGE_KEY)
+      this.$reset()
+    },
+
+    async logout() {
+      try {
+        if (this.accessToken) await logoutApi()
+      } finally {
+        this.clearAuth()
+      }
     },
   },
 })

@@ -64,10 +64,24 @@
             l.operation_type as type,
             l.target_table as targetTable,
             l.operation_result as result,
-            DATE_FORMAT(l.operation_time, '%Y-%m-%d %H:%i:%s') as time,
-            l.detail as detail
+            l.operation_time as time,
+            CAST(l.detail AS CHAR) as detail
         FROM operation_log l
         LEFT JOIN sys_user u ON l.user_id = u.user_id
+        LEFT JOIN sys_department d ON u.department_id = d.department_id
+        <where>
+            <choose>
+                <when test="dataScope.name() == 'DEPARTMENT'">
+                    u.department_id = #{departmentId}
+                </when>
+                <when test="dataScope.name() == 'REGION'">
+                    d.region_code = #{regionCode}
+                </when>
+                <when test="dataScope.name() == 'SELF'">
+                    l.user_id = #{userId}
+                </when>
+            </choose>
+        </where>
         ORDER BY l.operation_time DESC
         LIMIT 10
     </select>

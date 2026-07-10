@@ -20,7 +20,15 @@ public record ApiResponse<T>(int code, String message, T data, long timestamp) {
         return new ApiResponse<>(500, message, null, System.currentTimeMillis());
     }
 
+    public static <T> ApiResponse<T> fail(int code, String message) {
+        return new ApiResponse<>(code, message, null, System.currentTimeMillis());
+    }
+
     public static <T> ApiResponse<T> unauthorized(String message) {
         return new ApiResponse<>(401, message, null, System.currentTimeMillis());
+    }
+
+    public static <T> ApiResponse<T> forbidden(String message) {
+        return new ApiResponse<>(403, message, null, System.currentTimeMillis());
     }
 }

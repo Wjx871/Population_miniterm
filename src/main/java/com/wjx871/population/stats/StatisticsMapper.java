@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
 import java.util.Map;
+import com.wjx871.population.security.DataScopeCriteria;
 
 /**
  * 统计信息 Mapper 接口。
@@ -57,5 +58,5 @@ public interface StatisticsMapper {
     /**
      * 获取最近的操作日志（前10条）。
      */
-    List<Map<String, Object>> selectRecentLogs();
+    List<Map<String, Object>> selectRecentLogs(DataScopeCriteria criteria);
 }

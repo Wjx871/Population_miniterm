@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,6 +32,7 @@ public class PersonController {
     private final PersonService personService;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('population:view')")
     public ApiResponse<Page<Person>> search(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String idCard,
@@ -51,6 +53,7 @@ public class PersonController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('population:edit')")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Person> create(@Valid @RequestBody PersonRequest request) {
         return ApiResponse.created(personService.create(request));

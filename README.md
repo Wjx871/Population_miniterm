@@ -1,89 +1,76 @@
 # Population Miniterm
 
-人口数据库管理系统后端，基于 Spring Boot、Spring Web、Spring Data JPA 和 MySQL。
+人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。项目没有使用 Spring Data JPA。
 
-## 环境要求
+## 数据库
 
-- JDK 17+
-- MySQL 8+
-
-## 小组开发数据库约定
-
-平时开发时，每个人连接自己的本地 MySQL 数据库。大家共享项目代码和 SQL 文件，不共享某一个人的数据库。
-
-统一数据库名：
-
-```text
-population_miniterm
-```
-
-数据库初始化脚本：
-
-```text
-doc/database/population_miniterm.sql
-```
-
-每位组员拿到项目后，先在自己的 MySQL 中执行该 SQL 文件，然后按自己的本机账号密码启动项目。
-
-## 启动方式
-
-PowerShell 示例：
+新环境在 MySQL 8 中执行：
 
 ```powershell
-$env:JAVA_HOME="D:\ASUS"
-$env:Path="$env:JAVA_HOME\bin;C:\Windows\System32\WindowsPowerShell\v1.0;$env:Path"
+mysql -u root -p < doc/database/population_miniterm.sql
+```
+
+已有数据库执行增量升级：
+
+```powershell
+mysql -u root -p population_miniterm < doc/database/migrations/V4_001_system_auth_rbac.sql
+```
+
+迁移保留已有业务表和数据，不使用 `DROP TABLE` 重建业务表。
+
+## 启动后端
+
+JWT 使用 HMAC 密钥，生产或共享环境必须通过环境变量提供至少 32 个 UTF-8 字节的随机密钥：
+
+```powershell
 $env:DB_USERNAME="root"
-$env:DB_PASSWORD="你的MySQL密码"
+$env:DB_PASSWORD="你的本地 MySQL 密码"
+$env:JWT_SECRET="请替换为至少32字节的随机密钥"
+$env:JWT_EXPIRE_MINUTES="120"
 .\mvnw.cmd spring-boot:run
 ```
 
-如果你的数据库名、地址或端口不同，可以额外设置：
+`application.properties` 中仅有本地开发占位密钥，不能用于生产。默认后端地址为 `http://localhost:8080`。
+
+## 启动前端
 
 ```powershell
-$env:DB_URL="jdbc:mysql://localhost:3306/population_miniterm?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai"
+cd frontend
+npm install
+npm run dev
 ```
 
-默认服务地址为：
+Vite 默认将 `/api` 代理到 `http://127.0.0.1:8080`。
 
-```text
-http://localhost:8080
+## 登录与测试账号
+
+登录接口为 `POST /api/auth/login`，当前用户为 `GET /api/auth/me`，退出为 `POST /api/auth/logout`。受保护接口使用 `Authorization: Bearer <token>`。
+
+| 账号 | 角色 | 等级 | 数据范围 |
+| --- | --- | --- | --- |
+| viewer | QUERY_VIEWER | L1 | DEPARTMENT |
+| population | POPULATION_MANAGER | L2 | REGION |
+| household | HOUSEHOLD_MANAGER | L2 | REGION |
+| approver | APPROVER | L3 | REGION |
+| admin | SYSTEM_ADMIN | L3 | ALL |
+
+以上账号的本地课程演示初始密码均为 `123456`，数据库中仅保存 BCrypt 哈希。它们仅用于本地课程演示，首次部署后应立即修改密码。
+
+## 权限模型
+
+角色表示用户身份；`role_level` 表示最高操作等级；`data_scope` 表示数据可见范围。当前示范性保护 `GET /api/persons`、`POST /api/persons` 和 `GET /api/statistics/logs`，其他业务接口当前至少要求登录，后续再逐模块补齐细粒度权限。
+
+详细接口见 `doc/api/auth-rbac-api.md`，审计与范围见 `doc/development/phase-01-auth-rbac-audit.md`。
+
+## 测试
+
+```powershell
+.\mvnw.cmd test
+cd frontend
+npm install
+npm run build
 ```
 
-## IDEA 配置
+## 当前阶段边界
 
-打开运行配置 `PopulationMinitermApplication`，在 Environment variables 中填入：
-
-```text
-DB_USERNAME=root;DB_PASSWORD=你的MySQL密码
-```
-
-如果 IDEA 找不到 JDK，在 Project SDK 中选择：
-
-```text
-D:\ASUS
-```
-
-## 居民人口接口
-
-- `GET /api/residents`：分页查询居民，可选 `keyword`
-- `GET /api/residents/{id}`：查看单个居民
-- `POST /api/residents`：新增居民
-- `PUT /api/residents/{id}`：更新居民
-- `DELETE /api/residents/{id}`：删除居民
-
-新增示例：
-
-```json
-{
-  "name": "张三",
-  "gender": "MALE",
-  "birthDate": "1999-01-01",
-  "idCardNumber": "110101199901010011",
-  "phoneNumber": "13800138000",
-  "province": "北京市",
-  "city": "北京市",
-  "district": "东城区",
-  "address": "示例地址",
-  "active": true
-}
-```
+本阶段提供登录、JWT、三级权限、数据范围基础、部门结构和操作日志。尚未实现通用申请、材料管理、审批流、销户、户籍归档、迁入迁出事务重构、敏感导出审批及重点人口审批。
