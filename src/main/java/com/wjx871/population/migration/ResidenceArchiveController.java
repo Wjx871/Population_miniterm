@@ -1,0 +1,7 @@
+package com.wjx871.population.migration;
+import com.wjx871.population.common.ApiResponse; import java.time.LocalDateTime; import lombok.RequiredArgsConstructor; import org.springframework.data.domain.*; import org.springframework.format.annotation.DateTimeFormat; import org.springframework.security.access.prepost.PreAuthorize; import org.springframework.web.bind.annotation.*;
+@RestController @RequestMapping("/api/residence-archives") @RequiredArgsConstructor public class ResidenceArchiveController {
+ private final ResidenceArchiveService service;
+ @GetMapping @PreAuthorize("hasAuthority('migration:archive:view')") public ApiResponse<Page<ArchiveView>> search(@RequestParam(required=false)String personName,@RequestParam(required=false)String identityNo,@RequestParam(required=false)String householdNo,@RequestParam(required=false)String archiveType,@RequestParam(required=false)String regionCode,@RequestParam(required=false)@DateTimeFormat(iso=DateTimeFormat.ISO.DATE_TIME)LocalDateTime archivedFrom,@RequestParam(required=false)@DateTimeFormat(iso=DateTimeFormat.ISO.DATE_TIME)LocalDateTime archivedTo,Pageable pageable){return ApiResponse.ok(service.search(personName,identityNo,householdNo,archiveType,regionCode,archivedFrom,archivedTo,pageable));}
+ @GetMapping("/{id}") @PreAuthorize("hasAuthority('migration:archive:view')") public ApiResponse<ArchiveView> get(@PathVariable Long id){return ApiResponse.ok(service.get(id));}
+}

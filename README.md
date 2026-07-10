@@ -1,5 +1,13 @@
 # Population Miniterm
 
+## 第三阶段：户籍迁移闭环
+
+系统现支持申请制迁入/迁出、单级审批后的显式业务执行、当前户籍唯一登记、家庭成员同步、迁出历史快照、户主变更及同市跨区批次关联。操作顺序为：创建迁移草稿 → 上传必需材料 → 提交/审批 → 授权经办人确认执行。审批通过不会自动改变户籍。
+
+增量升级依次执行 `V4_001_system_auth_rbac.sql`、`V4_002_business_application_approval.sql`、`V4_003_household_migration_archive.sql`。数据库通过 `DB_USERNAME/DB_PASSWORD`，JWT 通过 `JWT_SECRET` 配置，上传目录通过 `APP_UPLOAD_DIR` 配置。演示账号仍为 `viewer/population/household/approver/admin`，课程环境初始密码 `123456`。
+
+人员销户、家庭户真正销户、死亡注销、重点人口、敏感导出和多级工作流尚未实现。当前没有可用真实 MySQL 实例，H2 测试通过不等同于 MySQL 迁移已验证。
+
 人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。项目没有使用 Spring Data JPA。
 
 ## 数据库

@@ -492,3 +492,47 @@ INSERT INTO residents (
     name = VALUES(name),
     phone_number = VALUES(phone_number),
     updated_at = CURRENT_TIMESTAMP(6);
+
+-- Phase 03 final household migration shape (fresh initialization only).
+ALTER TABLE person ADD COLUMN current_status_code VARCHAR(30) NOT NULL DEFAULT 'PENDING' AFTER status;
+ALTER TABLE household ADD COLUMN region_code VARCHAR(20) NULL AFTER address, ADD COLUMN version INT NOT NULL DEFAULT 0 AFTER status;
+ALTER TABLE household_member ADD COLUMN version INT NOT NULL DEFAULT 0 AFTER status, ADD UNIQUE KEY uk_household_member_pair(household_id,person_id);
+UPDATE household SET status='ACTIVE';
+UPDATE household_member SET status=CASE WHEN leave_date IS NULL THEN 'ACTIVE' ELSE 'LEFT' END;
+ALTER TABLE residence CHANGE residence_type register_type_code VARCHAR(30) NOT NULL,
+ ADD COLUMN registered_address VARCHAR(255) NULL AFTER household_id, ADD COLUMN region_code VARCHAR(20) NULL AFTER registered_address,
+ ADD COLUMN start_date DATE NULL AFTER register_date, ADD COLUMN created_by BIGINT NULL AFTER status, ADD COLUMN version INT NOT NULL DEFAULT 0 AFTER created_by;
+UPDATE residence r JOIN household h ON h.household_id=r.household_id SET r.registered_address=h.address,r.region_code=h.region_code,r.start_date=r.register_date,r.status='ACTIVE';
+ALTER TABLE residence MODIFY registered_address VARCHAR(255) NOT NULL,MODIFY region_code VARCHAR(20) NOT NULL,MODIFY start_date DATE NOT NULL,ADD UNIQUE KEY uk_residence_person(person_id);
+ALTER TABLE migration_in ADD COLUMN application_id BIGINT NOT NULL AFTER in_id,ADD COLUMN migration_type VARCHAR(40) NOT NULL AFTER person_id,
+ ADD COLUMN from_region_code VARCHAR(20) NULL AFTER migration_type,ADD COLUMN to_region_code VARCHAR(20) NOT NULL AFTER from_address,
+ ADD COLUMN to_address_snapshot VARCHAR(255) NULL AFTER to_household_id,ADD COLUMN transfer_batch_no VARCHAR(40) NULL AFTER reason,
+ ADD COLUMN business_status VARCHAR(30) NOT NULL DEFAULT 'DRAFT' AFTER transfer_batch_no,ADD COLUMN executed_at DATETIME NULL AFTER operator_id,
+ ADD COLUMN version INT NOT NULL DEFAULT 0 AFTER executed_at,ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ ADD UNIQUE KEY uk_migration_in_application(application_id),ADD UNIQUE KEY uk_migration_in_batch(transfer_batch_no),
+ ADD CONSTRAINT fk_migration_in_application FOREIGN KEY(application_id) REFERENCES business_application(application_id),MODIFY reason VARCHAR(500) NULL;
+ALTER TABLE migration_out ADD COLUMN application_id BIGINT NOT NULL AFTER out_id,ADD COLUMN migration_type VARCHAR(40) NOT NULL AFTER person_id,
+ ADD COLUMN from_region_code VARCHAR(20) NULL AFTER migration_type,ADD COLUMN from_address_snapshot VARCHAR(255) NOT NULL AFTER from_household_id,
+ ADD COLUMN to_region_code VARCHAR(20) NULL AFTER from_address_snapshot,ADD COLUMN transfer_batch_no VARCHAR(40) NULL AFTER reason,
+ ADD COLUMN new_head_person_id BIGINT NULL AFTER transfer_batch_no,ADD COLUMN business_status VARCHAR(30) NOT NULL DEFAULT 'DRAFT' AFTER new_head_person_id,
+ ADD COLUMN executed_at DATETIME NULL AFTER operator_id,ADD COLUMN version INT NOT NULL DEFAULT 0 AFTER executed_at,
+ ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ ADD UNIQUE KEY uk_migration_out_application(application_id),ADD UNIQUE KEY uk_migration_out_batch(transfer_batch_no),
+ ADD CONSTRAINT fk_migration_out_application FOREIGN KEY(application_id) REFERENCES business_application(application_id),MODIFY reason VARCHAR(500) NULL;
+CREATE TABLE IF NOT EXISTS residence_archive(archive_id BIGINT NOT NULL AUTO_INCREMENT,original_registration_id BIGINT NOT NULL,person_id BIGINT NOT NULL,
+ household_id BIGINT NOT NULL,application_id BIGINT NOT NULL,migration_out_id BIGINT NULL,archive_type VARCHAR(40) NOT NULL,archive_reason VARCHAR(500),
+ person_name_snapshot VARCHAR(50) NOT NULL,identity_no_snapshot VARCHAR(50) NOT NULL,household_no_snapshot VARCHAR(30) NOT NULL,
+ registered_address_snapshot VARCHAR(255) NOT NULL,region_code_snapshot VARCHAR(20) NOT NULL,register_type_code_snapshot VARCHAR(30),
+ register_date_snapshot DATE,start_date_snapshot DATE,end_date_snapshot DATE NOT NULL,original_status VARCHAR(30),archived_by BIGINT NOT NULL,
+ archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(archive_id),
+ UNIQUE KEY uk_residence_archive_application(application_id),KEY idx_archive_person_time(person_id,archived_at),KEY idx_archive_region_time(region_code_snapshot,archived_at),
+ CONSTRAINT fk_archive_application FOREIGN KEY(application_id) REFERENCES business_application(application_id),CONSTRAINT fk_archive_migration_out FOREIGN KEY(migration_out_id) REFERENCES migration_out(out_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO sys_permission(permission_code,permission_name,module_name,permission_type,status) VALUES
+ ('migration:in:create','创建迁入申请','MIGRATION','API','ENABLED'),('migration:out:create','创建迁出申请','MIGRATION','API','ENABLED'),
+ ('migration:view','查看迁移','MIGRATION','API','ENABLED'),('migration:execute','执行迁移','MIGRATION','API','ENABLED'),('migration:archive:view','查看户籍归档','MIGRATION','API','ENABLED')
+ ON DUPLICATE KEY UPDATE permission_name=VALUES(permission_name),status='ENABLED';
+INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE
+ (r.role_code='QUERY_VIEWER' AND p.permission_code='migration:view') OR (r.role_code='POPULATION_MANAGER' AND p.permission_code='migration:view') OR
+ (r.role_code='HOUSEHOLD_MANAGER' AND p.permission_code IN('migration:in:create','migration:out:create','migration:view','migration:execute','migration:archive:view')) OR
+ (r.role_code='APPROVER' AND p.permission_code IN('migration:view','migration:archive:view')) OR r.role_code='SYSTEM_ADMIN';

@@ -44,13 +44,16 @@
             <el-icon><HomeFilled /></el-icon>
             <span>户籍管理</span>
           </el-menu-item>
-          <el-menu-item index="/migrations/in">
+          <el-menu-item v-if="userStore.hasPermission('migration:view')" index="/migrations/in">
             <el-icon><Switch /></el-icon>
             <span>迁入管理</span>
           </el-menu-item>
-          <el-menu-item index="/migrations/out">
+          <el-menu-item v-if="userStore.hasPermission('migration:view')" index="/migrations/out">
             <el-icon><Switch /></el-icon>
             <span>迁出管理</span>
+          </el-menu-item>
+          <el-menu-item v-if="userStore.hasPermission('migration:archive:view')" index="/residence-archives">
+            <el-icon><Document /></el-icon><span>历史户籍归档</span>
           </el-menu-item>
           <el-menu-item index="/floating-population">
             <el-icon><User /></el-icon>

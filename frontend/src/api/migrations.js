@@ -1,47 +1,10 @@
 import request from './request'
-
-export function getMigrationInPage(params) {
-  return request({
-    url: '/migrations/in',
-    method: 'get',
-    params,
-  })
-}
-
-export function createMigrationIn(data) {
-  return request({
-    url: '/migrations/in',
-    method: 'post',
-    data,
-  })
-}
-
-export function deleteMigrationIn(id) {
-  return request({
-    url: `/migrations/in/${id}`,
-    method: 'delete',
-  })
-}
-
-export function getMigrationOutPage(params) {
-  return request({
-    url: '/migrations/out',
-    method: 'get',
-    params,
-  })
-}
-
-export function createMigrationOut(data) {
-  return request({
-    url: '/migrations/out',
-    method: 'post',
-    data,
-  })
-}
-
-export function deleteMigrationOut(id) {
-  return request({
-    url: `/migrations/out/${id}`,
-    method: 'delete',
-  })
-}
+export const createMigrationIn = (data) => request({ url: '/migrations/in/applications', method: 'post', data })
+export const createMigrationOut = (data) => request({ url: '/migrations/out/applications', method: 'post', data })
+export const updateMigrationIn = (id, data) => request({ url: `/migrations/in/applications/${id}`, method: 'put', data })
+export const updateMigrationOut = (id, data) => request({ url: `/migrations/out/applications/${id}`, method: 'put', data })
+export const getMigrationDetail = (id) => request({ url: `/migrations/applications/${id}`, method: 'get' })
+export const executeMigrationIn = (id, version) => request({ url: `/migrations/in/applications/${id}/execute`, method: 'post', data: { version } })
+export const executeMigrationOut = (id, version) => request({ url: `/migrations/out/applications/${id}/execute`, method: 'post', data: { version } })
+export const listResidenceArchives = (params) => request({ url: '/residence-archives', method: 'get', params })
+export const getResidenceArchive = (id) => request({ url: `/residence-archives/${id}`, method: 'get' })

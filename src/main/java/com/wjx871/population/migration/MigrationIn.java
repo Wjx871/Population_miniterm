@@ -1,0 +1,3 @@
+package com.wjx871.population.migration;
+import java.time.*; import lombok.Data;
+@Data public class MigrationIn { private Long inId; private Long applicationId; private Long personId; private MigrationType migrationType; private String fromRegionCode; private String fromAddress; private String toRegionCode; private Long toHouseholdId; private String toAddressSnapshot; private LocalDate inDate; private String reason; private String transferBatchNo; private MigrationBusinessStatus businessStatus; private Long operatorId; private LocalDateTime executedAt; private Integer version; private LocalDateTime createdAt; private LocalDateTime updatedAt; }
