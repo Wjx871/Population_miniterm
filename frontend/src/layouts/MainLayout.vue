@@ -28,6 +28,14 @@
             <el-icon><HomeFilled /></el-icon>
             <span>工作台</span>
           </el-menu-item>
+          <el-menu-item v-if="userStore.hasPermission('application:view')" index="/applications">
+            <el-icon><Document /></el-icon><span>我的申请</span>
+          </el-menu-item>
+          <el-sub-menu v-if="userStore.hasPermission('approval:view')" index="approval-center">
+            <template #title><el-icon><Finished /></el-icon><span>审批中心</span></template>
+            <el-menu-item index="/approvals/pending">待办审批</el-menu-item>
+            <el-menu-item index="/approvals/processed">已办审批</el-menu-item>
+          </el-sub-menu>
           <el-menu-item index="/persons">
             <el-icon><User /></el-icon>
             <span>人口信息管理</span>
@@ -80,7 +88,7 @@
 
 <script setup>
 import { 
-  Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled
+  Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Document, Finished
 } from '@element-plus/icons-vue';
 import { useUserStore } from '../stores/user';
 import { useRouter } from 'vue-router';

@@ -1,0 +1,11 @@
+import request from './request'
+export const listApplications = (params) => request({ url: '/applications', method: 'get', params })
+export const getApplication = (id) => request({ url: `/applications/${id}`, method: 'get' })
+export const createApplication = (data) => request({ url: '/applications', method: 'post', data })
+export const updateApplication = (id, data) => request({ url: `/applications/${id}`, method: 'put', data })
+export const submitApplication = (id) => request({ url: `/applications/${id}/submit`, method: 'post' })
+export const withdrawApplication = (id) => request({ url: `/applications/${id}/withdraw`, method: 'post' })
+export const listMaterials = (id) => request({ url: `/applications/${id}/materials`, method: 'get' })
+export const uploadMaterial = (id, data, onUploadProgress) => request({ url: `/applications/${id}/materials`, method: 'post', data, onUploadProgress })
+export const verifyMaterial = (id, data) => request({ url: `/materials/${id}/verify`, method: 'post', data })
+export const getApprovalLogs = (id) => request({ url: `/applications/${id}/approval-logs`, method: 'get' })

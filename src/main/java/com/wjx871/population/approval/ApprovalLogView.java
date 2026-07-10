@@ -1,0 +1,2 @@
+package com.wjx871.population.approval; import java.time.LocalDateTime;
+public record ApprovalLogView(Long logId,Long approvalId,Long applicationId,ApprovalAction action,String fromStatus,String toStatus,Long operatorUserId,String comment,LocalDateTime operationTime){public static ApprovalLogView from(ApprovalLog l){return new ApprovalLogView(l.getLogId(),l.getApprovalId(),l.getApplicationId(),l.getAction(),l.getFromStatus(),l.getToStatus(),l.getOperatorUserId(),l.getComment(),l.getOperationTime());}}

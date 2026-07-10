@@ -13,6 +13,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
@@ -63,6 +66,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResponseStatusException.class)
     ResponseEntity<ApiResponse<Void>> handleResponseStatus(ResponseStatusException exception) {
         return response(HttpStatus.valueOf(exception.getStatusCode().value()), exception.getReason());
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(HttpRequestMethodNotSupportedException exception) {
+        return response(HttpStatus.METHOD_NOT_ALLOWED, "请求方法不受支持");
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    ResponseEntity<ApiResponse<Void>> handleUnreadable(HttpMessageNotReadableException exception) {
+        return response(HttpStatus.BAD_REQUEST, "请求内容格式或枚举值不正确");
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    ResponseEntity<ApiResponse<Void>> handleUploadTooLarge(MaxUploadSizeExceededException exception) {
+        return response(HttpStatus.PAYLOAD_TOO_LARGE, "上传文件超过允许的最大大小");
     }
 
     @ExceptionHandler(Exception.class)

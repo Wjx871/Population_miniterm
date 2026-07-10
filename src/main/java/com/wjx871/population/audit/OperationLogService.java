@@ -35,6 +35,14 @@ public class OperationLogService {
         }
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordTransactional(Long userId, String operationType, HttpServletRequest request) {
+        operationLogMapper.insert(OperationLog.builder().userId(userId).operationType(operationType)
+                .moduleName("APPROVAL").requestPath(request.getRequestURI()).requestMethod(request.getMethod())
+                .operationResult("SUCCESS").ipAddress(clientIp(request))
+                .userAgent(truncate(request.getHeader("User-Agent"), 500)).detail(operationType).build());
+    }
+
     public String clientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {

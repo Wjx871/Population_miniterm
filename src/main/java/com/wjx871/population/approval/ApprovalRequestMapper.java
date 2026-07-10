@@ -1,0 +1,3 @@
+package com.wjx871.population.approval;
+import com.wjx871.population.security.DataScopeCriteria; import java.util.*; import org.apache.ibatis.annotations.*;
+@Mapper public interface ApprovalRequestMapper {int insert(ApprovalRequest value);Optional<ApprovalRequest> selectById(Long id);Optional<ApprovalRequest> selectByApplicationId(Long id);int decide(@Param("id")Long id,@Param("from")ApprovalStatus from,@Param("to")ApprovalStatus to,@Param("version")int version,@Param("userId")Long userId,@Param("comment")String comment);List<ApprovalSummary> selectByStatus(@Param("pending")boolean pending,@Param("scope")DataScopeCriteria scope);}

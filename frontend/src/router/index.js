@@ -31,7 +31,13 @@ const routes = [
       { path: 'key-population', name: 'KeyPopulation', component: { template: '<div>重点人口管理正在建设中...</div>' }, meta: { title: '重点人口' } },
       { path: 'certificates', name: 'Certificates', component: () => import('../views/certificates/CertificateList.vue'), meta: { title: '证件管理' } },
       { path: 'users', name: 'Users', component: () => import('../views/users/UserList.vue'), meta: { title: '用户管理' } },
-      { path: 'dictionary', name: 'Dictionary', component: { template: '<div>数据字典正在建设中...</div>' }, meta: { title: '数据字典' } }
+      { path: 'dictionary', name: 'Dictionary', component: { template: '<div>数据字典正在建设中...</div>' }, meta: { title: '数据字典' } },
+      { path: 'applications', name: 'Applications', component: () => import('../views/applications/ApplicationList.vue'), meta: { title: '我的申请' } },
+      { path: 'applications/create', name: 'ApplicationCreate', component: () => import('../views/applications/ApplicationCreate.vue'), meta: { title: '新建申请' } },
+      { path: 'applications/:id', name: 'ApplicationDetail', component: () => import('../views/applications/ApplicationDetail.vue'), meta: { title: '申请详情' } },
+      { path: 'approvals/pending', name: 'ApprovalsPending', component: () => import('../views/approvals/ApprovalList.vue'), meta: { title: '待办审批', processed: false } },
+      { path: 'approvals/processed', name: 'ApprovalsProcessed', component: () => import('../views/approvals/ApprovalList.vue'), meta: { title: '已办审批', processed: true } },
+      { path: 'approvals/:id', name: 'ApprovalDetail', component: () => import('../views/approvals/ApprovalDetail.vue'), meta: { title: '审批详情' } }
     ]
   },
   // 捕获未定义路由，重定向到首页

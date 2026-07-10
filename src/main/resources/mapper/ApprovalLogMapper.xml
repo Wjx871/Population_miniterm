@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wjx871.population.approval.ApprovalLogMapper">
+ <resultMap id="map" type="com.wjx871.population.approval.ApprovalLog"><id property="logId" column="log_id"/><result property="approvalId" column="approval_id"/><result property="applicationId" column="application_id"/><result property="action" column="action"/><result property="fromStatus" column="from_status"/><result property="toStatus" column="to_status"/><result property="operatorUserId" column="operator_user_id"/><result property="comment" column="comment"/><result property="operationTime" column="operation_time"/><result property="ipAddress" column="ip_address"/><result property="createdAt" column="created_at"/></resultMap>
+ <insert id="insert" useGeneratedKeys="true" keyProperty="logId">INSERT INTO sys_approval_log(approval_id,application_id,action,from_status,to_status,operator_user_id,comment,ip_address) VALUES(#{approvalId},#{applicationId},#{action},#{fromStatus},#{toStatus},#{operatorUserId},#{comment},#{ipAddress})</insert>
+ <select id="selectByApplicationId" resultMap="map">SELECT log_id,approval_id,application_id,action,from_status,to_status,operator_user_id,comment,operation_time,ip_address,created_at FROM sys_approval_log WHERE application_id=#{applicationId} ORDER BY operation_time,log_id</select>
+</mapper>

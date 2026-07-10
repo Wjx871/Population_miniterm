@@ -33,6 +33,7 @@ export const useUserStore = defineStore('user', {
   getters: {
     isLoggedIn: (state) => Boolean(state.accessToken),
     displayName: (state) => state.realName || state.username || '用户',
+    hasPermission: (state) => (permission) => state.permissions.includes(permission),
   },
 
   actions: {
