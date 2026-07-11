@@ -32,6 +32,7 @@ public class Person {
     private String currentAddress;
 
     private String status = PersonStatus.NORMAL;
+    private String currentStatusCode;
 
     private LocalDateTime createdAt;
 

@@ -6,7 +6,11 @@
 
 增量升级依次执行 `V4_001_system_auth_rbac.sql`、`V4_002_business_application_approval.sql`、`V4_003_household_migration_archive.sql`。数据库通过 `DB_USERNAME/DB_PASSWORD`，JWT 通过 `JWT_SECRET` 配置，上传目录通过 `APP_UPLOAD_DIR` 配置。演示账号仍为 `viewer/population/household/approver/admin`，课程环境初始密码 `123456`。
 
-人员销户、家庭户真正销户、死亡注销、重点人口、敏感导出和多级工作流尚未实现。当前没有可用真实 MySQL 实例，H2 测试通过不等同于 MySQL 迁移已验证。
+## 第四阶段：注销管理
+
+系统支持人员死亡/普通注销申请、家庭户销户申请、材料与单级审批、审批后的显式执行、个人户籍归档和家庭户快照。人员与家庭户主档始终保留，注销不可在本阶段直接撤销。增量升级新增 `V4_004_cancellation_and_household_archive.sql`。
+
+流动人口、居住证、重点人口、刑满释放恢复登记、敏感导出及多级审批仍未实现。当前没有可用真实 MySQL 实例，H2 测试通过不等同于 MySQL 迁移已验证。
 
 人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。项目没有使用 Spring Data JPA。
 

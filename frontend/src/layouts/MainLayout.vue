@@ -55,6 +55,13 @@
           <el-menu-item v-if="userStore.hasPermission('migration:archive:view')" index="/residence-archives">
             <el-icon><Document /></el-icon><span>历史户籍归档</span>
           </el-menu-item>
+          <el-sub-menu v-if="userStore.hasPermission('cancellation:view')" index="cancellation-center">
+            <template #title><el-icon><CircleCloseFilled /></el-icon><span>注销管理</span></template>
+            <el-menu-item index="/cancellations/person">人员注销申请</el-menu-item>
+            <el-menu-item index="/cancellations/household">家庭户销户申请</el-menu-item>
+            <el-menu-item index="/cancellations/records">注销记录</el-menu-item>
+            <el-menu-item v-if="userStore.hasPermission('cancellation:archive:view')" index="/household-archives">家庭户归档</el-menu-item>
+          </el-sub-menu>
           <el-menu-item index="/floating-population">
             <el-icon><User /></el-icon>
             <span>流动人口管理</span>
@@ -91,7 +98,7 @@
 
 <script setup>
 import { 
-  Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Document, Finished
+  Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Document, Finished, CircleCloseFilled
 } from '@element-plus/icons-vue';
 import { useUserStore } from '../stores/user';
 import { useRouter } from 'vue-router';
