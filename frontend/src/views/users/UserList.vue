@@ -102,6 +102,7 @@ import AppPagination from '../../components/common/AppPagination.vue';
 import FormDialog from '../../components/common/FormDialog.vue';
 import StatusTag from '../../components/common/StatusTag.vue';
 import { getUserPage, createUser, updateUser, deleteUser } from '../../api/users';
+import { normalizePageResult } from '../../utils/page';
 
 const loading = ref(false);
 const tableData = ref([]);
@@ -118,8 +119,9 @@ const fetchList = async () => {
   loading.value = true;
   try {
     const res = await getUserPage(query);
-    tableData.value = res.records || res.content || [];
-    total.value = res.total || res.totalElements || 0;
+    const page = normalizePageResult(res);
+    tableData.value = page.records;
+    total.value = page.total;
   } catch (error) {
     console.error(error);
   } finally {

@@ -133,6 +133,7 @@ import StatusTag from '../../components/common/StatusTag.vue';
 import { getPersonPage, createPerson, updatePerson, deletePerson } from '../../api/persons';
 import { formatDate } from '../../utils/date';
 import { validateIdCard, validatePhone } from '../../utils/validators';
+import { normalizePageResult } from '../../utils/page';
 
 const loading = ref(false);
 const tableData = ref([]);
@@ -156,9 +157,9 @@ const fetchList = async () => {
       current: query.current,
       size: query.size
     });
-    // Spring Boot page is typically { content, totalElements } or { records, total }
-    tableData.value = res.records || res.content || [];
-    total.value = res.total || res.totalElements || 0;
+    const page = normalizePageResult(res);
+    tableData.value = page.records;
+    total.value = page.total;
   } catch (error) {
     console.error(error);
   } finally {

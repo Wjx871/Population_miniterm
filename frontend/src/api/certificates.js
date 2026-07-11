@@ -1,10 +1,11 @@
 import request from './request'
+import { toSpringPageParams } from '../utils/page'
 
 export function getCertificatePage(params) {
   return request({
     url: '/certificates',
     method: 'get',
-    params,
+    params: toSpringPageParams(params),
   })
 }
 

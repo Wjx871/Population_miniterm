@@ -1,10 +1,11 @@
 import request from './request'
+import { toSpringPageParams } from '../utils/page'
 
 export function getMigrationInPage(params) {
   return request({
     url: '/migrations/in',
     method: 'get',
-    params,
+    params: toSpringPageParams(params),
   })
 }
 
@@ -27,7 +28,7 @@ export function getMigrationOutPage(params) {
   return request({
     url: '/migrations/out',
     method: 'get',
-    params,
+    params: toSpringPageParams(params),
   })
 }
 

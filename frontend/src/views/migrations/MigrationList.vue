@@ -120,6 +120,7 @@ import {
   getMigrationOutPage, createMigrationOut, deleteMigrationOut
 } from '../../api/migrations';
 import { formatDate } from '../../utils/date';
+import { normalizePageResult } from '../../utils/page';
 
 const route = useRoute();
 
@@ -157,8 +158,9 @@ const fetchList = async () => {
   try {
     const apiCall = isMigrationIn.value ? getMigrationInPage : getMigrationOutPage;
     const res = await apiCall(query);
-    tableData.value = res?.records || res?.content || [];
-    total.value = res?.total || res?.totalElements || 0;
+    const page = normalizePageResult(res);
+    tableData.value = page.records;
+    total.value = page.total;
   } catch (error) {
     console.error(error);
   } finally {

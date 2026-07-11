@@ -1,10 +1,11 @@
 import request from './request'
+import { toSpringPageParams } from '../utils/page'
 
 export function getHouseholdPage(params) {
   return request({
     url: '/households',
     method: 'get',
-    params,
+    params: toSpringPageParams(params),
   })
 }
 

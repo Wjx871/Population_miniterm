@@ -137,6 +137,7 @@ import StatusTag from '../../components/common/StatusTag.vue';
 import PersonSelect from '../../components/business/PersonSelect.vue';
 import { getCertificatePage, createCertificate, updateCertificate, deleteCertificate } from '../../api/certificates';
 import { formatDate } from '../../utils/date';
+import { normalizePageResult } from '../../utils/page';
 
 const loading = ref(false);
 const tableData = ref([]);
@@ -153,8 +154,9 @@ const fetchList = async () => {
   loading.value = true;
   try {
     const res = await getCertificatePage(query);
-    tableData.value = res.records || res.content || [];
-    total.value = res.total || res.totalElements || 0;
+    const page = normalizePageResult(res);
+    tableData.value = page.records;
+    total.value = page.total;
   } catch (error) {
     console.error(error);
   } finally {

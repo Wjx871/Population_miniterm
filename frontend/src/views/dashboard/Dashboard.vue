@@ -144,9 +144,9 @@ onMounted(async () => {
   margin-top: 10px;
 }
 .text-success { color: var(--color-success); }
-.text-placeholder { color: var(--color-ink-lighter); font-size: 20px; font-weight: normal; }
+.text-placeholder { color: var(--color-ink-muted); font-size: 20px; font-weight: normal; }
 .icon-success { color: var(--color-success); font-size: 18px; }
-.icon-primary { color: var(--color-primary); font-size: 18px; }
+.icon-primary { color: var(--color-accent); font-size: 18px; }
 .icon-warning { color: var(--color-warning); font-size: 18px; }
 .icon-danger { color: var(--color-danger); font-size: 18px; }
 </style>

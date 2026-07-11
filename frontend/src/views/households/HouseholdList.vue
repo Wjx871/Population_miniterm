@@ -117,6 +117,7 @@ import StatusTag from '../../components/common/StatusTag.vue';
 import PersonSelect from '../../components/business/PersonSelect.vue';
 import { getHouseholdPage, createHousehold, updateHousehold, deleteHousehold } from '../../api/households';
 import { formatDate } from '../../utils/date';
+import { normalizePageResult } from '../../utils/page';
 
 const router = useRouter();
 const loading = ref(false);
@@ -135,8 +136,9 @@ const fetchList = async () => {
   loading.value = true;
   try {
     const res = await getHouseholdPage(query);
-    tableData.value = res.records || res.content || [];
-    total.value = res.total || res.totalElements || 0;
+    const page = normalizePageResult(res);
+    tableData.value = page.records;
+    total.value = page.total;
   } catch (error) {
     console.error(error);
   } finally {
