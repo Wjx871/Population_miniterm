@@ -264,7 +264,8 @@ const submitForm = async () => {
         ElMessage.error('缺少最新详情，请重新打开编辑')
         return
       }
-      // idCard / status 取自最新详情对象，不依赖可被修改的隐藏表单字段
+      // idCard / status 取自最新详情对象，不依赖可被修改的隐藏表单字段；
+      // status 缺失时适配器会抛错，禁止兜底为「正常」
       const payload = toUpdatePersonPayload(form, latestDetail.value)
       await updatePerson(editingId.value, payload)
       ElMessage.success('修改成功')
@@ -276,6 +277,9 @@ const submitForm = async () => {
     dialogVisible.value = false
     fetchList()
   } catch (error) {
+    if (error?.message && String(error.message).includes('最新详情缺少')) {
+      ElMessage.error(error.message)
+    }
     console.error(error)
   } finally {
     submitting.value = false

@@ -3,16 +3,12 @@ export function isPhone(value) {
 }
 
 /**
- * 18 位身份证格式 + 出生日期段 + 校验位。
- * 15 位旧证仅做宽松数字校验。
+ * 仅接受合法 18 位身份证：格式 + 出生日期段 + 校验位。
+ * 不接受 15 位旧证或其他长度。
  */
 export function isIdCard(value) {
   if (!value) return false
   const text = String(value).trim().toUpperCase()
-
-  if (/^\d{15}$/.test(text)) {
-    return true
-  }
 
   if (!/^\d{17}[\dX]$/.test(text)) {
     return false
@@ -56,7 +52,7 @@ export function validateIdCard(rule, value, callback) {
   if (isIdCard(value)) {
     callback()
   } else {
-    callback(new Error('请输入正确的身份证号'))
+    callback(new Error('请输入合法的 18 位身份证号'))
   }
 }
 

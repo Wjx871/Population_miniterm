@@ -92,15 +92,26 @@ export function toCreatePersonPayload(form = {}) {
  */
 export function toUpdatePersonPayload(form = {}, latestDetail = {}) {
   const detail = normalizePerson(latestDetail)
+  const status = trimOrEmpty(detail.status)
+  // 更新时禁止在 status 缺失时兜底为「正常」，避免误覆盖「已注销」等状态
+  if (!status) {
+    throw new Error('最新详情缺少档案状态，无法提交更新')
+  }
+
+  const idCard = trimOrEmpty(detail.idCard).toUpperCase()
+  if (!idCard) {
+    throw new Error('最新详情缺少身份证号，无法提交更新')
+  }
+
   return {
     name: trimOrEmpty(form.name),
     gender: trimOrEmpty(form.gender),
     // 身份证与状态取自最新详情，避免前端隐藏字段被改写后误覆盖
-    idCard: trimOrEmpty(detail.idCard).toUpperCase(),
+    idCard,
     birthDate: toDatePayload(form.birthDate),
     ethnicity: trimOrNull(form.ethnicity),
     phone: trimOrEmpty(form.phone) || null,
     currentAddress: trimOrNull(form.currentAddress),
-    status: detail.status || '正常',
+    status,
   }
 }
