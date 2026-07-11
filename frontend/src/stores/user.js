@@ -12,6 +12,12 @@ function loadStorageUser() {
     const parsed = JSON.parse(raw)
     // On load, always re-normalize to ensure integrity
     const roleCode = normalizeRoleCode(parsed.roleCode, parsed.roleName)
+    
+    // 角色无法识别时，强制使用 NORMAL_USER 并忽略缓存的 permissions
+    if (roleCode === ROLE_CODE.NORMAL_USER && parsed.roleCode !== ROLE_CODE.NORMAL_USER) {
+      parsed.permissions = undefined
+    }
+    
     parsed.roleCode = roleCode
     parsed.permissionLevel = getRoleLevel(roleCode)
     parsed.permissions = resolvePermissions(roleCode, parsed.permissions)

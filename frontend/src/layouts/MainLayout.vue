@@ -29,7 +29,7 @@
           <!-- 动态渲染菜单 -->
           <template v-for="group in menuGroups" :key="group.name">
             <!-- 单个菜单项（无分组名或独立项，例如工作台） -->
-            <template v-if="!group.name || group.children.length === 1 && !group.name">
+            <template v-if="!group.name || group.name === '工作台'">
               <el-menu-item 
                 v-for="item in group.children" 
                 :key="item.path" 

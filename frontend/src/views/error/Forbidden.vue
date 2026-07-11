@@ -5,7 +5,7 @@
     <p class="error-desc">抱歉，您当前的权限不足以访问此页面或执行该操作。</p>
     <div class="error-actions">
       <el-button type="primary" @click="goHome">返回工作台</el-button>
-      <el-button @click="goBack" v-if="hasFrom">返回上一页</el-button>
+      <el-button @click="goBack">返回上一页</el-button>
     </div>
   </div>
 </template>
@@ -15,19 +15,16 @@ import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
-const route = useRoute()
-
-const hasFrom = computed(() => !!route.query.from)
 
 const goHome = () => {
   router.replace('/home')
 }
 
 const goBack = () => {
-  if (hasFrom.value) {
-    router.replace(route.query.from)
-  } else {
+  if (window.history.length > 1) {
     router.back()
+  } else {
+    router.replace('/home')
   }
 }
 </script>
