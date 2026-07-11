@@ -1,0 +1,2 @@
+package com.wjx871.population.floating;import lombok.Getter;import lombok.Setter;import org.springframework.boot.context.properties.ConfigurationProperties;
+@Getter @Setter @ConfigurationProperties(prefix="residence-permit") public class ResidencePermitProperties {private int minResidenceDays=180;private int validityDays=365;private int endorsementEarlyDays=30;private int expiryWarningDays=30;private String expiryCron="0 0 2 * * *";}

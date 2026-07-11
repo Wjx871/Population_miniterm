@@ -89,10 +89,9 @@
         <el-form-item label="证件类型" prop="certificateType">
           <el-select v-model="form.certificateType" style="width: 100%;">
             <el-option label="居民身份证" value="居民身份证" />
-            <el-option label="居住证" value="居住证" />
-            <el-option label="临时居住证" value="临时居住证" />
           </el-select>
         </el-form-item>
+        <el-alert title="居住证请前往“流动人口与居住证”专门模块办理；历史居住证记录仅兼容展示。" type="info" show-icon />
         <el-form-item label="证件编号" prop="certificateNo">
           <el-input v-model="form.certificateNo" placeholder="请输入证件编号" />
         </el-form-item>

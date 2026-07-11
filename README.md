@@ -10,7 +10,13 @@
 
 系统支持人员死亡/普通注销申请、家庭户销户申请、材料与单级审批、审批后的显式执行、个人户籍归档和家庭户快照。人员与家庭户主档始终保留，注销不可在本阶段直接撤销。增量升级新增 `V4_004_cancellation_and_household_archive.sql`。
 
-流动人口、居住证、重点人口、刑满释放恢复登记、敏感导出及多级审批仍未实现。当前没有可用真实 MySQL 实例，H2 测试通过不等同于 MySQL 迁移已验证。
+第五阶段已实现流动人口居住登记、当前与历史记录、居住证首次申领/签发/签注/注销、生命周期日志、关闭联动、自动到期和到期提醒。流动登记不创建户籍，居住证不再写入通用 `certificate`。
+
+数据库增量脚本为 `doc/database/migrations/V4_005_floating_population_residence_permit.sql`。环境变量：`RESIDENCE_PERMIT_MIN_RESIDENCE_DAYS`（180）、`RESIDENCE_PERMIT_VALIDITY_DAYS`（365）、`RESIDENCE_PERMIT_ENDORSEMENT_EARLY_DAYS`（30）、`RESIDENCE_PERMIT_EXPIRY_WARNING_DAYS`（30）、`RESIDENCE_PERMIT_EXPIRY_CRON`（每天 02:00）。
+
+演示流程：使用 `population` 创建申请和上传材料，使用 `approver` 审批，使用 `household` 或 `admin` 显式执行。演示账号密码沿用课程环境 `123456`，仅供本地课程数据。
+
+重点人口、刑满释放恢复登记、敏感导出、多级审批、补换领、真实制卡和政务联网仍未实现。当前没有可用真实 MySQL 8 实例；迁移脚本已静态检查并由 H2 等价结构测试覆盖，但不得视为真实 MySQL 实机迁移验证。
 
 人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。项目没有使用 Spring Data JPA。
 

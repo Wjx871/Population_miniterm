@@ -1,0 +1,1 @@
+package com.wjx871.population.floating;import java.time.LocalDate;public record ExpiringPermitView(Long permitId,String permitNo,String personName,String maskedIdentityNo,String currentAddress,LocalDate validUntil,long remainingDays,String status){}
