@@ -1,0 +1,123 @@
+package com.example.population.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.population.dto.PersonCreateDTO;
+import com.example.population.dto.PersonQueryDTO;
+import com.example.population.dto.PersonUpdateDTO;
+import com.example.population.entity.Person;
+import com.example.population.exception.NotFoundException;
+import com.example.population.mapper.PersonMapper;
+import com.example.population.service.PersonService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class PersonServiceImpl extends ServiceImpl<PersonMapper, Person> implements PersonService {
+
+    @Override
+    public IPage<Person> queryPage(PersonQueryDTO q) {
+        Page<Person> page = new Page<>(q.getCurrent(), q.getSize());
+        LambdaQueryWrapper<Person> w = new LambdaQueryWrapper<>();
+        if (StringUtils.hasText(q.getName())) {
+            w.like(Person::getName, q.getName());
+        }
+        if (StringUtils.hasText(q.getIdentityType())) {
+            w.eq(Person::getIdentityTypeCode, q.getIdentityType());
+        }
+        if (StringUtils.hasText(q.getIdentityNo())) {
+            w.eq(Person::getIdentityNo, q.getIdentityNo());
+        }
+        if (StringUtils.hasText(q.getGender())) {
+            w.eq(Person::getGenderCode, q.getGender());
+        }
+        if (StringUtils.hasText(q.getEthnicity())) {
+            w.eq(Person::getEthnicityCode, q.getEthnicity());
+        }
+        if (StringUtils.hasText(q.getStatus())) {
+            w.eq(Person::getRecordStatusCode, q.getStatus());
+        }
+        if (StringUtils.hasText(q.getPhone())) {
+            w.like(Person::getPhone, q.getPhone());
+        }
+        if (q.getBirthDateStart() != null) {
+            w.ge(Person::getBirthDate, q.getBirthDateStart());
+        }
+        if (q.getBirthDateEnd() != null) {
+            w.le(Person::getBirthDate, q.getBirthDateEnd());
+        }
+        w.orderByDesc(Person::getCreatedAt);
+        return this.page(page, w);
+    }
+
+    @Override
+    public Person getByIdentity(String identityType, String identityNo) {
+        return baseMapper.findByIdentity(identityType, identityNo);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Person createPerson(PersonCreateDTO dto) {
+        dto.validate();
+        Person existing = baseMapper.findByIdentity(dto.getIdentityTypeCode(), dto.getIdentityNo());
+        if (existing != null) {
+            throw new com.example.population.exception.DuplicateException(
+                    "人口[" + dto.getIdentityNo() + "]已存在");
+        }
+        Person p = new Person();
+        p.setName(dto.getName());
+        p.setGenderCode(dto.getGenderCode());
+        p.setIdentityTypeCode(dto.getIdentityTypeCode());
+        p.setIdentityNo(dto.getIdentityNo());
+        p.setBirthDate(dto.getBirthDate());
+        p.setEthnicityCode(dto.getEthnicityCode());
+        p.setPhone(dto.getPhone());
+        p.setContactAddress(dto.getContactAddress());
+        p.setRecordStatusCode("ACTIVE");
+        try {
+            baseMapper.insert(p);
+        } catch (DuplicateKeyException e) {
+            throw new com.example.population.exception.DuplicateException(
+                    "人口[" + dto.getIdentityNo() + "]主键或唯一键冲突", e);
+        }
+        return p;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updatePerson(Long personId, PersonUpdateDTO dto) {
+        Person p = baseMapper.selectById(personId);
+        if (p == null) {
+            throw new NotFoundException("人口[" + personId + "]不存在");
+        }
+        dto.validate();
+        if (StringUtils.hasText(dto.getName())) p.setName(dto.getName());
+        if (StringUtils.hasText(dto.getGenderCode())) p.setGenderCode(dto.getGenderCode());
+        if (dto.getBirthDate() != null) p.setBirthDate(dto.getBirthDate());
+        if (StringUtils.hasText(dto.getEthnicityCode())) p.setEthnicityCode(dto.getEthnicityCode());
+        if (dto.getPhone() != null) p.setPhone(dto.getPhone());
+        if (dto.getContactAddress() != null) p.setContactAddress(dto.getContactAddress());
+        return updateById(p);
+    }
+
+    /**
+     * 入口在 CancellationRecordServiceImpl.completePersonCancellation。
+     * Person service 提供一个轻量级 wrapper，调用方可用 cancelPerson recordId。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void cancelPerson(Long cancelRecordId, Long operatorId) {
+        // 实际业务在 CancellationRecordServiceImpl 中实现（需要 cancellation_record 行）。
+        // 这里提供给业务流高层做编排，本方法仅做参数校验
+        throw new com.example.population.exception.BizException(
+                "请直接调用 CancellationRecordService.completePersonCancellation");
+    }
+}

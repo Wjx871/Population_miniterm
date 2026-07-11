@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.population.mapper.MigrationOutMapper">
+
+    <select id="findByApplicationIdForUpdate" resultType="com.example.population.entity.MigrationOut">
+        SELECT * FROM migration_out WHERE application_id = #{applicationId} LIMIT 1 FOR UPDATE
+    </select>
+
+    <select id="findByApplicationId" resultType="com.example.population.entity.MigrationOut">
+        SELECT * FROM migration_out WHERE application_id = #{applicationId} LIMIT 1
+    </select>
+
+    <select id="existsByTransferBatch" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM migration_out WHERE transfer_batch_no = #{transferBatchNo}
+    </select>
+
+    <select id="listByTransferBatch" resultType="com.example.population.entity.MigrationOut">
+        SELECT * FROM migration_out
+        WHERE transfer_batch_no = #{transferBatchNo}
+        ORDER BY out_date, out_id
+    </select>
+
+</mapper>

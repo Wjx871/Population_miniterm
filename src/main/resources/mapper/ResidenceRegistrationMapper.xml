@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.population.mapper.ResidenceRegistrationMapper">
+
+    <!-- 关键：事务内加行锁，确保一人一条登记不被绕过 -->
+    <select id="findByPersonForUpdate" resultType="com.example.population.entity.ResidenceRegistration">
+        SELECT * FROM residence_registration
+        WHERE person_id = #{personId}
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
+    <select id="findByPerson" resultType="com.example.population.entity.ResidenceRegistration">
+        SELECT * FROM residence_registration WHERE person_id = #{personId} LIMIT 1
+    </select>
+
+    <!-- 物理删除：迁出/注销事务中，必须物理删除以保持一人一条记录。
+         软删除通过 application 层控制，但本表使用物理删除避免历史登记累积。 -->
+    <delete id="deleteByPersonAndId">
+        DELETE FROM residence_registration
+        WHERE person_id = #{personId} AND registration_id = #{registrationId}
+    </delete>
+
+</mapper>

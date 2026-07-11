@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.population.mapper.PersonMapper">
+
+    <!-- 按 (identityTypeCode, identityNo) 查重，FOR UPDATE 仅在事务内有效 -->
+    <select id="findByIdentityForUpdate" resultType="com.example.population.entity.Person">
+        SELECT * FROM person
+        WHERE identity_type_code = #{identityTypeCode}
+          AND identity_no = #{identityNo}
+          AND is_deleted = 0
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
+    <select id="findByIdentity" resultType="com.example.population.entity.Person">
+        SELECT * FROM person
+        WHERE identity_type_code = #{identityTypeCode}
+          AND identity_no = #{identityNo}
+          AND is_deleted = 0
+        LIMIT 1
+    </select>
+
+</mapper>
