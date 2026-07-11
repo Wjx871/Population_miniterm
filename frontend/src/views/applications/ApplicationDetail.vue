@@ -18,9 +18,11 @@
     </el-card>
 
     <MigrationDetailPanel v-if="migrationDetail" :detail="migrationDetail" :person="migrationPerson" />
+    <FloatingResidenceDetailPanel v-if="floatingDetail" mode="floating" :detail="floatingDetailBody" />
+    <FloatingResidenceDetailPanel v-if="permitDetail" mode="permit" :detail="permitDetailBody" />
     <div v-if="canExecute" class="execute-bar">
-      <el-button type="success" :loading="executing" @click="execute">执行{{ migrationDetail?.migrationIn ? '迁入' : '迁出' }}业务</el-button>
-      <span>执行后会重新读取申请与迁移状态，确认均为“已办结”才显示成功。</span>
+      <span>{{ executeLabelText }}</span>
+      <el-button type="success" :loading="executing" @click="openExecuteDialog">执行{{ executeLabelShort }}</el-button>
     </div>
 
     <el-card shadow="never">
@@ -29,8 +31,9 @@
       <MaterialList :materials="materials" :can-delete="isDraft && canDelete" @changed="load" />
     </el-card>
     <el-card shadow="never"><template #header>审批轨迹</template><ApprovalTimeline :logs="logs" /></el-card>
-    <ApplicationActionBar :application="application" :loading="actionLoading" :is-migration-draft="isMigrationApplication" @continue-migration="continueMigration" @submit="submit" @withdraw="withdraw" @cancel="cancelDraft" />
+    <ApplicationActionBar :application="application" :loading="actionLoading" :specialized-edit-route="specializedEditRoute" :can-continue-specialized="canContinueSpecialized" @continue-specialized="continueSpecialized" @submit="submit" @withdraw="withdraw" @cancel="cancelDraft" />
   </div>
+  <FloatingResidenceExecuteDialog v-model="executeVisible" :execute-type="executeType" :version="executeVersion" :loading="executing" @confirm="handleExecute" />
 </template>
 
 <script setup>
@@ -43,14 +46,20 @@ import MaterialList from '../../components/business/MaterialList.vue'
 import ApprovalTimeline from '../../components/business/ApprovalTimeline.vue'
 import ApplicationActionBar from '../../components/business/ApplicationActionBar.vue'
 import MigrationDetailPanel from '../migrations/components/MigrationDetailPanel.vue'
+import FloatingResidenceDetailPanel from '../floating/components/FloatingResidenceDetailPanel.vue'
+import FloatingResidenceExecuteDialog from '../floating/components/FloatingResidenceExecuteDialog.vue'
 import { cancelDraftApplication, getApplicationApprovalLogs, getApplicationDetail, submitApplication, withdrawApplication } from '../../api/applications'
 import { executeMigrationIn, executeMigrationOut, getMigrationApplicationDetail } from '../../api/migrations'
+import { getFloatingApplicationDetail, executeFloatingApplication, getPermitApplicationDetail, issueResidencePermit, endorseResidencePermit, cancelResidencePermitApplication } from '../../api/floatingResidence'
 import { getMaterials } from '../../api/materials'
 import { getPersonById } from '../../api/persons'
 import { getMigrationRecord } from '../../adapters/migration'
 import { normalizePerson } from '../../adapters/person'
+import { normalizeFloatingProfessional } from '../../adapters/floating'
+import { normalizePermitProfessional } from '../../adapters/residencePermit'
 import { BUSINESS_TYPE, BUSINESS_TYPE_LABEL } from '../../constants/application'
 import { getMigrationMaterialOptions, getMigrationMaterialRuleText } from '../../constants/material'
+import { getFloatingMaterialOptions, getFloatingMaterialRuleText, getPermitMaterialOptions, getPermitMaterialRuleText, EXECUTE_TYPE } from '../../constants/floatingResidence'
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { formatDateTime } from '../../utils/date'
@@ -66,17 +75,122 @@ const executing = ref(false)
 const application = ref(null)
 const migrationDetail = ref(null)
 const migrationPerson = ref(null)
+const floatingDetail = ref(null)
+const permitDetail = ref(null)
 const materials = ref([])
 const logs = ref([])
+const executeVisible = ref(false)
+const executeType = ref('')
+const executeVersion = ref(0)
 
 const isMigrationApplication = computed(() => [BUSINESS_TYPE.MIGRATION_IN, BUSINESS_TYPE.MIGRATION_OUT].includes(application.value?.businessType))
+const isFloatingApplication = computed(() => application.value?.businessType === BUSINESS_TYPE.FLOATING_REGISTRATION)
+const isPermitApplication = computed(() => [BUSINESS_TYPE.RESIDENCE_PERMIT_FIRST_ISSUE, BUSINESS_TYPE.RESIDENCE_PERMIT_ENDORSEMENT, BUSINESS_TYPE.RESIDENCE_PERMIT_CANCELLATION].includes(application.value?.businessType))
+const isProfessionalBusiness = computed(() => isMigrationApplication.value || isFloatingApplication.value || isPermitApplication.value)
 const migration = computed(() => getMigrationRecord(migrationDetail.value))
+const floatingDetailBody = computed(() => floatingDetail.value?.professional)
+const permitDetailBody = computed(() => permitDetail.value?.professional)
 const isDraft = computed(() => application.value?.status === 'DRAFT')
 const canUpload = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_UPLOAD))
 const canDelete = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_DELETE))
-const canExecute = computed(() => isMigrationApplication.value && application.value?.status === 'APPROVED' && migrationDetail.value?.executable && userStore.hasPermission(PERMISSIONS.MIGRATION_EXECUTE))
-const materialOptions = computed(() => getMigrationMaterialOptions(migrationDetail.value?.migrationIn ? 'in' : 'out', migration.value?.migrationType))
-const materialRuleText = computed(() => getMigrationMaterialRuleText(migrationDetail.value?.migrationIn ? 'in' : 'out', migration.value?.migrationType))
+const specializedEditRoute = computed(() => {
+  if (isMigrationApplication.value) {
+    return application.value?.businessType === BUSINESS_TYPE.MIGRATION_IN ? '/migrations/in/apply' : '/migrations/out/apply'
+  }
+  if (isFloatingApplication.value) return '/floating-population/apply'
+  if (isPermitApplication.value) {
+    const bt = application.value?.businessType
+    if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_FIRST_ISSUE) return '/residence-permits/first-issue'
+    if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_ENDORSEMENT) {
+      const pid = permitDetailBody.value?.permitId
+      return pid ? `/residence-permits/${pid}/endorsement/apply` : ''
+    }
+    if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_CANCELLATION) {
+      const pid = permitDetailBody.value?.permitId
+      return pid ? `/residence-permits/${pid}/cancellation/apply` : ''
+    }
+    return '/residence-permits/first-issue'
+  }
+  return ''
+})
+
+const canContinueSpecialized = computed(() => {
+  if (!isDraft.value) return false
+  if (!userStore.hasPermission(PERMISSIONS.APPLICATION_EDIT)) return false
+  if (isMigrationApplication.value) {
+    return application.value?.businessType === BUSINESS_TYPE.MIGRATION_IN
+      ? userStore.hasPermission(PERMISSIONS.MIGRATION_IN_CREATE)
+      : userStore.hasPermission(PERMISSIONS.MIGRATION_OUT_CREATE)
+  }
+  if (isFloatingApplication.value) return userStore.hasPermission(PERMISSIONS.FLOATING_EDIT)
+  if (isPermitApplication.value) return userStore.hasPermission(PERMISSIONS.RESIDENCE_PERMIT_APPLY)
+  return false
+})
+
+const canExecute = computed(() => {
+  if (application.value?.status !== 'APPROVED') return false
+  if (isMigrationApplication.value && migrationDetail.value?.executable && userStore.hasPermission(PERMISSIONS.MIGRATION_EXECUTE)) return true
+  if (isFloatingApplication.value && floatingDetail.value?.executable && userStore.hasPermission(PERMISSIONS.FLOATING_EXECUTE)) return true
+  if (isPermitApplication.value && permitDetail.value?.executable) {
+    const bt = application.value?.businessType
+    if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_FIRST_ISSUE && userStore.hasPermission(PERMISSIONS.RESIDENCE_PERMIT_ISSUE)) return true
+    if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_ENDORSEMENT && userStore.hasPermission(PERMISSIONS.RESIDENCE_PERMIT_ENDORSE)) return true
+    if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_CANCELLATION && userStore.hasPermission(PERMISSIONS.RESIDENCE_PERMIT_CANCEL)) return true
+    return false
+  }
+  return false
+})
+
+const executeLabelText = computed(() => {
+  if (isMigrationApplication.value) return '执行后会重新读取申请与迁移状态，确认均为"已办结"才显示成功。'
+  if (isFloatingApplication.value) return '执行后将生成正式流动登记记录。'
+  if (isPermitApplication.value) return '执行后将生成/变更正式居住证状态。'
+  return ''
+})
+
+const executeLabelShort = computed(() => {
+  if (isMigrationApplication.value) return migrationDetail.value?.migrationIn ? '迁入' : '迁出'
+  if (isFloatingApplication.value) return '流动登记'
+  const bt = application.value?.businessType
+  if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_FIRST_ISSUE) return '签发'
+  if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_ENDORSEMENT) return '签注'
+  if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_CANCELLATION) return '注销'
+  return '业务'
+})
+
+const materialOptions = computed(() => {
+  if (isMigrationApplication.value) {
+    return getMigrationMaterialOptions(migrationDetail.value?.migrationIn ? 'in' : 'out', migration.value?.migrationType)
+  }
+  if (isFloatingApplication.value) {
+    return getFloatingMaterialOptions(floatingDetailBody.value?.residenceReasonCode)
+  }
+  if (isPermitApplication.value) {
+    const bt = application.value?.businessType
+    let at = 'FIRST_ISSUE'
+    if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_ENDORSEMENT) at = 'ENDORSEMENT'
+    if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_CANCELLATION) at = 'CANCELLATION'
+    return getPermitMaterialOptions(at, floatingDetailBody.value?.residenceReasonCode)
+  }
+  return []
+})
+
+const materialRuleText = computed(() => {
+  if (isMigrationApplication.value) {
+    return getMigrationMaterialRuleText(migrationDetail.value?.migrationIn ? 'in' : 'out', migration.value?.migrationType)
+  }
+  if (isFloatingApplication.value) {
+    return getFloatingMaterialRuleText(floatingDetailBody.value?.residenceReasonCode)
+  }
+  if (isPermitApplication.value) {
+    const bt = application.value?.businessType
+    let at = 'FIRST_ISSUE'
+    if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_ENDORSEMENT) at = 'ENDORSEMENT'
+    if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_CANCELLATION) at = 'CANCELLATION'
+    return getPermitMaterialRuleText(at, floatingDetailBody.value?.residenceReasonCode)
+  }
+  return ''
+})
 
 async function loadMigrationPerson(record) {
   migrationPerson.value = null
@@ -93,11 +207,21 @@ async function load() {
     logs.value = logResult || []
     migrationDetail.value = null
     migrationPerson.value = null
+    floatingDetail.value = null
+    permitDetail.value = null
     if (isMigrationApplication.value) {
       migrationDetail.value = await getMigrationApplicationDetail(applicationId.value)
       materials.value = materialResult || migrationDetail.value.materials || []
       logs.value = logResult || migrationDetail.value.approvalLogs || []
       await loadMigrationPerson(migration.value)
+    } else if (isFloatingApplication.value) {
+      floatingDetail.value = normalizeFloatingProfessional(await getFloatingApplicationDetail(applicationId.value))
+      materials.value = materialResult || floatingDetail.value.materials || []
+      logs.value = logResult || floatingDetail.value?.approvalLogs || []
+    } else if (isPermitApplication.value) {
+      permitDetail.value = normalizePermitProfessional(await getPermitApplicationDetail(applicationId.value))
+      materials.value = materialResult || permitDetail.value.materials || []
+      logs.value = logResult || permitDetail.value?.approvalLogs || []
     }
     return true
   } catch (error) {
@@ -108,9 +232,9 @@ async function load() {
   }
 }
 
-function continueMigration() {
-  const path = application.value?.businessType === BUSINESS_TYPE.MIGRATION_IN ? '/migrations/in/apply' : '/migrations/out/apply'
-  router.push({ path, query: { applicationId: applicationId.value } })
+function continueSpecialized() {
+  const path = specializedEditRoute.value
+  if (path) router.push({ path, query: { applicationId: applicationId.value } })
 }
 
 async function submit() {
@@ -152,7 +276,27 @@ async function cancelDraft() {
   } finally { actionLoading.value = false }
 }
 
-async function execute() {
+function openExecuteDialog() {
+  if (isMigrationApplication.value) {
+    executeType.value = EXECUTE_TYPE.FLOATING_EXECUTE // migration uses its own execute, but this signals dialog not needed
+    executeVersion.value = migration.value?.version || 0
+    executeMigration()
+    return
+  }
+  if (isFloatingApplication.value) {
+    executeType.value = EXECUTE_TYPE.FLOATING_EXECUTE
+    executeVersion.value = floatingDetailBody.value?.version || 0
+  } else if (isPermitApplication.value) {
+    const bt = application.value?.businessType
+    if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_FIRST_ISSUE) executeType.value = EXECUTE_TYPE.PERMIT_ISSUE
+    else if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_ENDORSEMENT) executeType.value = EXECUTE_TYPE.PERMIT_ENDORSE
+    else executeType.value = EXECUTE_TYPE.PERMIT_CANCEL
+    executeVersion.value = permitDetailBody.value?.version || 0
+  }
+  executeVisible.value = true
+}
+
+async function executeMigration() {
   await ElMessageBox.confirm('执行会由后端变更当前户籍并生成归档，确认继续吗？', '执行迁移', { type: 'warning' })
   executing.value = true
   try {
@@ -163,6 +307,28 @@ async function execute() {
     const completed = refreshed && application.value?.status === 'COMPLETED' && migration.value?.businessStatus === 'COMPLETED'
     if (completed) ElMessage.success('业务执行完成')
     else ElMessage.warning('执行请求已受理，但未确认业务办结，请刷新查看。')
+  } catch (error) {
+    if (isApiConflict(error)) await load()
+    ElMessage.error(getApiErrorMessage(error, '业务执行失败'))
+  } finally { executing.value = false }
+}
+
+async function handleExecute(payload) {
+  executing.value = true
+  try {
+    if (isFloatingApplication.value) {
+      await executeFloatingApplication(applicationId.value, payload.version)
+    } else if (isPermitApplication.value) {
+      const bt = application.value?.businessType
+      if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_FIRST_ISSUE) await issueResidencePermit(applicationId.value, { issuingAuthority: payload.issuingAuthority, version: payload.version })
+      else if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_ENDORSEMENT) await endorseResidencePermit(applicationId.value, payload.version)
+      else await cancelResidencePermitApplication(applicationId.value, payload.version)
+    }
+    const refreshed = await load()
+    const completed = refreshed && application.value?.status === 'COMPLETED'
+    if (completed) ElMessage.success('业务执行完成')
+    else ElMessage.warning('执行请求已受理，但未确认业务办结，请刷新查看。')
+    executeVisible.value = false
   } catch (error) {
     if (isApiConflict(error)) await load()
     ElMessage.error(getApiErrorMessage(error, '业务执行失败'))

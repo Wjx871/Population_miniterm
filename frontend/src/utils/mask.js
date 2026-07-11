@@ -72,3 +72,15 @@ export function maskText(value, options = {}) {
   const middle = maskChar.repeat(text.length - keepStart - keepEnd)
   return `${text.slice(0, keepStart)}${middle}${text.slice(text.length - keepEnd)}`
 }
+
+/**
+ * 居住证编号脱敏。
+ * 前 3 + 星 + 后 3
+ * 空值返回 '-'
+ */
+export function maskPermitNo(value) {
+  const text = toSafeString(value)
+  if (!text) return '-'
+  if (text.length <= 6) return stars(text.length)
+  return `${text.slice(0, 3)}${stars(text.length - 6)}${text.slice(-3)}`
+}

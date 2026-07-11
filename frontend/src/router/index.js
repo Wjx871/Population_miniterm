@@ -143,7 +143,7 @@ const routes = [
       { 
         path: 'floating-population', 
         name: 'FloatingPopulation', 
-        component: { template: '<div>流动人口管理正在建设中...</div>' }, 
+        component: () => import('../views/floating/FloatingPopulationList.vue'), 
         meta: { 
           title: '流动人口管理',
           minLevel: 1,
@@ -155,6 +155,111 @@ const routes = [
         } 
       },
       { 
+        path: 'floating-population/apply', 
+        name: 'FloatingApplicationCreate', 
+        component: () => import('../views/floating/FloatingApplicationCreate.vue'), 
+        meta: { 
+          title: '流动人口登记申请',
+          minLevel: 2,
+          permission: 'floating:create',
+          menu: false,
+          activeMenu: '/floating-population',
+          group: '扩展业务'
+        } 
+      },
+      { 
+        path: 'floating-population/:floatingId', 
+        name: 'FloatingPopulationDetail', 
+        component: () => import('../views/floating/FloatingPopulationDetail.vue'), 
+        meta: { 
+          title: '流动登记详情',
+          minLevel: 1,
+          permission: 'floating:view',
+          menu: false,
+          activeMenu: '/floating-population',
+          group: '扩展业务'
+        } 
+      },
+      { 
+        path: 'residence-permits', 
+        name: 'ResidencePermitList', 
+        component: () => import('../views/floating/ResidencePermitList.vue'), 
+        meta: { 
+          title: '居住证管理',
+          minLevel: 1,
+          permission: 'residence-permit:view',
+          menu: true,
+          group: '扩展业务',
+          order: 31,
+          icon: 'Postcard'
+        } 
+      },
+      { 
+        path: 'residence-permits/expiring', 
+        name: 'ExpiringPermitList', 
+        component: () => import('../views/floating/ResidencePermitList.vue'), 
+        meta: { 
+          title: '居住证到期提醒',
+          minLevel: 1,
+          permission: 'residence-permit:expiry:view',
+          menu: false,
+          activeMenu: '/residence-permits',
+          group: '扩展业务'
+        } 
+      },
+      { 
+        path: 'residence-permits/first-issue', 
+        name: 'PermitFirstIssue', 
+        component: () => import('../views/floating/PermitApplicationCreate.vue'), 
+        meta: { 
+          title: '首次申领居住证',
+          minLevel: 2,
+          permission: 'residence-permit:apply',
+          menu: false,
+          activeMenu: '/residence-permits',
+          group: '扩展业务'
+        } 
+      },
+      { 
+        path: 'residence-permits/:permitId/endorsement/apply', 
+        name: 'PermitEndorsementApply', 
+        component: () => import('../views/floating/PermitApplicationCreate.vue'), 
+        meta: { 
+          title: '签注申请',
+          minLevel: 2,
+          permission: 'residence-permit:apply',
+          menu: false,
+          activeMenu: '/residence-permits',
+          group: '扩展业务'
+        } 
+      },
+      { 
+        path: 'residence-permits/:permitId/cancellation/apply', 
+        name: 'PermitCancellationApply', 
+        component: () => import('../views/floating/PermitApplicationCreate.vue'), 
+        meta: { 
+          title: '注销申请',
+          minLevel: 2,
+          permission: 'residence-permit:apply',
+          menu: false,
+          activeMenu: '/residence-permits',
+          group: '扩展业务'
+        } 
+      },
+      { 
+        path: 'residence-permits/:permitId', 
+        name: 'ResidencePermitDetail', 
+        component: () => import('../views/floating/ResidencePermitDetail.vue'), 
+        meta: { 
+          title: '居住证详情',
+          minLevel: 1,
+          permission: 'residence-permit:view',
+          menu: false,
+          activeMenu: '/residence-permits',
+          group: '扩展业务'
+        } 
+      },
+      { 
         path: 'key-population', 
         name: 'KeyPopulation', 
         component: { template: '<div>重点人口管理正在建设中...</div>' }, 
@@ -162,7 +267,7 @@ const routes = [
           title: '重点人口管理',
           minLevel: 2,
           permission: 'key:view',
-          menu: true,
+          menu: false,
           group: '扩展业务',
           order: 31,
           icon: 'StarFilled'
@@ -173,7 +278,7 @@ const routes = [
         name: 'Certificates', 
         component: () => import('../views/certificates/CertificateList.vue'), 
         meta: { 
-          title: '证件管理',
+          title: '通用证件管理',
           minLevel: 1,
           permission: 'certificate:view',
           menu: true,
