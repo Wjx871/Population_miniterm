@@ -16,6 +16,7 @@ test('isValidVersion', async (t) => {
     assert.equal(isValidVersion(null), false)
     assert.equal(isValidVersion(undefined), false)
     assert.equal(isValidVersion(NaN), false)
+    assert.equal(isValidVersion(0.5), false)
   })
 })
 
@@ -42,6 +43,14 @@ test('canSaveProfessionalDraft', async (t) => {
       applicationStatus: 'DRAFT',
       version: 0
     }), true)
+  })
+
+  await t.test('已有申请的非 DRAFT 状态不可保存', () => {
+    assert.equal(canSaveProfessionalDraft({
+      applicationId: '123',
+      applicationStatus: 'APPROVED',
+      version: 0
+    }), false)
   })
 })
 

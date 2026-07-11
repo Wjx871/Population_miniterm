@@ -22,7 +22,7 @@ export function canSaveProfessionalDraft({ applicationId, applicationStatus, ver
     return true
   }
 
-  return isValidVersion(version)
+  return applicationStatus === 'DRAFT' && isValidVersion(version)
 }
 
 /**

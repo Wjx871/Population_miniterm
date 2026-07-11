@@ -42,8 +42,9 @@
 import { computed } from 'vue'
 import StatusTag from '../../../components/common/StatusTag.vue'
 import SensitiveText from '../../../components/common/SensitiveText.vue'
-import { RESIDENCE_REASON, RESIDENCE_PROOF_TYPE, PERMIT_APPLY_TYPE, RESIDENCE_BASIS, PERMIT_BUSINESS_TYPE } from '../../../constants/floatingResidence'
+import { RESIDENCE_REASON, RESIDENCE_PROOF_TYPE, PERMIT_APPLY_TYPE, RESIDENCE_BASIS } from '../../../constants/floatingResidence'
 import { maskPhone } from '../../../utils/mask'
+import { mergeSubjectAndProfessional } from '../../../utils/professionalApplication'
 
 const props = defineProps({
   mode: { type: String, required: true, validator: (v) => ['floating', 'permit'].includes(v) },
@@ -51,10 +52,7 @@ const props = defineProps({
   subject: { type: Object, default: null }
 })
 
-const merged = computed(() => ({
-  ...(props.subject || {}),
-  ...(props.detail || {})
-}))
+const merged = computed(() => mergeSubjectAndProfessional(props.subject, props.detail))
 
 const applyType = computed(() => {
   return merged.value?.applyType || props.detail?.applyType

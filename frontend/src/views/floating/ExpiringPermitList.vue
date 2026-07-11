@@ -44,6 +44,7 @@ import SensitiveText from '../../components/common/SensitiveText.vue'
 import { getExpiringResidencePermits } from '../../api/floatingResidence'
 import { normalizeExpiringPermitList } from '../../adapters/residencePermit'
 import { getApiErrorMessage } from '../../utils/apiError'
+import { sliceClientPage } from '../../utils/professionalApplication'
 
 const loading = ref(false)
 const allRecords = ref([])
@@ -58,8 +59,7 @@ function truncateAddress(addr) {
 }
 
 function slicePage() {
-  const start = (pager.current - 1) * pager.size
-  records.value = allRecords.value.slice(start, start + pager.size)
+  records.value = sliceClientPage(allRecords.value, pager.current, pager.size)
   pager.total = allRecords.value.length
 }
 

@@ -17,12 +17,14 @@ test('useProfessionalDraftState 状态流转', async (t) => {
     assert.equal(state.isReadOnly.value, false)
   })
 
-  await t.test('非 DRAFT 的已有申请只读', () => {
+  await t.test('非 DRAFT 的已有申请只读且不可保存', () => {
     const state = useProfessionalDraftState()
     state.applyDetailMeta({
-      application: { applicationId: 123, status: 'PENDING' }
+      application: { applicationId: 123, status: 'PENDING' },
+      professional: { version: 0 }
     })
     assert.equal(state.isEdit.value, true)
     assert.equal(state.isReadOnly.value, true)
+    assert.equal(state.hasValidVersion.value, false)
   })
 })

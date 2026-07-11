@@ -30,18 +30,19 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { EXECUTE_TYPE } from '../../../constants/floatingResidence'
+import { isValidVersion } from '../../../utils/professionalApplication'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   executeType: { type: String, required: true },
-  version: { type: Number, default: 0 },
+  version: { type: Number, default: null },
   loading: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['update:modelValue', 'confirm'])
 
 const formRef = ref(null)
-const form = reactive({ issuingAuthority: '', version: 0 })
+const form = reactive({ issuingAuthority: '', version: null })
 
 const executeTitle = computed(() => {
   const titles = {
@@ -54,7 +55,15 @@ const executeTitle = computed(() => {
 })
 
 const rules = computed(() => {
-  const base = { version: [{ required: true, message: '版本号不可为空', trigger: 'change' }] }
+  const base = {
+    version: [{
+      validator: (_, value, callback) => {
+        if (isValidVersion(value)) callback()
+        else callback(new Error('版本号无效'))
+      },
+      trigger: 'change'
+    }]
+  }
   if (props.executeType === 'PERMIT_ISSUE') {
     return {
       ...base,
@@ -67,7 +76,7 @@ const rules = computed(() => {
 watch(() => props.modelValue, (val) => {
   if (val) {
     form.issuingAuthority = ''
-    form.version = props.version || 0
+    form.version = props.version
   }
 })
 

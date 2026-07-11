@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { isValidVersion } from '../utils/professionalApplication.js'
+import { canSaveProfessionalDraft, isValidVersion } from '../utils/professionalApplication.js'
 
 export function useProfessionalDraftState() {
   const applicationId = ref(null)
@@ -13,7 +13,11 @@ export function useProfessionalDraftState() {
   
   // 按照约束：如果是编辑状态，必须有合法 version，否则报错保护。新建时不要求。
   const hasValidVersion = computed(() => {
-    return !isEdit.value || isValidVersion(professionalVersion.value)
+    return canSaveProfessionalDraft({
+      applicationId: applicationId.value,
+      applicationStatus: applicationStatus.value,
+      version: professionalVersion.value
+    })
   })
 
   function applyDetailMeta(detail) {
