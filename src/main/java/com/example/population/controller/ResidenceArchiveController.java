@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.ResidenceArchive;
@@ -19,6 +20,7 @@ public class ResidenceArchiveController {
 
     private final ResidenceArchiveService archiveService;
 
+    @RequiresPermission("archive:query")
     @Operation(summary = "分页查询")
     @GetMapping
     public Result<PageVO<ResidenceArchive>> page(@RequestParam(defaultValue = "1") long current,
@@ -30,12 +32,14 @@ public class ResidenceArchiveController {
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
 
+    @RequiresPermission("archive:query")
     @Operation(summary = "查询单个")
     @GetMapping("/{id}")
     public Result<ResidenceArchive> get(@PathVariable Long id) {
         return Result.success(archiveService.getById(id));
     }
 
+    @RequiresPermission("archive:manage")
     @Operation(summary = "新建快照")
     @PostMapping
     public Result<Void> create(@RequestBody ResidenceArchive a) {

@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.BusinessApplication;
@@ -19,6 +20,7 @@ public class BusinessApplicationController {
 
     private final BusinessApplicationService applicationService;
 
+    @RequiresPermission("application:query")
     @Operation(summary = "分页查询")
     @GetMapping
     public Result<PageVO<BusinessApplication>> page(@RequestParam(defaultValue = "1") long current,
@@ -33,12 +35,14 @@ public class BusinessApplicationController {
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
 
+    @RequiresPermission("application:query")
     @Operation(summary = "查询详情")
     @GetMapping("/{id}")
     public Result<BusinessApplication> get(@PathVariable Long id) {
         return Result.success(applicationService.getDetail(id));
     }
 
+    @RequiresPermission("application:manage")
     @Operation(summary = "新增申请")
     @PostMapping
     public Result<Void> create(@RequestBody BusinessApplication app) {
@@ -46,6 +50,7 @@ public class BusinessApplicationController {
         return Result.success();
     }
 
+    @RequiresPermission("application:manage")
     @Operation(summary = "更新申请")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody BusinessApplication app) {
@@ -54,6 +59,7 @@ public class BusinessApplicationController {
         return Result.success();
     }
 
+    @RequiresPermission("application:manage")
     @Operation(summary = "提交申请")
     @PutMapping("/{id}/submit")
     public Result<Void> submit(@PathVariable Long id) {
@@ -61,6 +67,7 @@ public class BusinessApplicationController {
         return Result.success();
     }
 
+    @RequiresPermission("application:manage")
     @Operation(summary = "删除申请")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {

@@ -109,7 +109,25 @@ INSERT INTO sys_permission (permission_code, permission_name, module_name, actio
 -- Export permissions
 ('export:normal', '普通导出', 'EXPORT', 'EXPORT', 1, 0),
 ('export:sensitive', '敏感导出', 'EXPORT', 'EXPORT', 2, 1),
-('export:sensitive:high', '高敏导出', 'EXPORT', 'EXPORT', 3, 1)
+('export:sensitive:high', '高敏导出', 'EXPORT', 'EXPORT', 3, 1),
+-- Application permissions
+('application:query', '业务申请查询', 'APPLICATION', 'QUERY', 2, 0),
+('application:manage', '业务申请办理', 'APPLICATION', 'CREATE', 3, 1),
+-- Registration permissions
+('registration:query', '户籍登记查询', 'REGISTRATION', 'QUERY', 2, 0),
+('registration:manage', '户籍登记办理', 'REGISTRATION', 'CREATE', 3, 1),
+-- Archive permissions
+('archive:query', '户籍历史查询', 'ARCHIVE', 'QUERY', 1, 0),
+('archive:manage', '户籍历史归档', 'ARCHIVE', 'CREATE', 2, 1),
+-- Region permissions
+('region:query', '行政区划查询', 'REGION', 'QUERY', 1, 0),
+('region:manage', '行政区划管理', 'REGION', 'CONFIG', 3, 0),
+-- Material permissions
+('material:query', '申请材料查询', 'MATERIAL', 'QUERY', 2, 0),
+('material:manage', '申请材料维护', 'MATERIAL', 'CREATE', 2, 1),
+('material:verify', '申请材料核验', 'MATERIAL', 'APPROVE', 3, 0),
+-- Audit log permissions
+('log:query', '审计日志查询', 'LOG', 'QUERY', 2, 0)
 ON DUPLICATE KEY UPDATE permission_name = VALUES(permission_name);
 
 -- =====================================================
@@ -121,7 +139,7 @@ SELECT r.role_id, p.permission_id
 FROM sys_role r
 CROSS JOIN sys_permission p
 WHERE r.role_code = 'L1_QUERY'
-AND p.permission_code IN ('person:query', 'household:query', 'migration:query', 'floating:query', 'permit:query')
+AND p.permission_code IN ('person:query', 'household:query', 'migration:query', 'floating:query', 'permit:query', 'region:query', 'dictionary:query')
 ON DUPLICATE KEY UPDATE role_id = VALUES(role_id);
 
 -- L2_HANDLE: Basic + handling permissions
@@ -139,17 +157,27 @@ AND p.permission_code IN (
     'certificate:query',
     'approval:query',
     'user:query', 'role:query', 'department:query', 'dictionary:query',
-    'export:normal'
+    'export:normal',
+    'application:query', 'application:manage',
+    'registration:query', 'registration:manage',
+    'archive:query', 'material:query', 'material:manage',
+    'log:query'
 )
 ON DUPLICATE KEY UPDATE role_id = VALUES(role_id);
 
--- L3_APPROVE_ADMIN: All permissions except system admin
+-- L3_APPROVE_ADMIN: All permissions (excluding system admin perm_codes already use NOT LIKE '%manage%' is too narrow; widen with explicit IN list)
 INSERT INTO sys_role_permission (role_id, permission_id)
 SELECT r.role_id, p.permission_id
 FROM sys_role r
 CROSS JOIN sys_permission p
 WHERE r.role_code = 'L3_APPROVE_ADMIN'
-AND p.permission_code NOT LIKE '%manage%'
+AND (
+       p.permission_code NOT LIKE '%manage%'
+    OR p.permission_code IN (
+        'application:manage', 'registration:manage', 'archive:manage',
+        'region:manage', 'material:manage', 'material:verify'
+       )
+)
 ON DUPLICATE KEY UPDATE role_id = VALUES(role_id);
 
 -- ADMIN: All permissions
@@ -158,6 +186,27 @@ SELECT r.role_id, p.permission_id
 FROM sys_role r
 CROSS JOIN sys_permission p
 WHERE r.role_code = 'ADMIN'
+AND p.permission_code IN (
+    'person:query', 'person:create', 'person:update', 'person:register',
+    'household:query', 'household:create', 'household:establish', 'household:update',
+    'migration:query', 'migration:in:create', 'migration:out:create',
+    'floating:query', 'floating:register',
+    'permit:query', 'permit:apply',
+    'certificate:query', 'certificate:manage',
+    'cancellation:person', 'cancellation:household',
+    'approval:query', 'approval:handle',
+    'user:query', 'user:manage', 'role:query', 'role:manage',
+    'department:query', 'department:manage',
+    'dictionary:query', 'dictionary:manage',
+    'export:normal', 'export:sensitive', 'export:sensitive:high',
+    -- Section added in the "补 Controller 护栏" task:
+    'application:query', 'application:manage',
+    'registration:query', 'registration:manage',
+    'archive:query', 'archive:manage',
+    'region:query', 'region:manage',
+    'material:query', 'material:manage', 'material:verify',
+    'log:query'
+)
 ON DUPLICATE KEY UPDATE role_id = VALUES(role_id);
 
 -- =====================================================

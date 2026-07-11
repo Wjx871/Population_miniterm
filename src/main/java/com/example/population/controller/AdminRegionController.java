@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.AdminRegion;
@@ -21,6 +22,7 @@ public class AdminRegionController {
 
     private final AdminRegionService regionService;
 
+    @RequiresPermission("region:query")
     @Operation(summary = "分页查询行政区划")
     @GetMapping
     public Result<PageVO<AdminRegion>> page(@RequestParam(defaultValue = "1") long current,
@@ -31,24 +33,28 @@ public class AdminRegionController {
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
 
+    @RequiresPermission("region:query")
     @Operation(summary = "查询子区划")
     @GetMapping("/children")
     public Result<List<AdminRegion>> children(@RequestParam(required = false) String parentCode) {
         return Result.success(regionService.listChildren(parentCode));
     }
 
+    @RequiresPermission("region:query")
     @Operation(summary = "判断两个区划是否同市")
     @GetMapping("/same-city")
     public Result<Boolean> sameCity(@RequestParam String a, @RequestParam String b) {
         return Result.success(regionService.isSameCity(a, b));
     }
 
+    @RequiresPermission("region:query")
     @Operation(summary = "查询单个区划")
     @GetMapping("/{code}")
     public Result<AdminRegion> get(@PathVariable String code) {
         return Result.success(regionService.getById(code));
     }
 
+    @RequiresPermission("region:manage")
     @Operation(summary = "新增区划")
     @PostMapping
     public Result<Void> create(@RequestBody AdminRegion region) {
@@ -56,6 +62,7 @@ public class AdminRegionController {
         return Result.success();
     }
 
+    @RequiresPermission("region:manage")
     @Operation(summary = "更新区划")
     @PutMapping("/{code}")
     public Result<Void> update(@PathVariable String code, @RequestBody AdminRegion region) {
@@ -64,6 +71,7 @@ public class AdminRegionController {
         return Result.success();
     }
 
+    @RequiresPermission("region:manage")
     @Operation(summary = "启用/停用")
     @PutMapping("/{code}/enabled")
     public Result<Void> updateEnabled(@PathVariable String code, @RequestParam Integer enabled) {
@@ -71,6 +79,7 @@ public class AdminRegionController {
         return Result.success();
     }
 
+    @RequiresPermission("region:manage")
     @Operation(summary = "删除区划")
     @DeleteMapping("/{code}")
     public Result<Void> remove(@PathVariable String code) {

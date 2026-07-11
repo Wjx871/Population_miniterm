@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.DataExportLog;
@@ -19,6 +20,7 @@ public class DataExportLogController {
 
     private final DataExportLogService exportService;
 
+    @RequiresPermission("log:query")
     @Operation(summary = "分页查询")
     @GetMapping
     public Result<PageVO<DataExportLog>> page(@RequestParam(defaultValue = "1") long current,
@@ -30,6 +32,7 @@ public class DataExportLogController {
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
 
+    @RequiresPermission("export:normal")
     @Operation(summary = "记录一次导出")
     @PostMapping
     public Result<Void> create(@RequestBody DataExportLog log) {

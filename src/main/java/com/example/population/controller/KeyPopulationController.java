@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.KeyPopulation;
@@ -19,6 +20,7 @@ public class KeyPopulationController {
 
     private final KeyPopulationService keyService;
 
+    @RequiresPermission("key:query")
     @Operation(summary = "分页查询")
     @GetMapping
     public Result<PageVO<KeyPopulation>> page(@RequestParam(defaultValue = "1") long current,
@@ -32,12 +34,14 @@ public class KeyPopulationController {
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
 
+    @RequiresPermission("key:query")
     @Operation(summary = "查询单个")
     @GetMapping("/{id}")
     public Result<KeyPopulation> get(@PathVariable Long id) {
         return Result.success(keyService.getById(id));
     }
 
+    @RequiresPermission("key:register")
     @Operation(summary = "新增重点登记")
     @PostMapping
     public Result<Void> create(@RequestBody KeyPopulation k) {
@@ -45,6 +49,7 @@ public class KeyPopulationController {
         return Result.success();
     }
 
+    @RequiresPermission("key:register")
     @Operation(summary = "更新重点登记")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody KeyPopulation k) {
@@ -53,6 +58,7 @@ public class KeyPopulationController {
         return Result.success();
     }
 
+    @RequiresPermission("key:release")
     @Operation(summary = "解除重点管理")
     @PutMapping("/{id}/release")
     public Result<Void> release(@PathVariable Long id, @RequestParam Long releaseApplicationId) {
@@ -60,6 +66,7 @@ public class KeyPopulationController {
         return Result.success();
     }
 
+    @RequiresPermission("key:register")
     @Operation(summary = "删除重点登记")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {

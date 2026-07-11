@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.OperationLog;
@@ -19,6 +20,7 @@ public class OperationLogController {
 
     private final OperationLogService logService;
 
+    @RequiresPermission("log:query")
     @Operation(summary = "分页查询")
     @GetMapping
     public Result<PageVO<OperationLog>> page(@RequestParam(defaultValue = "1") long current,
@@ -30,6 +32,7 @@ public class OperationLogController {
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
 
+    @RequiresPermission("log:query")
     @Operation(summary = "查询单个")
     @GetMapping("/{id}")
     public Result<OperationLog> get(@PathVariable Long id) {

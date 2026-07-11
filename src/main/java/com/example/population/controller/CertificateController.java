@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.Certificate;
@@ -19,6 +20,7 @@ public class CertificateController {
 
     private final CertificateService certificateService;
 
+    @RequiresPermission("certificate:query")
     @Operation(summary = "分页查询")
     @GetMapping
     public Result<PageVO<Certificate>> page(@RequestParam(defaultValue = "1") long current,
@@ -30,12 +32,14 @@ public class CertificateController {
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
 
+    @RequiresPermission("certificate:query")
     @Operation(summary = "查询单个")
     @GetMapping("/{id}")
     public Result<Certificate> get(@PathVariable Long id) {
         return Result.success(certificateService.getById(id));
     }
 
+    @RequiresPermission("certificate:manage")
     @Operation(summary = "新增证件")
     @PostMapping
     public Result<Void> create(@RequestBody Certificate c) {
@@ -43,6 +47,7 @@ public class CertificateController {
         return Result.success();
     }
 
+    @RequiresPermission("certificate:manage")
     @Operation(summary = "更新证件")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody Certificate c) {
@@ -51,6 +56,7 @@ public class CertificateController {
         return Result.success();
     }
 
+    @RequiresPermission("certificate:manage")
     @Operation(summary = "删除证件")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {

@@ -1,5 +1,6 @@
 package com.example.population.controller;
 
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.ResidenceRegisterDTO;
 import com.example.population.dto.Result;
 import com.example.population.entity.Household;
@@ -28,6 +29,7 @@ public class ResidenceRegistrationController {
     private final PersonService personService;
     private final HouseholdService householdService;
 
+    @RequiresPermission("registration:query")
     @Operation(summary = "查询个人当前户籍（脱敏）")
     @GetMapping("/by-person/{personId}")
     public Result<Map<String, Object>> getByPerson(@PathVariable Long personId) {
@@ -53,12 +55,14 @@ public class ResidenceRegistrationController {
         return Result.success(data);
     }
 
+    @RequiresPermission("registration:manage")
     @Operation(summary = "新增户籍登记（事务内一人一条约束）")
     @PostMapping
     public Result<ResidenceRegistration> register(@Valid @RequestBody ResidenceRegisterDTO dto) {
         return Result.success("登记成功", registrationService.register(dto));
     }
 
+    @RequiresPermission("registration:manage")
     @Operation(summary = "更新户籍登记（极少使用，请走归档+新增）")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody ResidenceRegistration r) {
@@ -67,6 +71,7 @@ public class ResidenceRegistrationController {
         return Result.success();
     }
 
+    @RequiresPermission("registration:manage")
     @Operation(summary = "删除当前户籍登记（业务上请走迁出/注销，此方法仅做诊断）")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {
