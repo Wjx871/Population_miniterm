@@ -4,21 +4,17 @@
       <el-timeline-item
         v-for="(log, index) in sortedLogs"
         :key="index"
-        :timestamp="log.operatedAt || log.createdAt || ''"
+        :timestamp="log.operationTime || ''"
         :type="actionType(log.action)"
         placement="top"
       >
         <div class="timeline-item-header">
           <el-tag :type="actionType(log.action)" size="small">{{ LIFECYCLE_ACTION[log.action] || log.action }}</el-tag>
-          <span class="status-change" v-if="log.statusChange">{{ log.statusChange }}</span>
+          <span class="status-change" v-if="log.fromStatus && log.toStatus">{{ log.fromStatus }} → {{ log.toStatus }}</span>
         </div>
-        <div class="timeline-item-body" v-if="log.oldValidFrom || log.oldValidUntil || log.newValidFrom || log.newValidUntil">
-          <span v-if="log.oldValidFrom || log.oldValidUntil" class="valid-info">
-            原有效期：{{ log.oldValidFrom || '-' }} ~ {{ log.oldValidUntil || '-' }}
-          </span>
-          <span v-if="log.newValidFrom || log.newValidUntil" class="valid-info arrow">
-            → 新有效期：{{ log.newValidFrom || '-' }} ~ {{ log.newValidUntil || '-' }}
-          </span>
+        <div class="timeline-item-body" v-if="log.oldValidUntil || log.newValidUntil">
+          <span v-if="log.oldValidUntil" class="valid-info">原有效期至：{{ log.oldValidUntil }}</span>
+          <span v-if="log.newValidUntil" class="valid-info arrow">→ {{ log.newValidUntil }}</span>
         </div>
         <div class="timeline-item-footer" v-if="log.reason">
           原因：{{ log.reason }}
@@ -26,8 +22,8 @@
         <div class="timeline-item-footer" v-if="log.operatorId">
           操作人ID：{{ log.operatorId }}
         </div>
-        <div class="timeline-item-footer" v-if="log.sourceApplicationId">
-          关联申请：{{ log.sourceApplicationId }}
+        <div class="timeline-item-footer" v-if="log.applicationId">
+          关联申请：{{ log.applicationId }}
         </div>
       </el-timeline-item>
     </el-timeline>
@@ -48,8 +44,8 @@ const props = defineProps({
 
 const sortedLogs = computed(() => {
   return [...props.logs].sort((a, b) => {
-    const ta = a.operatedAt || a.createdAt || ''
-    const tb = b.operatedAt || b.createdAt || ''
+    const ta = a.operationTime || ''
+    const tb = b.operationTime || ''
     return ta.localeCompare(tb)
   })
 })

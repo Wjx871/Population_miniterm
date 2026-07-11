@@ -42,7 +42,7 @@ import AppPagination from '../../components/common/AppPagination.vue'
 import StatusTag from '../../components/common/StatusTag.vue'
 import SensitiveText from '../../components/common/SensitiveText.vue'
 import { getExpiringResidencePermits } from '../../api/floatingResidence'
-import { normalizeResidencePermitList } from '../../adapters/residencePermit'
+import { normalizeExpiringPermitList } from '../../adapters/residencePermit'
 import { normalizePageResult } from '../../utils/page'
 import { getApiErrorMessage } from '../../utils/apiError'
 
@@ -60,17 +60,14 @@ function truncateAddress(addr) {
 async function load() {
   loading.value = true
   try {
-    const params = {}
+    const params = { current: pager.current, size: pager.size }
     if (windowDays.value) params.days = windowDays.value
     const res = await getExpiringResidencePermits(params)
-    if (Array.isArray(res)) {
-      records.value = normalizeResidencePermitList(res)
-      pager.total = res.length
-    } else {
-      const page = normalizePageResult(res)
-      records.value = normalizeResidencePermitList(page.records)
-      pager.total = page.total
-    }
+    const page = normalizePageResult(res)
+    records.value = normalizeExpiringPermitList(page.records)
+    pager.total = page.total
+    pager.current = page.current
+    pager.size = page.size
   } catch (error) {
     ElMessage.error(getApiErrorMessage(error, '查询到期提醒失败'))
   } finally { loading.value = false }

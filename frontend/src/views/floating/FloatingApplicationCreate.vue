@@ -58,11 +58,11 @@
         <el-form-item label="联系电话">
           <el-input v-model="form.applicantPhone" maxlength="20" placeholder="选填，7~20位数字/加号/空格/横线" />
         </el-form-item>
-        <el-form-item label="申请标题">
-          <el-input v-model="form.title" maxlength="200" placeholder="选填" />
+        <el-form-item label="申请标题" prop="title">
+          <el-input v-model="form.title" maxlength="200" placeholder="必填，简要描述申请事项" />
         </el-form-item>
-        <el-form-item label="申请原因">
-          <el-input v-model="form.reason" type="textarea" :rows="2" placeholder="选填" />
+        <el-form-item label="申请原因" prop="reason">
+          <el-input v-model="form.reason" type="textarea" :rows="2" placeholder="必填，说明申请原因" />
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="选填" />
@@ -121,7 +121,7 @@ import { createFloatingApplication, updateFloatingApplication, getFloatingApplic
 import { submitApplication } from '../../api/applications'
 import { getMaterials } from '../../api/materials'
 import { normalizeFloatingProfessional } from '../../adapters/floating'
-import { RESIDENCE_REASON, RESIDENCE_PROOF_TYPE, getFloatingMaterialOptions, getFloatingMaterialRuleText, hasCompleteFloatingMaterials } from '../../constants/floatingResidence'
+import { RESIDENCE_REASON, RESIDENCE_PROOF_TYPE, getFloatingMaterialOptions, getFloatingMaterialRuleText, hasUploadedFloatingMaterials } from '../../constants/floatingResidence'
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
@@ -174,14 +174,16 @@ const step2Rules = {
       if (value && form.arrivalDate && value < form.arrivalDate) callback(new Error('计划离开日期不能早于到达日期'))
       else callback()
     }, trigger: 'change'
-  }]
+  }],
+  title: [{ required: true, message: '请输入申请标题', trigger: 'blur' }],
+  reason: [{ required: true, message: '请输入申请原因', trigger: 'blur' }]
 }
 
 const canUpload = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_UPLOAD))
 const canEdit = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_DELETE))
 const materialOptions = computed(() => getFloatingMaterialOptions(form.residenceReasonCode))
 const materialRuleText = computed(() => getFloatingMaterialRuleText(form.residenceReasonCode))
-const materialsReady = computed(() => hasCompleteFloatingMaterials(materials.value, form.residenceReasonCode))
+const materialsReady = computed(() => hasUploadedFloatingMaterials(materials.value, form.residenceReasonCode))
 
 function onPersonSelect(person) { selectedPersonName.value = person?.name || ''; form.applicantPhone = person?.phone || '' }
 function onReasonChange() { ElMessage.info('居住事由已变更，材料要求可能发生变化') }
@@ -245,6 +247,7 @@ async function saveStep() {
     if (isEdit.value) {
       await updateFloatingApplication(applicationId.value, { ...payload, version: professionalVersion.value })
       ElMessage.success('草稿已更新')
+      await loadApplication()
     } else {
       const result = await createFloatingApplication(payload)
       applicationId.value = result?.applicationId || result?.id

@@ -101,13 +101,13 @@ const REASON_MATERIAL_MAP = {
  */
 export function getFloatingMaterialOptions(reasonCode) {
   const materials = FLOATING_FIXED_MATERIALS.map(type => ({
-    type,
+    value: type,
     label: FLOATING_MATERIAL_TYPES[type],
     required: true
   }))
   if (reasonCode && REASON_MATERIAL_MAP[reasonCode]) {
     const type = REASON_MATERIAL_MAP[reasonCode]
-    materials.push({ type, label: FLOATING_MATERIAL_TYPES[type], required: true })
+    materials.push({ value: type, label: FLOATING_MATERIAL_TYPES[type], required: true })
   }
   return materials
 }
@@ -121,27 +121,27 @@ export function getFloatingMaterialOptions(reasonCode) {
 export function getPermitMaterialOptions(applyType, reasonCode) {
   if (applyType === 'FIRST_ISSUE') {
     const materials = [
-      { type: 'APPLICANT_IDENTITY_PROOF', label: PERMIT_MATERIAL_TYPES.APPLICANT_IDENTITY_PROOF, required: true },
-      { type: 'PERSON_PHOTO', label: PERMIT_MATERIAL_TYPES.PERSON_PHOTO, required: true },
-      { type: 'RESIDENCE_ADDRESS_PROOF', label: PERMIT_MATERIAL_TYPES.RESIDENCE_ADDRESS_PROOF, required: true }
+      { value: 'APPLICANT_IDENTITY_PROOF', label: PERMIT_MATERIAL_TYPES.APPLICANT_IDENTITY_PROOF, required: true },
+      { value: 'PERSON_PHOTO', label: PERMIT_MATERIAL_TYPES.PERSON_PHOTO, required: true },
+      { value: 'RESIDENCE_ADDRESS_PROOF', label: PERMIT_MATERIAL_TYPES.RESIDENCE_ADDRESS_PROOF, required: true }
     ]
     if (reasonCode && REASON_MATERIAL_MAP[reasonCode]) {
       const type = REASON_MATERIAL_MAP[reasonCode]
       const label = PERMIT_MATERIAL_TYPES[type] || FLOATING_MATERIAL_TYPES[type] || type
-      materials.push({ type, label, required: true })
+      materials.push({ value: type, label, required: true })
     }
     return materials
   }
   if (applyType === 'ENDORSEMENT') {
     return [
-      { type: 'CURRENT_RESIDENCE_PERMIT', label: PERMIT_MATERIAL_TYPES.CURRENT_RESIDENCE_PERMIT, required: true },
-      { type: 'CONTINUED_RESIDENCE_PROOF', label: PERMIT_MATERIAL_TYPES.CONTINUED_RESIDENCE_PROOF, required: true }
+      { value: 'CURRENT_RESIDENCE_PERMIT', label: PERMIT_MATERIAL_TYPES.CURRENT_RESIDENCE_PERMIT, required: true },
+      { value: 'CONTINUED_RESIDENCE_PROOF', label: PERMIT_MATERIAL_TYPES.CONTINUED_RESIDENCE_PROOF, required: true }
     ]
   }
   if (applyType === 'CANCELLATION') {
     return [
-      { type: 'CURRENT_RESIDENCE_PERMIT', label: PERMIT_MATERIAL_TYPES.CURRENT_RESIDENCE_PERMIT, required: true },
-      { type: 'CANCELLATION_APPLICATION', label: PERMIT_MATERIAL_TYPES.CANCELLATION_APPLICATION, required: true }
+      { value: 'CURRENT_RESIDENCE_PERMIT', label: PERMIT_MATERIAL_TYPES.CURRENT_RESIDENCE_PERMIT, required: true },
+      { value: 'CANCELLATION_APPLICATION', label: PERMIT_MATERIAL_TYPES.CANCELLATION_APPLICATION, required: true }
     ]
   }
   return []
@@ -154,45 +154,66 @@ export function getFloatingMaterialRuleText(reasonCode) {
   if (reasonCode && REASON_MATERIAL_MAP[reasonCode]) {
     requiredTypes.push(FLOATING_MATERIAL_TYPES[REASON_MATERIAL_MAP[reasonCode]] || REASON_MATERIAL_MAP[reasonCode])
   }
-  return '必需材料：' + requiredTypes.join('、') + '。所有材料须上传并通过核验后方可提交。'
+  return '必需材料：' + requiredTypes.join('、') + '。提交前须上传全部必需材料；材料将在审批阶段进行核验。'
 }
 
 export function getPermitMaterialRuleText(applyType, reasonCode) {
   const options = getPermitMaterialOptions(applyType, reasonCode)
   const requiredTypes = options.filter(o => o.required).map(o => o.label)
-  return '必需材料：' + requiredTypes.join('、') + '。所有材料须上传并通过核验后方可提交。'
+  return '必需材料：' + requiredTypes.join('、') + '。提交前须上传全部必需材料；材料将在审批阶段进行核验。'
 }
 
 // ==================== 材料完整性判断 ====================
 
 /**
- * 检查流动登记材料是否完整（类型存在且VERIFIED）
- * @param {Array} materials - 材料列表
- * @param {string} reasonCode - 居住事由
- * @returns {boolean}
+ * 检查流动登记必需材料是否已上传（不要求VERIFIED，用于提交按钮）
  */
-export function hasCompleteFloatingMaterials(materials, reasonCode) {
+export function hasUploadedFloatingMaterials(materials, reasonCode) {
   const options = getFloatingMaterialOptions(reasonCode)
-  const requiredTypes = options.filter(o => o.required).map(o => o.type)
-  return requiredTypes.every(type =>
-    materials.some(m => m.materialType === type && m.verifyStatus === 'VERIFIED')
+  const requiredValues = options.filter(o => o.required).map(o => o.value)
+  return requiredValues.every(value =>
+    materials.some(m => m.materialType === value)
   )
 }
 
 /**
- * 检查居住证材料是否完整
- * @param {Array} materials - 材料列表
- * @param {'FIRST_ISSUE'|'ENDORSEMENT'|'CANCELLATION'} applyType
- * @param {string} reasonCode - 居住事由（首次申领需要）
- * @returns {boolean}
+ * 检查流动登记必需材料是否全部核验通过（要求VERIFIED，用于审批按钮）
  */
-export function hasCompletePermitMaterials(materials, applyType, reasonCode) {
-  const options = getPermitMaterialOptions(applyType, reasonCode)
-  const requiredTypes = options.filter(o => o.required).map(o => o.type)
-  return requiredTypes.every(type =>
-    materials.some(m => m.materialType === type && m.verifyStatus === 'VERIFIED')
+export function hasVerifiedFloatingMaterials(materials, reasonCode) {
+  const options = getFloatingMaterialOptions(reasonCode)
+  const requiredValues = options.filter(o => o.required).map(o => o.value)
+  return requiredValues.every(value =>
+    materials.some(m => m.materialType === value && m.verifyStatus === 'VERIFIED')
   )
 }
+
+/**
+ * 检查居住证必需材料是否已上传（不要求VERIFIED，用于提交按钮）
+ */
+export function hasUploadedPermitMaterials(materials, applyType, reasonCode) {
+  const options = getPermitMaterialOptions(applyType, reasonCode)
+  const requiredValues = options.filter(o => o.required).map(o => o.value)
+  return requiredValues.every(value =>
+    materials.some(m => m.materialType === value)
+  )
+}
+
+/**
+ * 检查居住证必需材料是否全部核验通过（要求VERIFIED，用于审批按钮）
+ */
+export function hasVerifiedPermitMaterials(materials, applyType, reasonCode) {
+  const options = getPermitMaterialOptions(applyType, reasonCode)
+  const requiredValues = options.filter(o => o.required).map(o => o.value)
+  return requiredValues.every(value =>
+    materials.some(m => m.materialType === value && m.verifyStatus === 'VERIFIED')
+  )
+}
+
+// 保留旧函数名以兼容（标记为deprecated）
+/** @deprecated 使用 hasVerifiedFloatingMaterials */
+export const hasCompleteFloatingMaterials = hasVerifiedFloatingMaterials
+/** @deprecated 使用 hasVerifiedPermitMaterials */
+export const hasCompletePermitMaterials = hasVerifiedPermitMaterials
 
 // ==================== 生命周期动作 ====================
 export const LIFECYCLE_ACTION = Object.freeze({

@@ -50,27 +50,31 @@ export function normalizeFloatingList(records) {
  */
 export function normalizeFloatingProfessional(raw) {
   if (!raw) return null
+  const pro = raw.professional || {}
   return {
     application: raw.application,
     professional: {
-      floatingId: pickFirst(raw.professional?.floatingId, raw.floatingId),
-      registrationNo: pickFirst(raw.professional?.registrationNo, raw.registrationNo),
-      personId: pickFirst(raw.professional?.personId, raw.personId),
-      personName: pickFirst(raw.professional?.personName, raw.personName),
-      identityNo: pickFirst(raw.professional?.identityNo, raw.identityNo),
-      phone: pickFirst(raw.professional?.phone, raw.phone),
-      sourceRegionCode: pickFirst(raw.professional?.sourceRegionCode, raw.sourceRegionCode),
-      sourceAddress: pickFirst(raw.professional?.sourceAddress, raw.sourceAddress),
-      currentRegionCode: pickFirst(raw.professional?.currentRegionCode, raw.currentRegionCode),
-      currentAddress: pickFirst(raw.professional?.currentAddress, raw.currentAddress),
-      residenceReasonCode: pickFirst(raw.professional?.residenceReasonCode, raw.residenceReasonCode),
-      residenceProofType: pickFirst(raw.professional?.residenceProofType, raw.residenceProofType),
-      arrivalDate: pickFirst(raw.professional?.arrivalDate, raw.arrivalDate),
-      plannedLeaveDate: pickFirst(raw.professional?.plannedLeaveDate, raw.plannedLeaveDate),
-      applicantPhone: pickFirst(raw.professional?.applicantPhone, raw.applicantPhone),
-      version: pickFirst(raw.professional?.version, raw.version)
+      floatingApplicationId: pickFirst(pro.floatingApplicationId, pro.id, pro.applicationId),
+      floatingId: pickFirst(pro.floatingId, pro.executedFloatingId),
+      registrationNo: pickFirst(pro.registrationNo),
+      personId: pickFirst(pro.personId),
+      personName: pickFirst(pro.personName, raw.subject?.personName),
+      identityNo: pickFirst(pro.identityNo, raw.subject?.identityNo, raw.subject?.maskedIdentityNo),
+      phone: pickFirst(pro.phone, pro.applicantPhone, raw.subject?.phone),
+      sourceRegionCode: pickFirst(pro.sourceRegionCode),
+      sourceAddress: pickFirst(pro.sourceAddress),
+      currentRegionCode: pickFirst(pro.currentRegionCode),
+      currentAddress: pickFirst(pro.currentAddress),
+      residenceReasonCode: pickFirst(pro.residenceReasonCode, raw.subject?.residenceReasonCode),
+      residenceProofType: pickFirst(pro.residenceProofType),
+      arrivalDate: pickFirst(pro.arrivalDate),
+      plannedLeaveDate: pickFirst(pro.plannedLeaveDate),
+      applicantPhone: pickFirst(pro.applicantPhone, pro.phone),
+      businessStatus: pickFirst(pro.businessStatus, pro.status),
+      version: pickFirst(pro.version, 0),
+      executedFloatingId: pickFirst(pro.executedFloatingId)
     },
-    subject: raw.subject,
+    subject: raw.subject || null,
     materials: raw.materials || [],
     executable: raw.executable,
     unavailableReason: raw.unavailableReason

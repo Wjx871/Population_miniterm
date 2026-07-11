@@ -325,9 +325,16 @@ async function handleExecute(payload) {
       else await cancelResidencePermitApplication(applicationId.value, payload.version)
     }
     const refreshed = await load()
-    const completed = refreshed && application.value?.status === 'COMPLETED'
-    if (completed) ElMessage.success('业务执行完成')
-    else ElMessage.warning('执行请求已受理，但未确认业务办结，请刷新查看。')
+    const appCompleted = refreshed && application.value?.status === 'COMPLETED'
+    const pro = isFloatingApplication.value ? floatingDetailBody.value : permitDetailBody.value
+    const proCompleted = pro?.businessStatus === 'COMPLETED'
+    if (appCompleted && proCompleted) {
+      ElMessage.success('业务执行完成')
+    } else if (appCompleted) {
+      ElMessage.warning('执行请求已返回，但尚未确认专业业务办结，请刷新查看。')
+    } else {
+      ElMessage.warning('执行请求已返回，通用申请和专业状态均未确认办结，请刷新查看。')
+    }
     executeVisible.value = false
   } catch (error) {
     if (isApiConflict(error)) await load()

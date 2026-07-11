@@ -46,31 +46,57 @@ export function normalizeResidencePermitList(records) {
  */
 export function normalizePermitProfessional(raw) {
   if (!raw) return null
+  const pro = raw.professional || {}
   return {
     application: raw.application,
     professional: {
-      permitId: pickFirst(raw.professional?.permitId, raw.permitId),
-      permitNo: pickFirst(raw.professional?.permitNo, raw.permitNo),
-      floatingId: pickFirst(raw.professional?.floatingId, raw.floatingId),
-      personId: pickFirst(raw.professional?.personId, raw.personId),
-      personName: pickFirst(raw.professional?.personName, raw.personName),
-      identityNo: pickFirst(raw.professional?.identityNo, raw.identityNo),
-      currentAddress: pickFirst(raw.professional?.currentAddress, raw.currentAddress),
-      issueRegionCode: pickFirst(raw.professional?.issueRegionCode, raw.issueRegionCode),
-      issuingAuthority: pickFirst(raw.professional?.issuingAuthority, raw.issuingAuthority),
-      validFrom: pickFirst(raw.professional?.validFrom, raw.validFrom),
-      validUntil: pickFirst(raw.professional?.validUntil, raw.validUntil),
-      residenceBasisCode: pickFirst(raw.professional?.residenceBasisCode, raw.residenceBasisCode),
-      requestedValidFrom: pickFirst(raw.professional?.requestedValidFrom, raw.requestedValidFrom),
-      requestedValidUntil: pickFirst(raw.professional?.requestedValidUntil, raw.requestedValidUntil),
-      applyType: pickFirst(raw.professional?.applyType, raw.applyType),
-      version: pickFirst(raw.professional?.version, raw.version)
+      permitApplicationId: pickFirst(pro.permitApplicationId, pro.id, pro.applicationId),
+      permitId: pickFirst(pro.permitId, pro.executedPermitId),
+      permitNo: pickFirst(pro.permitNo, raw.subject?.permitNo),
+      floatingId: pickFirst(pro.floatingId, raw.subject?.floatingId),
+      personId: pickFirst(pro.personId, raw.subject?.personId),
+      personName: pickFirst(pro.personName, raw.subject?.personName),
+      identityNo: pickFirst(pro.identityNo, raw.subject?.identityNo, raw.subject?.maskedIdentityNo),
+      currentAddress: pickFirst(pro.currentAddress, raw.subject?.currentAddress),
+      issueRegionCode: pickFirst(pro.issueRegionCode),
+      issuingAuthority: pickFirst(pro.issuingAuthority),
+      validFrom: pickFirst(pro.validFrom, raw.subject?.validFrom),
+      validUntil: pickFirst(pro.validUntil, raw.subject?.validUntil),
+      residenceBasisCode: pickFirst(pro.residenceBasisCode),
+      requestedValidFrom: pickFirst(pro.requestedValidFrom),
+      requestedValidUntil: pickFirst(pro.requestedValidUntil),
+      applyType: pickFirst(pro.applyType),
+      businessStatus: pickFirst(pro.businessStatus, pro.status),
+      version: pickFirst(pro.version, 0),
+      executedPermitId: pickFirst(pro.executedPermitId)
     },
-    subject: raw.subject,
+    subject: raw.subject || null,
     materials: raw.materials || [],
     executable: raw.executable,
     unavailableReason: raw.unavailableReason
   }
+}
+
+/**
+ * 到期提醒专用适配器
+ */
+export function normalizeExpiringPermit(raw) {
+  if (!raw) return null
+  return {
+    permitId: pickFirst(raw.permitId, raw.id),
+    permitNo: raw.permitNo || '',
+    personName: raw.personName || '',
+    identityNo: raw.maskedIdentityNo || raw.identityNo || '',
+    currentAddress: raw.currentAddress || '',
+    validUntil: raw.validUntil || '',
+    remainingDays: raw.remainingDays,
+    status: raw.status || ''
+  }
+}
+
+export function normalizeExpiringPermitList(records) {
+  if (!Array.isArray(records)) return []
+  return records.filter(r => r != null).map(normalizeExpiringPermit)
 }
 
 /**

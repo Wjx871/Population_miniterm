@@ -11,13 +11,19 @@ export function normalizeRoleCode(roleCode, roleName) {
 
   const name = String(roleName || roleCode || '').toUpperCase()
 
-  if (['SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'ADMIN', '系统管理员', '超级管理员'].includes(name)) {
+  // 超级管理员别名
+  if (['SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMIN', '系统管理员', '超级管理员'].includes(name)) {
     return ROLE_CODE.SUPER_ADMIN
   }
-  if (['HOUSEHOLD_ADMIN', 'ROLE_HOUSEHOLD_ADMIN', '户口管理员', '户籍管理员'].includes(name)) {
+  // 户口管理员别名（后端人口管理员和户籍管理员均映射为户口管理员）
+  if (['HOUSEHOLD_ADMIN', 'ROLE_HOUSEHOLD_ADMIN', 'POPULATION_MANAGER', 'HOUSEHOLD_MANAGER', '户口管理员', '户籍管理员', '人口管理员'].includes(name)) {
     return ROLE_CODE.HOUSEHOLD_ADMIN
   }
-  
+  // APPROVER 不映射为超级管理员，仅依赖后端显式审批权限
+  if (['QUERY_VIEWER', 'APPROVER', '普通用户', '查询用户', '审批员'].includes(name)) {
+    return ROLE_CODE.NORMAL_USER
+  }
+
   return ROLE_CODE.NORMAL_USER
 }
 

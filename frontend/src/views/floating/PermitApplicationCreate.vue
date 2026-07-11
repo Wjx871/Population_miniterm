@@ -58,11 +58,11 @@
             <el-date-picker v-model="form.requestedValidUntil" type="date" placeholder="选填" value-format="YYYY-MM-DD" style="width:100%" />
           </el-form-item>
         </template>
-        <el-form-item label="标题">
-          <el-input v-model="form.title" maxlength="200" placeholder="选填" />
+        <el-form-item label="标题" prop="title">
+          <el-input v-model="form.title" maxlength="200" placeholder="必填，简要描述申请事项" />
         </el-form-item>
-        <el-form-item label="原因">
-          <el-input v-model="form.reason" type="textarea" :rows="2" placeholder="选填" />
+        <el-form-item label="原因" prop="reason">
+          <el-input v-model="form.reason" type="textarea" :rows="2" placeholder="必填，说明申请原因" />
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="选填" />
@@ -105,7 +105,7 @@ import { getMaterials } from '../../api/materials'
 import { normalizePermitProfessional } from '../../adapters/residencePermit'
 import { normalizeFloatingPopulation } from '../../adapters/floating'
 import { normalizeResidencePermit } from '../../adapters/residencePermit'
-import { RESIDENCE_BASIS, PERMIT_APPLY_TYPE, getPermitMaterialOptions, getPermitMaterialRuleText, hasCompletePermitMaterials } from '../../constants/floatingResidence'
+import { RESIDENCE_BASIS, PERMIT_APPLY_TYPE, getPermitMaterialOptions, getPermitMaterialRuleText, hasUploadedPermitMaterials } from '../../constants/floatingResidence'
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
@@ -140,7 +140,7 @@ const canUpload = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_UP
 const canEdit = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_DELETE))
 const materialOptions = computed(() => getPermitMaterialOptions(applyType.value, floatingInfo.value?.residenceReasonCode))
 const materialRuleText = computed(() => getPermitMaterialRuleText(applyType.value, floatingInfo.value?.residenceReasonCode))
-const materialsReady = computed(() => hasCompletePermitMaterials(materials.value, applyType.value, floatingInfo.value?.residenceReasonCode))
+const materialsReady = computed(() => hasUploadedPermitMaterials(materials.value, applyType.value, floatingInfo.value?.residenceReasonCode))
 
 const form = reactive({
   residenceBasisCode: '',
@@ -152,7 +152,10 @@ const form = reactive({
 })
 
 const formRules = computed(() => {
-  const rules = {}
+  const rules = {
+    title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
+    reason: [{ required: true, message: '请输入原因', trigger: 'blur' }]
+  }
   if (applyType.value !== 'CANCELLATION') {
     rules.residenceBasisCode = [{ required: true, message: '请选择居住依据', trigger: 'change' }]
   }

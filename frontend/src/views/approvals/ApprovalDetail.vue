@@ -1,6 +1,6 @@
 <template>
   <div class="page-container" v-loading="loading">
-    <div class="page-header"><div><h1>审批详情</h1><p class="subtitle">审批人须先核验材料并核对迁移专业信息；审批通过后仍需显式执行。</p></div><el-button @click="router.back()">返回</el-button></div>
+    <div class="page-header"><div><h1>审批详情</h1><p class="subtitle">审批人须先核验材料并核对专业信息；审批通过后仍需显式执行。</p></div><el-button @click="router.back()">返回</el-button></div>
     <el-card v-if="detail" shadow="never">
       <template #header><div class="card-header"><span>{{ detail.approval?.approvalNo }}</span><StatusTag :value="detail.approval?.status" kind="approval" /></div></template>
       <el-descriptions :column="2" border>
@@ -16,7 +16,7 @@
     <FloatingResidenceDetailPanel v-if="permitDetail" mode="permit" :detail="permitDetailBody" />
     <el-card v-if="detail" shadow="never"><template #header>申请材料</template><MaterialList :materials="detail.materials" :can-verify="canHandle && isPending" @changed="load" /></el-card>
     <el-card v-if="detail" shadow="never"><template #header>审批轨迹</template><ApprovalTimeline :logs="detail.logs" /></el-card>
-    <div v-if="canHandle && isPending" class="actions"><el-button type="success" :disabled="!allRequiredVerified" :loading="deciding" @click="approve">审批通过</el-button><el-button type="danger" plain :loading="deciding" @click="reject">审批驳回</el-button><span v-if="!allRequiredVerified" class="hint">尚未满足该迁移类型要求的全部核验材料。</span></div>
+    <div v-if="canHandle && isPending" class="actions"><el-button type="success" :disabled="!allRequiredVerified" :loading="deciding" @click="approve">审批通过</el-button><el-button type="danger" plain :loading="deciding" @click="reject">审批驳回</el-button><span v-if="!allRequiredVerified" class="hint">尚未满足该业务类型要求的全部核验材料。</span></div>
   </div>
 </template>
 
@@ -39,7 +39,7 @@ import { normalizePermitProfessional } from '../../adapters/residencePermit'
 import { getMigrationRecord } from '../../adapters/migration'
 import { BUSINESS_TYPE } from '../../constants/application'
 import { hasCompleteMigrationMaterials } from '../../constants/material'
-import { hasCompleteFloatingMaterials, hasCompletePermitMaterials } from '../../constants/floatingResidence'
+import { hasVerifiedFloatingMaterials, hasVerifiedPermitMaterials } from '../../constants/floatingResidence'
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
@@ -65,14 +65,18 @@ const allRequiredVerified = computed(() => {
   if (migrationDetail.value?.migrationIn) return hasCompleteMigrationMaterials('in', record?.migrationType, materials)
   if (migrationDetail.value?.migrationOut) return hasCompleteMigrationMaterials('out', record?.migrationType, materials)
   if (floatingDetail.value) {
-    return hasCompleteFloatingMaterials(materials, floatingDetailBody.value?.residenceReasonCode)
+    return hasVerifiedFloatingMaterials(materials, floatingDetailBody.value?.residenceReasonCode)
   }
   if (permitDetail.value) {
     const bt = detail.value?.application?.businessType
     let at = 'FIRST_ISSUE'
     if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_ENDORSEMENT) at = 'ENDORSEMENT'
     if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_CANCELLATION) at = 'CANCELLATION'
-    return hasCompletePermitMaterials(materials, at, floatingDetailBody.value?.residenceReasonCode || permitDetailBody.value?.residenceReasonCode)
+    // 首次申领的居住事由在 subject（流动登记）上
+    const reasonCode = at === 'FIRST_ISSUE'
+      ? permitDetail.value?.subject?.residenceReasonCode
+      : undefined
+    return hasVerifiedPermitMaterials(materials, at, reasonCode)
   }
   // fallback generic: 有requiredFlag且全部VERIFIED
   const required = materials.filter((item) => item.requiredFlag)

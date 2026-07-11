@@ -79,7 +79,12 @@ async function handleClose(payload) {
   closeLoading.value = true
   try {
     await closeFloatingPopulation(floatingId.value, payload)
-    ElMessage.success('登记已关闭。后端会同步注销关联的 ACTIVE 居住证。如需核验，请前往居住证列表确认。')
+    const updated = normalizeFloatingPopulation(await getFloatingPopulationById(floatingId.value))
+    if (updated?.status !== 'ACTIVE') {
+      ElMessage.success('登记已关闭。后端会同步注销关联的 ACTIVE 居住证。如需核验，请前往居住证列表确认。')
+    } else {
+      ElMessage.warning('关闭请求已返回，但未确认登记状态变更，请刷新查看。')
+    }
     closeVisible.value = false
     await load()
   } catch (error) {

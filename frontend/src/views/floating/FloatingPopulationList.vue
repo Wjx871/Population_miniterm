@@ -57,8 +57,8 @@ import AppPagination from '../../components/common/AppPagination.vue'
 import StatusTag from '../../components/common/StatusTag.vue'
 import SensitiveText from '../../components/common/SensitiveText.vue'
 import CloseFloatingDialog from './components/CloseFloatingDialog.vue'
-import { getFloatingPopulationPage, closeFloatingPopulation } from '../../api/floatingResidence'
-import { normalizeFloatingList } from '../../adapters/floating'
+import { getFloatingPopulationPage, closeFloatingPopulation, getFloatingPopulationById } from '../../api/floatingResidence'
+import { normalizeFloatingList, normalizeFloatingPopulation } from '../../adapters/floating'
 import { normalizePageResult } from '../../utils/page'
 import { FLOATING_STATUS } from '../../constants/floatingResidence'
 import { PERMISSIONS } from '../../constants/permissions'
@@ -117,7 +117,12 @@ async function handleClose(payload) {
   closeLoading.value = true
   try {
     await closeFloatingPopulation(closeTargetId, payload)
-    ElMessage.success('登记已关闭。后端会同步注销关联的 ACTIVE 居住证。如需核验，请前往居住证列表确认。')
+    const updated = normalizeFloatingPopulation(await getFloatingPopulationById(closeTargetId))
+    if (updated?.status !== 'ACTIVE') {
+      ElMessage.success('登记已关闭。后端会同步注销关联的 ACTIVE 居住证。如需核验，请前往居住证列表确认。')
+    } else {
+      ElMessage.warning('关闭请求已返回，但未确认登记状态变更，请刷新查看。')
+    }
     closeVisible.value = false
     await load()
   } catch (error) {

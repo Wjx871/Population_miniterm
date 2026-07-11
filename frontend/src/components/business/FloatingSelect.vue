@@ -102,6 +102,9 @@ async function fetchList(keyword = '') {
     if (text) {
       if (isIdCardLike(text)) {
         query.identityNo = text
+      } else if (/^\d{6,20}$/.test(text)) {
+        // 纯数字且足够长，按登记编号搜索
+        query.registrationNo = text
       } else {
         query.personName = text
       }

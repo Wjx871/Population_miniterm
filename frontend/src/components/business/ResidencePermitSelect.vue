@@ -30,6 +30,11 @@ import { normalizeResidencePermitList } from '../../adapters/residencePermit'
 import { normalizePageResult } from '../../utils/page'
 import { maskPermitNo } from '../../utils/mask'
 
+function isIdCardLike(keyword) {
+  const text = String(keyword || '').trim()
+  return /^[0-9Xx]{15,18}$/.test(text)
+}
+
 const props = defineProps({
   modelValue: {
     type: [Number, String],
@@ -93,7 +98,16 @@ async function fetchList(keyword = '') {
     const query = { current: 1, size: MAX_SIZE }
     if (props.status) query.status = props.status
     const text = String(keyword || '').trim()
-    if (text) query.personName = text
+    if (text) {
+      if (isIdCardLike(text)) {
+        query.identityNo = text
+      } else if (/^[A-Za-z0-9-]{4,30}$/.test(text)) {
+        // 含字母数字横线，按证件编号搜索
+        query.permitNo = text
+      } else {
+        query.personName = text
+      }
+    }
     const res = await getResidencePermitPage(query)
     if (seq !== requestSeq) return
     const page = normalizePageResult(res)
