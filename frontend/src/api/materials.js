@@ -1,4 +1,5 @@
 import request from './request'
+import { normalizeBlobError } from '../utils/download'
 
 export function getMaterials(applicationId) {
   return request({ url: `/applications/${applicationId}/materials`, method: 'get' })
@@ -21,6 +22,10 @@ export function verifyMaterial(materialId, payload) {
   return request({ url: `/materials/${materialId}/verify`, method: 'post', data: payload })
 }
 
-export function downloadMaterial(materialId) {
-  return request({ url: `/materials/${materialId}/download`, method: 'get', responseType: 'blob', rawResponse: true })
+export async function downloadMaterial(materialId) {
+  try {
+    return await request({ url: `/materials/${materialId}/download`, method: 'get', responseType: 'blob', rawResponse: true })
+  } catch (error) {
+    throw await normalizeBlobError(error)
+  }
 }

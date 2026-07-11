@@ -5,7 +5,7 @@
     <el-table-column prop="requiredFlag" label="必需" width="80" align="center">
       <template #default="{ row }">{{ row.requiredFlag ? '是' : '否' }}</template>
     </el-table-column>
-    <el-table-column prop="verifyStatus" label="核验状态" width="120" align="center"><template #default="{ row }"><StatusTag :value="row.verifyStatus" /></template></el-table-column>
+    <el-table-column prop="verifyStatus" label="核验状态" width="120" align="center"><template #default="{ row }"><StatusTag :value="row.verifyStatus" kind="material" /></template></el-table-column>
     <el-table-column prop="verifyComment" label="核验意见" min-width="150" show-overflow-tooltip />
     <el-table-column label="操作" width="180" fixed="right">
       <template #default="{ row }">
@@ -23,6 +23,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import StatusTag from '../common/StatusTag.vue'
 import { deleteMaterial, downloadMaterial, verifyMaterial } from '../../api/materials'
 import { downloadBlob } from '../../utils/download'
+import { getApiErrorMessage } from '../../utils/apiError'
 
 const props = defineProps({
   materials: { type: Array, default: () => [] },
@@ -32,8 +33,12 @@ const props = defineProps({
 const emit = defineEmits(['changed'])
 
 async function download(row) {
-  const response = await downloadMaterial(row.materialId)
-  downloadBlob(response, row.originalFilename || row.materialName || 'material')
+  try {
+    const response = await downloadMaterial(row.materialId)
+    await downloadBlob(response, row.originalFilename || row.materialName || 'material')
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '材料下载失败'))
+  }
 }
 
 async function remove(row) {

@@ -22,3 +22,10 @@ export const BUSINESS_TYPE_LABEL = Object.freeze({
 export const READONLY_APPLICATION_STATUS = new Set([
   'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'WITHDRAWN', 'COMPLETED', 'CANCELLED',
 ])
+
+export const APPROVAL_STATUS = Object.freeze({
+  PENDING: '待审批',
+  APPROVED: '已通过',
+  REJECTED: '已驳回',
+  CANCELLED: '已取消',
+})

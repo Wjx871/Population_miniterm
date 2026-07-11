@@ -6,14 +6,19 @@
 
 <script setup>
 import { computed } from 'vue';
-import { APPLICATION_STATUS } from '../../constants/application';
+import { APPLICATION_STATUS, APPROVAL_STATUS } from '../../constants/application';
 import { MATERIAL_VERIFY_STATUS } from '../../constants/material';
 
 const props = defineProps({
   value: {
     type: String,
     required: true
-  }
+  },
+  kind: {
+    type: String,
+    default: 'application',
+    validator: (value) => ['application', 'migration', 'approval', 'material'].includes(value),
+  },
 });
 
 const tagType = computed(() => {
@@ -37,8 +42,9 @@ const tagType = computed(() => {
   return 'primary';
 });
 
-const label = computed(() => APPLICATION_STATUS[props.value]
-  || MATERIAL_VERIFY_STATUS[props.value]
+const label = computed(() => (props.kind === 'approval' ? APPROVAL_STATUS[props.value] : null)
+  || (props.kind === 'material' ? MATERIAL_VERIFY_STATUS[props.value] : null)
+  || APPLICATION_STATUS[props.value]
   || props.value
   || '-');
 </script>

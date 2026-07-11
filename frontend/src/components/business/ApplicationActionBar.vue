@@ -1,6 +1,7 @@
 <template>
   <div class="action-bar">
     <el-button v-if="application?.status === 'DRAFT' && canSubmit" type="primary" :loading="loading" @click="$emit('submit')">提交申请</el-button>
+    <el-button v-if="application?.status === 'DRAFT' && canCancel" type="danger" plain :loading="loading" @click="$emit('cancel')">取消草稿</el-button>
     <el-button v-if="canWithdraw" type="warning" plain :loading="loading" @click="$emit('withdraw')">撤回申请</el-button>
     <span v-if="application?.status === 'APPROVED'" class="approved-tip">审批已通过，等待具备执行权限的管理员处理。</span>
   </div>
@@ -11,9 +12,10 @@ import { computed } from 'vue'
 import { useUserStore } from '../../stores/user'
 import { PERMISSIONS } from '../../constants/permissions'
 const props = defineProps({ application: { type: Object, default: null }, loading: Boolean })
-defineEmits(['submit', 'withdraw'])
+defineEmits(['submit', 'withdraw', 'cancel'])
 const userStore = useUserStore()
 const canSubmit = computed(() => userStore.hasPermission(PERMISSIONS.APPLICATION_SUBMIT))
+const canCancel = computed(() => userStore.hasPermission(PERMISSIONS.APPLICATION_EDIT))
 const canWithdraw = computed(() => ['SUBMITTED', 'UNDER_REVIEW'].includes(props.application?.status) && userStore.hasPermission(PERMISSIONS.APPLICATION_WITHDRAW))
 </script>
 

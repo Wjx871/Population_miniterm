@@ -20,3 +20,7 @@ export function submitApplication(applicationId) {
 export function withdrawApplication(applicationId) {
   return request({ url: `/applications/${applicationId}/withdraw`, method: 'post' })
 }
+
+export function cancelDraftApplication(applicationId) {
+  return request({ url: `/applications/${applicationId}`, method: 'delete' })
+}

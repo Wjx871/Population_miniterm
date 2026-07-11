@@ -1,10 +1,15 @@
 <template>
   <el-select :model-value="modelValue" clearable placeholder="请选择新户主" style="width: 100%" @update:model-value="$emit('update:modelValue', $event)">
-    <el-option v-for="personId in candidateIds" :key="personId" :label="`家庭成员 #${personId}`" :value="personId" />
+    <el-option v-for="candidate in candidates" :key="candidate.personId" :label="formatLabel(candidate)" :value="candidate.personId" />
   </el-select>
 </template>
 
 <script setup>
-defineProps({ modelValue: { type: [Number, String], default: null }, candidateIds: { type: Array, default: () => [] } })
+import { maskIdCard } from '../../utils/mask'
+const props = defineProps({ modelValue: { type: [Number, String], default: null }, candidates: { type: Array, default: () => [] } })
 defineEmits(['update:modelValue'])
+
+function formatLabel(candidate) {
+  return `${candidate.name || `成员 #${candidate.personId}`} · ${maskIdCard(candidate.idCard)}`
+}
 </script>

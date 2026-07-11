@@ -3,15 +3,15 @@
     <template #header>上传申请材料</template>
     <el-form :model="form" label-width="100px" @submit.prevent>
       <el-form-item label="材料类型" required>
-        <el-select v-model="form.materialType" placeholder="请选择材料类型">
-          <el-option v-for="item in MATERIAL_TYPES" :key="item.value" :label="item.label" :value="item.value" />
+        <el-select v-model="form.materialType" placeholder="请选择业务规则要求的材料" @change="applyMaterialRule">
+          <el-option v-for="item in materialOptions" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="材料名称" required>
-        <el-input v-model.trim="form.materialName" maxlength="100" show-word-limit placeholder="请输入材料名称" />
+        <el-input v-model="form.materialName" readonly />
       </el-form-item>
-      <el-form-item label="是否必需">
-        <el-switch v-model="form.requiredFlag" />
+      <el-form-item label="业务规则">
+        <el-tag type="primary">{{ form.requiredFlag ? '必需材料' : '非必需材料' }}</el-tag>
       </el-form-item>
       <el-form-item label="选择文件" required>
         <el-upload :auto-upload="false" :limit="1" :accept="ACCEPTED_MATERIAL_TYPES" :on-change="onFileChange" :on-remove="onFileRemove">
@@ -28,9 +28,12 @@
 import { computed, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { uploadMaterial } from '../../api/materials'
-import { ACCEPTED_MATERIAL_TYPES, MATERIAL_TYPES, MAX_MATERIAL_SIZE } from '../../constants/material'
+import { ACCEPTED_MATERIAL_TYPES, MATERIAL_ACCEPTED_MIME_TYPES, MAX_MATERIAL_SIZE } from '../../constants/material'
 
-const props = defineProps({ applicationId: { type: [Number, String], required: true } })
+const props = defineProps({
+  applicationId: { type: [Number, String], required: true },
+  materialOptions: { type: Array, required: true },
+})
 const emit = defineEmits(['uploaded'])
 const uploading = ref(false)
 const file = ref(null)
@@ -45,10 +48,24 @@ function onFileChange(uploadFile) {
     file.value = null
     return
   }
+  const extension = raw.name?.split('.').pop()?.toLowerCase()
+  const extensionAllowed = ['pdf', 'jpg', 'jpeg', 'png'].includes(extension)
+  const mimeAllowed = !raw.type || MATERIAL_ACCEPTED_MIME_TYPES.includes(raw.type.toLowerCase())
+  if (!extensionAllowed || !mimeAllowed) {
+    ElMessage.error('仅支持 PDF、JPG、JPEG、PNG 文件')
+    file.value = null
+    return
+  }
   file.value = raw
 }
 
 function onFileRemove() { file.value = null }
+
+function applyMaterialRule(materialType) {
+  const option = props.materialOptions.find((item) => item.value === materialType)
+  form.materialName = option?.label || ''
+  form.requiredFlag = Boolean(option?.required)
+}
 
 async function submit() {
   if (!canUpload.value) return
