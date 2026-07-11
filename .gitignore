@@ -38,3 +38,4 @@ build/
 .agents/
 .workbuddy/
 frontend/package-lock.json
+设计约束/
