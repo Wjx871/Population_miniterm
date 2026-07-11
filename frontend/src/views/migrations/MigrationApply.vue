@@ -27,7 +27,7 @@
       </el-form>
     </el-card>
     <template v-if="applicationId">
-      <MaterialUploader v-if="!isReadonly && canUpload" :application-id="applicationId" :material-options="materialOptions" @uploaded="refreshDetail" />
+      <MaterialUploader v-if="!isReadonly && canUpload" :application-id="applicationId" :material-options="materialOptions" :material-rule-text="materialRuleText" @uploaded="refreshDetail" />
       <el-card shadow="never"><template #header>已上传材料</template><MaterialList :materials="detail?.materials || []" :can-delete="!isReadonly && canDelete" @changed="refreshDetail" /></el-card>
       <ApplicationActionBar :application="detail?.application" :loading="submitting" @submit="submit" @withdraw="withdraw" @cancel="cancelDraft" />
     </template>
@@ -47,7 +47,7 @@ import ApplicationActionBar from '../../components/business/ApplicationActionBar
 import { createMigrationInApplication, createMigrationOutApplication, getMigrationApplicationDetail, updateMigrationInApplication, updateMigrationOutApplication } from '../../api/migrations'
 import { cancelDraftApplication, submitApplication, withdrawApplication } from '../../api/applications'
 import { MIGRATION_TYPE_OPTIONS } from '../../constants/migration'
-import { getMigrationMaterialOptions } from '../../constants/material'
+import { getMigrationMaterialOptions, getMigrationMaterialRuleText } from '../../constants/material'
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
@@ -65,6 +65,7 @@ const requiresNewHead = computed(() => !isIn.value && detail.value?.household?.h
 const candidateIds = computed(() => (detail.value?.activeMemberPersonIds || []).filter((id) => Number(id) !== Number(form.personId)))
 const requiresTransferBatch = computed(() => isIn.value && form.migrationType === 'IN_CITY_CROSS_DISTRICT')
 const materialOptions = computed(() => getMigrationMaterialOptions(isIn.value ? 'in' : 'out', form.migrationType))
+const materialRuleText = computed(() => getMigrationMaterialRuleText(isIn.value ? 'in' : 'out', form.migrationType))
 const canUpload = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_UPLOAD)); const canDelete = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_DELETE))
 const rules = computed(() => ({ personId: [{ required: true, message: '请选择办理人员', trigger: 'change' }], migrationType: [{ required: true, message: '请选择迁移类型', trigger: 'change' }], title: [{ required: true, message: '请输入申请标题', trigger: 'blur' }], reason: [{ required: true, message: '请输入迁移原因', trigger: 'blur' }], toRegionCode: [{ required: true, message: '请输入行政区划代码', trigger: 'blur' }], ...(requiresTransferBatch.value ? { transferBatchNo: [{ required: true, message: '同市跨区迁入必须填写迁移批次号', trigger: 'blur' }] } : {}), ...(isIn.value ? { fromAddress: [{ required: true, message: '请输入迁出地地址', trigger: 'blur' }], toHouseholdId: [{ required: true, message: '请选择目标家庭户', trigger: 'change' }], inDate: [{ required: true, message: '请选择迁入日期', trigger: 'change' }] } : { toAddress: [{ required: true, message: '请输入迁往地地址', trigger: 'blur' }], outDate: [{ required: true, message: '请选择迁出日期', trigger: 'change' }], ...(requiresNewHead.value ? { newHeadPersonId: [{ required: true, message: '请指定新户主', trigger: 'change' }] } : {}) }) }))
 

@@ -17,8 +17,8 @@ export function getMigrationMaterialOptions(direction, migrationType) {
   const options = direction === 'in'
     ? [
         { value: 'IDENTITY_PROOF', label: '身份证明', required: true },
-        { value: 'HOUSEHOLD_BOOK', label: '户口簿（与地址证明二选一）', required: true },
-        { value: 'ADDRESS_PROOF', label: '地址证明（与户口簿二选一）', required: true },
+        { value: 'HOUSEHOLD_BOOK', label: '户口簿', required: true },
+        { value: 'ADDRESS_PROOF', label: '地址证明', required: true },
       ]
     : [
         { value: 'IDENTITY_PROOF', label: '身份证明', required: true },
@@ -29,4 +29,23 @@ export function getMigrationMaterialOptions(direction, migrationType) {
     options.push({ value: 'MIGRATION_PROOF', label: '迁移证明', required: true })
   }
   return options
+}
+
+export function getMigrationMaterialRuleText(direction, migrationType) {
+  if (direction === 'out') return '迁出须核验通过：身份证明、户口簿。'
+  return migrationType === 'IN_CITY_CROSS_DISTRICT'
+    ? '迁入须核验通过：身份证明、户口簿或地址证明至少一项、迁移证明。'
+    : '迁入须核验通过：身份证明、户口簿或地址证明至少一项。'
+}
+
+function hasVerifiedMaterial(materials, materialType) {
+  return materials.some((item) => item?.materialType === materialType && item?.verifyStatus === 'VERIFIED')
+}
+
+export function hasCompleteMigrationMaterials(direction, migrationType, materials = []) {
+  if (!hasVerifiedMaterial(materials, 'IDENTITY_PROOF')) return false
+  if (direction === 'out') return hasVerifiedMaterial(materials, 'HOUSEHOLD_BOOK')
+  const hasResidenceProof = hasVerifiedMaterial(materials, 'HOUSEHOLD_BOOK') || hasVerifiedMaterial(materials, 'ADDRESS_PROOF')
+  if (!hasResidenceProof) return false
+  return migrationType !== 'IN_CITY_CROSS_DISTRICT' || hasVerifiedMaterial(materials, 'MIGRATION_PROOF')
 }

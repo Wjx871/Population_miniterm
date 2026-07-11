@@ -14,7 +14,7 @@
     <MigrationDetailPanel v-if="migrationDetail" :detail="migrationDetail" :person="migrationPerson" />
     <el-card v-if="detail" shadow="never"><template #header>申请材料</template><MaterialList :materials="detail.materials" :can-verify="canHandle && isPending" @changed="load" /></el-card>
     <el-card v-if="detail" shadow="never"><template #header>审批轨迹</template><ApprovalTimeline :logs="detail.logs" /></el-card>
-    <div v-if="canHandle && isPending" class="actions"><el-button type="success" :disabled="!allRequiredVerified" :loading="deciding" @click="approve">审批通过</el-button><el-button type="danger" plain :loading="deciding" @click="reject">审批驳回</el-button><span v-if="!allRequiredVerified" class="hint">必需材料必须全部核验通过后才能审批通过。</span></div>
+    <div v-if="canHandle && isPending" class="actions"><el-button type="success" :disabled="!allRequiredVerified" :loading="deciding" @click="approve">审批通过</el-button><el-button type="danger" plain :loading="deciding" @click="reject">审批驳回</el-button><span v-if="!allRequiredVerified" class="hint">尚未满足该迁移类型要求的全部核验材料。</span></div>
   </div>
 </template>
 
@@ -32,6 +32,7 @@ import { getPersonById } from '../../api/persons'
 import { normalizePerson } from '../../adapters/person'
 import { getMigrationRecord } from '../../adapters/migration'
 import { BUSINESS_TYPE } from '../../constants/application'
+import { hasCompleteMigrationMaterials } from '../../constants/material'
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
@@ -48,7 +49,11 @@ const approvalId = computed(() => route.params.approvalId)
 const isPending = computed(() => detail.value?.approval?.status === 'PENDING')
 const canHandle = computed(() => userStore.hasPermission(PERMISSIONS.APPROVAL_HANDLE))
 const allRequiredVerified = computed(() => {
-  const required = (detail.value?.materials || []).filter((item) => item.requiredFlag)
+  const materials = detail.value?.materials || []
+  const record = getMigrationRecord(migrationDetail.value)
+  if (migrationDetail.value?.migrationIn) return hasCompleteMigrationMaterials('in', record?.migrationType, materials)
+  if (migrationDetail.value?.migrationOut) return hasCompleteMigrationMaterials('out', record?.migrationType, materials)
+  const required = materials.filter((item) => item.requiredFlag)
   return required.length > 0 && required.every((item) => item.verifyStatus === 'VERIFIED')
 })
 

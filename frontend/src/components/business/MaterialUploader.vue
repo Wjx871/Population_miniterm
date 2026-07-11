@@ -11,7 +11,8 @@
         <el-input v-model="form.materialName" readonly />
       </el-form-item>
       <el-form-item label="业务规则">
-        <el-tag type="primary">{{ form.requiredFlag ? '必需材料' : '非必需材料' }}</el-tag>
+        <el-tag type="primary">{{ form.requiredFlag ? '上传后必须核验' : '非必需材料' }}</el-tag>
+        <span v-if="materialRuleText" class="rule-text">{{ materialRuleText }}</span>
       </el-form-item>
       <el-form-item label="选择文件" required>
         <el-upload :auto-upload="false" :limit="1" :accept="ACCEPTED_MATERIAL_TYPES" :on-change="onFileChange" :on-remove="onFileRemove">
@@ -33,6 +34,7 @@ import { ACCEPTED_MATERIAL_TYPES, MATERIAL_ACCEPTED_MIME_TYPES, MAX_MATERIAL_SIZ
 const props = defineProps({
   applicationId: { type: [Number, String], required: true },
   materialOptions: { type: Array, required: true },
+  materialRuleText: { type: String, default: '' },
 })
 const emit = defineEmits(['uploaded'])
 const uploading = ref(false)
@@ -81,3 +83,7 @@ async function submit() {
   }
 }
 </script>
+
+<style scoped>
+.rule-text { margin-left: 8px; color: var(--el-text-color-secondary); font-size: 13px; }
+</style>

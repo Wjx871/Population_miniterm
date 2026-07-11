@@ -25,11 +25,11 @@
 
     <el-card shadow="never">
       <template #header>申请材料</template>
-      <MaterialUploader v-if="isDraft && isMigrationApplication && canUpload" :application-id="applicationId" :material-options="materialOptions" @uploaded="load" />
+      <MaterialUploader v-if="isDraft && isMigrationApplication && canUpload" :application-id="applicationId" :material-options="materialOptions" :material-rule-text="materialRuleText" @uploaded="load" />
       <MaterialList :materials="materials" :can-delete="isDraft && canDelete" @changed="load" />
     </el-card>
     <el-card shadow="never"><template #header>审批轨迹</template><ApprovalTimeline :logs="logs" /></el-card>
-    <ApplicationActionBar :application="application" :loading="actionLoading" @submit="submit" @withdraw="withdraw" @cancel="cancelDraft" />
+    <ApplicationActionBar :application="application" :loading="actionLoading" :is-migration-draft="isMigrationApplication" @continue-migration="continueMigration" @submit="submit" @withdraw="withdraw" @cancel="cancelDraft" />
   </div>
 </template>
 
@@ -50,7 +50,7 @@ import { getPersonById } from '../../api/persons'
 import { getMigrationRecord } from '../../adapters/migration'
 import { normalizePerson } from '../../adapters/person'
 import { BUSINESS_TYPE, BUSINESS_TYPE_LABEL } from '../../constants/application'
-import { getMigrationMaterialOptions } from '../../constants/material'
+import { getMigrationMaterialOptions, getMigrationMaterialRuleText } from '../../constants/material'
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { formatDateTime } from '../../utils/date'
@@ -76,6 +76,7 @@ const canUpload = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_UP
 const canDelete = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_DELETE))
 const canExecute = computed(() => isMigrationApplication.value && application.value?.status === 'APPROVED' && migrationDetail.value?.executable && userStore.hasPermission(PERMISSIONS.MIGRATION_EXECUTE))
 const materialOptions = computed(() => getMigrationMaterialOptions(migrationDetail.value?.migrationIn ? 'in' : 'out', migration.value?.migrationType))
+const materialRuleText = computed(() => getMigrationMaterialRuleText(migrationDetail.value?.migrationIn ? 'in' : 'out', migration.value?.migrationType))
 
 async function loadMigrationPerson(record) {
   migrationPerson.value = null
@@ -105,6 +106,11 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+function continueMigration() {
+  const path = application.value?.businessType === BUSINESS_TYPE.MIGRATION_IN ? '/migrations/in/apply' : '/migrations/out/apply'
+  router.push({ path, query: { applicationId: applicationId.value } })
 }
 
 async function submit() {
