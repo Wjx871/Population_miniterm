@@ -1,6 +1,6 @@
 # Population Miniterm
 
-人口数据库管理系统后端，基于 Spring Boot、Spring Web、Spring Data JPA 和 MySQL。
+人口数据库管理系统前端，基于 Spring Boot、Spring Web、Spring Data JPA 和 MySQL。
 
 ## 环境要求
 
