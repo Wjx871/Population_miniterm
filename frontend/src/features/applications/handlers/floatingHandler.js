@@ -32,16 +32,17 @@ export function createFloatingHandler(services) {
 
     getMaterialOptions({ businessType, detail }) {
       if (!services.getFloatingMaterialOptions) return []
-      return services.getFloatingMaterialOptions()
+      return services.getFloatingMaterialOptions(detail?.professional?.residenceReasonCode)
     },
 
     getMaterialRuleText({ businessType, detail }) {
-      return null
+      if (!services.getFloatingMaterialRuleText) return ''
+      return services.getFloatingMaterialRuleText(detail?.professional?.residenceReasonCode)
     },
 
     hasVerifiedMaterials({ businessType, detail, materials }) {
-      if (!services.hasVerifiedFloatingMaterials) return true
-      return services.hasVerifiedFloatingMaterials({ detail, materials })
+      if (!services.hasVerifiedFloatingMaterials) return false
+      return services.hasVerifiedFloatingMaterials(materials, detail?.professional?.residenceReasonCode)
     },
 
     getExecutionMeta({ businessType, detail }) {
@@ -55,8 +56,8 @@ export function createFloatingHandler(services) {
 
     async execute({ businessType, applicationId, detail, payload }) {
       if (!services.executeFloatingApplication) return null
-      const version = detail?.professional?.version
-      return await services.executeFloatingApplication(applicationId, version, payload)
+      const version = payload?.version ?? detail?.professional?.version
+      return await services.executeFloatingApplication(applicationId, version)
     },
 
     isCompleted({ application, detail }) {

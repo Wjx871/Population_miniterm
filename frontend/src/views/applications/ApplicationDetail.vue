@@ -110,10 +110,9 @@ const canUpload = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_UP
 const canDelete = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_DELETE))
 const specializedEditRoute = computed(() => {
   if (handler.value) {
-    const routeObj = handler.value.buildEditRoute({ applicationId: applicationId.value, detail: getProfessionalDetail() })
-    return routeObj?.path || ''
+    return handler.value.buildEditRoute({ applicationId: applicationId.value, detail: getProfessionalDetail() })
   }
-  return ''
+  return null
 })
 
 const canContinueSpecialized = computed(() => {
@@ -214,8 +213,8 @@ async function load() {
 }
 
 function continueSpecialized() {
-  const path = specializedEditRoute.value
-  if (path) router.push({ path, query: { applicationId: applicationId.value } })
+  const routeObj = specializedEditRoute.value
+  if (routeObj) router.push(routeObj)
 }
 
 async function submit() {

@@ -9,7 +9,7 @@ export function useProfessionalDraftState() {
   const isEdit = computed(() => Boolean(applicationId.value))
   
   // 按照约束：非 DRAFT 状态只读
-  const isReadOnly = computed(() => applicationStatus.value !== 'DRAFT')
+  const isReadOnly = computed(() => isEdit.value && applicationStatus.value !== 'DRAFT')
   
   // 按照约束：如果是编辑状态，必须有合法 version，否则报错保护。新建时不要求。
   const hasValidVersion = computed(() => {

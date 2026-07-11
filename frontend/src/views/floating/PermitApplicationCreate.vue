@@ -272,16 +272,6 @@ async function submit() {
   } finally { submitting.value = false }
 }
 
-function resetForm() {
-  showForm.value = false
-  isEdit.value = false
-  applicationId.value = null
-  selectedFloatingId.value = null
-  floatingInfo.value = null
-  permitInfo.value = null
-  materials.value = []
-  Object.keys(form).forEach(k => form[k] = '')
-}
 
 function goBack() {
   if (route.path.includes('/first-issue')) router.push('/floating-population')

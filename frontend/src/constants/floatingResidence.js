@@ -97,7 +97,7 @@ const REASON_MATERIAL_MAP = {
 /**
  * 获取流动登记所需材料选项
  * @param {string} reasonCode - 居住事由
- * @returns {Array<{type: string, label: string, required: boolean}>}
+ * @returns {Array<{value: string, label: string, required: boolean}>}
  */
 export function getFloatingMaterialOptions(reasonCode) {
   const materials = FLOATING_FIXED_MATERIALS.map(type => ({
@@ -116,7 +116,7 @@ export function getFloatingMaterialOptions(reasonCode) {
  * 获取居住证申请所需材料选项
  * @param {'FIRST_ISSUE'|'ENDORSEMENT'|'CANCELLATION'} applyType
  * @param {string} reasonCode - 居住事由（首次申领需要）
- * @returns {Array<{type: string, label: string, required: boolean}>}
+ * @returns {Array<{value: string, label: string, required: boolean}>}
  */
 export function getPermitMaterialOptions(applyType, reasonCode) {
   if (applyType === 'FIRST_ISSUE') {

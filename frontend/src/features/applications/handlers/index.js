@@ -4,41 +4,39 @@ import { createResidencePermitHandler } from './residencePermitHandler'
 
 import { getMigrationApplicationDetail, executeMigrationIn, executeMigrationOut } from '../../../api/migrations'
 import { getFloatingApplicationDetail, executeFloatingApplication, getPermitApplicationDetail, issueResidencePermit, endorseResidencePermit, cancelResidencePermitApplication } from '../../../api/floatingResidence'
-import { getMigrationMaterialOptions, hasCompleteMigrationMaterials } from '../../../constants/material'
-import { getFloatingMaterialOptions, getPermitMaterialOptions, hasVerifiedFloatingMaterials, hasVerifiedPermitMaterials } from '../../../constants/floatingResidence'
+import { getMigrationMaterialOptions, getMigrationMaterialRuleText, hasCompleteMigrationMaterials } from '../../../constants/material'
+import { getFloatingMaterialOptions, getFloatingMaterialRuleText, getPermitMaterialOptions, getPermitMaterialRuleText, hasVerifiedFloatingMaterials, hasVerifiedPermitMaterials } from '../../../constants/floatingResidence'
+
+const migrationHandler = createMigrationHandler({
+  getMigrationApplicationDetail,
+  executeMigrationIn,
+  executeMigrationOut,
+  getMigrationMaterialOptions,
+  getMigrationMaterialRuleText,
+  hasCompleteMigrationMaterials
+})
+
+const floatingHandler = createFloatingHandler({
+  getFloatingApplicationDetail,
+  executeFloatingApplication,
+  getFloatingMaterialOptions,
+  getFloatingMaterialRuleText,
+  hasVerifiedFloatingMaterials
+})
+
+const residencePermitHandler = createResidencePermitHandler({
+  getPermitApplicationDetail,
+  issueResidencePermit,
+  endorseResidencePermit,
+  cancelResidencePermitApplication,
+  getPermitMaterialOptions,
+  getPermitMaterialRuleText,
+  hasVerifiedPermitMaterials
+})
+
+const handlers = [migrationHandler, floatingHandler, residencePermitHandler]
 
 export function getApplicationBusinessHandler(businessType) {
-  const migrationHandler = createMigrationHandler({
-    getMigrationApplicationDetail,
-    executeMigrationIn,
-    executeMigrationOut,
-    getMigrationMaterialOptions,
-    hasCompleteMigrationMaterials: ({ businessType, detail, materials }) => {
-      // 这里的 detail 就是 loadDetail 返回的原生 migrationDetail，包含 migrationIn 或 migrationOut
-      const record = detail?.migrationIn || detail?.migrationOut
-      const direction = businessType === 'MIGRATION_IN' ? 'in' : 'out'
-      return hasCompleteMigrationMaterials(direction, record?.migrationType, materials)
-    }
-  })
-  
-  const floatingHandler = createFloatingHandler({
-    getFloatingApplicationDetail,
-    executeFloatingApplication,
-    getFloatingMaterialOptions,
-    hasVerifiedFloatingMaterials
-  })
-  
-  const residencePermitHandler = createResidencePermitHandler({
-    getPermitApplicationDetail,
-    issueResidencePermit,
-    endorseResidencePermit,
-    cancelResidencePermitApplication,
-    getPermitMaterialOptions,
-    hasVerifiedPermitMaterials
-  })
-
-  const handlers = [migrationHandler, floatingHandler, residencePermitHandler]
-  
   for (const handler of handlers) {
     if (handler.supports(businessType)) {
       return handler
@@ -46,4 +44,3 @@ export function getApplicationBusinessHandler(businessType) {
   }
   return null
 }
-

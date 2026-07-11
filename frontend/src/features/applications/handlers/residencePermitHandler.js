@@ -1,3 +1,9 @@
+const APPLY_TYPE_MAP = {
+  RESIDENCE_PERMIT_FIRST_ISSUE: 'FIRST_ISSUE',
+  RESIDENCE_PERMIT_ENDORSEMENT: 'ENDORSEMENT',
+  RESIDENCE_PERMIT_CANCELLATION: 'CANCELLATION'
+}
+
 export function createResidencePermitHandler(services) {
   return {
     family: 'permit',
@@ -25,20 +31,29 @@ export function createResidencePermitHandler(services) {
 
     buildEditRoute({ applicationId, detail }) {
       const businessType = detail?.application?.businessType
-      const query = { applicationId }
       
-      // 签注和注销保留 permitId 和 applyType
-      if (businessType === 'RESIDENCE_PERMIT_ENDORSEMENT' || businessType === 'RESIDENCE_PERMIT_CANCELLATION') {
-        if (detail?.professional?.permitId) {
-          query.permitId = detail.professional.permitId
+      if (businessType === 'RESIDENCE_PERMIT_FIRST_ISSUE') {
+        return {
+          path: '/residence-permits/first-issue',
+          query: { applicationId }
         }
-        query.applyType = businessType === 'RESIDENCE_PERMIT_ENDORSEMENT' ? 'ENDORSEMENT' : 'CANCELLATION'
       }
 
-      return {
-        path: '/residence-permit/apply',
-        query
+      const permitId = detail?.professional?.permitId
+      if (businessType === 'RESIDENCE_PERMIT_ENDORSEMENT') {
+        return {
+          path: `/residence-permits/${permitId}/endorsement/apply`,
+          query: { applicationId, permitId, applyType: 'ENDORSEMENT' }
+        }
       }
+      
+      if (businessType === 'RESIDENCE_PERMIT_CANCELLATION') {
+        return {
+          path: `/residence-permits/${permitId}/cancellation/apply`,
+          query: { applicationId, permitId, applyType: 'CANCELLATION' }
+        }
+      }
+      return null
     },
 
     getEditPermission(businessType) {
@@ -47,28 +62,20 @@ export function createResidencePermitHandler(services) {
 
     getMaterialOptions({ businessType, detail }) {
       if (!services.getPermitMaterialOptions) return []
-      
-      if (businessType === 'RESIDENCE_PERMIT_FIRST_ISSUE') {
-        const reasonCode = detail?.subject?.residenceReasonCode
-        return services.getPermitMaterialOptions(businessType, reasonCode)
-      }
-      
-      return services.getPermitMaterialOptions(businessType)
+      const applyType = APPLY_TYPE_MAP[businessType]
+      return services.getPermitMaterialOptions(applyType, detail?.subject?.residenceReasonCode)
     },
 
     getMaterialRuleText({ businessType, detail }) {
-      return null
+      if (!services.getPermitMaterialRuleText) return ''
+      const applyType = APPLY_TYPE_MAP[businessType]
+      return services.getPermitMaterialRuleText(applyType, detail?.subject?.residenceReasonCode)
     },
 
     hasVerifiedMaterials({ businessType, detail, materials }) {
-      if (!services.hasVerifiedPermitMaterials) return true
-      
-      let reasonCode = null
-      if (businessType === 'RESIDENCE_PERMIT_FIRST_ISSUE') {
-        reasonCode = detail?.subject?.residenceReasonCode
-      }
-      
-      return services.hasVerifiedPermitMaterials({ businessType, reasonCode, materials })
+      if (!services.hasVerifiedPermitMaterials) return false
+      const applyType = APPLY_TYPE_MAP[businessType]
+      return services.hasVerifiedPermitMaterials(materials, applyType, detail?.subject?.residenceReasonCode)
     },
 
     getExecutionMeta({ businessType, detail }) {
@@ -95,14 +102,17 @@ export function createResidencePermitHandler(services) {
     },
 
     async execute({ businessType, applicationId, detail, payload }) {
-      const version = detail?.professional?.version
+      const version = payload?.version ?? detail?.professional?.version
       
       if (businessType === 'RESIDENCE_PERMIT_FIRST_ISSUE') {
-        return await services.issueResidencePermit(applicationId, version, payload)
+        return await services.issueResidencePermit(applicationId, {
+          issuingAuthority: payload?.issuingAuthority,
+          version
+        })
       } else if (businessType === 'RESIDENCE_PERMIT_ENDORSEMENT') {
-        return await services.endorseResidencePermit(applicationId, version, payload)
+        return await services.endorseResidencePermit(applicationId, version)
       } else if (businessType === 'RESIDENCE_PERMIT_CANCELLATION') {
-        return await services.cancelResidencePermitApplication(applicationId, version, payload)
+        return await services.cancelResidencePermitApplication(applicationId, version)
       }
       return null
     },
