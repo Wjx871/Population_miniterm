@@ -2,18 +2,18 @@
   <div class="page-container">
     <div class="page-header"><div><h1>户籍历史归档</h1><p class="subtitle">归档为只读历史快照，不提供编辑、恢复或删除入口。</p></div></div>
     <SearchPanel @search="fetchList" @reset="reset">
-      <el-form :inline="true" :model="query" size="default">
+      <el-form :inline="true" :model="query" size="default" label-width="80px">
         <el-form-item label="人员姓名">
-          <el-input v-model.trim="query.personName" placeholder="请输入姓名" clearable />
+          <el-input v-model.trim="query.personName" placeholder="请输入姓名" clearable style="width: 200px;" />
         </el-form-item>
         <el-form-item label="身份证号">
-          <el-input v-model.trim="query.identityNo" placeholder="请输入身份证号" clearable />
+          <el-input v-model.trim="query.identityNo" placeholder="请输入身份证号" clearable style="width: 200px;" />
         </el-form-item>
         <el-form-item label="户号">
-          <el-input v-model.trim="query.householdNo" placeholder="请输入户号" clearable />
+          <el-input v-model.trim="query.householdNo" placeholder="请输入户号" clearable style="width: 200px;" />
         </el-form-item>
         <el-form-item label="归档类型">
-          <el-input v-model.trim="query.archiveType" placeholder="请输入归档类型" clearable />
+          <el-input v-model.trim="query.archiveType" placeholder="请输入归档类型" clearable style="width: 200px;" />
         </el-form-item>
       </el-form>
     </SearchPanel>
