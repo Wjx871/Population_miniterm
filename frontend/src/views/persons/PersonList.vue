@@ -6,6 +6,7 @@
         <p class="subtitle">维护人口基础信息，支持多条件查询与档案管理。</p>
       </div>
       <div class="header-right">
+        <el-button v-if="user.hasPermission('data:export:normal')" @click="exportCurrent">导出当前查询</el-button>
         <el-button type="primary" :icon="Plus" @click="openCreateDialog">新增人员</el-button>
       </div>
     </div>
@@ -133,6 +134,11 @@ import StatusTag from '../../components/common/StatusTag.vue';
 import { getPersonPage, createPerson, updatePerson, deletePerson } from '../../api/persons';
 import { formatDate } from '../../utils/date';
 import { validateIdCard, validatePhone } from '../../utils/validators';
+import { normalExport } from '../../api/exports';
+import { useUserStore } from '../../stores/user';
+import { useRouter } from 'vue-router';
+
+const user=useUserStore(),router=useRouter();
 
 const loading = ref(false);
 const tableData = ref([]);
@@ -173,6 +179,8 @@ const resetQuery = () => {
   query.current = 1;
   fetchList();
 };
+
+const exportCurrent=async()=>{const r=await normalExport({module:'PERSON',filters:{name:query.name||undefined,status:query.status||undefined},fields:['name','maskedIdentityNo','gender','status','regionCode']});ElMessage.success('脱敏导出已生成');router.push('/exports/'+r.exportLogId)};
 
 onMounted(() => {
   fetchList();

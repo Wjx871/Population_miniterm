@@ -27,6 +27,7 @@ public class StatisticsController {
      * 获取大屏核心面板数字汇总。
      */
     @GetMapping("/summary")
+    @PreAuthorize("hasAuthority('statistics:view')")
     public ApiResponse<Map<String, Object>> getSummary() {
         return ApiResponse.ok(statisticsService.getSummary());
     }
@@ -35,6 +36,7 @@ public class StatisticsController {
      * 获取大屏图表所需的数据。
      */
     @GetMapping("/charts")
+    @PreAuthorize("hasAuthority('statistics:view')")
     public ApiResponse<Map<String, Object>> getCharts() {
         return ApiResponse.ok(statisticsService.getChartData());
     }

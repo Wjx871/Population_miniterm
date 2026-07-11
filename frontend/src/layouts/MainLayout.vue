@@ -76,6 +76,8 @@
             <el-icon><Postcard /></el-icon>
             <span>证件管理</span>
           </el-menu-item>
+          <el-menu-item v-if="userStore.hasPermission('data:export:log:view')" index="/exports"><el-icon><Download /></el-icon><span>数据导出</span></el-menu-item>
+          <el-menu-item v-if="userStore.hasPermission('log:view')" index="/system/operation-logs"><el-icon><Document /></el-icon><span>操作审计日志</span></el-menu-item>
           <el-menu-item index="/users">
             <el-icon><UserFilled /></el-icon>
             <span>用户管理</span>
@@ -100,7 +102,7 @@
 
 <script setup>
 import { 
-  Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Document, Finished, CircleCloseFilled
+  Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Document, Finished, CircleCloseFilled, Download
 } from '@element-plus/icons-vue';
 import { useUserStore } from '../stores/user';
 import { useRouter } from 'vue-router';

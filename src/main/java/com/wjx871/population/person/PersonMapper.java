@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import com.wjx871.population.security.DataScopeCriteria;
 
 /**
  * 人口基础信息 Mapper。
@@ -37,6 +38,10 @@ public interface PersonMapper {
      * @return 人口基础信息
      */
     Optional<Person> selectByIdCard(String idCard);
+    Optional<Person> selectScopedById(@Param("personId")Long personId,@Param("scope")DataScopeCriteria scope);
+    Optional<Person> selectScopedByIdCard(@Param("idCard")String idCard,@Param("scope")DataScopeCriteria scope);
+    long countScopedByCondition(@Param("name")String name,@Param("idCard")String idCard,@Param("status")String status,@Param("scope")DataScopeCriteria scope);
+    List<Person> selectScopedListByCondition(@Param("name")String name,@Param("idCard")String idCard,@Param("status")String status,@Param("scope")DataScopeCriteria scope,@Param("limit")int limit,@Param("offset")long offset);
 
     /**
      * 统计指定身份证号的人口记录数量。

@@ -1,0 +1,1 @@
+package com.wjx871.population.export;import com.wjx871.population.application.ApplicationView;public record ExportApplicationView(ApplicationView application,DataExportRequest professional,boolean executable,String unavailableReason){}

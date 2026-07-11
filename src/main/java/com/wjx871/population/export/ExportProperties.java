@@ -1,0 +1,2 @@
+package com.wjx871.population.export;import lombok.Getter;import lombok.Setter;import org.springframework.boot.context.properties.ConfigurationProperties;
+@Getter @Setter @ConfigurationProperties(prefix="export") public class ExportProperties {private String dir="./data/exports";private int normalMaxRows=5000;private int sensitiveMaxRows=20000;private int fileRetentionDays=7;private String cleanupCron="0 30 2 * * *";}

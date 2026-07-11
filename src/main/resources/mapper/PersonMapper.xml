@@ -37,6 +37,12 @@
         FROM person
         WHERE id_card = #{idCard}
     </select>
+    <sql id="Scope"><if test="scope.dataScope.name()!='ALL'"><choose><when test="scope.dataScope.name()=='SELF'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.target_person_id=p.person_id AND a.applicant_user_id=#{scope.userId})</when><when test="scope.dataScope.name()=='DEPARTMENT'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.target_person_id=p.person_id AND a.applicant_department_id=#{scope.departmentId})</when><otherwise>AND (EXISTS(SELECT 1 FROM residence r WHERE r.person_id=p.person_id AND SUBSTRING(r.region_code,1,2)=SUBSTRING(#{scope.regionCode},1,2)) OR EXISTS(SELECT 1 FROM business_application a WHERE a.target_person_id=p.person_id AND SUBSTRING(a.applicant_region_code,1,2)=SUBSTRING(#{scope.regionCode},1,2)))</otherwise></choose></if></sql>
+    <select id="selectScopedById" resultMap="PersonResultMap">SELECT p.* FROM person p WHERE p.person_id=#{personId}<include refid="Scope"/></select>
+    <select id="selectScopedByIdCard" resultMap="PersonResultMap">SELECT p.* FROM person p WHERE p.id_card=#{idCard}<include refid="Scope"/></select>
+    <sql id="ScopedFilter"><where><if test="name!=null">AND LOWER(p.name) LIKE LOWER(CONCAT('%',#{name},'%'))</if><if test="idCard!=null">AND p.id_card LIKE CONCAT('%',#{idCard},'%')</if><if test="status!=null">AND p.status=#{status}</if><include refid="Scope"/></where></sql>
+    <select id="countScopedByCondition" resultType="long">SELECT COUNT(*) FROM person p <include refid="ScopedFilter"/></select>
+    <select id="selectScopedListByCondition" resultMap="PersonResultMap">SELECT p.* FROM person p <include refid="ScopedFilter"/> ORDER BY p.person_id DESC LIMIT #{limit} OFFSET #{offset}</select>
 
     <select id="countByIdCard" resultType="long">
         SELECT COUNT(*)
