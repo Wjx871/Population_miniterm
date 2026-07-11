@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * 居民演示模块接口控制器。
@@ -31,6 +32,7 @@ public class ResidentController {
     private final ResidentService residentService;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('population:view')")
     public ApiResponse<Page<Resident>> search(
             @RequestParam(required = false) String keyword,
             Pageable pageable
@@ -39,17 +41,20 @@ public class ResidentController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('population:view')")
     public ApiResponse<Resident> get(@PathVariable Long id) {
         return ApiResponse.ok(residentService.get(id));
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('population:edit')")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Resident> create(@Valid @RequestBody ResidentRequest request) {
         return ApiResponse.created(residentService.create(request));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('population:edit')")
     public ApiResponse<Resident> update(
             @PathVariable Long id,
             @Valid @RequestBody ResidentRequest request
@@ -58,6 +63,7 @@ public class ResidentController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('population:edit')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         residentService.delete(id);

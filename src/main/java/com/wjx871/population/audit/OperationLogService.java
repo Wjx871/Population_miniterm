@@ -6,6 +6,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import com.wjx871.population.security.SensitiveDataMaskingService;
 
 @Log4j2
 @Service
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OperationLogService {
 
     private final OperationLogMapper operationLogMapper;
+    private final SensitiveDataMaskingService masking;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void record(Long userId, String operationType, String result, String errorMessage,
@@ -25,10 +27,10 @@ public class OperationLogService {
                     .requestPath(request.getRequestURI())
                     .requestMethod(request.getMethod())
                     .operationResult(result)
-                    .errorMessage(errorMessage)
+                    .errorMessage(masking.auditDetail(errorMessage))
                     .ipAddress(clientIp(request))
                     .userAgent(truncate(request.getHeader("User-Agent"), 500))
-                    .detail(operationType)
+                    .detail(masking.auditDetail(operationType))
                     .build());
         } catch (RuntimeException exception) {
             log.error("Failed to persist operation log type={}", operationType, exception);
@@ -40,7 +42,7 @@ public class OperationLogService {
         operationLogMapper.insert(OperationLog.builder().userId(userId).operationType(operationType)
                 .moduleName("APPROVAL").requestPath(request.getRequestURI()).requestMethod(request.getMethod())
                 .operationResult("SUCCESS").ipAddress(clientIp(request))
-                .userAgent(truncate(request.getHeader("User-Agent"), 500)).detail(operationType).build());
+                .userAgent(truncate(request.getHeader("User-Agent"), 500)).detail(masking.auditDetail(operationType)).build());
     }
 
     public String clientIp(HttpServletRequest request) {

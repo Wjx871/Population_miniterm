@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.wjx871.population.audit.OperationLogService;
+import com.wjx871.population.security.CurrentUserContext;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * 人口基础信息接口控制器。
@@ -30,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PersonController {
 
     private final PersonService personService;
+    private final OperationLogService audit;
 
     @GetMapping
     @PreAuthorize("hasAuthority('population:view')")
@@ -43,11 +47,13 @@ public class PersonController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('population:view')")
     public ApiResponse<Person> get(@PathVariable Long id) {
         return ApiResponse.ok(personService.get(id));
     }
 
     @GetMapping("/id-card/{idCard}")
+    @PreAuthorize("hasAuthority('population:view')")
     public ApiResponse<Person> getByIdCard(@PathVariable String idCard) {
         return ApiResponse.ok(personService.getByIdCard(idCard));
     }
@@ -55,21 +61,23 @@ public class PersonController {
     @PostMapping
     @PreAuthorize("hasAuthority('population:edit')")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<Person> create(@Valid @RequestBody PersonRequest request) {
-        return ApiResponse.created(personService.create(request));
+    public ApiResponse<Person> create(@Valid @RequestBody PersonRequest request,HttpServletRequest http) {
+        Person result=personService.create(request);audit.record(CurrentUserContext.requireUser().userId(),"PERSON_CREATE","SUCCESS",null,http);return ApiResponse.created(result);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('population:edit')")
     public ApiResponse<Person> update(
             @PathVariable Long id,
-            @Valid @RequestBody PersonRequest request
+            @Valid @RequestBody PersonRequest request,HttpServletRequest http
     ) {
-        return ApiResponse.ok(personService.update(id, request));
+        Person result=personService.update(id, request);audit.record(CurrentUserContext.requireUser().userId(),"PERSON_UPDATE","SUCCESS",null,http);return ApiResponse.ok(result);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('population:edit')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        personService.delete(id);
+    public void delete(@PathVariable Long id,HttpServletRequest http) {
+        personService.delete(id);audit.record(CurrentUserContext.requireUser().userId(),"PERSON_LOGICAL_DELETE","SUCCESS",null,http);
     }
 }

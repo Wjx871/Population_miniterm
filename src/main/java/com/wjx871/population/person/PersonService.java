@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import com.wjx871.population.security.SensitiveDataMaskingService;
+import com.wjx871.population.security.DataScopeCriteria;
 
 /**
  * 人口基础信息业务服务。
@@ -24,27 +26,31 @@ import org.springframework.web.server.ResponseStatusException;
 public class PersonService {
 
     private final PersonMapper personMapper;
+    private final SensitiveDataMaskingService masking;
 
     @Transactional(readOnly = true)
     public Page<Person> search(String name, String idCard, String status, Pageable pageable) {
         String trimmedName = trimToNull(name);
         String trimmedIdCard = normalizeIdCard(idCard);
         String trimmedStatus = trimToNull(status);
-        long total = personMapper.countByCondition(trimmedName, trimmedIdCard, trimmedStatus);
-        List<Person> persons = personMapper.selectListByCondition(
+        DataScopeCriteria scope=DataScopeCriteria.current();
+        long total = personMapper.countScopedByCondition(trimmedName, trimmedIdCard, trimmedStatus,scope);
+        List<Person> persons = personMapper.selectScopedListByCondition(
                 trimmedName,
                 trimmedIdCard,
                 trimmedStatus,
+                scope,
                 pageable.getPageSize(),
                 pageable.getOffset()
         );
+        persons.forEach(this::mask);
         return new PageImpl<>(persons, pageable, total);
     }
 
     @Transactional(readOnly = true)
     public Person get(Long personId) {
-        return personMapper.selectById(personId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Person not found: " + personId));
+        Person p=personMapper.selectScopedById(personId,DataScopeCriteria.current()).orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "No data-scope access to person: " + personId));
+        mask(p);return p;
     }
 
     @Transactional(readOnly = true)
@@ -53,8 +59,8 @@ public class PersonService {
         if (normalizedIdCard == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ID card is required");
         }
-        return personMapper.selectByIdCard(normalizedIdCard)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Person not found: " + idCard));
+        Person p=personMapper.selectScopedByIdCard(normalizedIdCard,DataScopeCriteria.current()).orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "No data-scope access to person"));
+        mask(p);return p;
     }
 
     @Transactional
@@ -71,7 +77,7 @@ public class PersonService {
         person.setCreatedAt(now);
         person.setUpdatedAt(now);
         personMapper.insertPerson(person);
-        return get(person.getPersonId());
+        Person created=personMapper.selectById(person.getPersonId()).orElseThrow();mask(created);return created;
     }
 
     @Transactional
@@ -115,4 +121,6 @@ public class PersonService {
     private String trimToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
+
+    private void mask(Person p){if(!masking.canViewFull()){p.setIdCard(masking.identity(p.getIdCard()));p.setPhone(masking.phone(p.getPhone()));p.setCurrentAddress(masking.address(p.getCurrentAddress()));}}
 }

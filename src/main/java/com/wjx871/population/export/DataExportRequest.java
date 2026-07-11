@@ -1,0 +1,2 @@
+package com.wjx871.population.export;import java.time.*;import lombok.Data;
+@Data public class DataExportRequest {private Long exportRequestId;private Long applicationId;private String exportModule;private String exportScope;private String filterSnapshot;private String requestedFields;private String requestedFormat;private String reason;private Integer expectedRowLimit;private String businessStatus;private Long generatedExportLogId;private Long operatorId;private LocalDateTime executedAt;private Integer version;}

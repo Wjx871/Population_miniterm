@@ -16,7 +16,11 @@
 
 演示流程：使用 `population` 创建申请和上传材料，使用 `approver` 审批，使用 `household` 或 `admin` 显式执行。演示账号密码沿用课程环境 `123456`，仅供本地课程数据。
 
-重点人口、刑满释放恢复登记、敏感导出、多级审批、补换领、真实制卡和政务联网仍未实现。当前没有可用真实 MySQL 8 实例；迁移脚本已静态检查并由 H2 等价结构测试覆盖，但不得视为真实 MySQL 实机迁移验证。
+重点人口、刑满释放恢复登记、多级审批、补换领、真实制卡和政务联网仍未实现。当前没有可用真实 MySQL 8 实例；迁移脚本已静态检查并由 H2 等价结构测试覆盖，但不得视为真实 MySQL 实机迁移验证。
+
+第六阶段已完成接口权限收口、统一敏感字段脱敏、普通脱敏 XLSX 导出、敏感导出审批与显式执行、安全下载、SHA-256、下载审计和过期清理。数据库脚本为 `V4_006_export_audit_permission.sql`。
+
+导出环境变量：`EXPORT_DIR`（默认 `./data/exports`）、`EXPORT_NORMAL_MAX_ROWS`（5000）、`EXPORT_SENSITIVE_MAX_ROWS`（20000）、`EXPORT_FILE_RETENTION_DAYS`（7）、`EXPORT_CLEANUP_CRON`（每天 02:30）。导出目录不会提交 Git。MySQL 8 实机验证仍留待第七阶段，后续工作以项目集成验收和最终答辩收口为主。
 
 人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。项目没有使用 Spring Data JPA。
 

@@ -39,3 +39,4 @@ build/
 .workbuddy/
 frontend/package-lock.json
 data/uploads/
+data/exports/
