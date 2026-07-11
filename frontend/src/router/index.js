@@ -98,6 +98,48 @@ const routes = [
           icon: 'Switch'
         } 
       },
+      {
+        path: 'applications',
+        name: 'ApplicationList',
+        component: () => import('../views/applications/ApplicationList.vue'),
+        meta: { title: '我的申请', minLevel: 1, permission: 'application:view', menu: true, group: '业务办理', order: 22, icon: 'Document' }
+      },
+      {
+        path: 'applications/:applicationId',
+        name: 'ApplicationDetail',
+        component: () => import('../views/applications/ApplicationDetail.vue'),
+        meta: { title: '申请详情', minLevel: 1, permission: 'application:view', menu: false, activeMenu: '/applications', group: '业务办理' }
+      },
+      {
+        path: 'migrations/in/apply',
+        name: 'MigrationInApply',
+        component: () => import('../views/migrations/MigrationApply.vue'),
+        meta: { title: '迁入申请', type: 'in', minLevel: 1, permission: 'migration:in:create', menu: false, activeMenu: '/migrations/in', group: '业务办理' }
+      },
+      {
+        path: 'migrations/out/apply',
+        name: 'MigrationOutApply',
+        component: () => import('../views/migrations/MigrationApply.vue'),
+        meta: { title: '迁出申请', type: 'out', minLevel: 1, permission: 'migration:out:create', menu: false, activeMenu: '/migrations/out', group: '业务办理' }
+      },
+      {
+        path: 'approvals',
+        name: 'ApprovalList',
+        component: () => import('../views/approvals/ApprovalList.vue'),
+        meta: { title: '审批中心', minLevel: 1, permission: 'approval:view', menu: true, group: '业务办理', order: 23, icon: 'Finished' }
+      },
+      {
+        path: 'approvals/:approvalId',
+        name: 'ApprovalDetail',
+        component: () => import('../views/approvals/ApprovalDetail.vue'),
+        meta: { title: '审批详情', minLevel: 1, permission: 'approval:view', menu: false, activeMenu: '/approvals', group: '业务办理' }
+      },
+      {
+        path: 'residence-archives',
+        name: 'ResidenceArchiveList',
+        component: () => import('../views/migrations/ResidenceArchiveList.vue'),
+        meta: { title: '户籍历史归档', minLevel: 1, permission: 'migration:archive:view', menu: true, group: '人口户籍', order: 12, icon: 'Collection' }
+      },
       { 
         path: 'floating-population', 
         name: 'FloatingPopulation', 

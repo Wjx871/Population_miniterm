@@ -52,17 +52,19 @@ export const useUserStore = defineStore('user', {
 
   actions: {
     setLoginInfo(loginVO) {
-      this.accessToken = loginVO.accessToken
+      // 新版后端返回 { token, tokenType, user }；保留旧字段兼容，避免破坏 M1/M2 本地联调。
+      const user = loginVO.user || loginVO
+      this.accessToken = loginVO.token || loginVO.accessToken || ''
       this.tokenType = loginVO.tokenType || 'Bearer'
-      this.userId = loginVO.userId
-      this.username = loginVO.username
-      this.realName = loginVO.realName
-      this.roleName = loginVO.roleName
+      this.userId = user.userId
+      this.username = user.username
+      this.realName = user.realName
+      this.roleName = user.roleName
 
       // 角色归一化与权限计算
-      this.roleCode = normalizeRoleCode(loginVO.roleCode, loginVO.roleName)
+      this.roleCode = normalizeRoleCode(user.roleCode, user.roleName)
       this.permissionLevel = getRoleLevel(this.roleCode)
-      this.permissions = resolvePermissions(this.roleCode, loginVO.permissions)
+      this.permissions = resolvePermissions(this.roleCode, user.permissions)
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         accessToken: this.accessToken,

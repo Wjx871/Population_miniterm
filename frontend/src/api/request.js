@@ -17,6 +17,9 @@ request.interceptors.request.use(
     if (userStore.accessToken) {
       config.headers.Authorization = `${userStore.tokenType || 'Bearer'} ${userStore.accessToken}`
     }
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type']
+    }
     return config
   },
   (error) => Promise.reject(error)
@@ -24,13 +27,16 @@ request.interceptors.request.use(
 
 request.interceptors.response.use(
   (response) => {
+    if (response.config.rawResponse) {
+      return response
+    }
     const result = response.data
 
     if (!result || typeof result.code === 'undefined') {
       return result
     }
 
-    if (result.code === 200) {
+    if (result.code >= 200 && result.code < 300) {
       return result.data
     }
 
@@ -55,6 +61,9 @@ request.interceptors.response.use(
     return Promise.reject(result)
   },
   (error) => {
+    if (error.response?.status === 409 || error.response?.data?.code === 409) {
+      return Promise.reject(error)
+    }
     if (error.response?.status === 401) {
       const userStore = useUserStore()
       userStore.logout()

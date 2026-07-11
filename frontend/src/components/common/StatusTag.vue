@@ -1,11 +1,13 @@
 <template>
   <el-tag :type="tagType" size="small">
-    {{ value }}
+    {{ label }}
   </el-tag>
 </template>
 
 <script setup>
 import { computed } from 'vue';
+import { APPLICATION_STATUS } from '../../constants/application';
+import { MATERIAL_VERIFY_STATUS } from '../../constants/material';
 
 const props = defineProps({
   value: {
@@ -16,6 +18,10 @@ const props = defineProps({
 
 const tagType = computed(() => {
   const v = props.value || '';
+  if (['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'PENDING'].includes(v)) return 'primary';
+  if (['APPROVED', 'VERIFIED', 'COMPLETED'].includes(v)) return 'success';
+  if (['REJECTED'].includes(v)) return 'danger';
+  if (['WITHDRAWN', 'CANCELLED'].includes(v)) return 'info';
   if (v.includes('正常') || v.includes('启用') || v.includes('有效') || v.includes('迁入')) {
     return 'success';
   }
@@ -30,4 +36,9 @@ const tagType = computed(() => {
   }
   return 'primary';
 });
+
+const label = computed(() => APPLICATION_STATUS[props.value]
+  || MATERIAL_VERIFY_STATUS[props.value]
+  || props.value
+  || '-');
 </script>

@@ -1,48 +1,38 @@
 import request from './request'
 import { toSpringPageParams } from '../utils/page'
 
-export function getMigrationInPage(params) {
-  return request({
-    url: '/migrations/in',
-    method: 'get',
-    params: toSpringPageParams(params),
-  })
+export function createMigrationInApplication(payload) {
+  return request({ url: '/migrations/in/applications', method: 'post', data: payload })
 }
 
-export function createMigrationIn(data) {
-  return request({
-    url: '/migrations/in',
-    method: 'post',
-    data,
-  })
+export function updateMigrationInApplication(applicationId, payload) {
+  return request({ url: `/migrations/in/applications/${applicationId}`, method: 'put', data: payload })
 }
 
-export function deleteMigrationIn(id) {
-  return request({
-    url: `/migrations/in/${id}`,
-    method: 'delete',
-  })
+export function createMigrationOutApplication(payload) {
+  return request({ url: '/migrations/out/applications', method: 'post', data: payload })
 }
 
-export function getMigrationOutPage(params) {
-  return request({
-    url: '/migrations/out',
-    method: 'get',
-    params: toSpringPageParams(params),
-  })
+export function updateMigrationOutApplication(applicationId, payload) {
+  return request({ url: `/migrations/out/applications/${applicationId}`, method: 'put', data: payload })
 }
 
-export function createMigrationOut(data) {
-  return request({
-    url: '/migrations/out',
-    method: 'post',
-    data,
-  })
+export function getMigrationApplicationDetail(applicationId) {
+  return request({ url: `/migrations/applications/${applicationId}`, method: 'get' })
 }
 
-export function deleteMigrationOut(id) {
-  return request({
-    url: `/migrations/out/${id}`,
-    method: 'delete',
-  })
+export function executeMigrationIn(applicationId, version) {
+  return request({ url: `/migrations/in/applications/${applicationId}/execute`, method: 'post', data: { version } })
+}
+
+export function executeMigrationOut(applicationId, version) {
+  return request({ url: `/migrations/out/applications/${applicationId}/execute`, method: 'post', data: { version } })
+}
+
+export function getResidenceArchivePage(params) {
+  return request({ url: '/residence-archives', method: 'get', params: toSpringPageParams(params) })
+}
+
+export function getResidenceArchiveDetail(archiveId) {
+  return request({ url: `/residence-archives/${archiveId}`, method: 'get' })
 }
