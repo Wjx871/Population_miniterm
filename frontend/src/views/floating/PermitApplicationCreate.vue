@@ -44,7 +44,7 @@
         <template #title>课程模拟系统生成，不作为真实政务证件。</template>
       </el-alert>
 
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="120px">
+      <el-form ref="formRef" :model="form" :rules="formRules" :disabled="isFormReadOnly" label-width="120px">
         <template v-if="applyType !== 'CANCELLATION'">
           <el-form-item label="居住依据" prop="residenceBasisCode">
             <el-select v-model="form.residenceBasisCode" placeholder="请选择" style="width:100%">
@@ -143,7 +143,9 @@ const materialOptions = computed(() => getPermitMaterialOptions(applyType.value,
 const materialRuleText = computed(() => getPermitMaterialRuleText(applyType.value, floatingInfo.value?.residenceReasonCode))
 const materialsReady = computed(() => hasUploadedPermitMaterials(materials.value, applyType.value, floatingInfo.value?.residenceReasonCode))
 const isFormReadOnly = computed(() => detailAppStatus.value !== 'DRAFT')
-const hasValidVersion = computed(() => Number.isInteger(professionalVersion.value))
+const hasValidVersion = computed(() =>
+  !isEdit.value || Number.isInteger(professionalVersion.value)
+)
 
 const form = reactive({
   residenceBasisCode: '',

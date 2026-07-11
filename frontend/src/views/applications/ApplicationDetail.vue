@@ -81,7 +81,14 @@ const materials = ref([])
 const logs = ref([])
 const executeVisible = ref(false)
 const executeType = ref('')
-const executeVersion = ref(0)
+const executeVersion = ref(null)
+
+const hasExecutableVersion = computed(() => {
+  if (isFloatingApplication.value) return Number.isInteger(floatingDetailBody.value?.version)
+  if (isPermitApplication.value) return Number.isInteger(permitDetailBody.value?.version)
+  if (isMigrationApplication.value) return Number.isInteger(migration.value?.version)
+  return false
+})
 
 const isMigrationApplication = computed(() => [BUSINESS_TYPE.MIGRATION_IN, BUSINESS_TYPE.MIGRATION_OUT].includes(application.value?.businessType))
 const isFloatingApplication = computed(() => application.value?.businessType === BUSINESS_TYPE.FLOATING_REGISTRATION)
@@ -131,6 +138,7 @@ const canContinueSpecialized = computed(() => {
 
 const canExecute = computed(() => {
   if (application.value?.status !== 'APPROVED') return false
+  if (!hasExecutableVersion.value) return false
   if (isMigrationApplication.value && migrationDetail.value?.executable && userStore.hasPermission(PERMISSIONS.MIGRATION_EXECUTE)) return true
   if (isFloatingApplication.value && floatingDetail.value?.executable && userStore.hasPermission(PERMISSIONS.FLOATING_EXECUTE)) return true
   if (isPermitApplication.value && permitDetail.value?.executable) {
@@ -280,20 +288,20 @@ async function cancelDraft() {
 
 function openExecuteDialog() {
   if (isMigrationApplication.value) {
-    executeType.value = EXECUTE_TYPE.FLOATING_EXECUTE // migration uses its own execute, but this signals dialog not needed
-    executeVersion.value = migration.value?.version || 0
+    executeType.value = EXECUTE_TYPE.FLOATING_EXECUTE
+    executeVersion.value = migration.value?.version
     executeMigration()
     return
   }
   if (isFloatingApplication.value) {
     executeType.value = EXECUTE_TYPE.FLOATING_EXECUTE
-    executeVersion.value = floatingDetailBody.value?.version || 0
+    executeVersion.value = floatingDetailBody.value?.version
   } else if (isPermitApplication.value) {
     const bt = application.value?.businessType
     if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_FIRST_ISSUE) executeType.value = EXECUTE_TYPE.PERMIT_ISSUE
     else if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_ENDORSEMENT) executeType.value = EXECUTE_TYPE.PERMIT_ENDORSE
     else executeType.value = EXECUTE_TYPE.PERMIT_CANCEL
-    executeVersion.value = permitDetailBody.value?.version || 0
+    executeVersion.value = permitDetailBody.value?.version
   }
   executeVisible.value = true
 }

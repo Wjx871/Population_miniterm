@@ -15,7 +15,7 @@
     <!-- 步骤1：人员信息 -->
     <el-card v-show="activeStep === 0" shadow="never">
       <template #header>1. 人员与来源信息</template>
-      <el-form ref="step1Ref" :model="form" :rules="step1Rules" label-width="120px">
+      <el-form ref="step1Ref" :model="form" :rules="step1Rules" :disabled="isFormReadOnly" label-width="120px">
         <el-form-item label="选择人员" prop="personId">
           <PersonSelect v-model="form.personId" :disabled="isEdit || isFormReadOnly" @select="onPersonSelect" />
         </el-form-item>
@@ -32,7 +32,7 @@
     <!-- 步骤2：居住信息 -->
     <el-card v-show="activeStep === 1" shadow="never">
       <template #header>2. 当前居住信息</template>
-      <el-form ref="step2Ref" :model="form" :rules="step2Rules" label-width="120px">
+      <el-form ref="step2Ref" :model="form" :rules="step2Rules" :disabled="isFormReadOnly" label-width="120px">
         <el-form-item label="当前区划" prop="currentRegionCode">
           <el-input v-model="form.currentRegionCode" maxlength="20" placeholder="6~20位数字" />
         </el-form-item>
@@ -183,7 +183,9 @@ const step2Rules = {
 const canUpload = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_UPLOAD))
 const canEdit = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_DELETE))
 const isFormReadOnly = computed(() => detailAppStatus.value !== 'DRAFT')
-const hasValidVersion = computed(() => Number.isInteger(professionalVersion.value))
+const hasValidVersion = computed(() =>
+  !isEdit.value || Number.isInteger(professionalVersion.value)
+)
 const materialOptions = computed(() => getFloatingMaterialOptions(form.residenceReasonCode))
 const materialRuleText = computed(() => getFloatingMaterialRuleText(form.residenceReasonCode))
 const materialsReady = computed(() => hasUploadedFloatingMaterials(materials.value, form.residenceReasonCode))
