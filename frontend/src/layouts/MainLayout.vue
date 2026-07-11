@@ -62,10 +62,12 @@
             <el-menu-item index="/cancellations/records">注销记录</el-menu-item>
             <el-menu-item v-if="userStore.hasPermission('cancellation:archive:view')" index="/household-archives">家庭户归档</el-menu-item>
           </el-sub-menu>
-          <el-menu-item index="/floating-population">
-            <el-icon><User /></el-icon>
-            <span>流动人口管理</span>
-          </el-menu-item>
+          <el-sub-menu v-if="userStore.hasPermission('floating:view')" index="floating-residence">
+            <template #title><el-icon><User /></el-icon><span>流动人口与居住证</span></template>
+            <el-menu-item index="/floating-populations">流动人口登记</el-menu-item>
+            <el-menu-item v-if="userStore.hasPermission('residence-permit:view')" index="/residence-permits">居住证管理</el-menu-item>
+            <el-menu-item v-if="userStore.hasPermission('residence-permit:expiry:view')" index="/residence-permits/expiring">即将到期</el-menu-item>
+          </el-sub-menu>
           <el-menu-item index="/key-population">
             <el-icon><StarFilled /></el-icon>
             <span>重点人口管理</span>

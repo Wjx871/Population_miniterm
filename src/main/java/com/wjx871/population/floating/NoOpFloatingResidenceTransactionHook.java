@@ -1,0 +1,1 @@
+package com.wjx871.population.floating;import org.springframework.stereotype.Component;@Component public class NoOpFloatingResidenceTransactionHook implements FloatingResidenceTransactionHook{}

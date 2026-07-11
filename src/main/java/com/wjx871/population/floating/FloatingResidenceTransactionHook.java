@@ -1,0 +1,1 @@
+package com.wjx871.population.floating;public interface FloatingResidenceTransactionHook {default void afterFloatingInsert(){}default void afterPermitInsert(){}default void afterPermitLog(){}default void afterPermitUpdate(){}default void afterFloatingClose(){}default void afterPermitExpire(){}}

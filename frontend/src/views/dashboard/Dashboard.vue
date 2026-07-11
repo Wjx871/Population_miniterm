@@ -8,7 +8,7 @@
     </div>
     
     <div class="stats-grid">
-      <el-card shadow="hover" class="stat-card">
+      <el-card shadow="hover" class="stat-card" @click="$router.push('/residence-permits/expiring')">
         <template #header>
           <div class="card-header">
             <span>系统状态</span>
@@ -62,12 +62,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { CircleCheck, User, Switch, Warning } from '@element-plus/icons-vue';
-import { 
-  getSystemHealth, 
-  getPersonsStatistics, 
-  getMigrationsInStatistics, 
-  getCertificatesExpireSoon 
-} from '../../api/dashboard';
+import { getSystemHealth, getPersonsStatistics, getMigrationsInStatistics } from '../../api/dashboard';
+import { getExpiring } from '../../api/floatingResidence';
 
 const health = ref('检查中...');
 const totalPersons = ref('加载中...');
@@ -97,8 +93,8 @@ onMounted(async () => {
   }
 
   try {
-    const res = await getCertificatesExpireSoon();
-    expireSoon.value = res?.total !== undefined ? res.total : '暂无数据';
+    const res = await getExpiring();
+    expireSoon.value = Array.isArray(res) ? res.length : '暂无数据';
   } catch (e) {
     expireSoon.value = '暂无数据';
   }

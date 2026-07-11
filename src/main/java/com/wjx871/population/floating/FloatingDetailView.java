@@ -1,0 +1,1 @@
+package com.wjx871.population.floating;import com.wjx871.population.application.ApplicationView;import com.wjx871.population.material.MaterialView;import java.util.List;public record FloatingDetailView(ApplicationView application,Object professional,Object subject,List<MaterialView> materials,boolean executable,String unavailableReason){}
