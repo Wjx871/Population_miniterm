@@ -14,13 +14,14 @@
         <result property="phone" column="phone"/>
         <result property="currentAddress" column="current_address"/>
         <result property="status" column="status"/>
+        <result property="currentStatusCode" column="current_status_code"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <sql id="PersonColumns">
         person_id, name, gender, id_card, birth_date, ethnicity, phone,
-        current_address, status, created_at, updated_at
+        current_address, status, current_status_code, created_at, updated_at
     </sql>
 
     <select id="selectById" resultMap="PersonResultMap">
