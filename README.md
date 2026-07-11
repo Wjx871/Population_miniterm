@@ -4,7 +4,7 @@
 
 系统现支持申请制迁入/迁出、单级审批后的显式业务执行、当前户籍唯一登记、家庭成员同步、迁出历史快照、户主变更及同市跨区批次关联。操作顺序为：创建迁移草稿 → 上传必需材料 → 提交/审批 → 授权经办人确认执行。审批通过不会自动改变户籍。
 
-增量升级依次执行 `V4_001_system_auth_rbac.sql`、`V4_002_business_application_approval.sql`、`V4_003_household_migration_archive.sql`。数据库通过 `DB_USERNAME/DB_PASSWORD`，JWT 通过 `JWT_SECRET` 配置，上传目录通过 `APP_UPLOAD_DIR` 配置。演示账号仍为 `viewer/population/household/approver/admin`，课程环境初始密码 `123456`。
+增量升级依次执行 `doc/database/migrations` 下的 `V4_001` 至 `V4_006`。数据库通过 `DB_URL/DB_USERNAME/DB_PASSWORD`，JWT 通过 `JWT_SECRET` 配置，上传目录通过 `APP_UPLOAD_DIR` 配置。演示账号仍为 `viewer/population/household/approver/admin`，课程环境初始密码 `123456`。
 
 ## 第四阶段：注销管理
 
@@ -16,11 +16,13 @@
 
 演示流程：使用 `population` 创建申请和上传材料，使用 `approver` 审批，使用 `household` 或 `admin` 显式执行。演示账号密码沿用课程环境 `123456`，仅供本地课程数据。
 
-重点人口、刑满释放恢复登记、多级审批、补换领、真实制卡和政务联网仍未实现。当前没有可用真实 MySQL 8 实例；迁移脚本已静态检查并由 H2 等价结构测试覆盖，但不得视为真实 MySQL 实机迁移验证。
+重点人口、刑满释放恢复登记、多级审批、补换领、真实制卡和政务联网仍未实现。
 
 第六阶段已完成接口权限收口、统一敏感字段脱敏、普通脱敏 XLSX 导出、敏感导出审批与显式执行、安全下载、SHA-256、下载审计和过期清理。数据库脚本为 `V4_006_export_audit_permission.sql`。
 
-导出环境变量：`EXPORT_DIR`（默认 `./data/exports`）、`EXPORT_NORMAL_MAX_ROWS`（5000）、`EXPORT_SENSITIVE_MAX_ROWS`（20000）、`EXPORT_FILE_RETENTION_DAYS`（7）、`EXPORT_CLEANUP_CRON`（每天 02:30）。导出目录不会提交 Git。MySQL 8 实机验证仍留待第七阶段，后续工作以项目集成验收和最终答辩收口为主。
+导出环境变量：`EXPORT_DIR`（默认 `./data/exports`）、`EXPORT_NORMAL_MAX_ROWS`（5000）、`EXPORT_SENSITIVE_MAX_ROWS`（20000）、`EXPORT_FILE_RETENTION_DAYS`（7）、`EXPORT_CLEANUP_CRON`（每天 02:30）。导出目录不会提交 Git。
+
+第七阶段已在隔离的 MySQL Community Server 8.4.10 LTS 上完成完整初始化、历史结构升级、V4_001-V4_006 重复执行、应用启动和五角色 API 烟测。验证脚本见 `scripts/verify-mysql.ps1`，结果见 `doc/testing/end-to-end-regression-report.md`。
 
 人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。项目没有使用 Spring Data JPA。
 
@@ -32,13 +34,18 @@
 mysql -u root -p < doc/database/population_miniterm.sql
 ```
 
-已有数据库执行增量升级：
+已有数据库在备份后按文件名顺序执行 V4_001 至 V4_006。也可以先在明确命名的测试库中运行：
 
 ```powershell
-mysql -u root -p population_miniterm < doc/database/migrations/V4_001_system_auth_rbac.sql
+$env:DB_URL='jdbc:mysql://127.0.0.1:3306/population_miniterm_upgrade'
+$env:DB_USERNAME='root'
+$env:DB_PASSWORD='<通过安全方式设置>'
+.\scripts\verify-mysql.ps1 -Mode Repeat -MySqlClient 'C:\path\to\mysql.exe'
 ```
 
 迁移保留已有业务表和数据，不使用 `DROP TABLE` 重建业务表。
+
+`doc/database/demo_data.sql` 只用于可丢弃的课程演示环境，包含可重复执行的虚构人员、户籍、流动人口和即将到期居住证数据，不得用于生产。
 
 ## 启动后端
 
@@ -80,7 +87,7 @@ Vite 默认将 `/api` 代理到 `http://127.0.0.1:8080`。
 
 ## 权限模型
 
-角色表示用户身份；`role_level` 表示最高操作等级；`data_scope` 表示数据可见范围。当前示范性保护 `GET /api/persons`、`POST /api/persons` 和 `GET /api/statistics/logs`，其他业务接口当前至少要求登录，后续再逐模块补齐细粒度权限。
+角色表示用户身份；`role_level` 表示最高操作等级；`data_scope` 表示数据可见范围。所有 Controller 方法均已纳入权限审计；登录是唯一匿名业务入口。查询、写入、审批、执行、下载、日志和系统管理使用独立权限。
 
 详细接口见 `doc/api/auth-rbac-api.md`，审计与范围见 `doc/development/phase-01-auth-rbac-audit.md`。
 
@@ -95,6 +102,6 @@ npm run build
 
 ## 当前阶段边界
 
-当前已提供登录、JWT、三级权限、数据范围基础，以及可复用的业务申请、材料上传和单级审批状态流转。上传目录通过 `APP_UPLOAD_DIR` 配置，单文件上限通过 `APP_UPLOAD_MAX_SIZE_MB` 配置。
+当前已提供登录、JWT、三级权限、数据范围、业务申请、材料上传、单级审批、迁入迁出、注销、流动人口、居住证、普通/敏感导出和审计闭环。专业业务审批通过后仍需授权人员显式执行。
 
-审批通过仅形成 `APPROVED` 申请，尚未执行实际销户、户籍归档、迁入迁出落表、重点人口变更或敏感导出生成。
+尚未实现重点人口完整业务、刑满释放恢复登记、多级审批、消息队列、微服务、云存储、实体制卡、政务平台对接、短信和邮件。这些内容不属于当前验收范围。

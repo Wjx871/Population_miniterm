@@ -1,4 +1,31 @@
 -- Phase 05: floating population and residence permit lifecycle (MySQL 8)
+USE population_miniterm;
+
+DELIMITER $$
+DROP PROCEDURE IF EXISTS phase05_add_column$$
+CREATE PROCEDURE phase05_add_column(IN table_name_value VARCHAR(64), IN column_name_value VARCHAR(64), IN ddl_value TEXT)
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=table_name_value AND column_name=column_name_value) THEN
+  SET @ddl=ddl_value; PREPARE statement_value FROM @ddl; EXECUTE statement_value; DEALLOCATE PREPARE statement_value;
+ END IF;
+END$$
+DROP PROCEDURE IF EXISTS phase05_rename_column$$
+CREATE PROCEDURE phase05_rename_column(IN table_name_value VARCHAR(64), IN old_column_value VARCHAR(64), IN new_column_value VARCHAR(64), IN ddl_value TEXT)
+BEGIN
+ IF EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=table_name_value AND column_name=old_column_value)
+    AND NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=table_name_value AND column_name=new_column_value) THEN
+  SET @ddl=ddl_value; PREPARE statement_value FROM @ddl; EXECUTE statement_value; DEALLOCATE PREPARE statement_value;
+ END IF;
+END$$
+DROP PROCEDURE IF EXISTS phase05_add_index$$
+CREATE PROCEDURE phase05_add_index(IN table_name_value VARCHAR(64), IN index_name_value VARCHAR(64), IN ddl_value TEXT)
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name=table_name_value AND index_name=index_name_value) THEN
+  SET @ddl=ddl_value; PREPARE statement_value FROM @ddl; EXECUTE statement_value; DEALLOCATE PREPARE statement_value;
+ END IF;
+END$$
+DELIMITER ;
+
 CREATE TABLE IF NOT EXISTS floating_registration_application(
  floating_application_id BIGINT NOT NULL AUTO_INCREMENT,application_id BIGINT NOT NULL,person_id BIGINT NOT NULL,source_region_code VARCHAR(20) NOT NULL,
  source_address VARCHAR(255),current_region_code VARCHAR(20) NOT NULL,current_address VARCHAR(255) NOT NULL,residence_reason_code VARCHAR(30) NOT NULL,
@@ -10,23 +37,33 @@ CREATE TABLE IF NOT EXISTS floating_registration_application(
  CONSTRAINT fk_floating_app_person FOREIGN KEY(person_id) REFERENCES person(person_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-ALTER TABLE floating_population
- ADD COLUMN registration_no VARCHAR(40) NULL AFTER floating_id,ADD COLUMN source_application_id BIGINT NULL AFTER registration_no,
- ADD COLUMN source_region_code VARCHAR(20) NULL AFTER person_id,ADD COLUMN source_address VARCHAR(255) NULL AFTER source_region_code,
- ADD COLUMN current_region_code VARCHAR(20) NULL AFTER source_address,ADD COLUMN residence_reason_code VARCHAR(30) NULL AFTER current_address,
- ADD COLUMN residence_proof_type VARCHAR(30) NULL AFTER residence_reason_code,ADD COLUMN arrival_date DATE NULL AFTER residence_proof_type,
- ADD COLUMN planned_leave_date DATE NULL AFTER arrival_date,CHANGE register_date registration_date DATE NOT NULL,
- ADD COLUMN eligible_from_date DATE NULL AFTER registration_date,ADD COLUMN department_id BIGINT NULL AFTER eligible_from_date,
- ADD COLUMN operator_id BIGINT NULL AFTER department_id,ADD COLUMN close_reason_code VARCHAR(30) NULL AFTER status,
- ADD COLUMN closed_at DATETIME NULL AFTER close_reason_code,ADD COLUMN current_flag TINYINT NULL AFTER closed_at,
- ADD COLUMN version INT NOT NULL DEFAULT 0 AFTER current_flag;
+CALL phase05_add_column('floating_population','registration_no','ALTER TABLE floating_population ADD COLUMN registration_no VARCHAR(40) NULL AFTER floating_id');
+CALL phase05_add_column('floating_population','source_application_id','ALTER TABLE floating_population ADD COLUMN source_application_id BIGINT NULL AFTER registration_no');
+CALL phase05_add_column('floating_population','source_region_code','ALTER TABLE floating_population ADD COLUMN source_region_code VARCHAR(20) NULL AFTER person_id');
+CALL phase05_add_column('floating_population','source_address','ALTER TABLE floating_population ADD COLUMN source_address VARCHAR(255) NULL AFTER source_region_code');
+CALL phase05_add_column('floating_population','current_region_code','ALTER TABLE floating_population ADD COLUMN current_region_code VARCHAR(20) NULL AFTER source_address');
+CALL phase05_add_column('floating_population','residence_reason_code','ALTER TABLE floating_population ADD COLUMN residence_reason_code VARCHAR(30) NULL AFTER current_address');
+CALL phase05_add_column('floating_population','residence_proof_type','ALTER TABLE floating_population ADD COLUMN residence_proof_type VARCHAR(30) NULL AFTER residence_reason_code');
+CALL phase05_add_column('floating_population','arrival_date','ALTER TABLE floating_population ADD COLUMN arrival_date DATE NULL AFTER residence_proof_type');
+CALL phase05_add_column('floating_population','planned_leave_date','ALTER TABLE floating_population ADD COLUMN planned_leave_date DATE NULL AFTER arrival_date');
+CALL phase05_rename_column('floating_population','register_date','registration_date','ALTER TABLE floating_population CHANGE register_date registration_date DATE NOT NULL');
+CALL phase05_add_column('floating_population','eligible_from_date','ALTER TABLE floating_population ADD COLUMN eligible_from_date DATE NULL AFTER registration_date');
+CALL phase05_add_column('floating_population','department_id','ALTER TABLE floating_population ADD COLUMN department_id BIGINT NULL AFTER eligible_from_date');
+CALL phase05_add_column('floating_population','operator_id','ALTER TABLE floating_population ADD COLUMN operator_id BIGINT NULL AFTER department_id');
+CALL phase05_add_column('floating_population','close_reason_code','ALTER TABLE floating_population ADD COLUMN close_reason_code VARCHAR(30) NULL AFTER status');
+CALL phase05_add_column('floating_population','closed_at','ALTER TABLE floating_population ADD COLUMN closed_at DATETIME NULL AFTER close_reason_code');
+CALL phase05_add_column('floating_population','current_flag','ALTER TABLE floating_population ADD COLUMN current_flag TINYINT NULL AFTER closed_at');
+CALL phase05_add_column('floating_population','version','ALTER TABLE floating_population ADD COLUMN version INT NOT NULL DEFAULT 0 AFTER current_flag');
 UPDATE floating_population SET registration_no=CONCAT('LEGACY-FR-',floating_id),source_region_code='LEGACY',current_region_code='LEGACY',
  residence_reason_code='OTHER_APPROVED',residence_proof_type='OTHER_APPROVED',arrival_date=registration_date,current_flag=IF(status IN('有效','ACTIVE'),1,NULL),
  status=IF(status='有效','ACTIVE',status) WHERE registration_no IS NULL;
 ALTER TABLE floating_population MODIFY registration_no VARCHAR(40) NOT NULL,MODIFY source_region_code VARCHAR(20) NOT NULL,
  MODIFY current_region_code VARCHAR(20) NOT NULL,MODIFY residence_reason_code VARCHAR(30) NOT NULL,MODIFY residence_proof_type VARCHAR(30) NOT NULL,
- MODIFY arrival_date DATE NOT NULL,ADD UNIQUE KEY uk_floating_registration_no(registration_no),ADD UNIQUE KEY uk_floating_source_application(source_application_id),
- ADD UNIQUE KEY uk_floating_person_current(person_id,current_flag),ADD KEY idx_floating_region_status(current_region_code,status);
+ MODIFY arrival_date DATE NOT NULL;
+CALL phase05_add_index('floating_population','uk_floating_registration_no','ALTER TABLE floating_population ADD UNIQUE KEY uk_floating_registration_no(registration_no)');
+CALL phase05_add_index('floating_population','uk_floating_source_application','ALTER TABLE floating_population ADD UNIQUE KEY uk_floating_source_application(source_application_id)');
+CALL phase05_add_index('floating_population','uk_floating_person_current','ALTER TABLE floating_population ADD UNIQUE KEY uk_floating_person_current(person_id,current_flag)');
+CALL phase05_add_index('floating_population','idx_floating_region_status','ALTER TABLE floating_population ADD KEY idx_floating_region_status(current_region_code,status)');
 
 CREATE TABLE IF NOT EXISTS residence_permit(
  permit_id BIGINT NOT NULL AUTO_INCREMENT,permit_no VARCHAR(50) NOT NULL,person_id BIGINT NOT NULL,floating_id BIGINT NOT NULL,source_application_id BIGINT NOT NULL,
@@ -67,3 +104,7 @@ INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p
  (r.role_code='POPULATION_MANAGER' AND p.permission_code IN('floating:create','floating:edit','floating:view','residence-permit:apply','residence-permit:view','residence-permit:log:view','residence-permit:expiry:view')) OR
  (r.role_code='HOUSEHOLD_MANAGER' AND p.module_name IN('FLOATING','RESIDENCE_PERMIT')) OR
  (r.role_code='APPROVER' AND p.permission_code IN('floating:view','residence-permit:view','residence-permit:log:view','residence-permit:expiry:view')) OR r.role_code='SYSTEM_ADMIN';
+
+DROP PROCEDURE IF EXISTS phase05_add_index;
+DROP PROCEDURE IF EXISTS phase05_rename_column;
+DROP PROCEDURE IF EXISTS phase05_add_column;
