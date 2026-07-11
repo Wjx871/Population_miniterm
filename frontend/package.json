@@ -7,7 +7,7 @@
     "dev": "vite --open",
     "build": "vite build",
     "preview": "vite preview",
-    "test:unit": "node --test tests/professionalApplication.test.js tests/applicationBusinessHandlers.test.js",
+    "test:unit": "node --test tests/*.test.js",
     "check": "npm run test:unit && npm run build"
   },
   "dependencies": {

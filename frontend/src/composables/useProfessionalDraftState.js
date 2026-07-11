@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { isValidVersion } from '../utils/professionalApplication'
+import { isValidVersion } from '../utils/professionalApplication.js'
 
 export function useProfessionalDraftState() {
   const applicationId = ref(null)

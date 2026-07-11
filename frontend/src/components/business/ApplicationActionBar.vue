@@ -17,7 +17,7 @@ const props = defineProps({
   application: { type: Object, default: null },
   loading: Boolean,
   /** 专业业务草稿的编辑路由 */
-  specializedEditRoute: { type: String, default: '' },
+  specializedEditRoute: { type: Object, default: null },
   /** 是否允许继续编辑专业草稿（须同时检查 DRAFT + application:edit + 对应专业权限） */
   canContinueSpecialized: { type: Boolean, default: false }
 })
