@@ -27,4 +27,20 @@ import { onMounted, reactive, ref } from 'vue'; import { ElMessage } from 'eleme
 const loading=ref(false);const records=ref([]);const total=ref(0);const query=reactive({personName:'',identityNo:'',householdNo:'',archiveType:'',current:1,size:10});const drawerVisible=ref(false);const detailLoading=ref(false);const detail=ref(null);async function fetchList(){loading.value=true;try{const page=normalizePageResult(await getResidenceArchivePage(query));records.value=page.records;total.value=page.total}finally{loading.value=false}}function reset(){Object.assign(query,{personName:'',identityNo:'',householdNo:'',archiveType:'',current:1});fetchList()}async function open(row){drawerVisible.value=true;detailLoading.value=true;try{detail.value=await getResidenceArchiveDetail(row.archiveId)}catch(error){ElMessage.error(getApiErrorMessage(error,'加载归档详情失败'))}finally{detailLoading.value=false}}onMounted(fetchList)
 </script>
 
-<style scoped>.page-container{display:flex;flex-direction:column;gap:16px}.page-header h1{margin:0 0 8px}.subtitle{margin:0;color:var(--el-text-color-secondary)}</style>
+<style scoped>
+.page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.page-header h1 {
+  margin: 0 0 8px;
+}
+.subtitle {
+  margin: 0;
+  color: var(--el-text-color-secondary);
+}
+:deep(.el-form-item) {
+  margin-bottom: 16px;
+}
+</style>
