@@ -6,7 +6,7 @@
         <p class="subtitle">管理系统登录账号及角色分配。</p>
       </div>
       <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="openCreateDialog">新增用户</el-button>
+        <el-button type="primary" :icon="Plus" @click="openCreateDialog" v-permission="'user:manage'">新增用户</el-button>
       </div>
     </div>
 
@@ -39,12 +39,13 @@
         </el-table-column>
         <el-table-column label="操作" width="200" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
+            <el-button size="small" type="primary" link @click="openEditDialog(row)" v-permission="'user:manage'">编辑</el-button>
             <el-button 
               size="small" 
               type="danger" 
               link 
               @click="handleDelete(row)"
+              v-permission="'user:manage'"
             >
               删除
             </el-button>

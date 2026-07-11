@@ -158,7 +158,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { 
   User, Lock, Warning, StarFilled, UserFilled, HomeFilled, Switch, Postcard, TrendCharts, CircleCheck, Setting
 } from '@element-plus/icons-vue';
@@ -166,6 +166,7 @@ import { ElMessage } from 'element-plus';
 import { useUserStore } from '../stores/user';
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 const loginFormRef = ref(null);
 const loading = ref(false);
@@ -216,7 +217,12 @@ const handleLoginSubmit = () => {
       }
 
       ElMessage.success({ message: '登录成功', duration: 1500 });
-      router.push('/home');
+      const redirect = route.query.redirect;
+      if (redirect && typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//') && redirect !== '/login') {
+        router.replace(redirect);
+      } else {
+        router.replace('/home');
+      }
     } catch (error) {
       errorMessage.value = error.message || '账号或密码验证失败';
     } finally {

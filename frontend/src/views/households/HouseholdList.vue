@@ -6,7 +6,7 @@
         <p class="subtitle">维护家庭户籍信息，支持户主设置与住址管理。</p>
       </div>
       <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="openCreateDialog">开户立户</el-button>
+        <el-button type="primary" :icon="Plus" @click="openCreateDialog" v-permission="'household:create'">开户立户</el-button>
       </div>
     </div>
 
@@ -48,13 +48,14 @@
         <el-table-column label="操作" width="200" align="center" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="primary" link @click="viewDetail(row)">成员详情</el-button>
-            <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
+            <el-button size="small" type="primary" link @click="openEditDialog(row)" v-permission="'household:update'">编辑</el-button>
             <el-button 
               size="small" 
               type="danger" 
               link 
               :disabled="row.status === '已撤销'"
               @click="handleDelete(row)"
+              v-permission="'household:delete'"
             >
               撤销
             </el-button>

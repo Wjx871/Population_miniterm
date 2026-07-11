@@ -1,0 +1,59 @@
+import { ROLE_CODE } from './roles'
+
+export const PERMISSIONS = Object.freeze({
+  DASHBOARD_VIEW: 'dashboard:view',
+  PERSON_VIEW: 'person:view',
+  PERSON_CREATE: 'person:create',
+  PERSON_UPDATE: 'person:update',
+  PERSON_DELETE: 'person:delete',
+  HOUSEHOLD_VIEW: 'household:view',
+  HOUSEHOLD_CREATE: 'household:create',
+  HOUSEHOLD_UPDATE: 'household:update',
+  HOUSEHOLD_MEMBER_MANAGE: 'household:member:manage',
+  HOUSEHOLD_DELETE: 'household:delete',
+  MIGRATION_VIEW: 'migration:view',
+  MIGRATION_APPLY: 'migration:apply',
+  MIGRATION_DELETE: 'migration:delete',
+  FLOATING_VIEW: 'floating:view',
+  FLOATING_MANAGE: 'floating:manage',
+  KEY_VIEW: 'key:view',
+  KEY_APPLY: 'key:apply',
+  KEY_MANAGE: 'key:manage',
+  CERTIFICATE_VIEW: 'certificate:view',
+  CERTIFICATE_MANAGE: 'certificate:manage',
+  CERTIFICATE_DELETE: 'certificate:delete',
+  USER_VIEW: 'user:view',
+  USER_MANAGE: 'user:manage',
+  DICTIONARY_VIEW: 'dictionary:view',
+  DICTIONARY_MANAGE: 'dictionary:manage'
+})
+
+export const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
+  [ROLE_CODE.NORMAL_USER]: [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.PERSON_VIEW,
+    PERMISSIONS.HOUSEHOLD_VIEW,
+    PERMISSIONS.MIGRATION_VIEW,
+    PERMISSIONS.FLOATING_VIEW,
+    PERMISSIONS.CERTIFICATE_VIEW
+  ],
+  [ROLE_CODE.HOUSEHOLD_ADMIN]: [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.PERSON_VIEW,
+    PERMISSIONS.PERSON_CREATE,
+    PERMISSIONS.PERSON_UPDATE,
+    PERMISSIONS.HOUSEHOLD_VIEW,
+    PERMISSIONS.HOUSEHOLD_CREATE,
+    PERMISSIONS.HOUSEHOLD_UPDATE,
+    PERMISSIONS.HOUSEHOLD_MEMBER_MANAGE,
+    PERMISSIONS.MIGRATION_VIEW,
+    PERMISSIONS.MIGRATION_APPLY,
+    PERMISSIONS.FLOATING_VIEW,
+    PERMISSIONS.FLOATING_MANAGE,
+    PERMISSIONS.KEY_VIEW,
+    PERMISSIONS.KEY_APPLY,
+    PERMISSIONS.CERTIFICATE_VIEW,
+    PERMISSIONS.CERTIFICATE_MANAGE
+  ],
+  [ROLE_CODE.SUPER_ADMIN]: ['*']
+})

@@ -9,7 +9,9 @@
       <div class="user-area" v-if="userStore.isLoggedIn">
         <span class="username">
           欢迎您，{{ userStore.displayName }}
-          <span class="role-badge">{{ userStore.roleName === 'admin' ? '系统管理员' : userStore.roleName }}</span>
+          <el-tag :type="roleBadgeType" size="small" effect="dark" class="role-badge">
+            {{ userStore.roleLabel }}
+          </el-tag>
         </span>
         <el-button class="logout-btn" text @click="handleLogout">
           <el-icon class="logout-icon"><SwitchButton /></el-icon> 退出
@@ -21,49 +23,38 @@
       <aside class="sidebar">
         <el-menu
           router
-          :default-active="$route.path"
+          :default-active="activeMenu"
           class="side-menu"
         >
-          <el-menu-item index="/home">
-            <el-icon><HomeFilled /></el-icon>
-            <span>工作台</span>
-          </el-menu-item>
-          <el-menu-item index="/persons">
-            <el-icon><User /></el-icon>
-            <span>人口信息管理</span>
-          </el-menu-item>
-          <el-menu-item index="/households">
-            <el-icon><HomeFilled /></el-icon>
-            <span>户籍管理</span>
-          </el-menu-item>
-          <el-menu-item index="/migrations/in">
-            <el-icon><Switch /></el-icon>
-            <span>迁入管理</span>
-          </el-menu-item>
-          <el-menu-item index="/migrations/out">
-            <el-icon><Switch /></el-icon>
-            <span>迁出管理</span>
-          </el-menu-item>
-          <el-menu-item index="/floating-population">
-            <el-icon><User /></el-icon>
-            <span>流动人口管理</span>
-          </el-menu-item>
-          <el-menu-item index="/key-population">
-            <el-icon><StarFilled /></el-icon>
-            <span>重点人口管理</span>
-          </el-menu-item>
-          <el-menu-item index="/certificates">
-            <el-icon><Postcard /></el-icon>
-            <span>证件管理</span>
-          </el-menu-item>
-          <el-menu-item index="/users">
-            <el-icon><UserFilled /></el-icon>
-            <span>用户管理</span>
-          </el-menu-item>
-          <el-menu-item index="/dictionary">
-            <el-icon><Setting /></el-icon>
-            <span>数据字典</span>
-          </el-menu-item>
+          <!-- 动态渲染菜单 -->
+          <template v-for="group in menuGroups" :key="group.name">
+            <!-- 单个菜单项（无分组名或独立项，例如工作台） -->
+            <template v-if="!group.name || group.children.length === 1 && !group.name">
+              <el-menu-item 
+                v-for="item in group.children" 
+                :key="item.path" 
+                :index="item.path"
+              >
+                <el-icon><component :is="item.meta.icon" /></el-icon>
+                <span>{{ item.meta.title }}</span>
+              </el-menu-item>
+            </template>
+            <!-- 分组子菜单 -->
+            <el-sub-menu v-else :index="group.name">
+              <template #title>
+                <el-icon><component :is="group.icon || 'Menu'" /></el-icon>
+                <span>{{ group.name }}</span>
+              </template>
+              <el-menu-item 
+                v-for="item in group.children" 
+                :key="item.path" 
+                :index="item.path"
+              >
+                <el-icon><component :is="item.meta.icon" /></el-icon>
+                <span>{{ item.meta.title }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+          </template>
         </el-menu>
         <div class="sidebar-footer">
           <p>系统版本 V1.0</p>
@@ -72,22 +63,92 @@
       </aside>
 
       <main class="main-content">
-        <router-view />
+        <!-- 面包屑导航 -->
+        <div class="breadcrumb-container" v-if="$route.path !== '/home'">
+          <el-breadcrumb separator="/">
+            <el-breadcrumb-item :to="{ path: '/home' }">工作台</el-breadcrumb-item>
+            <el-breadcrumb-item v-if="$route.meta.group">{{ $route.meta.group }}</el-breadcrumb-item>
+            <el-breadcrumb-item>{{ $route.meta.title }}</el-breadcrumb-item>
+          </el-breadcrumb>
+        </div>
+        <div class="page-wrapper">
+          <router-view />
+        </div>
       </main>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { 
-  Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled
+  Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Menu
 } from '@element-plus/icons-vue';
 import { useUserStore } from '../stores/user';
-import { useRouter } from 'vue-router';
+import { ROLE_BADGE_TYPE } from '../constants/roles';
+import { useRouter, useRoute } from 'vue-router';
 import { ElMessageBox, ElMessage } from 'element-plus';
 
 const userStore = useUserStore();
 const router = useRouter();
+const route = useRoute();
+
+const roleBadgeType = computed(() => ROLE_BADGE_TYPE[userStore.roleCode] || 'info');
+
+const activeMenu = computed(() => {
+  return route.meta.activeMenu || route.path;
+});
+
+const menuGroups = computed(() => {
+  const routes = router.getRoutes();
+  
+  // 过滤出需要显示在菜单中并且当前角色有权限访问的路由
+  const visibleRoutes = routes.filter(r => 
+    r.meta && 
+    r.meta.menu === true && 
+    userStore.canAccess(r.meta)
+  );
+
+  // 按照 order 排序
+  visibleRoutes.sort((a, b) => (a.meta.order || 99) - (b.meta.order || 99));
+
+  // 分组
+  const groups = {};
+  visibleRoutes.forEach(r => {
+    const groupName = r.meta.group || '';
+    if (!groups[groupName]) {
+      groups[groupName] = {
+        name: groupName,
+        icon: getGroupIcon(groupName) || r.meta.icon, // 如果没有指定组图标，借用第一个子项图标
+        children: []
+      };
+    }
+    groups[groupName].children.push(r);
+  });
+
+  // 如果某个组名为“工作台”，通常我们希望它没有父级折叠，这里保留原有平铺设计
+  // 为了确保顺序，可以将对象转换为数组，通常工作台在前
+  const result = Object.values(groups);
+  
+  // 将没有分组名或为工作台的分组排到最前面
+  result.sort((a, b) => {
+    if (a.name === '工作台' || a.name === '') return -1;
+    if (b.name === '工作台' || b.name === '') return 1;
+    return 0;
+  });
+
+  return result;
+});
+
+function getGroupIcon(groupName) {
+  const map = {
+    '人口户籍': 'User',
+    '业务办理': 'Switch',
+    '扩展业务': 'StarFilled',
+    '系统管理': 'Setting'
+  };
+  return map[groupName] || 'Menu';
+}
 
 const handleLogout = () => {
   ElMessageBox.confirm('确定要退出登录并返回登录页面吗？', '系统安全提示', {
@@ -102,6 +163,19 @@ const handleLogout = () => {
     })
     .catch(() => {});
 };
+</script>
+
+<script>
+// 图标组件注册供动态解析
+import { 
+  Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Menu
+} from '@element-plus/icons-vue';
+
+export default {
+  components: {
+    Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Menu
+  }
+}
 </script>
 
 <style scoped>
@@ -158,15 +232,12 @@ const handleLogout = () => {
   font-size: 14px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .role-badge {
   font-size: 12px;
-  background-color: #f59e0b;
-  padding: 2px 6px;
-  border-radius: 4px;
-  color: white;
+  border: none;
 }
 
 .logout-btn {
@@ -211,8 +282,21 @@ const handleLogout = () => {
 
 .main-content {
   flex: 1;
-  padding: 20px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   background-color: var(--el-bg-color-page, #f5f7fa);
+  min-width: 0; /* 修复 flex 子项内容过宽导致溢出的问题 */
+  overflow: hidden;
+}
+
+.breadcrumb-container {
+  padding: 16px 20px 0 20px;
+  background-color: var(--el-bg-color-page, #f5f7fa);
+}
+
+.page-wrapper {
+  flex: 1;
+  padding: 20px;
+  overflow: auto; /* 允许横向和纵向滚动 */
 }
 </style>

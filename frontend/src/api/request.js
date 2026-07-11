@@ -42,6 +42,14 @@ request.interceptors.response.use(
       return Promise.reject(new Error(result.message || '未授权'))
     }
 
+    if (result.code === 403) {
+      ElMessage.error(result.message || '无权执行该操作')
+      if (router.currentRoute.value.path !== '/403') {
+        router.replace({ path: '/403', query: { from: router.currentRoute.value.fullPath } })
+      }
+      return Promise.reject(new Error(result.message || '无权执行该操作'))
+    }
+
     // 其他业务错误
     ElMessage.error(result.message || '操作失败')
     return Promise.reject(result)
@@ -52,6 +60,11 @@ request.interceptors.response.use(
       userStore.logout()
       ElMessage.error('登录状态已失效，请重新登录')
       router.replace('/login')
+    } else if (error.response?.status === 403) {
+      ElMessage.error('无权执行该操作 (403)')
+      if (router.currentRoute.value.path !== '/403') {
+        router.replace({ path: '/403', query: { from: router.currentRoute.value.fullPath } })
+      }
     } else if (error.response?.status === 404) {
       ElMessage.error(`请求的接口不存在 (404): ${error.config?.url}`)
     } else {

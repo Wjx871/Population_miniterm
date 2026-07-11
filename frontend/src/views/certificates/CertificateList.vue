@@ -6,7 +6,7 @@
         <p class="subtitle">管理人员相关证件，支持到期自动预警与状态追踪。</p>
       </div>
       <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="openCreateDialog">颁发/登记证件</el-button>
+        <el-button type="primary" :icon="Plus" @click="openCreateDialog" v-permission="'certificate:manage'">颁发/登记证件</el-button>
       </div>
     </div>
 
@@ -47,12 +47,13 @@
         </el-table-column>
         <el-table-column label="操作" width="150" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
+            <el-button size="small" type="primary" link @click="openEditDialog(row)" v-permission="'certificate:manage'">编辑</el-button>
             <el-button 
               size="small" 
               type="danger" 
               link 
               @click="handleDelete(row)"
+              v-permission="'certificate:delete'"
             >
               作废
             </el-button>

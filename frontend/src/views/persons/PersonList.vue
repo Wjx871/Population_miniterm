@@ -6,7 +6,7 @@
         <p class="subtitle">维护人口基础信息，支持多条件查询与档案管理。</p>
       </div>
       <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="openCreateDialog">新增人员</el-button>
+        <el-button type="primary" :icon="Plus" @click="openCreateDialog" v-permission="'person:create'">新增人员</el-button>
       </div>
     </div>
 
@@ -46,13 +46,14 @@
         </el-table-column>
         <el-table-column label="操作" width="150" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
+            <el-button size="small" type="primary" link @click="openEditDialog(row)" v-permission="'person:update'">编辑</el-button>
             <el-button 
               size="small" 
               type="danger" 
               link 
               :disabled="row.status === '死亡' || row.status === '迁出'"
               @click="handleDelete(row)"
+              v-permission="'person:delete'"
             >
               删除
             </el-button>

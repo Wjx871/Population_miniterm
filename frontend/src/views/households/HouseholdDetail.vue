@@ -7,7 +7,7 @@
         <p class="subtitle">家庭住址：{{ householdInfo.address || '加载中...' }} | 户主：{{ householdInfo.headPersonName || '...' }}</p>
       </div>
       <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="openAddDialog">添加成员</el-button>
+        <el-button type="primary" :icon="Plus" @click="openAddDialog" v-permission="'household:member:manage'">添加成员</el-button>
       </div>
     </div>
 
@@ -33,6 +33,7 @@
               link 
               :disabled="row.relationship === '户主'"
               @click="handleRemove(row)"
+              v-permission="'household:member:manage'"
             >
               移除
             </el-button>

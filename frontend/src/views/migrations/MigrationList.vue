@@ -6,7 +6,7 @@
         <p class="subtitle">记录人员{{ isMigrationIn ? '迁入' : '迁出' }}信息，实时同步人员状态变更。</p>
       </div>
       <div class="header-right">
-        <el-button :type="isMigrationIn ? 'primary' : 'danger'" :icon="Plus" @click="openCreateDialog">
+        <el-button :type="isMigrationIn ? 'primary' : 'danger'" :icon="Plus" @click="openCreateDialog" v-permission="'migration:apply'">
           办理{{ isMigrationIn ? '迁入' : '迁出' }}
         </el-button>
       </div>
@@ -50,7 +50,7 @@
         
         <el-table-column label="操作" width="100" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="danger" link @click="handleDelete(row)">撤销</el-button>
+            <el-button size="small" type="danger" link @click="handleDelete(row)" v-permission="'migration:delete'">撤销</el-button>
           </template>
         </el-table-column>
       </el-table>

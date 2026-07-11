@@ -6,7 +6,7 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Login,
-    meta: { title: '登录 - 人口数据库管理系统' }
+    meta: { title: '登录' }
   },
   {
     path: '/',
@@ -18,25 +18,174 @@ const routes = [
         path: 'home',
         name: 'Dashboard',
         component: () => import('../views/dashboard/Dashboard.vue'),
-        meta: { title: '工作台 - 人口数据库管理系统' }
+        meta: { 
+          title: '工作台',
+          minLevel: 1,
+          permission: 'dashboard:view',
+          menu: true,
+          group: '工作台',
+          order: 1,
+          icon: 'HomeFilled'
+        }
       },
-      // 先占位，避免报错
-      { path: 'persons', name: 'Persons', component: () => import('../views/persons/PersonList.vue'), meta: { title: '人员管理' } },
-      { path: 'households', name: 'Households', component: () => import('../views/households/HouseholdList.vue'), meta: { title: '户籍管理' } },
-      { path: 'households/:id', name: 'HouseholdDetail', component: () => import('../views/households/HouseholdDetail.vue'), meta: { title: '户籍详情' } },
-      { path: 'migrations/in', name: 'MigrationIn', component: () => import('../views/migrations/MigrationList.vue'), meta: { title: '迁入管理', type: 'in' } },
-      { path: 'migrations/out', name: 'MigrationOut', component: () => import('../views/migrations/MigrationList.vue'), meta: { title: '迁出管理', type: 'out' } },
-      { path: 'floating-population', name: 'FloatingPopulation', component: { template: '<div>流动人口管理正在建设中...</div>' }, meta: { title: '流动人口' } },
-      { path: 'key-population', name: 'KeyPopulation', component: { template: '<div>重点人口管理正在建设中...</div>' }, meta: { title: '重点人口' } },
-      { path: 'certificates', name: 'Certificates', component: () => import('../views/certificates/CertificateList.vue'), meta: { title: '证件管理' } },
-      { path: 'users', name: 'Users', component: () => import('../views/users/UserList.vue'), meta: { title: '用户管理' } },
-      { path: 'dictionary', name: 'Dictionary', component: { template: '<div>数据字典正在建设中...</div>' }, meta: { title: '数据字典' } }
+      { 
+        path: 'persons', 
+        name: 'Persons', 
+        component: () => import('../views/persons/PersonList.vue'), 
+        meta: { 
+          title: '人口信息管理',
+          minLevel: 1,
+          permission: 'person:view',
+          menu: true,
+          group: '人口户籍',
+          order: 10,
+          icon: 'User'
+        } 
+      },
+      { 
+        path: 'households', 
+        name: 'Households', 
+        component: () => import('../views/households/HouseholdList.vue'), 
+        meta: { 
+          title: '户籍管理',
+          minLevel: 1,
+          permission: 'household:view',
+          menu: true,
+          group: '人口户籍',
+          order: 11,
+          icon: 'HomeFilled'
+        } 
+      },
+      { 
+        path: 'households/:id', 
+        name: 'HouseholdDetail', 
+        component: () => import('../views/households/HouseholdDetail.vue'), 
+        meta: { 
+          title: '户籍详情',
+          minLevel: 1,
+          permission: 'household:view',
+          menu: false,
+          activeMenu: '/households'
+        } 
+      },
+      { 
+        path: 'migrations/in', 
+        name: 'MigrationIn', 
+        component: () => import('../views/migrations/MigrationList.vue'), 
+        meta: { 
+          title: '迁入管理', 
+          type: 'in',
+          minLevel: 1,
+          permission: 'migration:view',
+          menu: true,
+          group: '业务办理',
+          order: 20,
+          icon: 'Switch'
+        } 
+      },
+      { 
+        path: 'migrations/out', 
+        name: 'MigrationOut', 
+        component: () => import('../views/migrations/MigrationList.vue'), 
+        meta: { 
+          title: '迁出管理', 
+          type: 'out',
+          minLevel: 1,
+          permission: 'migration:view',
+          menu: true,
+          group: '业务办理',
+          order: 21,
+          icon: 'Switch'
+        } 
+      },
+      { 
+        path: 'floating-population', 
+        name: 'FloatingPopulation', 
+        component: { template: '<div>流动人口管理正在建设中...</div>' }, 
+        meta: { 
+          title: '流动人口管理',
+          minLevel: 1,
+          permission: 'floating:view',
+          menu: true,
+          group: '扩展业务',
+          order: 30,
+          icon: 'UserFilled'
+        } 
+      },
+      { 
+        path: 'key-population', 
+        name: 'KeyPopulation', 
+        component: { template: '<div>重点人口管理正在建设中...</div>' }, 
+        meta: { 
+          title: '重点人口管理',
+          minLevel: 2,
+          permission: 'key:view',
+          menu: true,
+          group: '扩展业务',
+          order: 31,
+          icon: 'StarFilled'
+        } 
+      },
+      { 
+        path: 'certificates', 
+        name: 'Certificates', 
+        component: () => import('../views/certificates/CertificateList.vue'), 
+        meta: { 
+          title: '证件管理',
+          minLevel: 1,
+          permission: 'certificate:view',
+          menu: true,
+          group: '扩展业务',
+          order: 32,
+          icon: 'Postcard'
+        } 
+      },
+      { 
+        path: 'users', 
+        name: 'Users', 
+        component: () => import('../views/users/UserList.vue'), 
+        meta: { 
+          title: '用户管理',
+          minLevel: 3,
+          permission: 'user:view',
+          menu: true,
+          group: '系统管理',
+          order: 40,
+          icon: 'User'
+        } 
+      },
+      { 
+        path: 'dictionary', 
+        name: 'Dictionary', 
+        component: { template: '<div>数据字典正在建设中...</div>' }, 
+        meta: { 
+          title: '数据字典',
+          minLevel: 3,
+          permission: 'dictionary:view',
+          menu: true,
+          group: '系统管理',
+          order: 41,
+          icon: 'Setting'
+        } 
+      },
+      {
+        path: '403',
+        name: 'Forbidden',
+        component: () => import('../views/error/Forbidden.vue'),
+        meta: { title: '无权访问', menu: false }
+      },
+      {
+        path: '404',
+        name: 'NotFound',
+        component: () => import('../views/error/NotFound.vue'),
+        meta: { title: '页面不存在', menu: false }
+      }
     ]
   },
-  // 捕获未定义路由，重定向到首页
+  // 捕获未定义路由，重定向到404
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/home'
+    redirect: '/404'
   }
 ];
 
@@ -49,24 +198,32 @@ import { useUserStore } from '../stores/user';
 
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
-  // 设置页面标题
-  if (to.meta && to.meta.title) {
-    document.title = to.meta.title;
-  }
+  // 1. 设置页面标题
+  const baseTitle = '人口数据库管理系统';
+  document.title = to.meta.title ? `${to.meta.title} - ${baseTitle}` : baseTitle;
 
   const userStore = useUserStore();
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
 
+  // 2. 判断是否需要登录
   if (requiresAuth && !userStore.isLoggedIn) {
-    // 页面需要登录但未登录，强制重定向到登录页
-    next('/login');
-  } else if (to.path === '/login' && userStore.isLoggedIn) {
-    // 已登录状态下访问登录页，重定向到首页
-    next('/home');
-  } else {
-    // 正常放行
-    next();
+    return next({ path: '/login', query: { redirect: to.fullPath } });
   }
+
+  // 3. 已登录访问 /login 时跳转 /home
+  if (to.path === '/login' && userStore.isLoggedIn) {
+    return next('/home');
+  }
+
+  // 4. 对需要授权的页面进行角色与权限校验
+  if (requiresAuth && to.path !== '/403' && to.path !== '/404') {
+    if (!userStore.canAccess(to.meta)) {
+      return next({ path: '/403', query: { from: to.fullPath }, replace: true });
+    }
+  }
+
+  // 5. 正常放行
+  next();
 });
 
 export default router;
