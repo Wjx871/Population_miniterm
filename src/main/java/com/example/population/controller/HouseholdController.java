@@ -1,17 +1,25 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.RequiresPermission;
+import com.example.population.dto.ApprovalDraftDTO;
 import com.example.population.dto.HouseholdCreateDTO;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.Household;
+import com.example.population.service.ApprovalGateService;
 import com.example.population.service.HouseholdService;
 import com.example.population.util.PageUtil;
+import com.example.population.util.SecurityContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Tag(name = "家庭户档案")
 @RestController
@@ -20,7 +28,10 @@ import org.springframework.web.bind.annotation.*;
 public class HouseholdController {
 
     private final HouseholdService householdService;
+    private final ApprovalGateService approvalGateService;
+    private final ObjectMapper objectMapper;
 
+    @RequiresPermission("household:query")
     @Operation(summary = "分页查询户籍")
     @GetMapping
     public Result<PageVO<Household>> page(@RequestParam(defaultValue = "1") long current,
@@ -32,18 +43,37 @@ public class HouseholdController {
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
 
+    @RequiresPermission("household:query")
     @Operation(summary = "查询详情（含成员数）")
     @GetMapping("/{id}")
     public Result<Household> detail(@PathVariable Long id) {
         return Result.success(householdService.getDetail(id));
     }
 
-    @Operation(summary = "立户")
+    @RequiresPermission({"household:create", "household:establish"})
+    @Operation(summary = "立户（审批流：L3 直通，L1/L2 走审批）")
     @PostMapping("/establish")
-    public Result<Household> establish(@Valid @RequestBody HouseholdCreateDTO dto) {
-        return Result.success("立户成功", householdService.establishHousehold(dto));
+    public Result<Map<String, Object>> establish(@Valid @RequestBody HouseholdCreateDTO dto) throws Exception {
+        SecurityContext sc = SecurityContext.current();
+        if (sc.getPermissionLevel() != null && sc.getPermissionLevel() >= 3
+                && sc.hasPermission("household:create")) {
+            Household h = householdService.establishHousehold(dto);
+            Map<String, Object> data = new HashMap<>();
+            data.put("householdId", h == null ? null : h.getHouseholdId());
+            data.put("directLanding", true);
+            return Result.success("立户成功", data);
+        }
+        ApprovalDraftDTO draft = new ApprovalDraftDTO();
+        draft.setBusinessType("HOUSEHOLD_ESTABLISH");
+        draft.setPayloadJson(objectMapper.writeValueAsString(dto));
+        Long approvalId = approvalGateService.submit(draft);
+        Map<String, Object> data = new HashMap<>();
+        data.put("approvalId", approvalId);
+        data.put("directLanding", false);
+        return Result.success("已提交审批，等待 L3 审批", data);
     }
 
+    @RequiresPermission("household:create")
     @Operation(summary = "新增家庭户（兼容旧 POST /）")
     @PostMapping
     public Result<Void> create(@RequestBody Household h) {
@@ -51,6 +81,7 @@ public class HouseholdController {
         return Result.success();
     }
 
+    @RequiresPermission("household:update")
     @Operation(summary = "更新家庭户")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody Household h) {
@@ -59,6 +90,7 @@ public class HouseholdController {
         return Result.success();
     }
 
+    @RequiresPermission("household:update")
     @Operation(summary = "更换户主")
     @PutMapping("/{id}/head")
     public Result<Void> changeHead(@PathVariable Long id, @RequestParam Long newHeadPersonId) {
@@ -66,6 +98,7 @@ public class HouseholdController {
         return Result.success();
     }
 
+    @RequiresPermission("cancellation:household")
     @Operation(summary = "销户（停用户；前置校验无 CURRENT 成员）")
     @PutMapping("/{id}/disable")
     public Result<Void> disable(@PathVariable Long id, @RequestParam Long operatorId) {
@@ -73,6 +106,7 @@ public class HouseholdController {
         return Result.success();
     }
 
+    @RequiresPermission("household:update")
     @Operation(summary = "删除家庭户（软删已禁用，请走 /disable）")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {

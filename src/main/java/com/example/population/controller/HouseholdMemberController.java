@@ -1,5 +1,6 @@
 package com.example.population.controller;
 
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.HouseholdMemberDTO;
 import com.example.population.dto.HouseholdMemberTransferDTO;
 import com.example.population.dto.Result;
@@ -21,30 +22,35 @@ public class HouseholdMemberController {
 
     private final HouseholdMemberService memberService;
 
+    @RequiresPermission("household:query")
     @Operation(summary = "查询户当前成员")
     @GetMapping("/current/{householdId}")
     public Result<List<HouseholdMember>> currentMembers(@PathVariable Long householdId) {
         return Result.success(memberService.listCurrentMembers(householdId));
     }
 
+    @RequiresPermission("household:query")
     @Operation(summary = "查询个人户关系历史")
     @GetMapping("/history/person/{personId}")
     public Result<List<HouseholdMember>> historyByPerson(@PathVariable Long personId) {
         return Result.success(memberService.listHistoryByPerson(personId));
     }
 
+    @RequiresPermission("household:create")
     @Operation(summary = "新增成员关系")
     @PostMapping
     public Result<HouseholdMember> create(@Valid @RequestBody HouseholdMemberDTO dto) {
         return Result.success("添加成功", memberService.addMember(dto));
     }
 
+    @RequiresPermission("household:update")
     @Operation(summary = "批量过户（同市跨区随迁事务）")
     @PostMapping("/transfer")
     public Result<List<Long>> transfer(@Valid @RequestBody HouseholdMemberTransferDTO dto) {
         return Result.success("过户完成", memberService.transferMembers(dto));
     }
 
+    @RequiresPermission("household:update")
     @Operation(summary = "移除成员关系（迁出/注销）")
     @PutMapping("/{memberId}/leave")
     public Result<Void> leave(@PathVariable Long memberId) {
@@ -52,6 +58,7 @@ public class HouseholdMemberController {
         return Result.success();
     }
 
+    @RequiresPermission("household:update")
     @Operation(summary = "更新成员关系")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody HouseholdMember m) {
@@ -60,6 +67,7 @@ public class HouseholdMemberController {
         return Result.success();
     }
 
+    @RequiresPermission("household:update")
     @Operation(summary = "删除成员关系")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {

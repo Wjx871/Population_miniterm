@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.RegisterDTO;
 import com.example.population.dto.Result;
@@ -22,6 +23,7 @@ public class SysUserController {
 
     private final SysUserService userService;
 
+    @RequiresPermission("user:query")
     @Operation(summary = "分页查询")
     @GetMapping
     public Result<PageVO<SysUser>> page(@RequestParam(defaultValue = "1") long current,
@@ -34,6 +36,7 @@ public class SysUserController {
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
 
+    @RequiresPermission("user:query")
     @Operation(summary = "查询单个")
     @GetMapping("/{id}")
     public Result<SysUser> get(@PathVariable Long id) {
@@ -44,6 +47,7 @@ public class SysUserController {
         return Result.success(u);
     }
 
+    @RequiresPermission("user:manage")
     @Operation(summary = "新增用户")
     @PostMapping
     public Result<Void> create(@Valid @RequestBody RegisterDTO dto) {
@@ -62,6 +66,7 @@ public class SysUserController {
         return Result.success();
     }
 
+    @RequiresPermission("user:manage")
     @Operation(summary = "更新用户")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody SysUser u) {
@@ -71,6 +76,7 @@ public class SysUserController {
         return Result.success();
     }
 
+    @RequiresPermission("user:manage")
     @Operation(summary = "重置密码")
     @PutMapping("/{id}/password")
     public Result<Void> resetPwd(@PathVariable Long id, @RequestParam String newPassword) {
@@ -78,6 +84,7 @@ public class SysUserController {
         return Result.success();
     }
 
+    @RequiresPermission("user:manage")
     @Operation(summary = "删除用户")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {

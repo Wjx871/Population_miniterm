@@ -1,6 +1,8 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.RequiresPermission;
+import com.example.population.annotation.RequiresLevel;
 import com.example.population.dto.CancellationDTO;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
@@ -21,6 +23,7 @@ public class CancellationRecordController {
 
     private final CancellationRecordService cancellationService;
 
+    @RequiresLevel(2)
     @Operation(summary = "分页查询")
     @GetMapping
     public Result<PageVO<CancellationRecord>> page(@RequestParam(defaultValue = "1") long current,
@@ -31,30 +34,37 @@ public class CancellationRecordController {
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
 
+    @RequiresLevel(2)
     @Operation(summary = "查询单个")
     @GetMapping("/{id}")
     public Result<CancellationRecord> get(@PathVariable Long id) {
         return Result.success(cancellationService.getById(id));
     }
 
+    @RequiresLevel(2)
     @Operation(summary = "人口注销前置校验")
     @GetMapping("/precheck-person/{personId}")
     public Result<CancellationRecordService.PrecheckResult> precheckPerson(@PathVariable Long personId) {
         return Result.success(cancellationService.precheckPerson(personId));
     }
 
+    @RequiresLevel(2)
     @Operation(summary = "家庭户销户前置校验")
     @GetMapping("/precheck-household/{householdId}")
     public Result<CancellationRecordService.PrecheckResult> precheckHousehold(@PathVariable Long householdId) {
         return Result.success(cancellationService.precheckHousehold(householdId));
     }
 
+    @RequiresLevel(3)
+    @RequiresPermission({"cancellation:person", "cancellation:household"})
     @Operation(summary = "新增注销/销户记录（不办结）")
     @PostMapping
     public Result<CancellationRecord> create(@Valid @RequestBody CancellationDTO dto) {
         return Result.success("登记成功", cancellationService.createCancellation(dto));
     }
 
+    @RequiresLevel(3)
+    @RequiresPermission("cancellation:person")
     @Operation(summary = "办结人口注销（事务：归档 → 删登记 → 状态更新）")
     @PutMapping("/{id}/complete-person")
     public Result<Void> completePerson(@PathVariable Long id, @RequestParam Long operatorId) {
@@ -62,6 +72,8 @@ public class CancellationRecordController {
         return Result.success();
     }
 
+    @RequiresLevel(3)
+    @RequiresPermission("cancellation:household")
     @Operation(summary = "办结家庭户销户（事务：前置 → 归档 → 户置 CANCELLED）")
     @PutMapping("/{id}/complete-household")
     public Result<Void> completeHousehold(@PathVariable Long id, @RequestParam Long operatorId) {
@@ -69,6 +81,7 @@ public class CancellationRecordController {
         return Result.success();
     }
 
+    @RequiresLevel(3)
     @Operation(summary = "兼容旧 PUT /{id}")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody CancellationRecord r) {
@@ -77,6 +90,7 @@ public class CancellationRecordController {
         return Result.success();
     }
 
+    @RequiresLevel(3)
     @Operation(summary = "删除注销记录")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {

@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.ResidencePermit;
@@ -19,6 +20,7 @@ public class ResidencePermitController {
 
     private final ResidencePermitService permitService;
 
+    @RequiresPermission("permit:query")
     @Operation(summary = "分页查询")
     @GetMapping
     public Result<PageVO<ResidencePermit>> page(@RequestParam(defaultValue = "1") long current,
@@ -30,12 +32,14 @@ public class ResidencePermitController {
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
 
+    @RequiresPermission("permit:query")
     @Operation(summary = "查询单个")
     @GetMapping("/{id}")
     public Result<ResidencePermit> get(@PathVariable Long id) {
         return Result.success(permitService.getById(id));
     }
 
+    @RequiresPermission("permit:apply")
     @Operation(summary = "签发凭证")
     @PostMapping
     public Result<Void> create(@RequestBody ResidencePermit p) {
@@ -43,6 +47,7 @@ public class ResidencePermitController {
         return Result.success();
     }
 
+    @RequiresPermission("permit:apply")
     @Operation(summary = "注销凭证")
     @PutMapping("/{id}/cancel")
     public Result<Void> cancel(@PathVariable Long id) {
@@ -50,6 +55,7 @@ public class ResidencePermitController {
         return Result.success();
     }
 
+    @RequiresPermission("permit:apply")
     @Operation(summary = "删除凭证")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {

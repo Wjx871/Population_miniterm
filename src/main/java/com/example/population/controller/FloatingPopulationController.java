@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.FloatingPopulation;
@@ -19,6 +20,7 @@ public class FloatingPopulationController {
 
     private final FloatingPopulationService floatingService;
 
+    @RequiresPermission("floating:query")
     @Operation(summary = "分页查询")
     @GetMapping
     public Result<PageVO<FloatingPopulation>> page(@RequestParam(defaultValue = "1") long current,
@@ -31,12 +33,14 @@ public class FloatingPopulationController {
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
 
+    @RequiresPermission("floating:query")
     @Operation(summary = "查询单个")
     @GetMapping("/{id}")
     public Result<FloatingPopulation> get(@PathVariable Long id) {
         return Result.success(floatingService.getById(id));
     }
 
+    @RequiresPermission("floating:register")
     @Operation(summary = "新增登记")
     @PostMapping
     public Result<Void> create(@RequestBody FloatingPopulation f) {
@@ -44,6 +48,7 @@ public class FloatingPopulationController {
         return Result.success();
     }
 
+    @RequiresPermission("floating:register")
     @Operation(summary = "更新登记")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody FloatingPopulation f) {
@@ -52,6 +57,7 @@ public class FloatingPopulationController {
         return Result.success();
     }
 
+    @RequiresPermission("floating:register")
     @Operation(summary = "删除登记")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {

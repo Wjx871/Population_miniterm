@@ -1,5 +1,6 @@
 package com.example.population.controller;
 
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.Result;
 import com.example.population.entity.SysPermission;
 import com.example.population.service.SysPermissionService;
@@ -18,12 +19,14 @@ public class SysPermissionController {
 
     private final SysPermissionService permissionService;
 
+    @RequiresPermission("role:query")
     @Operation(summary = "查询所有权限")
     @GetMapping
     public Result<List<SysPermission>> list() {
         return Result.success(permissionService.list());
     }
 
+    @RequiresPermission("role:query")
     @Operation(summary = "按模块查询")
     @GetMapping("/by-module/{module}")
     public Result<List<SysPermission>> byModule(@PathVariable String module) {
@@ -32,6 +35,7 @@ public class SysPermissionController {
                 .list());
     }
 
+    @RequiresPermission("role:manage")
     @Operation(summary = "新增")
     @PostMapping
     public Result<Void> create(@RequestBody SysPermission p) {
@@ -39,6 +43,7 @@ public class SysPermissionController {
         return Result.success();
     }
 
+    @RequiresPermission("role:manage")
     @Operation(summary = "更新")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody SysPermission p) {
@@ -47,6 +52,7 @@ public class SysPermissionController {
         return Result.success();
     }
 
+    @RequiresPermission("role:manage")
     @Operation(summary = "删除")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {

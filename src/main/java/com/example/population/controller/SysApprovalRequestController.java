@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.SysApprovalRequest;
@@ -19,6 +20,7 @@ public class SysApprovalRequestController {
 
     private final SysApprovalRequestService approvalService;
 
+    @RequiresPermission("approval:query")
     @Operation(summary = "分页查询")
     @GetMapping
     public Result<PageVO<SysApprovalRequest>> page(@RequestParam(defaultValue = "1") long current,
@@ -29,13 +31,15 @@ public class SysApprovalRequestController {
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
 
+    @RequiresPermission("approval:query")
     @Operation(summary = "查询单个")
     @GetMapping("/{id}")
     public Result<SysApprovalRequest> get(@PathVariable Long id) {
         return Result.success(approvalService.getById(id));
     }
 
-    @Operation(summary = "同意")
+    @RequiresPermission("approval:handle")
+    @Operation(summary = "同意（轻量级审批，不联动业务数据落地）")
     @PutMapping("/{id}/approve")
     public Result<Void> approve(@PathVariable Long id,
                                  @RequestParam Long approverId,
@@ -44,7 +48,8 @@ public class SysApprovalRequestController {
         return Result.success();
     }
 
-    @Operation(summary = "驳回")
+    @RequiresPermission("approval:handle")
+    @Operation(summary = "驳回（轻量级审批）")
     @PutMapping("/{id}/reject")
     public Result<Void> reject(@PathVariable Long id,
                                 @RequestParam Long approverId,

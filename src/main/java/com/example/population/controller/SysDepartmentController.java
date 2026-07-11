@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.SysDepartment;
@@ -19,6 +20,7 @@ public class SysDepartmentController {
 
     private final SysDepartmentService departmentService;
 
+    @RequiresPermission("department:query")
     @Operation(summary = "分页查询")
     @GetMapping
     public Result<PageVO<SysDepartment>> page(@RequestParam(defaultValue = "1") long current,
@@ -30,12 +32,14 @@ public class SysDepartmentController {
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
 
+    @RequiresPermission("department:query")
     @Operation(summary = "查询单个")
     @GetMapping("/{id}")
     public Result<SysDepartment> get(@PathVariable Long id) {
         return Result.success(departmentService.getById(id));
     }
 
+    @RequiresPermission("department:manage")
     @Operation(summary = "新增")
     @PostMapping
     public Result<Void> create(@RequestBody SysDepartment dept) {
@@ -43,6 +47,7 @@ public class SysDepartmentController {
         return Result.success();
     }
 
+    @RequiresPermission("department:manage")
     @Operation(summary = "更新")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody SysDepartment dept) {
@@ -51,6 +56,7 @@ public class SysDepartmentController {
         return Result.success();
     }
 
+    @RequiresPermission("department:manage")
     @Operation(summary = "删除")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {

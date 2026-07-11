@@ -1,5 +1,6 @@
 package com.example.population.controller;
 
+import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.Result;
 import com.example.population.entity.SysRole;
 import com.example.population.service.SysRoleService;
@@ -18,18 +19,21 @@ public class SysRoleController {
 
     private final SysRoleService roleService;
 
+    @RequiresPermission("role:query")
     @Operation(summary = "全部角色")
     @GetMapping
     public Result<List<SysRole>> list() {
         return Result.success(roleService.list());
     }
 
+    @RequiresPermission("role:query")
     @Operation(summary = "查询单个")
     @GetMapping("/{id}")
     public Result<SysRole> get(@PathVariable Long id) {
         return Result.success(roleService.getById(id));
     }
 
+    @RequiresPermission("role:manage")
     @Operation(summary = "新增")
     @PostMapping
     public Result<Void> create(@RequestBody SysRole role) {
@@ -37,6 +41,7 @@ public class SysRoleController {
         return Result.success();
     }
 
+    @RequiresPermission("role:manage")
     @Operation(summary = "更新")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody SysRole role) {
@@ -45,6 +50,7 @@ public class SysRoleController {
         return Result.success();
     }
 
+    @RequiresPermission("role:manage")
     @Operation(summary = "删除")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {
