@@ -18,8 +18,8 @@
     </el-card>
 
     <MigrationDetailPanel v-if="migrationDetail" :detail="migrationDetail" :person="migrationPerson" />
-    <FloatingResidenceDetailPanel v-if="floatingDetail" mode="floating" :detail="floatingDetailBody" />
-    <FloatingResidenceDetailPanel v-if="permitDetail" mode="permit" :detail="permitDetailBody" />
+    <FloatingResidenceDetailPanel v-if="floatingDetail" mode="floating" :detail="floatingDetailBody" :subject="floatingSubject" />
+    <FloatingResidenceDetailPanel v-if="permitDetail" mode="permit" :detail="permitDetailBody" :subject="permitSubject" />
     <div v-if="canExecute" class="execute-bar">
       <span>{{ executeLabelText }}</span>
       <el-button type="success" :loading="executing" @click="openExecuteDialog">执行{{ executeLabelShort }}</el-button>
@@ -89,7 +89,9 @@ const isPermitApplication = computed(() => [BUSINESS_TYPE.RESIDENCE_PERMIT_FIRST
 const isProfessionalBusiness = computed(() => isMigrationApplication.value || isFloatingApplication.value || isPermitApplication.value)
 const migration = computed(() => getMigrationRecord(migrationDetail.value))
 const floatingDetailBody = computed(() => floatingDetail.value?.professional)
+const floatingSubject = computed(() => floatingDetail.value?.subject)
 const permitDetailBody = computed(() => permitDetail.value?.professional)
+const permitSubject = computed(() => permitDetail.value?.subject)
 const isDraft = computed(() => application.value?.status === 'DRAFT')
 const canUpload = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_UPLOAD))
 const canDelete = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_DELETE))

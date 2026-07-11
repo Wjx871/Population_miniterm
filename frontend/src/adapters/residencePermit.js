@@ -67,7 +67,7 @@ export function normalizePermitProfessional(raw) {
       requestedValidUntil: pickFirst(pro.requestedValidUntil),
       applyType: pickFirst(pro.applyType),
       businessStatus: pickFirst(pro.businessStatus, pro.status),
-      version: pickFirst(pro.version, 0),
+      version: pro.version,
       executedPermitId: pickFirst(pro.executedPermitId)
     },
     subject: raw.subject || null,

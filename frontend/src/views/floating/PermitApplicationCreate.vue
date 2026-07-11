@@ -70,8 +70,8 @@
       </el-form>
 
       <div style="text-align:right;margin-top:16px;display:flex;justify-content:space-between">
-        <el-button @click="resetForm">重新开始</el-button>
-        <el-button type="primary" :loading="saving" @click="saveApplication">{{ isEdit ? '更新草稿' : '保存并继续' }}</el-button>
+        <el-button @click="goBack">返回列表</el-button>
+        <el-button type="primary" :loading="saving" :disabled="isFormReadOnly || !hasValidVersion" @click="saveApplication">{{ isEdit ? '更新草稿' : '保存并继续' }}</el-button>
       </div>
     </el-card>
 
@@ -79,10 +79,10 @@
     <el-card v-if="showForm && applicationId" shadow="never">
       <template #header>申请材料</template>
       <el-alert type="info" :closable="false" style="margin-bottom:16px">{{ materialRuleText }}</el-alert>
-      <MaterialUploader v-if="canUpload" :application-id="applicationId" :material-options="materialOptions" @uploaded="loadMaterials" />
-      <MaterialList :materials="materials" :can-delete="canEdit" @changed="loadMaterials" />
+      <MaterialUploader v-if="canUpload && !isFormReadOnly" :application-id="applicationId" :material-options="materialOptions" @uploaded="loadMaterials" />
+      <MaterialList :materials="materials" :can-delete="canEdit && !isFormReadOnly" @changed="loadMaterials" />
       <div style="text-align:right;margin-top:16px">
-        <el-button type="primary" :loading="submitting" :disabled="!materialsReady" @click="submit">提交申请</el-button>
+        <el-button type="primary" :loading="submitting" :disabled="!materialsReady || isFormReadOnly" @click="submit">提交申请</el-button>
       </div>
     </el-card>
   </div>
@@ -116,7 +116,8 @@ const userStore = useUserStore()
 
 const isEdit = ref(false)
 const applicationId = ref(null)
-const professionalVersion = ref(0)
+const professionalVersion = ref(null)
+const detailAppStatus = ref('DRAFT')
 const loading = ref(false)
 const saving = ref(false)
 const submitting = ref(false)
@@ -141,6 +142,8 @@ const canEdit = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_DELE
 const materialOptions = computed(() => getPermitMaterialOptions(applyType.value, floatingInfo.value?.residenceReasonCode))
 const materialRuleText = computed(() => getPermitMaterialRuleText(applyType.value, floatingInfo.value?.residenceReasonCode))
 const materialsReady = computed(() => hasUploadedPermitMaterials(materials.value, applyType.value, floatingInfo.value?.residenceReasonCode))
+const isFormReadOnly = computed(() => detailAppStatus.value !== 'DRAFT')
+const hasValidVersion = computed(() => Number.isInteger(professionalVersion.value))
 
 const form = reactive({
   residenceBasisCode: '',
@@ -158,6 +161,12 @@ const formRules = computed(() => {
   }
   if (applyType.value !== 'CANCELLATION') {
     rules.residenceBasisCode = [{ required: true, message: '请选择居住依据', trigger: 'change' }]
+    rules.requestedValidUntil = [{
+      validator: (_rule, value, callback) => {
+        if (value && form.requestedValidFrom && value < form.requestedValidFrom) callback(new Error('结束日期不能早于开始日期'))
+        else callback()
+      }, trigger: 'change'
+    }]
   }
   return rules
 })
@@ -191,7 +200,8 @@ async function loadApplicationForEdit() {
     form.remark = detail.application?.remark || ''
     form.requestedValidFrom = p.requestedValidFrom || ''
     form.requestedValidUntil = p.requestedValidUntil || ''
-    professionalVersion.value = p.version || 0
+    professionalVersion.value = Number.isInteger(p.version) ? p.version : null
+    detailAppStatus.value = detail.application?.status || 'DRAFT'
     if (p.floatingId) {
       try { floatingInfo.value = normalizeFloatingPopulation(await getFloatingPopulationById(p.floatingId)) } catch { /* non-blocking */ }
     }

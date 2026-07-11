@@ -17,16 +17,16 @@
       <template #header>1. 人员与来源信息</template>
       <el-form ref="step1Ref" :model="form" :rules="step1Rules" label-width="120px">
         <el-form-item label="选择人员" prop="personId">
-          <PersonSelect v-model="form.personId" :disabled="isEdit" @select="onPersonSelect" />
+          <PersonSelect v-model="form.personId" :disabled="isEdit || isFormReadOnly" @select="onPersonSelect" />
         </el-form-item>
         <el-form-item label="来源区划" prop="sourceRegionCode">
-          <el-input v-model="form.sourceRegionCode" maxlength="20" placeholder="6~20位数字" />
+          <el-input v-model="form.sourceRegionCode" :disabled="isFormReadOnly" maxlength="20" placeholder="6~20位数字" />
         </el-form-item>
         <el-form-item label="来源地址">
-          <el-input v-model="form.sourceAddress" maxlength="255" placeholder="选填" />
+          <el-input v-model="form.sourceAddress" :disabled="isFormReadOnly" maxlength="255" placeholder="选填" />
         </el-form-item>
       </el-form>
-      <div style="text-align:right;margin-top:16px"><el-button type="primary" @click="nextStep">下一步</el-button></div>
+      <div style="text-align:right;margin-top:16px"><el-button type="primary" @click="nextStep" :disabled="isFormReadOnly">下一步</el-button></div>
     </el-card>
 
     <!-- 步骤2：居住信息 -->
@@ -70,7 +70,7 @@
       </el-form>
       <div style="text-align:right;margin-top:16px;display:flex;justify-content:space-between">
         <el-button @click="activeStep = 0">上一步</el-button>
-        <el-button type="primary" :loading="saving" @click="saveStep">保存草稿，继续下一步</el-button>
+        <el-button type="primary" :loading="saving" :disabled="isFormReadOnly || !hasValidVersion" @click="saveStep">保存草稿，继续下一步</el-button>
       </div>
     </el-card>
 
@@ -78,11 +78,11 @@
     <el-card v-show="activeStep === 2" shadow="never">
       <template #header>3. 上传材料</template>
       <el-alert type="info" :closable="false" style="margin-bottom:16px">{{ materialRuleText }}</el-alert>
-      <MaterialUploader v-if="applicationId && canUpload" :application-id="applicationId" :material-options="materialOptions" @uploaded="loadMaterials" />
-      <MaterialList :materials="materials" :can-delete="canEdit" @changed="loadMaterials" />
+      <MaterialUploader v-if="applicationId && canUpload && !isFormReadOnly" :application-id="applicationId" :material-options="materialOptions" @uploaded="loadMaterials" />
+      <MaterialList :materials="materials" :can-delete="canEdit && !isFormReadOnly" @changed="loadMaterials" />
       <div style="text-align:right;margin-top:16px;display:flex;justify-content:space-between">
-        <el-button @click="activeStep = 1">上一步</el-button>
-        <el-button type="primary" @click="activeStep = 3">检查并提交</el-button>
+        <el-button @click="activeStep = 1" :disabled="isFormReadOnly">上一步</el-button>
+        <el-button type="primary" @click="activeStep = 3" :disabled="isFormReadOnly">检查并提交</el-button>
       </div>
     </el-card>
 
@@ -100,11 +100,11 @@
         <el-descriptions-item label="计划离开">{{ form.plannedLeaveDate || '-' }}</el-descriptions-item>
       </el-descriptions>
       <el-alert v-if="!materialsReady" type="warning" :closable="false" show-icon style="margin-top: 16px">
-        <template #title>材料未完整。所有必需材料须上传并通过核验后才能提交。</template>
+        <template #title>材料未完整。所有必需材料须上传后才能提交，材料将在审批阶段进行核验。</template>
       </el-alert>
       <div style="text-align:right;margin-top:16px;display:flex;justify-content:space-between">
         <el-button @click="activeStep = 2">上一步</el-button>
-        <el-button type="primary" :loading="submitting" :disabled="!materialsReady" @click="submit">提交申请</el-button>
+        <el-button type="primary" :loading="submitting" :disabled="!materialsReady || isFormReadOnly" @click="submit">提交申请</el-button>
       </div>
     </el-card>
   </div>
@@ -132,7 +132,8 @@ const userStore = useUserStore()
 
 const isEdit = ref(false)
 const applicationId = ref(null)
-const professionalVersion = ref(0)
+const professionalVersion = ref(null)
+const detailAppStatus = ref('DRAFT')
 const loading = ref(false)
 const saving = ref(false)
 const submitting = ref(false)
@@ -181,6 +182,8 @@ const step2Rules = {
 
 const canUpload = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_UPLOAD))
 const canEdit = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_DELETE))
+const isFormReadOnly = computed(() => detailAppStatus.value !== 'DRAFT')
+const hasValidVersion = computed(() => Number.isInteger(professionalVersion.value))
 const materialOptions = computed(() => getFloatingMaterialOptions(form.residenceReasonCode))
 const materialRuleText = computed(() => getFloatingMaterialRuleText(form.residenceReasonCode))
 const materialsReady = computed(() => hasUploadedFloatingMaterials(materials.value, form.residenceReasonCode))
@@ -212,7 +215,11 @@ async function loadApplication() {
     form.title = detail.application?.title || ''
     form.reason = detail.application?.reason || ''
     form.remark = detail.application?.remark || ''
-    professionalVersion.value = p.version || 0
+    professionalVersion.value = Number.isInteger(p.version) ? p.version : null
+    detailAppStatus.value = detail.application?.status || 'DRAFT'
+    if (detailAppStatus.value !== 'DRAFT') {
+      activeStep.value = 3
+    }
     selectedPersonName.value = p.personName || ''
     await loadMaterials()
   } catch (error) {

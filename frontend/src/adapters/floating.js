@@ -71,7 +71,7 @@ export function normalizeFloatingProfessional(raw) {
       plannedLeaveDate: pickFirst(pro.plannedLeaveDate),
       applicantPhone: pickFirst(pro.applicantPhone, pro.phone),
       businessStatus: pickFirst(pro.businessStatus, pro.status),
-      version: pickFirst(pro.version, 0),
+      version: pro.version,
       executedFloatingId: pickFirst(pro.executedFloatingId)
     },
     subject: raw.subject || null,

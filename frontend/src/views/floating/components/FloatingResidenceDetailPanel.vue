@@ -23,15 +23,15 @@
       <template #header><div class="card-header"><span>居住证专业信息</span><el-tag size="small">{{ PERMIT_APPLY_TYPE[applyType] || applyType }}</el-tag></div></template>
       <el-descriptions :column="2" border>
         <el-descriptions-item label="申请类型">{{ PERMIT_APPLY_TYPE[applyType] || applyType || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="人员">{{ detail.personName || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="身份证号"><SensitiveText :value="detail.identityNo" kind="idCard" /></el-descriptions-item>
-        <el-descriptions-item label="当前区域">{{ detail.currentRegionCode || detail.issueRegionCode || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="当前地址" :span="2">{{ detail.currentAddress || '-' }}</el-descriptions-item>
-        <el-descriptions-item v-if="applyType === 'FIRST_ISSUE'" label="居住依据">{{ RESIDENCE_BASIS[detail.residenceBasisCode] || detail.residenceBasisCode || '-' }}</el-descriptions-item>
-        <el-descriptions-item v-if="applyType === 'FIRST_ISSUE'" label="关联登记编号">{{ detail.registrationNo || '-' }}</el-descriptions-item>
-        <el-descriptions-item v-if="(applyType === 'ENDORSEMENT' || applyType === 'CANCELLATION') && detail.permitNo" label="当前证件编号"><SensitiveText :value="detail.permitNo" kind="text" /></el-descriptions-item>
-        <el-descriptions-item v-if="detail.requestedValidFrom || detail.requestedValidUntil" label="申请有效期">
-          {{ detail.requestedValidFrom || '-' }} ~ {{ detail.requestedValidUntil || '-' }}
+        <el-descriptions-item label="人员">{{ merged.personName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="身份证号"><SensitiveText :value="merged.identityNo" kind="idCard" /></el-descriptions-item>
+        <el-descriptions-item label="当前区域">{{ merged.currentRegionCode || merged.issueRegionCode || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="当前地址" :span="2">{{ merged.currentAddress || '-' }}</el-descriptions-item>
+        <el-descriptions-item v-if="applyType === 'FIRST_ISSUE'" label="居住依据">{{ RESIDENCE_BASIS[merged.residenceBasisCode] || merged.residenceBasisCode || '-' }}</el-descriptions-item>
+        <el-descriptions-item v-if="applyType === 'FIRST_ISSUE'" label="关联登记编号">{{ merged.registrationNo || '-' }}</el-descriptions-item>
+        <el-descriptions-item v-if="(applyType === 'ENDORSEMENT' || applyType === 'CANCELLATION') && merged.permitNo" label="当前证件编号"><SensitiveText :value="merged.permitNo" kind="text" /></el-descriptions-item>
+        <el-descriptions-item v-if="merged.requestedValidFrom || merged.requestedValidUntil" label="申请有效期">
+          {{ merged.requestedValidFrom || '-' }} ~ {{ merged.requestedValidUntil || '-' }}
         </el-descriptions-item>
       </el-descriptions>
     </el-card>
@@ -47,12 +47,17 @@ import { maskPhone } from '../../../utils/mask'
 
 const props = defineProps({
   mode: { type: String, required: true, validator: (v) => ['floating', 'permit'].includes(v) },
-  detail: { type: Object, default: null }
+  detail: { type: Object, default: null },
+  subject: { type: Object, default: null }
 })
 
+const merged = computed(() => ({
+  ...(props.subject || {}),
+  ...(props.detail || {})
+}))
+
 const applyType = computed(() => {
-  if (!props.detail?.applyType) return null
-  return props.detail.applyType
+  return merged.value?.applyType || props.detail?.applyType
 })
 
 function formatPhone(phone) {

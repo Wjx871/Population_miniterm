@@ -43,10 +43,10 @@ import StatusTag from '../../components/common/StatusTag.vue'
 import SensitiveText from '../../components/common/SensitiveText.vue'
 import { getExpiringResidencePermits } from '../../api/floatingResidence'
 import { normalizeExpiringPermitList } from '../../adapters/residencePermit'
-import { normalizePageResult } from '../../utils/page'
 import { getApiErrorMessage } from '../../utils/apiError'
 
 const loading = ref(false)
+const allRecords = ref([])
 const records = ref([])
 const pager = reactive({ current: 1, size: 20, total: 0 })
 const windowDays = ref(null)
@@ -57,23 +57,26 @@ function truncateAddress(addr) {
   return addr.length > 15 ? addr.slice(0, 15) + '…' : addr
 }
 
+function slicePage() {
+  const start = (pager.current - 1) * pager.size
+  records.value = allRecords.value.slice(start, start + pager.size)
+  pager.total = allRecords.value.length
+}
+
 async function load() {
   loading.value = true
   try {
-    const params = { current: pager.current, size: pager.size }
-    if (windowDays.value) params.days = windowDays.value
+    const params = windowDays.value ? { days: windowDays.value } : {}
     const res = await getExpiringResidencePermits(params)
-    const page = normalizePageResult(res)
-    records.value = normalizeExpiringPermitList(page.records)
-    pager.total = page.total
-    pager.current = page.current
-    pager.size = page.size
+    allRecords.value = normalizeExpiringPermitList(Array.isArray(res) ? res : [])
+    pager.current = 1
+    slicePage()
   } catch (error) {
     ElMessage.error(getApiErrorMessage(error, '查询到期提醒失败'))
   } finally { loading.value = false }
 }
 
 onMounted(load)
-watch(() => pager.current, () => load())
-watch(() => pager.size, () => { pager.current = 1; load() })
+watch(() => pager.current, () => slicePage())
+watch(() => pager.size, () => { pager.current = 1; slicePage() })
 </script>
