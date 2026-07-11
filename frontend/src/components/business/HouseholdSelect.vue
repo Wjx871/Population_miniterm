@@ -15,20 +15,23 @@
     @clear="handleClear"
   >
     <el-option
-      v-for="p in options"
-      :key="p.id"
-      :label="formatLabel(p)"
-      :value="p.id"
+      v-for="item in options"
+      :key="item.id"
+      :label="formatLabel(item)"
+      :value="item.id"
     />
   </el-select>
 </template>
 
 <script setup>
+/**
+ * 家庭户远程选择器（结构完成）。
+ * 接口契约待后端确认；当前无 HouseholdController 时搜索会失败并展示空列表，禁止 Mock。
+ */
 import { ref, watch } from 'vue'
-import { getPersonPage, getPersonById } from '../../api/persons'
-import { normalizePerson, normalizePersonList } from '../../adapters/person'
+import { getHouseholdPage, getHouseholdById } from '../../api/households'
+import { normalizeHousehold, normalizeHouseholdList } from '../../adapters/household'
 import { normalizePageResult } from '../../utils/page'
-import { maskIdCard } from '../../utils/mask'
 
 const props = defineProps({
   modelValue: {
@@ -37,13 +40,12 @@ const props = defineProps({
   },
   placeholder: {
     type: String,
-    default: '请输入姓名或身份证号搜索',
+    default: '请输入户籍编号或户主姓名搜索',
   },
   disabled: {
     type: Boolean,
     default: false,
   },
-  /** 传给分页筛选；空字符串表示不限状态 */
   status: {
     type: String,
     default: '正常',
@@ -72,15 +74,12 @@ let requestSeq = 0
 
 const maxSize = () => Math.min(20, Math.max(1, Number(props.size) || 20))
 
-function formatLabel(person) {
-  if (!person) return ''
-  const name = person.name || '未知'
-  return `${name} · ${maskIdCard(person.idCard)}`
-}
-
-function isIdCardLike(keyword) {
-  const text = String(keyword || '').trim()
-  return /^[0-9Xx]{15,18}$/.test(text)
+function formatLabel(item) {
+  if (!item) return ''
+  const no = item.householdNo || '无编号'
+  const head = item.headPersonName || '未知户主'
+  const address = item.address ? String(item.address).slice(0, 20) : '无地址'
+  return `${no} · ${head} · ${address}`
 }
 
 function mergeOptions(list) {
@@ -93,7 +92,6 @@ function mergeOptions(list) {
     map.set(String(item.id), item)
   })
 
-  // 已选项不在当前结果时仍保留显示
   if (props.modelValue != null && props.modelValue !== '') {
     const key = String(props.modelValue)
     if (!excludeSet.has(key)) {
@@ -107,7 +105,7 @@ function mergeOptions(list) {
   options.value = Array.from(map.values())
 }
 
-async function fetchPersons(keyword = '') {
+async function fetchHouseholds(keyword = '') {
   const seq = ++requestSeq
   loading.value = true
   try {
@@ -121,23 +119,23 @@ async function fetchPersons(keyword = '') {
 
     const text = String(keyword || '').trim()
     if (text) {
-      if (isIdCardLike(text)) {
-        query.idCard = text
+      // 接口契约待后端确认：常见筛选为户号或户主姓名
+      if (/^\d+$/.test(text) || text.length >= 6) {
+        query.householdNo = text
       } else {
-        query.name = text
+        query.headPersonName = text
       }
     }
 
-    const res = await getPersonPage(query)
+    const res = await getHouseholdPage(query)
     if (seq !== requestSeq) return
 
     const page = normalizePageResult(res)
-    const list = normalizePersonList(page.records)
+    const list = normalizeHouseholdList(page.records)
     mergeOptions(list)
   } catch (error) {
     if (seq !== requestSeq) return
-    console.error('人员远程搜索失败', error)
-    // 保留已选项，避免清空导致表单显示异常
+    console.error('家庭户远程搜索失败', error)
     mergeOptions([])
   } finally {
     if (seq === requestSeq) {
@@ -149,13 +147,13 @@ async function fetchPersons(keyword = '') {
 function onRemoteSearch(keyword) {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
-    fetchPersons(keyword)
+    fetchHouseholds(keyword)
   }, 300)
 }
 
 function onVisibleChange(visible) {
   if (visible && options.value.length === 0) {
-    fetchPersons('')
+    fetchHouseholds('')
   }
 }
 
@@ -173,14 +171,14 @@ async function ensureSelectedOption(id) {
   }
 
   try {
-    const res = await getPersonById(id)
-    const person = normalizePerson(res)
-    if (person.id != null) {
-      selectedCache.value.set(String(person.id), person)
+    const res = await getHouseholdById(id)
+    const item = normalizeHousehold(res)
+    if (item.id != null) {
+      selectedCache.value.set(String(item.id), item)
       mergeOptions(options.value)
     }
   } catch (error) {
-    console.error('加载已选人员失败', error)
+    console.error('加载已选家庭户失败', error)
   }
 }
 

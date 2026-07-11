@@ -6,6 +6,8 @@ export const PERMISSIONS = Object.freeze({
   PERSON_CREATE: 'person:create',
   PERSON_UPDATE: 'person:update',
   PERSON_DELETE: 'person:delete',
+  /** 详情中临时查看完整敏感信息；列表默认仍脱敏 */
+  PERSON_SENSITIVE_VIEW: 'person:sensitive:view',
   HOUSEHOLD_VIEW: 'household:view',
   HOUSEHOLD_CREATE: 'household:create',
   HOUSEHOLD_UPDATE: 'household:update',
@@ -42,6 +44,7 @@ export const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
     PERMISSIONS.PERSON_VIEW,
     PERMISSIONS.PERSON_CREATE,
     PERMISSIONS.PERSON_UPDATE,
+    PERMISSIONS.PERSON_SENSITIVE_VIEW,
     PERMISSIONS.HOUSEHOLD_VIEW,
     PERMISSIONS.HOUSEHOLD_CREATE,
     PERMISSIONS.HOUSEHOLD_UPDATE,
