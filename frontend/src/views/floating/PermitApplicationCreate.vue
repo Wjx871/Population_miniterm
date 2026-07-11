@@ -109,15 +109,22 @@ import { RESIDENCE_BASIS, PERMIT_APPLY_TYPE, getPermitMaterialOptions, getPermit
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
+import { useProfessionalDraftState } from '../../composables/useProfessionalDraftState'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-const isEdit = ref(false)
-const applicationId = ref(null)
-const professionalVersion = ref(null)
-const detailAppStatus = ref('DRAFT')
+const {
+  applicationId,
+  professionalVersion,
+  isEdit,
+  isReadOnly: isFormReadOnly,
+  hasValidVersion,
+  applyDetailMeta,
+  markCreated
+} = useProfessionalDraftState()
+
 const loading = ref(false)
 const saving = ref(false)
 const submitting = ref(false)
@@ -142,10 +149,6 @@ const canEdit = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_DELE
 const materialOptions = computed(() => getPermitMaterialOptions(applyType.value, floatingInfo.value?.residenceReasonCode))
 const materialRuleText = computed(() => getPermitMaterialRuleText(applyType.value, floatingInfo.value?.residenceReasonCode))
 const materialsReady = computed(() => hasUploadedPermitMaterials(materials.value, applyType.value, floatingInfo.value?.residenceReasonCode))
-const isFormReadOnly = computed(() => detailAppStatus.value !== 'DRAFT')
-const hasValidVersion = computed(() =>
-  !isEdit.value || Number.isInteger(professionalVersion.value)
-)
 
 const form = reactive({
   residenceBasisCode: '',
@@ -202,8 +205,8 @@ async function loadApplicationForEdit() {
     form.remark = detail.application?.remark || ''
     form.requestedValidFrom = p.requestedValidFrom || ''
     form.requestedValidUntil = p.requestedValidUntil || ''
-    professionalVersion.value = Number.isInteger(p.version) ? p.version : null
-    detailAppStatus.value = detail.application?.status || 'DRAFT'
+    
+    applyDetailMeta(detail)
     if (p.floatingId) {
       try { floatingInfo.value = normalizeFloatingPopulation(await getFloatingPopulationById(p.floatingId)) } catch { /* non-blocking */ }
     }
@@ -224,6 +227,11 @@ async function saveApplication() {
   try {
     const base = { title: form.title || '', reason: form.reason || '', remark: form.remark || '' }
     if (isEdit.value) {
+      if (!hasValidVersion.value) {
+        ElMessage.error('专业申请缺少版本号，无法更新，请重新加载')
+        saving.value = false
+        return
+      }
       await updatePermitApplication(applicationId.value, {
         ...base,
         residenceBasisCode: form.residenceBasisCode,
@@ -232,6 +240,7 @@ async function saveApplication() {
         version: professionalVersion.value
       })
       ElMessage.success('草稿已更新')
+      await loadMaterials()
     } else {
       const payload = applyType.value === 'FIRST_ISSUE' ? { ...base, floatingId: selectedFloatingId.value || floatingInfo.value?.floatingId, residenceBasisCode: form.residenceBasisCode, requestedValidFrom: form.requestedValidFrom || null, requestedValidUntil: form.requestedValidUntil || null }
         : applyType.value === 'ENDORSEMENT' ? { ...base, residenceBasisCode: form.residenceBasisCode, requestedValidFrom: form.requestedValidFrom || null, requestedValidUntil: form.requestedValidUntil || null }
@@ -240,11 +249,10 @@ async function saveApplication() {
       if (applyType.value === 'FIRST_ISSUE') result = await createPermitFirstIssueApplication(payload)
       else if (applyType.value === 'ENDORSEMENT') result = await createPermitEndorsementApplication(route.params.permitId, payload)
       else result = await createPermitCancellationApplication(route.params.permitId, payload)
-      applicationId.value = result?.applicationId || result?.id
-      isEdit.value = true
+      markCreated(result?.applicationId || result?.id)
       ElMessage.success('草稿已创建')
+      await loadApplicationForEdit()
     }
-    await loadMaterials()
   } catch (error) {
     if (isApiConflict(error)) { await loadApplicationForEdit(); ElMessage.warning('版本冲突，数据已刷新。') }
     else ElMessage.error(getApiErrorMessage(error, '保存失败'))
@@ -291,13 +299,10 @@ onMounted(async () => {
     try { permitInfo.value = normalizeResidencePermit(await getResidencePermitById(route.params.permitId)) } catch { /* non-blocking */ }
     showForm.value = true
   }
-  // 首次申领的快捷入口
   if (selectedFloatingId.value && applyType.value === 'FIRST_ISSUE' && !appId) {
     await startFirstIssue()
   }
-  // 编辑模式
   if (appId) {
-    isEdit.value = true
     applicationId.value = appId
     await loadApplicationForEdit()
   }

@@ -125,15 +125,22 @@ import { RESIDENCE_REASON, RESIDENCE_PROOF_TYPE, getFloatingMaterialOptions, get
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
+import { useProfessionalDraftState } from '../../composables/useProfessionalDraftState'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-const isEdit = ref(false)
-const applicationId = ref(null)
-const professionalVersion = ref(null)
-const detailAppStatus = ref('DRAFT')
+const {
+  applicationId,
+  professionalVersion,
+  isEdit,
+  isReadOnly: isFormReadOnly,
+  hasValidVersion,
+  applyDetailMeta,
+  markCreated
+} = useProfessionalDraftState()
+
 const loading = ref(false)
 const saving = ref(false)
 const submitting = ref(false)
@@ -182,10 +189,6 @@ const step2Rules = {
 
 const canUpload = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_UPLOAD))
 const canEdit = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_DELETE))
-const isFormReadOnly = computed(() => detailAppStatus.value !== 'DRAFT')
-const hasValidVersion = computed(() =>
-  !isEdit.value || Number.isInteger(professionalVersion.value)
-)
 const materialOptions = computed(() => getFloatingMaterialOptions(form.residenceReasonCode))
 const materialRuleText = computed(() => getFloatingMaterialRuleText(form.residenceReasonCode))
 const materialsReady = computed(() => hasUploadedFloatingMaterials(materials.value, form.residenceReasonCode))
@@ -217,11 +220,12 @@ async function loadApplication() {
     form.title = detail.application?.title || ''
     form.reason = detail.application?.reason || ''
     form.remark = detail.application?.remark || ''
-    professionalVersion.value = Number.isInteger(p.version) ? p.version : null
-    detailAppStatus.value = detail.application?.status || 'DRAFT'
-    if (detailAppStatus.value !== 'DRAFT') {
+    
+    applyDetailMeta(detail)
+    if (isFormReadOnly.value) {
       activeStep.value = 3
     }
+
     selectedPersonName.value = p.personName || ''
     await loadMaterials()
   } catch (error) {
@@ -254,13 +258,16 @@ async function saveStep() {
       remark: form.remark || ''
     }
     if (isEdit.value) {
+      if (!hasValidVersion.value) {
+        ElMessage.error('专业申请缺少版本号，无法更新，请重新加载')
+        saving.value = false
+        return
+      }
       await updateFloatingApplication(applicationId.value, { ...payload, version: professionalVersion.value })
       ElMessage.success('草稿已更新')
-      await loadApplication()
     } else {
       const result = await createFloatingApplication(payload)
-      applicationId.value = result?.applicationId || result?.id
-      isEdit.value = true
+      markCreated(result?.applicationId || result?.id)
       ElMessage.success('草稿已创建')
     }
     await loadApplication()
@@ -291,7 +298,6 @@ function backToList() { router.push('/floating-population') }
 onMounted(async () => {
   const appId = route.query.applicationId
   if (appId) {
-    isEdit.value = true
     applicationId.value = appId
     await loadApplication()
     activeStep.value = 2

@@ -210,10 +210,6 @@ export function hasVerifiedPermitMaterials(materials, applyType, reasonCode) {
 }
 
 // 保留旧函数名以兼容（标记为deprecated）
-/** @deprecated 使用 hasVerifiedFloatingMaterials */
-export const hasCompleteFloatingMaterials = hasVerifiedFloatingMaterials
-/** @deprecated 使用 hasVerifiedPermitMaterials */
-export const hasCompletePermitMaterials = hasVerifiedPermitMaterials
 
 // ==================== 生命周期动作 ====================
 export const LIFECYCLE_ACTION = Object.freeze({

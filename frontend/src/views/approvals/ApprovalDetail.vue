@@ -30,17 +30,14 @@ import ApprovalTimeline from '../../components/business/ApprovalTimeline.vue'
 import MigrationDetailPanel from '../migrations/components/MigrationDetailPanel.vue'
 import FloatingResidenceDetailPanel from '../floating/components/FloatingResidenceDetailPanel.vue'
 import { approveApproval, getApprovalDetail, rejectApproval } from '../../api/approvals'
-import { getMigrationApplicationDetail } from '../../api/migrations'
-import { getFloatingApplicationDetail, getPermitApplicationDetail } from '../../api/floatingResidence'
 import { getPersonById } from '../../api/persons'
 import { normalizePerson } from '../../adapters/person'
 import { normalizeFloatingProfessional } from '../../adapters/floating'
 import { normalizePermitProfessional } from '../../adapters/residencePermit'
 import { getMigrationRecord } from '../../adapters/migration'
 import { BUSINESS_TYPE } from '../../constants/application'
-import { hasCompleteMigrationMaterials } from '../../constants/material'
-import { hasVerifiedFloatingMaterials, hasVerifiedPermitMaterials } from '../../constants/floatingResidence'
 import { PERMISSIONS } from '../../constants/permissions'
+import { getApplicationBusinessHandler } from '../../features/applications/handlers'
 import { useUserStore } from '../../stores/user'
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
 
@@ -63,23 +60,25 @@ const isPending = computed(() => detail.value?.approval?.status === 'PENDING')
 const canHandle = computed(() => userStore.hasPermission(PERMISSIONS.APPROVAL_HANDLE))
 const allRequiredVerified = computed(() => {
   const materials = detail.value?.materials || []
-  const record = getMigrationRecord(migrationDetail.value)
-  if (migrationDetail.value?.migrationIn) return hasCompleteMigrationMaterials('in', record?.migrationType, materials)
-  if (migrationDetail.value?.migrationOut) return hasCompleteMigrationMaterials('out', record?.migrationType, materials)
-  if (floatingDetail.value) {
-    return hasVerifiedFloatingMaterials(materials, floatingDetailBody.value?.residenceReasonCode)
+  const bt = detail.value?.application?.businessType
+  const handler = getApplicationBusinessHandler(bt)
+  
+  if (handler) {
+    // determine detail object based on what is loaded
+    let professionalDetail = null
+    if (handler.family === 'migration') professionalDetail = migrationDetail.value
+    else if (handler.family === 'floating') professionalDetail = floatingDetail.value
+    else if (handler.family === 'permit') professionalDetail = permitDetail.value
+    
+    if (professionalDetail) {
+      return handler.hasVerifiedMaterials({
+        businessType: bt,
+        detail: professionalDetail,
+        materials
+      })
+    }
   }
-  if (permitDetail.value) {
-    const bt = detail.value?.application?.businessType
-    let at = 'FIRST_ISSUE'
-    if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_ENDORSEMENT) at = 'ENDORSEMENT'
-    if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_CANCELLATION) at = 'CANCELLATION'
-    // 首次申领的居住事由在 subject（流动登记）上
-    const reasonCode = at === 'FIRST_ISSUE'
-      ? permitDetail.value?.subject?.residenceReasonCode
-      : undefined
-    return hasVerifiedPermitMaterials(materials, at, reasonCode)
-  }
+
   // fallback generic: 有requiredFlag且全部VERIFIED
   const required = materials.filter((item) => item.requiredFlag)
   return required.length > 0 && required.every((item) => item.verifyStatus === 'VERIFIED')
@@ -99,14 +98,21 @@ async function load() {
     migrationPerson.value = null
     floatingDetail.value = null
     permitDetail.value = null
+    
     const bt = detail.value.application?.businessType
-    if ([BUSINESS_TYPE.MIGRATION_IN, BUSINESS_TYPE.MIGRATION_OUT].includes(bt)) {
-      migrationDetail.value = await getMigrationApplicationDetail(detail.value.application.applicationId)
-      await loadMigrationPerson(getMigrationRecord(migrationDetail.value))
-    } else if (bt === BUSINESS_TYPE.FLOATING_REGISTRATION) {
-      floatingDetail.value = normalizeFloatingProfessional(await getFloatingApplicationDetail(detail.value.application.applicationId))
-    } else if ([BUSINESS_TYPE.RESIDENCE_PERMIT_FIRST_ISSUE, BUSINESS_TYPE.RESIDENCE_PERMIT_ENDORSEMENT, BUSINESS_TYPE.RESIDENCE_PERMIT_CANCELLATION].includes(bt)) {
-      permitDetail.value = normalizePermitProfessional(await getPermitApplicationDetail(detail.value.application.applicationId))
+    const handler = getApplicationBusinessHandler(bt)
+    
+    if (handler) {
+      const rawDetail = await handler.loadDetail(detail.value.application.applicationId)
+      
+      if (handler.family === 'migration') {
+        migrationDetail.value = rawDetail
+        await loadMigrationPerson(getMigrationRecord(migrationDetail.value))
+      } else if (handler.family === 'floating') {
+        floatingDetail.value = normalizeFloatingProfessional(rawDetail)
+      } else if (handler.family === 'permit') {
+        permitDetail.value = normalizePermitProfessional(rawDetail)
+      }
     }
   } catch (error) {
     ElMessage.error(getApiErrorMessage(error, '加载审批详情失败'))
