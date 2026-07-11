@@ -28,9 +28,20 @@ public class ApplicationService {
     private final ApplicationStateMachine stateMachine;
     private final ApprovalLogMapper approvalLogMapper;
     private final OperationLogService audit;
+    private final SpecializedBusinessTypeRegistry specializedTypes;
 
     @Transactional
     public ApplicationView create(ApplicationRequest request, HttpServletRequest httpRequest) {
+        requireGenericBusinessType(request.businessType());
+        return createInternal(request, httpRequest);
+    }
+
+    @Transactional
+    public ApplicationView createSpecialized(ApplicationRequest request, HttpServletRequest httpRequest) {
+        return createInternal(request, httpRequest);
+    }
+
+    private ApplicationView createInternal(ApplicationRequest request, HttpServletRequest httpRequest) {
         AuthenticatedUser user = CurrentUserContext.requireUser();
         BusinessApplication value = new BusinessApplication();
         value.setApplicationNo(generateNumber("APP"));
@@ -66,6 +77,16 @@ public class ApplicationService {
 
     @Transactional
     public ApplicationView update(Long id, ApplicationRequest request) {
+        requireGenericBusinessType(request.businessType());
+        return updateInternal(id, request);
+    }
+
+    @Transactional
+    public ApplicationView updateSpecialized(Long id, ApplicationRequest request) {
+        return updateInternal(id, request);
+    }
+
+    private ApplicationView updateInternal(Long id, ApplicationRequest request) {
         BusinessApplication value = require(id);
         AuthenticatedUser user = CurrentUserContext.requireUser();
         stateMachine.requireDraft(value.getStatus());
@@ -127,6 +148,12 @@ public class ApplicationService {
 
     public static void conflict() {
         throw new BusinessException(HttpStatus.CONFLICT, "记录已被其他用户处理，请刷新后重试");
+    }
+
+    private void requireGenericBusinessType(BusinessType type) {
+        if (specializedTypes.requiresDedicatedEntry(type)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "该业务必须通过对应的专业业务入口创建");
+        }
     }
 
     private void forbidden() { throw new BusinessException(HttpStatus.FORBIDDEN, "无权访问该申请"); }
