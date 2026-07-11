@@ -18,3 +18,7 @@ logs/
 # 临时文件
 *.tmp
 *.bak
+*.err
+
+# Spring Boot 运行时输出
+springboot.err
