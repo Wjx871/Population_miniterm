@@ -162,17 +162,17 @@ ON DUPLICATE KEY UPDATE role_id = VALUES(role_id);
 
 -- =====================================================
 -- 6. System Users (sys_user)
--- Default password: Admin@123 (BCrypt hashed)
+-- Default password: Admin@123 (SHA-256+salt via PasswordEncoder; format = hash:base64salt)
 -- =====================================================
 INSERT INTO sys_user (username, password_hash, real_name, phone, role_id, department_id, status) VALUES
 -- Admin user (role_id=4, department_id=1)
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '系统管理员', '13800138000', 4, 1, 'ENABLED'),
+('admin',      '0de25abfb9e2f1d55e7098621b2995fa090dff4c0bf87c7ea45fc50553296dd8:eOJWh/WpoT1ugqlQc5cmUA==', '系统管理员', '13800138000', 4, 1, 'ENABLED'),
 -- L1 Query user
-('viewer01', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '张三(查询)', '13800138001', 1, 2, 'ENABLED'),
+('viewer01',   '4ab724fa646f13277f2fa537140af0b42c7e5e5bfc5e22d0da4ef70ee1eeebef:rsM2txc3HMoE+fLIn4zKHA==', '张三(查询)', '13800138001', 1, 2, 'ENABLED'),
 -- L2 Handle user
-('operator01', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '李四(经办)', '13800138002', 2, 2, 'ENABLED'),
+('operator01', 'be05900889d6308f08bf32274702381a2eb9722218a761f42946d1a61c49ce4f:CV875gE90d3iml0uy3hJvg==', '李四(经办)', '13800138002', 2, 2, 'ENABLED'),
 -- L3 Approve user
-('approver01', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '王五(审批)', '13800138003', 3, 1, 'ENABLED')
+('approver01', '535cdd1377a83f4a0640f813c2fc0ba47e0645ddf87c4a5afe240d8d8ec295f1:iqyjO1MbQY0rbMG8rsZaqQ==', '王五(审批)', '13800138003', 3, 1, 'ENABLED')
 ON DUPLICATE KEY UPDATE username = VALUES(username);
 
 -- =====================================================
