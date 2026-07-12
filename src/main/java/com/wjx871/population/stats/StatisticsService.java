@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import com.wjx871.population.security.DataScopeCriteria;
 
 /**
  * 统计信息业务逻辑服务。
@@ -141,7 +142,7 @@ public class StatisticsService {
      */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getRecentLogs() {
-        List<Map<String, Object>> logs = statisticsMapper.selectRecentLogs();
+        List<Map<String, Object>> logs = statisticsMapper.selectRecentLogs(DataScopeCriteria.current());
         if (logs == null || logs.isEmpty()) {
             // 构造真实的测试操作日志
             logs = Arrays.asList(

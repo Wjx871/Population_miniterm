@@ -1,0 +1,1 @@
+package com.wjx871.population.cancellation; public interface CancellationTransactionHook {default void afterResidenceArchive(){}default void afterResidenceDelete(){}default void afterMemberUpdate(){}default void afterPersonUpdate(){}default void afterHouseholdArchive(){}default void afterHouseholdUpdate(){}}

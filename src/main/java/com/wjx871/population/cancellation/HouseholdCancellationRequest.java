@@ -1,0 +1,2 @@
+package com.wjx871.population.cancellation; import jakarta.validation.constraints.*; import java.time.LocalDate;
+public record HouseholdCancellationRequest(@NotNull Long householdId,@NotNull CancelReasonCode cancelReasonCode,@Size(max=500) String cancelReasonDetail,@NotNull LocalDate eventDate,@NotBlank @Size(max=200) String title,@NotBlank String reason,@Size(max=500) String remark,Integer version) {}

@@ -1,0 +1,14 @@
+package com.wjx871.population.migration;
+import java.time.LocalDateTime; import java.util.*; import org.apache.ibatis.annotations.*;
+@Mapper public interface MigrationMapper {
+ int insertIn(MigrationIn v); int insertOut(MigrationOut v); Optional<MigrationIn> findIn(Long applicationId); Optional<MigrationOut> findOut(Long applicationId);
+ Optional<MigrationIn> lockIn(Long applicationId); Optional<MigrationOut> lockOut(Long applicationId); int updateInDraft(@Param("v") MigrationIn v,@Param("expectedVersion") int version); int updateOutDraft(@Param("v") MigrationOut v,@Param("expectedVersion") int version);
+ int updateInStatus(@Param("applicationId")Long id,@Param("from")MigrationBusinessStatus from,@Param("to")MigrationBusinessStatus to,@Param("expectedVersion")int version,@Param("operatorId")Long operatorId);
+ int updateOutStatus(@Param("applicationId")Long id,@Param("from")MigrationBusinessStatus from,@Param("to")MigrationBusinessStatus to,@Param("expectedVersion")int version,@Param("operatorId")Long operatorId,@Param("batchNo")String batchNo);
+ Optional<Residence> findResidence(Long personId); Optional<Residence> lockResidence(Long personId); int insertResidence(Residence v); int deleteResidence(@Param("id")Long id,@Param("version")int version);
+ Optional<HouseholdSnapshot> findHousehold(Long id); Optional<HouseholdSnapshot> lockHousehold(Long id); List<Long> activeMembers(Long id); long countActiveMembership(Long personId);
+ int reactivateMember(@Param("householdId")Long h,@Param("personId")Long p,@Param("date")java.time.LocalDate d); int insertMember(@Param("householdId")Long h,@Param("personId")Long p,@Param("date")java.time.LocalDate d); int leaveMember(@Param("householdId")Long h,@Param("personId")Long p,@Param("date")java.time.LocalDate d);
+ int changeHead(@Param("householdId")Long h,@Param("oldHead")Long oldHead,@Param("newHead")Long newHead); int markHouseholdPending(@Param("householdId")Long h,@Param("oldHead")Long oldHead);
+ int insertArchive(ResidenceArchive v); Optional<ResidenceArchive> findArchive(Long id); List<ResidenceArchive> searchArchives(@Param("personName")String personName,@Param("identityNo")String identityNo,@Param("householdNo")String householdNo,@Param("archiveType")String archiveType,@Param("regionCode")String regionCode,@Param("from")LocalDateTime from,@Param("to")LocalDateTime to,@Param("limit")int limit,@Param("offset")long offset); long countArchives(@Param("personName")String personName,@Param("identityNo")String identityNo,@Param("householdNo")String householdNo,@Param("archiveType")String archiveType,@Param("regionCode")String regionCode,@Param("from")LocalDateTime from,@Param("to")LocalDateTime to);
+ int updatePersonResidence(@Param("personId")Long p,@Param("status")String status,@Param("address")String address); Optional<MigrationOut> findCompletedBatch(String batchNo); long countCompletedInBatch(String batchNo);
+}

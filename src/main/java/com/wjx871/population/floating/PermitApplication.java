@@ -1,0 +1,2 @@
+package com.wjx871.population.floating;import java.time.*;import lombok.Data;
+@Data public class PermitApplication {private Long permitApplicationId;private Long applicationId;private String applyType;private Long floatingId;private Long permitId;private Long personId;private String currentRegionCode;private String residenceBasisCode;private LocalDate requestedValidFrom;private LocalDate requestedValidUntil;private String businessStatus;private Long executedPermitId;private Long operatorId;private LocalDateTime executedAt;private Integer version;}

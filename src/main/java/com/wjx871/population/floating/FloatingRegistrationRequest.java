@@ -1,0 +1,3 @@
+package com.wjx871.population.floating;
+import jakarta.validation.constraints.*;import java.time.LocalDate;
+public record FloatingRegistrationRequest(@NotNull Long personId,@NotBlank @Pattern(regexp="[0-9]{6,20}")String sourceRegionCode,String sourceAddress,@NotBlank @Pattern(regexp="[0-9]{6,20}")String currentRegionCode,@NotBlank @Size(max=255)String currentAddress,@NotBlank String residenceReasonCode,@NotBlank String residenceProofType,@NotNull LocalDate arrivalDate,LocalDate plannedLeaveDate,@Pattern(regexp="^$|[0-9+ -]{7,20}")String applicantPhone,@NotBlank String title,@NotBlank String reason,String remark,Integer version){}

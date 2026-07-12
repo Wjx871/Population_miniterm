@@ -40,3 +40,5 @@ build/
 frontend/package-lock.json
 设计约束/前端开发提示词/
 项目记忆.md
+data/uploads/
+data/exports/

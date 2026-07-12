@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wjx871.population.audit.OperationLogMapper">
+    <insert id="insert" parameterType="com.wjx871.population.audit.OperationLog">
+        INSERT INTO operation_log (
+            user_id, operation_type, module_name, request_path, request_method,
+            operation_result, error_message, ip_address, user_agent, detail
+        ) VALUES (
+            #{userId}, #{operationType}, #{moduleName}, #{requestPath}, #{requestMethod},
+            #{operationResult}, #{errorMessage}, #{ipAddress}, #{userAgent}, #{detail}
+        )
+    </insert>
+</mapper>

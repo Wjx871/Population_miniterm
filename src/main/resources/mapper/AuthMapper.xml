@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wjx871.population.auth.AuthMapper">
+    <resultMap id="SystemUserMap" type="com.wjx871.population.auth.SystemUser">
+        <id property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="passwordHash" column="password_hash"/>
+        <result property="roleId" column="role_id"/>
+        <result property="departmentId" column="department_id"/>
+        <result property="realName" column="real_name"/>
+        <result property="phone" column="phone"/>
+        <result property="status" column="user_status"/>
+        <result property="lastLoginTime" column="last_login_time"/>
+        <result property="lastLoginIp" column="last_login_ip"/>
+        <result property="roleCode" column="role_code"/>
+        <result property="roleName" column="role_name"/>
+        <result property="roleLevel" column="role_level"/>
+        <result property="dataScope" column="data_scope"/>
+        <result property="roleStatus" column="role_status"/>
+        <result property="departmentName" column="department_name"/>
+        <result property="regionCode" column="region_code"/>
+    </resultMap>
+
+    <select id="selectByUsername" resultMap="SystemUserMap">
+        SELECT u.user_id, u.username, u.password_hash, u.role_id, u.department_id,
+               u.real_name, u.phone, u.status AS user_status, u.last_login_time, u.last_login_ip,
+               r.role_code, r.role_name, r.role_level, r.data_scope, r.status AS role_status,
+               d.department_name, d.region_code
+        FROM sys_user u
+        JOIN sys_role r ON r.role_id = u.role_id
+        LEFT JOIN sys_department d ON d.department_id = u.department_id
+        WHERE u.username = #{username}
+    </select>
+
+    <select id="selectPermissionCodesByRoleId" resultType="string">
+        SELECT p.permission_code
+        FROM sys_permission p
+        JOIN sys_role_permission rp ON rp.permission_id = p.permission_id
+        WHERE rp.role_id = #{roleId} AND p.status = 'ENABLED'
+        ORDER BY p.permission_code
+    </select>
+
+    <update id="updateLastLogin">
+        UPDATE sys_user
+        SET last_login_time = CURRENT_TIMESTAMP,
+            last_login_ip = #{ipAddress},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE user_id = #{userId}
+    </update>
+</mapper>

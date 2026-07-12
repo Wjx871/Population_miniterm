@@ -1,89 +1,107 @@
 # Population Miniterm
 
-人口数据库管理系统前端，基于 Spring Boot、Spring Web、Spring Data JPA 和 MySQL。
+人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。
 
-## 环境要求
+## 第三阶段：户籍迁移闭环
 
-- JDK 17+
-- MySQL 8+
+系统现支持申请制迁入/迁出、单级审批后的显式业务执行、当前户籍唯一登记、家庭成员同步、迁出历史快照、户主变更及同市跨区批次关联。操作顺序为：创建迁移草稿 → 上传必需材料 → 提交/审批 → 授权经办人确认执行。审批通过不会自动改变户籍。
 
-## 小组开发数据库约定
+增量升级依次执行 `doc/database/migrations` 下的 `V4_001` 至 `V4_006`。数据库通过 `DB_URL/DB_USERNAME/DB_PASSWORD`，JWT 通过 `JWT_SECRET` 配置，上传目录通过 `APP_UPLOAD_DIR` 配置。演示账号仍为 `viewer/population/household/approver/admin`，课程环境初始密码 `123456`。
 
-平时开发时，每个人连接自己的本地 MySQL 数据库。大家共享项目代码和 SQL 文件，不共享某一个人的数据库。
+## 第四阶段：注销管理
 
-统一数据库名：
+系统支持人员死亡/普通注销申请、家庭户销户申请、材料与单级审批、审批后的显式执行、个人户籍归档和家庭户快照。人员与家庭户主档始终保留，注销不可在本阶段直接撤销。增量升级新增 `V4_004_cancellation_and_household_archive.sql`。
 
-```text
-population_miniterm
-```
+第五阶段已实现流动人口居住登记、当前与历史记录、居住证首次申领/签发/签注/注销、生命周期日志、关闭联动、自动到期和到期提醒。流动登记不创建户籍，居住证不再写入通用 `certificate`。
 
-数据库初始化脚本：
+数据库增量脚本为 `doc/database/migrations/V4_005_floating_population_residence_permit.sql`。环境变量：`RESIDENCE_PERMIT_MIN_RESIDENCE_DAYS`（180）、`RESIDENCE_PERMIT_VALIDITY_DAYS`（365）、`RESIDENCE_PERMIT_ENDORSEMENT_EARLY_DAYS`（30）、`RESIDENCE_PERMIT_EXPIRY_WARNING_DAYS`（30）、`RESIDENCE_PERMIT_EXPIRY_CRON`（每天 02:00）。
 
-```text
-doc/database/population_miniterm.sql
-```
+演示流程：使用 `population` 创建申请和上传材料，使用 `approver` 审批，使用 `household` 或 `admin` 显式执行。演示账号密码沿用课程环境 `123456`，仅供本地课程数据。
 
-每位组员拿到项目后，先在自己的 MySQL 中执行该 SQL 文件，然后按自己的本机账号密码启动项目。
+重点人口、刑满释放恢复登记、多级审批、补换领、真实制卡和政务联网仍未实现。
 
-## 启动方式
+第六阶段已完成接口权限收口、统一敏感字段脱敏、普通脱敏 XLSX 导出、敏感导出审批与显式执行、安全下载、SHA-256、下载审计和过期清理。数据库脚本为 `V4_006_export_audit_permission.sql`。
 
-PowerShell 示例：
+导出环境变量：`EXPORT_DIR`（默认 `./data/exports`）、`EXPORT_NORMAL_MAX_ROWS`（5000）、`EXPORT_SENSITIVE_MAX_ROWS`（20000）、`EXPORT_FILE_RETENTION_DAYS`（7）、`EXPORT_CLEANUP_CRON`（每天 02:30）。导出目录不会提交 Git。
+
+第七阶段已在隔离的 MySQL Community Server 8.4.10 LTS 上完成完整初始化、历史结构升级、V4_001-V4_006 重复执行、应用启动和五角色 API 烟测。验证脚本见 `scripts/verify-mysql.ps1`，结果见 `doc/testing/end-to-end-regression-report.md`。
+
+## 数据库
+
+新环境在 MySQL 8 中执行：
 
 ```powershell
-$env:JAVA_HOME="D:\ASUS"
-$env:Path="$env:JAVA_HOME\bin;C:\Windows\System32\WindowsPowerShell\v1.0;$env:Path"
+mysql -u root -p < doc/database/population_miniterm.sql
+```
+
+已有数据库在备份后按文件名顺序执行 V4_001 至 V4_006。也可以先在明确命名的测试库中运行：
+
+```powershell
+$env:DB_URL='jdbc:mysql://127.0.0.1:3306/population_miniterm_upgrade'
+$env:DB_USERNAME='root'
+$env:DB_PASSWORD='<通过安全方式设置>'
+.\scripts\verify-mysql.ps1 -Mode Repeat -MySqlClient 'C:\path\to\mysql.exe'
+```
+
+迁移保留已有业务表和数据，不使用 `DROP TABLE` 重建业务表。
+
+`doc/database/demo_data.sql` 只用于可丢弃的课程演示环境，包含可重复执行的虚构人员、户籍、流动人口和即将到期居住证数据，不得用于生产。
+
+## 启动后端
+
+JWT 使用 HMAC 密钥，生产或共享环境必须通过环境变量提供至少 32 个 UTF-8 字节的随机密钥：
+
+```powershell
 $env:DB_USERNAME="root"
-$env:DB_PASSWORD="你的MySQL密码"
+$env:DB_PASSWORD="你的本地 MySQL 密码"
+$env:JWT_SECRET="请替换为至少32字节的随机密钥"
+$env:JWT_EXPIRE_MINUTES="120"
 .\mvnw.cmd spring-boot:run
 ```
 
-如果你的数据库名、地址或端口不同，可以额外设置：
+`application.properties` 中仅有本地开发占位密钥，不能用于生产。默认后端地址为 `http://localhost:8080`。
+
+## 启动前端
 
 ```powershell
-$env:DB_URL="jdbc:mysql://localhost:3306/population_miniterm?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai"
+cd frontend
+npm install
+npm run dev
 ```
 
-默认服务地址为：
+Vite 默认将 `/api` 代理到 `http://127.0.0.1:8080`。
 
-```text
-http://localhost:8080
+## 登录与测试账号
+
+登录接口为 `POST /api/auth/login`，当前用户为 `GET /api/auth/me`，退出为 `POST /api/auth/logout`。受保护接口使用 `Authorization: Bearer <token>`。
+
+| 账号 | 角色 | 等级 | 数据范围 |
+| --- | --- | --- | --- |
+| viewer | QUERY_VIEWER | L1 | DEPARTMENT |
+| population | POPULATION_MANAGER | L2 | REGION |
+| household | HOUSEHOLD_MANAGER | L2 | REGION |
+| approver | APPROVER | L3 | REGION |
+| admin | SYSTEM_ADMIN | L3 | ALL |
+
+以上账号的本地课程演示初始密码均为 `123456`，数据库中仅保存 BCrypt 哈希。它们仅用于本地课程演示，首次部署后应立即修改密码。
+
+## 权限模型
+
+角色表示用户身份；`role_level` 表示最高操作等级；`data_scope` 表示数据可见范围。所有 Controller 方法均已纳入权限审计；登录是唯一匿名业务入口。查询、写入、审批、执行、下载、日志和系统管理使用独立权限。
+
+详细接口见 `doc/api/auth-rbac-api.md`，审计与范围见 `doc/development/phase-01-auth-rbac-audit.md`。
+
+## 测试
+
+```powershell
+.\mvnw.cmd test
+cd frontend
+npm install
+npm run build
 ```
 
-## IDEA 配置
+## 当前阶段边界
 
-打开运行配置 `PopulationMinitermApplication`，在 Environment variables 中填入：
+当前已提供登录、JWT、三级权限、数据范围、业务申请、材料上传、单级审批、迁入迁出、注销、流动人口、居住证、普通/敏感导出和审计闭环。专业业务审批通过后仍需授权人员显式执行。
 
-```text
-DB_USERNAME=root;DB_PASSWORD=你的MySQL密码
-```
-
-如果 IDEA 找不到 JDK，在 Project SDK 中选择：
-
-```text
-D:\ASUS
-```
-
-## 居民人口接口
-
-- `GET /api/residents`：分页查询居民，可选 `keyword`
-- `GET /api/residents/{id}`：查看单个居民
-- `POST /api/residents`：新增居民
-- `PUT /api/residents/{id}`：更新居民
-- `DELETE /api/residents/{id}`：删除居民
-
-新增示例：
-
-```json
-{
-  "name": "张三",
-  "gender": "MALE",
-  "birthDate": "1999-01-01",
-  "idCardNumber": "110101199901010011",
-  "phoneNumber": "13800138000",
-  "province": "北京市",
-  "city": "北京市",
-  "district": "东城区",
-  "address": "示例地址",
-  "active": true
-}
-```
+尚未实现重点人口完整业务、刑满释放恢复登记、多级审批、消息队列、微服务、云存储、实体制卡、政务平台对接、短信和邮件。这些内容不属于当前验收范围。

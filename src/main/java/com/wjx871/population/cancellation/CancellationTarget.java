@@ -1,0 +1,3 @@
+package com.wjx871.population.cancellation;
+import java.time.LocalDate; import lombok.Data;
+@Data public class CancellationTarget {private Long personId;private String personName;private String identityNo;private String personStatus;private String currentStatusCode;private Long householdId;private String householdNo;private Long headPersonId;private String headPersonName;private String address;private String regionCode;private String householdType;private LocalDate establishDate;private String householdStatus;private Integer householdVersion;private Long activeMemberCount;private Long residenceCount;}
