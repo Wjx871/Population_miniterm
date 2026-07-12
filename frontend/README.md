@@ -12,16 +12,36 @@
 - Node.js 20 或更高版本
 - npm 10 或更高版本
 
-## 安装与启动
+## Windows 一键启动（推荐）
+
+在项目根目录（非 `frontend/`）双击以下脚本即可：
+
+| 脚本 | 作用 |
+|------|------|
+| `start_all.bat` | 等待后端就绪后启动前端（推荐） |
+| `start_backend.bat` | 仅启动后端 |
+| `start_frontend.bat` | 仅启动前端（会探测后端是否在线） |
+
+首次使用前，复制配置并填写数据库密码：
+
+```cmd
+copy start.local.env.example start.local.env
+```
+
+`start.local.env` 含密码，已被 `.gitignore` 忽略，不会提交。
+
+默认端口：后端 `8080`、前端 `5180`。修改 `start.local.env` 中的 `SERVER_PORT` 和 `FRONTEND_PORT` 即可自定义。修改 `SERVER_PORT` 后 Vite 代理会自动同步，无需手动修改 `vite.config.js`。
+
+## 安装与启动（手动）
 
 在 `frontend/` 目录执行：
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-开发服务器默认从 `http://localhost:5180` 提供服务；端口被占用时 Vite 会选择下一个可用端口。
+开发服务器默认从 `http://localhost:5180` 提供服务；端口被占用时 Vite 会直接退出（`strictPort: true`），不会自动切换到其他端口。
 
 ## 构建
 
@@ -34,7 +54,7 @@ npm run build
 ## 前后端联调
 
 - 前端请求基地址由 `VITE_API_BASE_URL` 配置，默认值为 `/api`；可参考 `.env.example`。
-- 开发环境会将 `/api` 代理到 `http://127.0.0.1:8080`。
+- 开发环境会将 `/api` 代理到后端地址（默认 `http://127.0.0.1:8080`），代理目标由启动脚本通过 `VITE_BACKEND_TARGET` 环境变量传入，也可在 `start.local.env` 中通过 `SERVER_PORT` 控制。
 - 前端分页状态使用 `current`（从 1 开始），请求层会转换为 Spring `Pageable` 的 `page`（从 0 开始）和 `size`。
 
 ## 开发约定
