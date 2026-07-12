@@ -4,9 +4,9 @@ USE population_miniterm;
 
 INSERT INTO person(person_id,name,gender,id_card,birth_date,ethnicity,phone,current_address,status,current_status_code) VALUES
  (700001,'演示迁出人员','M','110101199001010015','1990-01-01','汉族','13900000001','北京市东城区演示路1号','正常','REGISTERED'),
- (700002,'演示迁入人员','F','110101199202020026','1992-02-02','汉族','13900000002','天津市演示路2号','正常','PENDING'),
- (700003,'演示注销人员','M','110101195503030037','1955-03-03','汉族','13900000003','北京市东城区演示路3号','正常','REGISTERED'),
- (700004,'演示流动人员','F','110101199404040048','1994-04-04','汉族','13900000004','北京市朝阳区演示路4号','正常','REGISTERED')
+ (700002,'演示迁入人员','F','110101199202020025','1992-02-02','汉族','13900000002','天津市演示路2号','正常','PENDING'),
+ (700003,'演示注销人员','M','110101195503030034','1955-03-03','汉族','13900000003','北京市东城区演示路3号','正常','REGISTERED'),
+ (700004,'演示流动人员','F','110101199404040040','1994-04-04','汉族','13900000004','北京市朝阳区演示路4号','正常','REGISTERED')
 ON DUPLICATE KEY UPDATE name=VALUES(name),phone=VALUES(phone),current_address=VALUES(current_address);
 
 INSERT INTO household(household_id,household_no,head_person_id,address,region_code,household_type,establish_date,status) VALUES
