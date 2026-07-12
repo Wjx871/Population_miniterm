@@ -26,6 +26,8 @@
 
 第八阶段以 `person` 为唯一正式人口主模型，停用旧 `/api/residents` 和对应生产 Mapper，并禁止普通人口删除；人员注销继续走既有注销申请、审批和显式执行流程。新增 GB 11643 身份证校验，以及 `/api/households` 家庭户分页、详情、维护、成员离户和事务性户主变更接口。升级脚本为 `V4_007_household_master_data.sql`。
 
+第八阶段已在隔离的 MySQL Community Server 8.4.10 上完成全新初始化、从 V4_006 历史状态连续三次执行 V4_007、应用启动、API/权限/数据范围、一致性和原业务回归验收。legacy `residents` 表保留但生产代码零依赖；完整证据见 `doc/testing/phase-08-household-master-data-test-report.md`。
+
 人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。项目没有使用 Spring Data JPA。
 
 ## 数据库
