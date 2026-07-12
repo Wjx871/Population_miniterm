@@ -258,13 +258,23 @@ CREATE TABLE IF NOT EXISTS key_population (
     person_id BIGINT NOT NULL,
     key_type VARCHAR(50) NOT NULL,
     management_level VARCHAR(20) NULL,
+    register_reason VARCHAR(500) NULL,
     register_date DATE NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT '有效',
+    responsible_department_id BIGINT NULL,
+    responsible_user_id BIGINT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    release_reason VARCHAR(500) NULL,
+    release_date DATE NULL,
+    source_application_id BIGINT NULL,
+    version INT NOT NULL DEFAULT 0,
+    active_flag TINYINT GENERATED ALWAYS AS (CASE WHEN status='ACTIVE' THEN 1 ELSE NULL END) STORED,
     remark VARCHAR(255) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (key_id),
     KEY idx_key_population_person_id (person_id),
+    UNIQUE KEY uk_key_population_active(person_id,key_type,active_flag),
+    KEY idx_key_population_query(key_type,status,management_level,register_date),
     CONSTRAINT fk_key_population_person FOREIGN KEY (person_id) REFERENCES person (person_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -653,6 +663,12 @@ INSERT INTO sys_permission(permission_code,permission_name,module_name,permissio
 INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE p.permission_code='dictionary:view' OR (r.role_code='SYSTEM_ADMIN' AND p.permission_code='dictionary:manage');
 INSERT INTO sys_permission(permission_code,permission_name,module_name,permission_type,status) VALUES('certificate:edit','维护通用证件','CERTIFICATE','API','ENABLED') ON DUPLICATE KEY UPDATE permission_name=VALUES(permission_name),status='ENABLED';
 INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE p.permission_code='certificate:edit' AND r.role_code IN('POPULATION_MANAGER','SYSTEM_ADMIN');
+
+-- Phase 10: key population professional application, current record and append-only history.
+CREATE TABLE IF NOT EXISTS key_population_application(detail_id BIGINT NOT NULL AUTO_INCREMENT,application_id BIGINT NOT NULL,operation_type VARCHAR(20) NOT NULL,record_id BIGINT NULL,person_id BIGINT NOT NULL,population_type VARCHAR(50) NOT NULL,attention_level VARCHAR(20) NOT NULL,reason VARCHAR(500) NOT NULL,event_date DATE NOT NULL,responsible_department_id BIGINT NULL,responsible_user_id BIGINT NULL,business_status VARCHAR(30) NOT NULL DEFAULT 'DRAFT',version INT NOT NULL DEFAULT 0,created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY(detail_id),UNIQUE KEY uk_key_population_application(application_id),KEY idx_key_app_person_type_status(person_id,population_type,operation_type,business_status),KEY idx_key_app_record_status(record_id,operation_type,business_status),CONSTRAINT fk_key_app_application FOREIGN KEY(application_id) REFERENCES business_application(application_id),CONSTRAINT fk_key_app_record FOREIGN KEY(record_id) REFERENCES key_population(key_id),CONSTRAINT fk_key_app_person FOREIGN KEY(person_id) REFERENCES person(person_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS key_population_history(history_id BIGINT NOT NULL AUTO_INCREMENT,record_id BIGINT NOT NULL,person_id BIGINT NOT NULL,event_type VARCHAR(30) NOT NULL,previous_status VARCHAR(20) NULL,new_status VARCHAR(20) NOT NULL,reason VARCHAR(500) NULL,source_application_id BIGINT NOT NULL,operator_id BIGINT NOT NULL,occurred_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,snapshot_json JSON NOT NULL,PRIMARY KEY(history_id),UNIQUE KEY uk_key_history_application_event(source_application_id,event_type),KEY idx_key_history_record_time(record_id,occurred_at),CONSTRAINT fk_key_history_record FOREIGN KEY(record_id) REFERENCES key_population(key_id),CONSTRAINT fk_key_history_person FOREIGN KEY(person_id) REFERENCES person(person_id),CONSTRAINT fk_key_history_application FOREIGN KEY(source_application_id) REFERENCES business_application(application_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO sys_permission(permission_code,permission_name,module_name,permission_type,status) VALUES('key-population:view','查看重点人口','KEY_POPULATION','API','ENABLED'),('key-population:apply','申请重点人口业务','KEY_POPULATION','API','ENABLED'),('key-population:execute','执行重点人口业务','KEY_POPULATION','API','ENABLED') ON DUPLICATE KEY UPDATE permission_name=VALUES(permission_name),status='ENABLED';
+INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE p.permission_code='key-population:view' OR (r.role_code='POPULATION_MANAGER' AND p.permission_code IN('key-population:apply','key-population:execute')) OR r.role_code='SYSTEM_ADMIN';
 DELIMITER $$
 CREATE PROCEDURE phase08_add_index(IN p_table VARCHAR(64), IN p_index VARCHAR(64), IN p_ddl TEXT)
 BEGIN
