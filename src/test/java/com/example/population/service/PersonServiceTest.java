@@ -195,14 +195,4 @@ class PersonServiceTest {
         // 未更新的字段保持原值
         assertThat(cap.getValue().getGenderCode()).isEqualTo("MALE");
     }
-
-    // ---------- cancelPerson 仅占位 ----------
-
-    @Test
-    @DisplayName("cancelPerson 已被业务替换为 CancellationRecordService,这里抛 BizException 引导调用方")
-    void cancelPerson_throws() {
-        assertThatThrownBy(() -> service.cancelPerson(1L, 2L))
-                .isInstanceOf(com.example.population.exception.BizException.class)
-                .hasMessageContaining("CancellationRecordService");
-    }
 }

@@ -45,7 +45,4 @@ public class Person implements Serializable {
 
     @TableLogic
     private Integer isDeleted;
-
-    @TableField(exist = false)
-    private Integer age;
 }

@@ -2,35 +2,16 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.population.mapper.HouseholdMemberMapper">
 
-    <select id="listCurrentMembersForUpdate" resultType="com.example.population.entity.HouseholdMember">
-        SELECT * FROM household_member
-        WHERE household_id = #{householdId} AND member_status = 'CURRENT'
-        ORDER BY member_id
-        FOR UPDATE
-    </select>
-
     <select id="listByPerson" resultType="com.example.population.entity.HouseholdMember">
         SELECT * FROM household_member
         WHERE person_id = #{personId}
         ORDER BY join_date DESC, member_id DESC
     </select>
 
-    <!-- 批量更新成员状态 + 离开日期；参数：memberIds（List<Long>）、status、leaveDate -->
-    <update id="updateStatusBatch">
-        UPDATE household_member
-        SET member_status = #{status},
-            leave_date = #{leaveDate},
-            updated_at = NOW()
-        WHERE member_id IN
-        <foreach collection="memberIds" item="id" open="(" close=")" separator=",">
-            #{id}
-        </foreach>
-    </update>
-
     <!-- 按人口 + 户批量置 LEFT；多用于 archiveAndRemove 阶段 -->
     <update id="updatePersonStatusLeft">
         UPDATE household_member
-        SET member_status = 'LEFT',
+        SET member_status = #{status},
             leave_date = #{leaveDate},
             updated_at = NOW()
         WHERE person_id = #{personId}

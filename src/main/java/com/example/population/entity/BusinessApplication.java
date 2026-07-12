@@ -50,10 +50,4 @@ public class BusinessApplication implements Serializable {
 
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
-
-    @TableField(exist = false)
-    private String targetPersonName;
-
-    @TableField(exist = false)
-    private String departmentName;
 }

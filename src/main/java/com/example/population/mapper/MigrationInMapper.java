@@ -10,11 +10,5 @@ import java.util.List;
 @Mapper
 public interface MigrationInMapper extends BaseMapper<MigrationIn> {
 
-    MigrationIn findByApplicationIdForUpdate(@Param("applicationId") Long applicationId);
-
-    MigrationIn findByApplicationId(@Param("applicationId") Long applicationId);
-
-    int existsByTransferBatch(@Param("transferBatchNo") String transferBatchNo);
-
     List<MigrationIn> listByTransferBatch(@Param("transferBatchNo") String transferBatchNo);
 }

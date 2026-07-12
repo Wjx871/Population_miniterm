@@ -37,10 +37,4 @@ public class HouseholdMember implements Serializable {
 
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
-
-    @TableField(exist = false)
-    private String personName;
-
-    @TableField(exist = false)
-    private String identityNo;
 }

@@ -4,8 +4,6 @@ import com.example.population.exception.IdCardInvalidException;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 中华人民共和国居民身份证号校验工具（GB 11643-1999）。
@@ -21,18 +19,6 @@ public final class IdCardValidator {
     private static final int[] WEIGHT = {7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2};
     /** 18 位校验位对照表 */
     private static final char[] CHECK_CODES = {'1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'};
-
-    private static final Map<String, String> PROVINCE_PREFIX = new HashMap<>();
-
-    static {
-        // 仅作基本行政区划前缀识别，可按需扩充
-        PROVINCE_PREFIX.put("11", "北京");
-        PROVINCE_PREFIX.put("12", "天津");
-        PROVINCE_PREFIX.put("31", "上海");
-        PROVINCE_PREFIX.put("32", "江苏");
-        PROVINCE_PREFIX.put("33", "浙江");
-        PROVINCE_PREFIX.put("44", "广东");
-    }
 
     private IdCardValidator() {}
 

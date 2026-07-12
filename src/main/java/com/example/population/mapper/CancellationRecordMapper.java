@@ -8,10 +8,6 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface CancellationRecordMapper extends BaseMapper<CancellationRecord> {
 
-    CancellationRecord findByApplicationIdForUpdate(@Param("applicationId") Long applicationId);
-
-    CancellationRecord findByApplicationId(@Param("applicationId") Long applicationId);
-
     /**
      * 目标人口的未办结业务申请单数量。
      */

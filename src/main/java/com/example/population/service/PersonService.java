@@ -22,9 +22,4 @@ public interface PersonService extends IService<Person> {
      * 更新人口基础信息。身份证号组合锁住不能改。
      */
     boolean updatePerson(Long personId, PersonUpdateDTO dto);
-
-    /**
-     * 人口注销。在事务内完成"归档快照 → 删除当前登记 → 更新人口状态 → 更新家庭成员状态 → 回填 cancellation_record"。
-     */
-    void cancelPerson(Long cancelRecordId, Long operatorId);
 }

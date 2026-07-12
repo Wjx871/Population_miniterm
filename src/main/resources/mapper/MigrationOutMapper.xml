@@ -6,14 +6,6 @@
         SELECT * FROM migration_out WHERE application_id = #{applicationId} LIMIT 1 FOR UPDATE
     </select>
 
-    <select id="findByApplicationId" resultType="com.example.population.entity.MigrationOut">
-        SELECT * FROM migration_out WHERE application_id = #{applicationId} LIMIT 1
-    </select>
-
-    <select id="existsByTransferBatch" resultType="java.lang.Integer">
-        SELECT COUNT(*) FROM migration_out WHERE transfer_batch_no = #{transferBatchNo}
-    </select>
-
     <select id="listByTransferBatch" resultType="com.example.population.entity.MigrationOut">
         SELECT * FROM migration_out
         WHERE transfer_batch_no = #{transferBatchNo}

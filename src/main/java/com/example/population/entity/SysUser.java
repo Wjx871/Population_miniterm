@@ -42,10 +42,4 @@ public class SysUser implements Serializable {
 
     @TableLogic
     private Integer isDeleted;
-
-    @TableField(exist = false)
-    private String roleName;
-
-    @TableField(exist = false)
-    private String departmentName;
 }

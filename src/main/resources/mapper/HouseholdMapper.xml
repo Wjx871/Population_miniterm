@@ -6,12 +6,4 @@
         SELECT * FROM household WHERE household_no = #{householdNo} LIMIT 1 FOR UPDATE
     </select>
 
-    <select id="findHeadByHousehold" resultType="com.example.population.entity.Person">
-        SELECT p.* FROM household h
-        INNER JOIN person p ON h.head_person_id = p.person_id
-        WHERE h.household_id = #{householdId}
-          AND p.is_deleted = 0
-        LIMIT 1
-    </select>
-
 </mapper>

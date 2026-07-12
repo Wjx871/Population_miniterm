@@ -12,9 +12,5 @@ public interface MigrationOutMapper extends BaseMapper<MigrationOut> {
 
     MigrationOut findByApplicationIdForUpdate(@Param("applicationId") Long applicationId);
 
-    MigrationOut findByApplicationId(@Param("applicationId") Long applicationId);
-
-    int existsByTransferBatch(@Param("transferBatchNo") String transferBatchNo);
-
     List<MigrationOut> listByTransferBatch(@Param("transferBatchNo") String transferBatchNo);
 }

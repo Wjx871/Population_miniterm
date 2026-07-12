@@ -40,7 +40,7 @@ Population_System/
     ├── config/                          # 配置类（MyBatis-Plus 分页、Web 配置等）
     ├── controller/                      # 控制器层（26 个 Controller）
     ├── dto/                             # 数据传输对象（16 个）
-    │   ├── 通用：PageDTO / PageVO / Result / LoginDTO / LoginVO / RegisterDTO
+    │   ├── 通用：PageDTO / PageVO / Result / LoginDTO / RegisterDTO
     │   └── 业务：PersonCreateDTO（必带 applicationId）/ PersonUpdateDTO / PersonQueryDTO /
     │          HouseholdCreateDTO（必带 applicationId）/ HouseholdMemberDTO / HouseholdMemberTransferDTO /
     │          ResidenceRegisterDTO / MigrationInDTO / MigrationOutDTO / CancellationDTO
@@ -58,7 +58,7 @@ Population_System/
     └── util/                            # 工具类
         ├── JwtUtil / PasswordEncoder / PageUtil          # 通用
         └── IdCardValidator / PhoneValidator / IdentityMasker /
-            RegionUtil / SnapshotCopier                   # 业务
+            SnapshotCopier                   # 业务
 ├── src/main/resources/
 │   ├── application.yml                  # 主配置（数据源 / Redis / JWT / MyBatis-Plus / Knife4j）
 │   └── mapper/                          # 自定义 XML 映射（如有）

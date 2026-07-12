@@ -41,14 +41,5 @@ public class Household implements Serializable {
     private LocalDateTime updatedAt;
 
     @TableField(exist = false)
-    private String headPersonName;
-
-    @TableField(exist = false)
     private Integer memberCount;
-
-    @TableField(exist = false)
-    private String regionName;
-
-    @TableField(exist = false)
-    private String departmentName;
 }

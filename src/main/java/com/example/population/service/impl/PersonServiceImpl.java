@@ -112,17 +112,4 @@ public class PersonServiceImpl extends ServiceImpl<PersonMapper, Person> impleme
         if (dto.getContactAddress() != null) p.setContactAddress(dto.getContactAddress());
         return updateById(p);
     }
-
-    /**
-     * 入口在 CancellationRecordServiceImpl.completePersonCancellation。
-     * Person service 提供一个轻量级 wrapper，调用方可用 cancelPerson recordId。
-     */
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void cancelPerson(Long cancelRecordId, Long operatorId) {
-        // 实际业务在 CancellationRecordServiceImpl 中实现（需要 cancellation_record 行）。
-        // 这里提供给业务流高层做编排，本方法仅做参数校验
-        throw new com.example.population.exception.BizException(
-                "请直接调用 CancellationRecordService.completePersonCancellation");
-    }
 }
