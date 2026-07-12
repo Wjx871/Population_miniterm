@@ -1,30 +1,13 @@
-import axios from 'axios';
-
-// 配置基础 axios 实例
-const request = axios.create({
-  baseURL: '/api/statistics',
-  timeout: 5000,
-});
-
-// 给请求注入 token
-request.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers['Authorization'] = `Bearer ${token}`;
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+import request from './request'
 
 /**
  * 获取大屏核心面板数据汇总
  */
 export function getSummary() {
   return request({
-    url: '/summary',
+    url: '/statistics/summary',
     method: 'get',
-  }).then(res => res.data);
+  })
 }
 
 /**
@@ -32,9 +15,9 @@ export function getSummary() {
  */
 export function getCharts() {
   return request({
-    url: '/charts',
+    url: '/statistics/charts',
     method: 'get',
-  }).then(res => res.data);
+  })
 }
 
 /**
@@ -42,7 +25,7 @@ export function getCharts() {
  */
 export function getLogs() {
   return request({
-    url: '/logs',
+    url: '/statistics/logs',
     method: 'get',
-  }).then(res => res.data);
+  })
 }

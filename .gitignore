@@ -37,6 +37,10 @@ build/
 ### Agent tools ###
 .agents/
 .workbuddy/
-frontend/package-lock.json
+start.local.env
+.env.backend
+frontend/.env
+设计约束/前端开发提示词/
+项目记忆.md
 data/uploads/
 data/exports/

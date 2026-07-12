@@ -1,4 +1,149 @@
-<template><div v-if="detail"><el-card><template #header><div class="head"><b>{{detail.approval.approvalNo}}</b><div v-if="detail.approval.status==='PENDING'&&user.hasPermission('approval:handle')"><el-button type="success" :loading="submitting" @click="decide('approve')">审批通过</el-button><el-button type="danger" :loading="submitting" @click="decide('reject')">驳回</el-button></div></div></template><el-descriptions border :column="2"><el-descriptions-item label="申请编号">{{detail.application.applicationNo}}</el-descriptions-item><el-descriptions-item label="状态">{{detail.approval.status}}</el-descriptions-item><el-descriptions-item label="标题">{{detail.application.title}}</el-descriptions-item><el-descriptions-item label="申请人">{{detail.application.applicantName}}</el-descriptions-item><el-descriptions-item label="原因" :span="2">{{detail.application.reason}}</el-descriptions-item></el-descriptions></el-card>
-<el-card class="section"><template #header><b>材料核验</b></template><el-table :data="detail.materials"><el-table-column prop="materialName" label="材料"/><el-table-column prop="originalFilename" label="文件"/><el-table-column prop="verifyStatus" label="状态"/><el-table-column label="操作" width="190"><template #default="{row}"><template v-if="row.verifyStatus==='PENDING'&&user.hasPermission('material:verify')"><el-button size="small" type="success" @click="verify(row,'VERIFIED')">通过</el-button><el-button size="small" type="danger" @click="verify(row,'REJECTED')">拒绝</el-button></template></template></el-table-column></el-table></el-card>
-<el-card class="section"><template #header><b>审批时间线</b></template><el-timeline><el-timeline-item v-for="l in detail.logs" :key="l.logId" :timestamp="l.operationTime">{{l.action}}：{{l.fromStatus||'-'}} → {{l.toStatus}} {{l.comment||''}}</el-timeline-item></el-timeline></el-card></div></template>
-<script setup>import{onMounted,ref}from'vue';import{useRoute}from'vue-router';import{ElMessage,ElMessageBox}from'element-plus';import{getApproval,approve,reject}from'../../api/approvals';import{verifyMaterial}from'../../api/applications';import{useUserStore}from'../../stores/user';const route=useRoute(),user=useUserStore(),detail=ref(),submitting=ref(false);async function load(){detail.value=await getApproval(route.params.id)}async function verify(row,result){const{value}=await ElMessageBox.prompt('请输入核验意见','材料核验',{inputValue:result==='VERIFIED'?'材料真实有效':'材料不符合要求'});await verifyMaterial(row.materialId,{result,comment:value});ElMessage.success('核验完成');load()}async function decide(action){const{value}=await ElMessageBox.prompt(action==='approve'?'请输入审批意见':'请输入驳回原因',action==='approve'?'审批通过':'审批驳回',{inputValue:action==='approve'?'材料齐全，同意办理':''});submitting.value=true;try{const data={comment:value,version:detail.value.approval.version};if(action==='approve')await approve(route.params.id,data);else await reject(route.params.id,data);ElMessage.success('审批处理完成');await load()}finally{submitting.value=false}}onMounted(load)</script><style scoped>.head{display:flex;justify-content:space-between}.section{margin-top:16px}</style>
+<template>
+  <div class="page-container" v-loading="loading">
+    <div class="page-header"><div><h1>审批详情</h1><p class="subtitle">审批人须先核验材料并核对专业信息；审批通过后仍需显式执行。</p></div><el-button @click="router.back()">返回</el-button></div>
+    <el-card v-if="detail" shadow="never">
+      <template #header><div class="card-header"><span>{{ detail.approval?.approvalNo }}</span><StatusTag :value="detail.approval?.status" kind="approval" /></div></template>
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="申请编号">{{ detail.application?.applicationNo }}</el-descriptions-item>
+        <el-descriptions-item label="申请人">{{ detail.application?.applicantName }}</el-descriptions-item>
+        <el-descriptions-item label="申请标题" :span="2">{{ detail.application?.title }}</el-descriptions-item>
+        <el-descriptions-item label="申请原因" :span="2">{{ detail.application?.reason }}</el-descriptions-item>
+        <el-descriptions-item label="审批意见" :span="2">{{ detail.approval?.decisionComment || '-' }}</el-descriptions-item>
+      </el-descriptions>
+    </el-card>
+    <MigrationDetailPanel v-if="migrationDetail" :detail="migrationDetail" :person="migrationPerson" />
+    <FloatingResidenceDetailPanel v-if="floatingDetail" mode="floating" :detail="floatingDetailBody" :subject="floatingSubject" />
+    <FloatingResidenceDetailPanel v-if="permitDetail" mode="permit" :detail="permitDetailBody" :subject="permitSubject" />
+    <el-card v-if="detail" shadow="never"><template #header>申请材料</template><MaterialList :materials="detail.materials" :can-verify="canHandle && isPending" @changed="load" /></el-card>
+    <el-card v-if="detail" shadow="never"><template #header>审批轨迹</template><ApprovalTimeline :logs="detail.logs" /></el-card>
+    <div v-if="canHandle && isPending" class="actions"><el-button type="success" :disabled="!allRequiredVerified" :loading="deciding" @click="approve">审批通过</el-button><el-button type="danger" plain :loading="deciding" @click="reject">审批驳回</el-button><span v-if="!allRequiredVerified" class="hint">尚未满足该业务类型要求的全部核验材料。</span></div>
+  </div>
+</template>
+
+<script setup>
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import StatusTag from '../../components/common/StatusTag.vue'
+import MaterialList from '../../components/business/MaterialList.vue'
+import ApprovalTimeline from '../../components/business/ApprovalTimeline.vue'
+import MigrationDetailPanel from '../migrations/components/MigrationDetailPanel.vue'
+import FloatingResidenceDetailPanel from '../floating/components/FloatingResidenceDetailPanel.vue'
+import { approveApproval, getApprovalDetail, rejectApproval } from '../../api/approvals'
+import { getPersonById } from '../../api/persons'
+import { normalizePerson } from '../../adapters/person'
+import { normalizeFloatingProfessional } from '../../adapters/floating'
+import { normalizePermitProfessional } from '../../adapters/residencePermit'
+import { getMigrationRecord } from '../../adapters/migration'
+import { BUSINESS_TYPE } from '../../constants/application'
+import { PERMISSIONS } from '../../constants/permissions'
+import { getApplicationBusinessHandler } from '../../features/applications/handlers'
+import { useUserStore } from '../../stores/user'
+import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
+
+const route = useRoute()
+const router = useRouter()
+const userStore = useUserStore()
+const detail = ref(null)
+const migrationDetail = ref(null)
+const migrationPerson = ref(null)
+const floatingDetail = ref(null)
+const permitDetail = ref(null)
+const loading = ref(false)
+const deciding = ref(false)
+const approvalId = computed(() => route.params.approvalId)
+const floatingDetailBody = computed(() => floatingDetail.value?.professional)
+const floatingSubject = computed(() => floatingDetail.value?.subject)
+const permitDetailBody = computed(() => permitDetail.value?.professional)
+const permitSubject = computed(() => permitDetail.value?.subject)
+const isPending = computed(() => detail.value?.approval?.status === 'PENDING')
+const canHandle = computed(() => userStore.hasPermission(PERMISSIONS.APPROVAL_HANDLE))
+const allRequiredVerified = computed(() => {
+  const materials = detail.value?.materials || []
+  const bt = detail.value?.application?.businessType
+  const handler = getApplicationBusinessHandler(bt)
+  
+  if (handler) {
+    // determine detail object based on what is loaded
+    let professionalDetail = null
+    if (handler.family === 'migration') professionalDetail = migrationDetail.value
+    else if (handler.family === 'floating') professionalDetail = floatingDetail.value
+    else if (handler.family === 'permit') professionalDetail = permitDetail.value
+    
+    if (professionalDetail) {
+      return handler.hasVerifiedMaterials({
+        businessType: bt,
+        detail: professionalDetail,
+        materials
+      })
+    }
+  }
+
+  // fallback generic: 有requiredFlag且全部VERIFIED
+  const required = materials.filter((item) => item.requiredFlag)
+  return required.length > 0 && required.every((item) => item.verifyStatus === 'VERIFIED')
+})
+
+async function loadMigrationPerson(record) {
+  migrationPerson.value = null
+  if (!record?.personId) return
+  try { migrationPerson.value = normalizePerson(await getPersonById(record.personId)) } catch { /* optional enrichment only */ }
+}
+
+async function load() {
+  loading.value = true
+  try {
+    detail.value = await getApprovalDetail(approvalId.value)
+    migrationDetail.value = null
+    migrationPerson.value = null
+    floatingDetail.value = null
+    permitDetail.value = null
+    
+    const bt = detail.value.application?.businessType
+    const handler = getApplicationBusinessHandler(bt)
+    
+    if (handler) {
+      const rawDetail = await handler.loadDetail(detail.value.application.applicationId)
+      
+      if (handler.family === 'migration') {
+        migrationDetail.value = rawDetail
+        await loadMigrationPerson(getMigrationRecord(migrationDetail.value))
+      } else if (handler.family === 'floating') {
+        floatingDetail.value = normalizeFloatingProfessional(rawDetail)
+      } else if (handler.family === 'permit') {
+        permitDetail.value = normalizePermitProfessional(rawDetail)
+      }
+    }
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '加载审批详情失败'))
+  } finally { loading.value = false }
+}
+
+async function decide(action) {
+  const rejecting = action === 'reject'
+  const { value } = await ElMessageBox.prompt(rejecting ? '请输入驳回意见' : '可填写审批意见', rejecting ? '审批驳回' : '审批通过', {
+    inputPattern: rejecting ? /\S+/ : undefined,
+    inputErrorMessage: '驳回意见不能为空',
+    confirmButtonText: '确认提交',
+  })
+  deciding.value = true
+  try {
+    const payload = { comment: value || '', version: detail.value.approval.version }
+    if (rejecting) await rejectApproval(approvalId.value, payload)
+    else await approveApproval(approvalId.value, payload)
+    ElMessage.success(rejecting ? '已驳回申请' : '已通过申请，等待业务执行')
+    await load()
+  } catch (error) {
+    if (isApiConflict(error)) await load()
+    ElMessage.error(getApiErrorMessage(error, '审批处理失败'))
+  } finally { deciding.value = false }
+}
+
+function approve() { decide('approve') }
+function reject() { decide('reject') }
+onMounted(load)
+</script>
+
+<style scoped>
+.page-container{display:flex;flex-direction:column;gap:16px}.page-header,.card-header,.actions{display:flex;align-items:center;justify-content:space-between;gap:12px}.page-header h1{margin:0 0 8px}.subtitle,.hint{margin:0;color:var(--el-text-color-secondary);font-size:13px}.actions{justify-content:flex-start;flex-wrap:wrap}
+</style>

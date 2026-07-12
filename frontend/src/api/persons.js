@@ -1,24 +1,24 @@
 import request from './request'
+import { toSpringPageParams } from '../utils/page'
 
 export function getPersonPage(params) {
   return request({
     url: '/persons',
     method: 'get',
-    params,
-  })
-}
-
-export function getPersonList(params) {
-  return request({
-    url: '/persons/list',
-    method: 'get',
-    params,
+    params: toSpringPageParams(params),
   })
 }
 
 export function getPersonById(id) {
   return request({
     url: `/persons/${id}`,
+    method: 'get',
+  })
+}
+
+export function getPersonByIdCard(idCard) {
+  return request({
+    url: `/persons/id-card/${encodeURIComponent(idCard)}`,
     method: 'get',
   })
 }
@@ -39,16 +39,13 @@ export function updatePerson(id, data) {
   })
 }
 
+/**
+ * 软删除人口（后端将状态置为「已注销」）。
+ * M2 页面禁止调用；保留导出供后续审计或审批流程使用。
+ */
 export function deletePerson(id) {
   return request({
     url: `/persons/${id}`,
     method: 'delete',
-  })
-}
-
-export function getPersonStatistics() {
-  return request({
-    url: '/persons/statistics',
-    method: 'get',
   })
 }

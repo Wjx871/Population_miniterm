@@ -3,14 +3,21 @@
     <div class="page-header">
       <div class="header-left">
         <h1>户籍管理</h1>
-        <p class="subtitle">维护家庭户籍信息，支持户主设置与住址管理。</p>
+        <p class="subtitle">维护家庭户籍信息，支持立户与基础信息管理。</p>
       </div>
       <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="openCreateDialog">开户立户</el-button>
+        <el-button
+          type="primary"
+          :icon="Plus"
+          v-permission="'household:create'"
+          @click="openCreateDialog"
+        >
+          开户立户
+        </el-button>
       </div>
     </div>
 
-    <SearchPanel @search="fetchList" @reset="resetQuery">
+    <SearchPanel @search="handleSearch" @reset="resetQuery">
       <el-form :inline="true" :model="query" size="default">
         <el-form-item label="户籍编号">
           <el-input v-model="query.householdNo" placeholder="请输入户籍号" clearable />
@@ -28,14 +35,21 @@
     </SearchPanel>
 
     <el-card shadow="never" class="table-card">
-      <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
+      <el-table
+        :data="tableData"
+        v-loading="loading"
+        border
+        stripe
+        style="width: 100%"
+        row-key="id"
+      >
         <el-table-column prop="householdNo" label="户籍编号" width="150" align="center" fixed />
         <el-table-column prop="headPersonName" label="户主姓名" width="120" align="center" />
         <el-table-column prop="address" label="家庭住址" min-width="250" show-overflow-tooltip />
         <el-table-column prop="establishDate" label="立户日期" width="120" align="center">
           <template #default="{ row }">{{ formatDate(row.establishDate) }}</template>
         </el-table-column>
-        <el-table-column prop="memberCount" label="家庭成员数" width="100" align="center">
+        <el-table-column prop="memberCount" label="家庭成员数" width="110" align="center">
           <template #default="{ row }">
             <el-tag size="small" type="info">{{ row.memberCount || 0 }} 人</el-tag>
           </template>
@@ -45,18 +59,19 @@
             <StatusTag :value="row.status" />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center" fixed="right">
+        <el-table-column label="操作" width="160" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="primary" link @click="viewDetail(row)">成员详情</el-button>
-            <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
-            <el-button 
-              size="small" 
-              type="danger" 
-              link 
-              :disabled="row.status === '已撤销'"
-              @click="handleDelete(row)"
+            <el-button size="small" type="primary" link @click="viewDetail(row)">
+              详情
+            </el-button>
+            <el-button
+              size="small"
+              type="primary"
+              link
+              v-permission="'household:update'"
+              @click="openEditDialog(row)"
             >
-              撤销
+              编辑
             </el-button>
           </template>
         </el-table-column>
@@ -70,184 +85,206 @@
       />
     </el-card>
 
-    <FormDialog 
-      v-model:visible="dialogVisible" 
-      :title="isEdit ? '编辑户籍' : '新增户籍'"
+    <FormDialog
+      v-model:visible="dialogVisible"
+      :title="isEdit ? '编辑户籍基础信息' : '开户立户'"
       :loading="submitting"
       @confirm="submitForm"
     >
-      <el-form 
-        ref="formRef" 
-        :model="form" 
-        :rules="rules" 
-        label-width="100px" 
-      >
-        <el-form-item label="户籍编号" prop="householdNo" v-if="isEdit">
-          <el-input v-model="form.householdNo" disabled />
-        </el-form-item>
-        <el-form-item label="户主" prop="headPersonId">
-          <PersonSelect v-model="form.headPersonId" />
-        </el-form-item>
-        <el-form-item label="户籍地址" prop="address">
-          <el-input v-model="form.address" type="textarea" :rows="2" placeholder="请输入详细地址" />
-        </el-form-item>
-        <el-form-item label="立户日期" prop="establishDate">
-          <el-date-picker 
-            v-model="form.establishDate" 
-            type="date" 
-            placeholder="请选择日期" 
-            value-format="YYYY-MM-DD"
-            style="width: 100%;"
-          />
-        </el-form-item>
-      </el-form>
+      <HouseholdForm
+        ref="householdFormRef"
+        v-model="formModel"
+        :is-edit="isEdit"
+        :household-no="editMeta.householdNo"
+        :head-person-name="editMeta.headPersonName"
+        :head-person-id="editMeta.headPersonId"
+        :status="editMeta.status"
+      />
     </FormDialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { Plus } from '@element-plus/icons-vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import SearchPanel from '../../components/common/SearchPanel.vue';
-import AppPagination from '../../components/common/AppPagination.vue';
-import FormDialog from '../../components/common/FormDialog.vue';
-import StatusTag from '../../components/common/StatusTag.vue';
-import PersonSelect from '../../components/business/PersonSelect.vue';
-import { getHouseholdPage, createHousehold, updateHousehold, deleteHousehold } from '../../api/households';
-import { formatDate } from '../../utils/date';
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { Plus } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import SearchPanel from '../../components/common/SearchPanel.vue'
+import AppPagination from '../../components/common/AppPagination.vue'
+import FormDialog from '../../components/common/FormDialog.vue'
+import StatusTag from '../../components/common/StatusTag.vue'
+import HouseholdForm from './components/HouseholdForm.vue'
+import {
+  getHouseholdPage,
+  getHouseholdById,
+  createHousehold,
+  updateHousehold,
+} from '../../api/households'
+import {
+  normalizeHousehold,
+  normalizeHouseholdList,
+  toCreateHouseholdPayload,
+  toUpdateHouseholdPayload,
+} from '../../adapters/household'
+import { formatDate } from '../../utils/date'
+import { normalizePageResult } from '../../utils/page'
 
-const router = useRouter();
-const loading = ref(false);
-const tableData = ref([]);
-const total = ref(0);
+const router = useRouter()
+const loading = ref(false)
+const tableData = ref([])
+const total = ref(0)
 
 const query = reactive({
   householdNo: '',
   headPersonName: '',
   status: '',
   current: 1,
-  size: 10
-});
+  size: 10,
+})
+
+const dialogVisible = ref(false)
+const isEdit = ref(false)
+const submitting = ref(false)
+const householdFormRef = ref(null)
+const formModel = ref({})
+const editingId = ref(null)
+const editMeta = reactive({
+  householdNo: '',
+  headPersonName: '',
+  headPersonId: null,
+  status: '',
+})
 
 const fetchList = async () => {
-  loading.value = true;
+  loading.value = true
   try {
-    const res = await getHouseholdPage(query);
-    tableData.value = res.records || res.content || [];
-    total.value = res.total || res.totalElements || 0;
+    const res = await getHouseholdPage({
+      householdNo: query.householdNo,
+      headPersonName: query.headPersonName,
+      status: query.status,
+      current: query.current,
+      size: query.size,
+    })
+    const page = normalizePageResult(res)
+    tableData.value = normalizeHouseholdList(page.records)
+    total.value = page.total
   } catch (error) {
-    console.error(error);
+    // 接口契约待后端确认；失败时保留空表，不注入假数据
+    console.error(error)
+    tableData.value = []
+    total.value = 0
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
+
+const handleSearch = () => {
+  query.current = 1
+  fetchList()
+}
 
 const resetQuery = () => {
-  query.householdNo = '';
-  query.headPersonName = '';
-  query.status = '';
-  query.current = 1;
-  fetchList();
-};
-
-onMounted(() => {
-  fetchList();
-});
-
-// 弹窗
-const dialogVisible = ref(false);
-const isEdit = ref(false);
-const submitting = ref(false);
-const formRef = ref(null);
-
-const form = reactive({
-  id: null,
-  householdNo: '',
-  headPersonId: null,
-  address: '',
-  establishDate: ''
-});
-
-const rules = {
-  headPersonId: [{ required: true, message: '请选择户主', trigger: 'change' }],
-  address: [{ required: true, message: '请输入户籍地址', trigger: 'blur' }],
-  establishDate: [{ required: true, message: '请选择立户日期', trigger: 'change' }]
-};
+  query.householdNo = ''
+  query.headPersonName = ''
+  query.status = ''
+  query.current = 1
+  fetchList()
+}
 
 const openCreateDialog = () => {
-  isEdit.value = false;
-  Object.assign(form, {
-    id: null,
+  isEdit.value = false
+  editingId.value = null
+  Object.assign(editMeta, {
     householdNo: '',
+    headPersonName: '',
+    headPersonId: null,
+    status: '',
+  })
+  formModel.value = {
     headPersonId: null,
     address: '',
-    establishDate: ''
-  });
-  dialogVisible.value = true;
-  if (formRef.value) formRef.value.clearValidate();
-};
+    establishDate: '',
+  }
+  dialogVisible.value = true
+  householdFormRef.value?.clearValidate()
+}
 
-const openEditDialog = (row) => {
-  isEdit.value = true;
-  Object.assign(form, {
-    id: row.id || row.householdId,
-    householdNo: row.householdNo,
-    headPersonId: row.headPersonId,
-    address: row.address,
-    establishDate: formatDate(row.establishDate)
-  });
-  dialogVisible.value = true;
-  if (formRef.value) formRef.value.clearValidate();
-};
-
-const submitForm = () => {
-  if (!formRef.value) return;
-  formRef.value.validate(async (valid) => {
-    if (!valid) return;
-    
-    submitting.value = true;
+const openEditDialog = async (row) => {
+  if (!row?.id) {
+    ElMessage.warning('无法识别家庭户标识')
+    return
+  }
+  isEdit.value = true
+  editingId.value = row.id
+  submitting.value = true
+  dialogVisible.value = true
+  try {
+    // 优先请求最新详情；接口不可用时回退列表行结构字段
+    let detail = normalizeHousehold(row)
     try {
-      const payload = { ...form };
-      if (isEdit.value) {
-        await updateHousehold(form.id, payload);
-        ElMessage.success('修改成功');
-      } else {
-        await createHousehold(payload);
-        ElMessage.success('新增成功');
-      }
-      dialogVisible.value = false;
-      fetchList();
+      const res = await getHouseholdById(row.id)
+      detail = normalizeHousehold(res)
     } catch (error) {
-      console.error(error);
-    } finally {
-      submitting.value = false;
+      console.error('加载家庭户详情失败，使用列表行数据', error)
     }
-  });
-};
 
-const handleDelete = (row) => {
-  const id = row.id || row.householdId;
-  ElMessageBox.confirm(`确定要撤销户籍 [${row.householdNo}] 吗？`, '警告', {
-    confirmButtonText: '确定撤销',
-    cancelButtonText: '取消',
-    type: 'warning',
-  }).then(async () => {
-    try {
-      await deleteHousehold(id);
-      ElMessage.success('撤销成功');
-      fetchList();
-    } catch (error) {
-      console.error(error);
+    Object.assign(editMeta, {
+      householdNo: detail.householdNo,
+      headPersonName: detail.headPersonName,
+      headPersonId: detail.headPersonId,
+      status: detail.status,
+    })
+    formModel.value = {
+      address: detail.address,
+      establishDate: formatDate(detail.establishDate),
     }
-  }).catch(() => {});
-};
+    householdFormRef.value?.clearValidate()
+  } catch (error) {
+    console.error(error)
+    dialogVisible.value = false
+  } finally {
+    submitting.value = false
+  }
+}
+
+const submitForm = async () => {
+  if (!householdFormRef.value) return
+  const valid = await householdFormRef.value.validate()
+  if (!valid) return
+
+  const form = householdFormRef.value.getForm()
+  submitting.value = true
+  try {
+    if (isEdit.value) {
+      // 基础编辑不含户主与状态
+      const payload = toUpdateHouseholdPayload(form)
+      await updateHousehold(editingId.value, payload)
+      ElMessage.success('修改成功')
+    } else {
+      const payload = toCreateHouseholdPayload(form)
+      await createHousehold(payload)
+      ElMessage.success('立户成功')
+    }
+    dialogVisible.value = false
+    fetchList()
+  } catch (error) {
+    console.error(error)
+  } finally {
+    submitting.value = false
+  }
+}
 
 const viewDetail = (row) => {
-  const id = row.id || row.householdId;
-  router.push(`/households/${id}`);
-};
+  if (!row?.id) {
+    ElMessage.warning('无法识别家庭户标识')
+    return
+  }
+  router.push(`/households/${row.id}`)
+}
+
+onMounted(() => {
+  fetchList()
+})
 </script>
 
 <style scoped>

@@ -5,9 +5,6 @@
         <h1>系统用户管理</h1>
         <p class="subtitle">管理系统登录账号及角色分配。</p>
       </div>
-      <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="openCreateDialog">新增用户</el-button>
-      </div>
     </div>
 
     <SearchPanel @search="fetchList" @reset="resetQuery">
@@ -37,19 +34,6 @@
             <StatusTag :value="row.status || '正常'" />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center" fixed="right">
-          <template #default="{ row }">
-            <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
-            <el-button 
-              size="small" 
-              type="danger" 
-              link 
-              @click="handleDelete(row)"
-            >
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
       </el-table>
 
       <AppPagination
@@ -59,49 +43,16 @@
         @change="fetchList"
       />
     </el-card>
-
-    <FormDialog 
-      v-model:visible="dialogVisible" 
-      :title="isEdit ? '编辑用户' : '新增用户'"
-      :loading="submitting"
-      @confirm="submitForm"
-    >
-      <el-form 
-        ref="formRef" 
-        :model="form" 
-        :rules="rules" 
-        label-width="100px" 
-      >
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="请输入登录账号" :disabled="isEdit" />
-        </el-form-item>
-        <el-form-item label="初始密码" prop="password" v-if="!isEdit">
-          <el-input v-model="form.password" type="password" placeholder="请输入初始密码" show-password />
-        </el-form-item>
-        <el-form-item label="真实姓名" prop="realName">
-          <el-input v-model="form.realName" placeholder="请输入真实姓名" />
-        </el-form-item>
-        <el-form-item label="角色分配" prop="roleId">
-          <el-select v-model="form.roleId" style="width: 100%;">
-            <!-- 简化处理：固定两个角色，后端根据 roleId 关联 -->
-            <el-option label="系统管理员" :value="1" />
-            <el-option label="普通操作员" :value="2" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-    </FormDialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import { Plus } from '@element-plus/icons-vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
 import SearchPanel from '../../components/common/SearchPanel.vue';
 import AppPagination from '../../components/common/AppPagination.vue';
-import FormDialog from '../../components/common/FormDialog.vue';
 import StatusTag from '../../components/common/StatusTag.vue';
-import { getUserPage, createUser, updateUser, deleteUser } from '../../api/users';
+import { getUserPage } from '../../api/users';
+import { normalizePageResult } from '../../utils/page';
 
 const loading = ref(false);
 const tableData = ref([]);
@@ -118,8 +69,9 @@ const fetchList = async () => {
   loading.value = true;
   try {
     const res = await getUserPage(query);
-    tableData.value = res.records || res.content || [];
-    total.value = res.total || res.totalElements || 0;
+    const page = normalizePageResult(res);
+    tableData.value = page.records;
+    total.value = page.total;
   } catch (error) {
     console.error(error);
   } finally {
@@ -138,96 +90,7 @@ onMounted(() => {
   fetchList();
 });
 
-// Dialog
-const dialogVisible = ref(false);
-const isEdit = ref(false);
-const submitting = ref(false);
-const formRef = ref(null);
-
-const form = reactive({
-  id: null,
-  username: '',
-  password: '',
-  realName: '',
-  roleId: 2
-});
-
-const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入初始密码', trigger: 'blur' }],
-  realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
-  roleId: [{ required: true, message: '请选择角色', trigger: 'change' }]
-};
-
-const openCreateDialog = () => {
-  isEdit.value = false;
-  Object.assign(form, {
-    id: null,
-    username: '',
-    password: '',
-    realName: '',
-    roleId: 2
-  });
-  dialogVisible.value = true;
-  if (formRef.value) formRef.value.clearValidate();
-};
-
-const openEditDialog = (row) => {
-  isEdit.value = true;
-  Object.assign(form, {
-    id: row.id || row.userId,
-    username: row.username,
-    password: '',
-    realName: row.realName,
-    roleId: row.roleId || 2
-  });
-  dialogVisible.value = true;
-  if (formRef.value) formRef.value.clearValidate();
-};
-
-const submitForm = () => {
-  if (!formRef.value) return;
-  formRef.value.validate(async (valid) => {
-    if (!valid) return;
-    
-    submitting.value = true;
-    try {
-      const payload = { ...form };
-      if (isEdit.value) {
-        // 不需要传密码，密码修改通过重置密码实现，或者后端忽略
-        delete payload.password;
-        await updateUser(form.id, payload);
-        ElMessage.success('修改成功');
-      } else {
-        await createUser(payload);
-        ElMessage.success('新增成功');
-      }
-      dialogVisible.value = false;
-      fetchList();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      submitting.value = false;
-    }
-  });
-};
-
-const handleDelete = (row) => {
-  const id = row.id || row.userId;
-  ElMessageBox.confirm(`确定要删除用户 [${row.username}] 吗？`, '警告', {
-    confirmButtonText: '确定删除',
-    cancelButtonText: '取消',
-    type: 'warning',
-  }).then(async () => {
-    try {
-      await deleteUser(id);
-      ElMessage.success('删除成功');
-      fetchList();
-    } catch (error) {
-      console.error(error);
-    }
-  }).catch(() => {});
-};
+// 用户管理暂时只读：待后端提供角色列表和角色分配契约后恢复编辑能力。
 </script>
 
 <style scoped>

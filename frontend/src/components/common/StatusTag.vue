@@ -1,21 +1,34 @@
 <template>
   <el-tag :type="tagType" size="small">
-    {{ value }}
+    {{ label }}
   </el-tag>
 </template>
 
 <script setup>
 import { computed } from 'vue';
+import { APPLICATION_STATUS, APPROVAL_STATUS } from '../../constants/application';
+import { MATERIAL_VERIFY_STATUS } from '../../constants/material';
+import { FLOATING_STATUS, RESIDENCE_PERMIT_STATUS } from '../../constants/floatingResidence';
 
 const props = defineProps({
   value: {
     type: String,
     required: true
-  }
+  },
+  kind: {
+    type: String,
+    default: 'application',
+    validator: (value) => ['application', 'migration', 'approval', 'material', 'floating', 'residencePermit'].includes(value),
+  },
 });
 
 const tagType = computed(() => {
   const v = props.value || '';
+  if (['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'PENDING'].includes(v)) return 'primary';
+  if (['APPROVED', 'VERIFIED', 'COMPLETED', 'ACTIVE'].includes(v)) return 'success';
+  if (['REJECTED'].includes(v)) return 'danger';
+  if (['WITHDRAWN', 'CANCELLED', 'LEFT'].includes(v)) return 'info';
+  if (['EXPIRED'].includes(v)) return 'warning';
   if (v.includes('正常') || v.includes('启用') || v.includes('有效') || v.includes('迁入')) {
     return 'success';
   }
@@ -30,4 +43,12 @@ const tagType = computed(() => {
   }
   return 'primary';
 });
+
+const label = computed(() => (props.kind === 'approval' ? APPROVAL_STATUS[props.value] : null)
+  || (props.kind === 'material' ? MATERIAL_VERIFY_STATUS[props.value] : null)
+  || (props.kind === 'floating' ? FLOATING_STATUS[props.value] : null)
+  || (props.kind === 'residencePermit' ? RESIDENCE_PERMIT_STATUS[props.value] : null)
+  || APPLICATION_STATUS[props.value]
+  || props.value
+  || '-');
 </script>

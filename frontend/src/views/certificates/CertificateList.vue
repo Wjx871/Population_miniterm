@@ -2,11 +2,11 @@
   <div class="page-container">
     <div class="page-header">
       <div class="header-left">
-        <h1>证件信息管理</h1>
-        <p class="subtitle">管理人员相关证件，支持到期自动预警与状态追踪。</p>
+        <h1>通用证件管理</h1>
+        <p class="subtitle">管理通用证件记录（居民身份证等）。居住证请通过专业居住证管理页面操作。</p>
       </div>
       <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="openCreateDialog">颁发/登记证件</el-button>
+        <el-button type="primary" :icon="Plus" @click="openCreateDialog" v-permission="'certificate:manage'">颁发/登记证件</el-button>
       </div>
     </div>
 
@@ -15,8 +15,6 @@
         <el-form-item label="证件类型">
           <el-select v-model="query.certificateType" placeholder="请选择证件类型" clearable style="width: 150px;">
             <el-option label="居民身份证" value="居民身份证" />
-            <el-option label="居住证" value="居住证" />
-            <el-option label="临时居住证" value="临时居住证" />
           </el-select>
         </el-form-item>
         <el-form-item label="证件状态">
@@ -32,8 +30,19 @@
     <el-card shadow="never" class="table-card">
       <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
         <el-table-column prop="personName" label="持有者姓名" width="120" align="center" fixed />
-        <el-table-column prop="certificateType" label="证件类型" width="130" align="center" />
-        <el-table-column prop="certificateNo" label="证件编号" width="200" align="center" />
+        <el-table-column prop="certificateType" label="证件类型" width="130" align="center">
+          <template #default="{ row }">
+            <template v-if="isLegacyResidenceType(row.certificateType)">
+              {{ row.certificateType }} <el-tag size="small" type="info">历史兼容</el-tag>
+            </template>
+            <template v-else>{{ row.certificateType }}</template>
+          </template>
+        </el-table-column>
+        <el-table-column prop="certificateNo" label="证件编号" width="200" align="center">
+          <template #default="{ row }">
+            <SensitiveText :value="row.certificateNo" kind="text" />
+          </template>
+        </el-table-column>
         <el-table-column prop="issueDate" label="签发日期" width="120" align="center">
           <template #default="{ row }">{{ formatDate(row.issueDate) }}</template>
         </el-table-column>
@@ -47,15 +56,13 @@
         </el-table-column>
         <el-table-column label="操作" width="150" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
-            <el-button 
-              size="small" 
-              type="danger" 
-              link 
-              @click="handleDelete(row)"
-            >
-              作废
-            </el-button>
+            <template v-if="isLegacyResidenceType(row.certificateType)">
+              <span class="legacy-readonly">仅可查看</span>
+            </template>
+            <template v-else>
+              <el-button size="small" type="primary" link @click="openEditDialog(row)" v-permission="'certificate:manage'">编辑</el-button>
+              <el-button size="small" type="danger" link @click="handleDelete(row)" v-permission="'certificate:delete'">作废</el-button>
+            </template>
           </template>
         </el-table-column>
       </el-table>
@@ -91,7 +98,6 @@
             <el-option label="居民身份证" value="居民身份证" />
           </el-select>
         </el-form-item>
-        <el-alert title="居住证请前往“流动人口与居住证”专门模块办理；历史居住证记录仅兼容展示。" type="info" show-icon />
         <el-form-item label="证件编号" prop="certificateNo">
           <el-input v-model="form.certificateNo" placeholder="请输入证件编号" />
         </el-form-item>
@@ -116,7 +122,6 @@
         <el-form-item label="状态" prop="status">
           <el-select v-model="form.status" style="width: 100%;">
             <el-option label="有效" value="有效" />
-            <el-option label="即将到期" value="即将到期" />
             <el-option label="已过期" value="已过期" />
           </el-select>
         </el-form-item>
@@ -133,9 +138,11 @@ import SearchPanel from '../../components/common/SearchPanel.vue';
 import AppPagination from '../../components/common/AppPagination.vue';
 import FormDialog from '../../components/common/FormDialog.vue';
 import StatusTag from '../../components/common/StatusTag.vue';
+import SensitiveText from '../../components/common/SensitiveText.vue';
 import PersonSelect from '../../components/business/PersonSelect.vue';
 import { getCertificatePage, createCertificate, updateCertificate, deleteCertificate } from '../../api/certificates';
 import { formatDate } from '../../utils/date';
+import { normalizePageResult } from '../../utils/page';
 
 const loading = ref(false);
 const tableData = ref([]);
@@ -152,8 +159,9 @@ const fetchList = async () => {
   loading.value = true;
   try {
     const res = await getCertificatePage(query);
-    tableData.value = res.records || res.content || [];
-    total.value = res.total || res.totalElements || 0;
+    const page = normalizePageResult(res);
+    tableData.value = page.records;
+    total.value = page.total;
   } catch (error) {
     console.error(error);
   } finally {
@@ -255,7 +263,12 @@ const submitForm = () => {
   });
 };
 
+function isLegacyResidenceType(type) {
+  return ['居住证', '临时居住证'].includes(type)
+}
+
 const handleDelete = (row) => {
+  if (isLegacyResidenceType(row.certificateType)) return
   const id = row.id || row.certificateId;
   ElMessageBox.confirm(`确定要作废该证件吗？`, '警告', {
     confirmButtonText: '确定作废',
@@ -295,5 +308,9 @@ const handleDelete = (row) => {
 }
 .table-card {
   border-radius: var(--radius-large);
+}
+.legacy-readonly {
+  color: var(--el-text-color-placeholder);
+  font-size: 13px;
 }
 </style>

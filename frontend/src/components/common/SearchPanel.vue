@@ -24,15 +24,16 @@ defineEmits(['search', 'reset']);
 .search-content {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
   gap: 16px;
 }
 .search-form {
   flex: 1;
+  margin-bottom: -16px; /* 抵消最后一行 el-form-item 的 margin-bottom，实现完美垂直居中 */
 }
 .search-form :deep(.el-form-item) {
-  margin-bottom: 0;
+  margin-bottom: 16px;
   margin-right: 24px;
 }
 .search-actions {

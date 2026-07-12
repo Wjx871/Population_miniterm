@@ -6,12 +6,18 @@
         <p class="subtitle">维护人口基础信息，支持多条件查询与档案管理。</p>
       </div>
       <div class="header-right">
-        <el-button v-if="user.hasPermission('data:export:normal')" @click="exportCurrent">导出当前查询</el-button>
-        <el-button type="primary" :icon="Plus" @click="openCreateDialog">新增人员</el-button>
+        <el-button
+          type="primary"
+          :icon="Plus"
+          v-permission="'person:create'"
+          @click="openCreateDialog"
+        >
+          新增人员
+        </el-button>
       </div>
     </div>
 
-    <SearchPanel @search="fetchList" @reset="resetQuery">
+    <SearchPanel @search="handleSearch" @reset="resetQuery">
       <el-form :inline="true" :model="query" size="default">
         <el-form-item label="姓名">
           <el-input v-model="query.name" placeholder="请输入姓名" clearable />
@@ -22,40 +28,61 @@
         <el-form-item label="状态">
           <el-select v-model="query.status" placeholder="全部" clearable style="width: 120px;">
             <el-option label="正常" value="正常" />
-            <el-option label="死亡" value="死亡" />
-            <el-option label="迁出" value="迁出" />
+            <el-option label="已注销" value="已注销" />
           </el-select>
         </el-form-item>
       </el-form>
     </SearchPanel>
 
     <el-card shadow="never" class="table-card">
-      <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
+      <el-table
+        :data="tableData"
+        v-loading="loading"
+        border
+        stripe
+        style="width: 100%"
+        row-key="id"
+      >
         <el-table-column prop="name" label="姓名" width="100" fixed />
         <el-table-column prop="gender" label="性别" width="80" align="center" />
-        <el-table-column prop="idCard" label="身份证号" width="180" align="center" />
+        <el-table-column label="身份证号" width="200" align="center">
+          <template #default="{ row }">
+            <SensitiveText :value="row.idCard" kind="idCard" :revealable="false" />
+          </template>
+        </el-table-column>
         <el-table-column prop="birthDate" label="出生日期" width="120" align="center">
           <template #default="{ row }">{{ formatDate(row.birthDate) }}</template>
         </el-table-column>
         <el-table-column prop="ethnicity" label="民族" width="100" align="center" />
-        <el-table-column prop="phone" label="联系电话" width="130" align="center" />
-        <el-table-column prop="currentAddress" label="现居住地址" min-width="200" show-overflow-tooltip />
+        <el-table-column label="联系电话" width="140" align="center">
+          <template #default="{ row }">
+            <SensitiveText :value="row.phone" kind="phone" :revealable="false" />
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="currentAddress"
+          label="现居住地址"
+          min-width="200"
+          show-overflow-tooltip
+        />
         <el-table-column prop="status" label="状态" width="100" align="center">
           <template #default="{ row }">
             <StatusTag :value="row.status" />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" align="center" fixed="right">
+        <el-table-column label="操作" width="160" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
-            <el-button 
-              size="small" 
-              type="danger" 
-              link 
-              :disabled="row.status === '死亡' || row.status === '迁出'"
-              @click="handleDelete(row)"
+            <el-button size="small" type="primary" link @click="openDetail(row)">
+              详情
+            </el-button>
+            <el-button
+              size="small"
+              type="primary"
+              link
+              v-permission="'person:update'"
+              @click="openEditDialog(row)"
             >
-              删除
+              编辑
             </el-button>
           </template>
         </el-table-column>
@@ -69,156 +96,111 @@
       />
     </el-card>
 
-    <FormDialog 
-      v-model:visible="dialogVisible" 
+    <FormDialog
+      v-model:visible="dialogVisible"
       :title="isEdit ? '编辑人口信息' : '新增人口信息'"
       :loading="submitting"
       @confirm="submitForm"
     >
-      <el-form 
-        ref="formRef" 
-        :model="form" 
-        :rules="rules" 
-        label-width="100px" 
-      >
-        <el-form-item label="姓名" prop="name">
-          <el-input v-model="form.name" placeholder="请输入姓名" />
-        </el-form-item>
-        <el-form-item label="性别" prop="gender">
-          <el-radio-group v-model="form.gender">
-            <el-radio value="男">男</el-radio>
-            <el-radio value="女">女</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="身份证号" prop="idCard">
-          <el-input v-model="form.idCard" placeholder="请输入身份证号" :disabled="isEdit" />
-        </el-form-item>
-        <el-form-item label="出生日期" prop="birthDate">
-          <el-date-picker 
-            v-model="form.birthDate" 
-            type="date" 
-            placeholder="请选择日期" 
-            value-format="YYYY-MM-DD"
-            style="width: 100%;"
-          />
-        </el-form-item>
-        <el-form-item label="民族" prop="ethnicity">
-          <el-input v-model="form.ethnicity" placeholder="如：汉族" />
-        </el-form-item>
-        <el-form-item label="联系电话" prop="phone">
-          <el-input v-model="form.phone" placeholder="手机号" />
-        </el-form-item>
-        <el-form-item label="现居住地址" prop="currentAddress">
-          <el-input v-model="form.currentAddress" type="textarea" :rows="2" placeholder="请输入详细地址" />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="form.status" style="width: 100%;">
-            <el-option label="正常" value="正常" />
-            <el-option label="死亡" value="死亡" />
-            <el-option label="迁出" value="迁出" />
-          </el-select>
-        </el-form-item>
-      </el-form>
+      <PersonForm
+        ref="personFormRef"
+        v-model="formModel"
+        :is-edit="isEdit"
+      />
     </FormDialog>
+
+    <PersonDetailDrawer
+      v-model="detailVisible"
+      :person-id="detailPersonId"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { Plus } from '@element-plus/icons-vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import SearchPanel from '../../components/common/SearchPanel.vue';
-import AppPagination from '../../components/common/AppPagination.vue';
-import FormDialog from '../../components/common/FormDialog.vue';
-import StatusTag from '../../components/common/StatusTag.vue';
-import { getPersonPage, createPerson, updatePerson, deletePerson } from '../../api/persons';
-import { formatDate } from '../../utils/date';
-import { validateIdCard, validatePhone } from '../../utils/validators';
-import { normalExport } from '../../api/exports';
-import { useUserStore } from '../../stores/user';
-import { useRouter } from 'vue-router';
+import { ref, reactive, onMounted } from 'vue'
+import { Plus } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import SearchPanel from '../../components/common/SearchPanel.vue'
+import AppPagination from '../../components/common/AppPagination.vue'
+import FormDialog from '../../components/common/FormDialog.vue'
+import StatusTag from '../../components/common/StatusTag.vue'
+import SensitiveText from '../../components/common/SensitiveText.vue'
+import PersonForm from './components/PersonForm.vue'
+import PersonDetailDrawer from './components/PersonDetailDrawer.vue'
+import { getPersonPage, getPersonById, createPerson, updatePerson } from '../../api/persons'
+import {
+  normalizePerson,
+  normalizePersonList,
+  toCreatePersonPayload,
+  toUpdatePersonPayload,
+} from '../../adapters/person'
+import { formatDate } from '../../utils/date'
+import { normalizePageResult } from '../../utils/page'
 
-const user=useUserStore(),router=useRouter();
-
-const loading = ref(false);
-const tableData = ref([]);
-const total = ref(0);
+const loading = ref(false)
+const tableData = ref([])
+const total = ref(0)
 
 const query = reactive({
   name: '',
   idCard: '',
   status: '',
   current: 1,
-  size: 10
-});
+  size: 10,
+})
+
+const dialogVisible = ref(false)
+const isEdit = ref(false)
+const submitting = ref(false)
+const personFormRef = ref(null)
+const formModel = ref({})
+/** 编辑时缓存最新详情，用于构造 update payload 的 idCard/status */
+const latestDetail = ref(null)
+const editingId = ref(null)
+
+const detailVisible = ref(false)
+const detailPersonId = ref(null)
 
 const fetchList = async () => {
-  loading.value = true;
+  loading.value = true
   try {
     const res = await getPersonPage({
       name: query.name,
       idCard: query.idCard,
       status: query.status,
       current: query.current,
-      size: query.size
-    });
-    // Spring Boot page is typically { content, totalElements } or { records, total }
-    tableData.value = res.records || res.content || [];
-    total.value = res.total || res.totalElements || 0;
+      size: query.size,
+    })
+    const page = normalizePageResult(res)
+    tableData.value = normalizePersonList(page.records)
+    total.value = page.total
   } catch (error) {
-    console.error(error);
+    console.error(error)
+    tableData.value = []
+    total.value = 0
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
+
+const handleSearch = () => {
+  query.current = 1
+  fetchList()
+}
 
 const resetQuery = () => {
-  query.name = '';
-  query.idCard = '';
-  query.status = '';
-  query.current = 1;
-  fetchList();
-};
-
-const exportCurrent=async()=>{const r=await normalExport({module:'PERSON',filters:{name:query.name||undefined,status:query.status||undefined},fields:['name','maskedIdentityNo','gender','status','regionCode']});ElMessage.success('脱敏导出已生成');router.push('/exports/'+r.exportLogId)};
-
-onMounted(() => {
-  fetchList();
-});
-
-// Dialog
-const dialogVisible = ref(false);
-const isEdit = ref(false);
-const submitting = ref(false);
-const formRef = ref(null);
-
-const form = reactive({
-  id: null,
-  name: '',
-  gender: '男',
-  idCard: '',
-  birthDate: '',
-  ethnicity: '汉族',
-  phone: '',
-  currentAddress: '',
-  status: '正常'
-});
-
-const rules = {
-  name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
-  gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
-  idCard: [
-    { required: true, message: '请输入身份证号', trigger: 'blur' },
-    { validator: validateIdCard, trigger: 'blur' }
-  ],
-  birthDate: [{ required: true, message: '请选择出生日期', trigger: 'change' }],
-  phone: [{ validator: validatePhone, trigger: 'blur' }]
-};
+  query.name = ''
+  query.idCard = ''
+  query.status = ''
+  query.current = 1
+  fetchList()
+}
 
 const openCreateDialog = () => {
-  isEdit.value = false;
-  Object.assign(form, {
-    id: null,
+  isEdit.value = false
+  editingId.value = null
+  latestDetail.value = null
+  formModel.value = {
     name: '',
     gender: '男',
     idCard: '',
@@ -226,70 +208,87 @@ const openCreateDialog = () => {
     ethnicity: '汉族',
     phone: '',
     currentAddress: '',
-    status: '正常'
-  });
-  dialogVisible.value = true;
-  if (formRef.value) formRef.value.clearValidate();
-};
+  }
+  dialogVisible.value = true
+  personFormRef.value?.clearValidate()
+}
 
-const openEditDialog = (row) => {
-  isEdit.value = true;
-  Object.assign(form, {
-    id: row.id || row.personId,
-    name: row.name,
-    gender: row.gender,
-    idCard: row.idCard,
-    birthDate: formatDate(row.birthDate),
-    ethnicity: row.ethnicity,
-    phone: row.phone,
-    currentAddress: row.currentAddress,
-    status: row.status
-  });
-  dialogVisible.value = true;
-  if (formRef.value) formRef.value.clearValidate();
-};
+const openEditDialog = async (row) => {
+  if (!row?.id) {
+    ElMessage.warning('无法识别人员标识')
+    return
+  }
+  isEdit.value = true
+  editingId.value = row.id
+  submitting.value = true
+  dialogVisible.value = true
+  try {
+    // 强制请求最新详情，不信任列表行
+    const res = await getPersonById(row.id)
+    const detail = normalizePerson(res)
+    latestDetail.value = detail
+    formModel.value = {
+      name: detail.name,
+      gender: detail.gender || '男',
+      idCard: detail.idCard,
+      birthDate: formatDate(detail.birthDate),
+      ethnicity: detail.ethnicity || '',
+      phone: detail.phone || '',
+      currentAddress: detail.currentAddress || '',
+    }
+    personFormRef.value?.clearValidate()
+  } catch (error) {
+    console.error(error)
+    dialogVisible.value = false
+    latestDetail.value = null
+  } finally {
+    submitting.value = false
+  }
+}
 
-const submitForm = () => {
-  if (!formRef.value) return;
-  formRef.value.validate(async (valid) => {
-    if (!valid) return;
-    
-    submitting.value = true;
-    try {
-      const payload = { ...form };
-      if (isEdit.value) {
-        await updatePerson(form.id, payload);
-        ElMessage.success('修改成功');
-      } else {
-        await createPerson(payload);
-        ElMessage.success('新增成功');
+const openDetail = (row) => {
+  detailPersonId.value = row.id
+  detailVisible.value = true
+}
+
+const submitForm = async () => {
+  if (!personFormRef.value) return
+  const valid = await personFormRef.value.validate()
+  if (!valid) return
+
+  const form = personFormRef.value.getForm()
+  submitting.value = true
+  try {
+    if (isEdit.value) {
+      if (!latestDetail.value || !editingId.value) {
+        ElMessage.error('缺少最新详情，请重新打开编辑')
+        return
       }
-      dialogVisible.value = false;
-      fetchList();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      submitting.value = false;
+      // idCard / status 取自最新详情对象，不依赖可被修改的隐藏表单字段；
+      // status 缺失时适配器会抛错，禁止兜底为「正常」
+      const payload = toUpdatePersonPayload(form, latestDetail.value)
+      await updatePerson(editingId.value, payload)
+      ElMessage.success('修改成功')
+    } else {
+      const payload = toCreatePersonPayload(form)
+      await createPerson(payload)
+      ElMessage.success('新增成功')
     }
-  });
-};
+    dialogVisible.value = false
+    fetchList()
+  } catch (error) {
+    if (error?.message && String(error.message).includes('最新详情缺少')) {
+      ElMessage.error(error.message)
+    }
+    console.error(error)
+  } finally {
+    submitting.value = false
+  }
+}
 
-const handleDelete = (row) => {
-  const id = row.id || row.personId;
-  ElMessageBox.confirm(`确定要删除人员 [${row.name}] 吗？`, '警告', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  }).then(async () => {
-    try {
-      await deletePerson(id);
-      ElMessage.success('删除成功');
-      fetchList();
-    } catch (error) {
-      console.error(error);
-    }
-  }).catch(() => {});
-};
+onMounted(() => {
+  fetchList()
+})
 </script>
 
 <style scoped>

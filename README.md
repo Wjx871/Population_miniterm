@@ -1,5 +1,7 @@
 # Population Miniterm
 
+人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。
+
 ## 第三阶段：户籍迁移闭环
 
 系统现支持申请制迁入/迁出、单级审批后的显式业务执行、当前户籍唯一登记、家庭成员同步、迁出历史快照、户主变更及同市跨区批次关联。操作顺序为：创建迁移草稿 → 上传必需材料 → 提交/审批 → 授权经办人确认执行。审批通过不会自动改变户籍。
@@ -23,8 +25,6 @@
 导出环境变量：`EXPORT_DIR`（默认 `./data/exports`）、`EXPORT_NORMAL_MAX_ROWS`（5000）、`EXPORT_SENSITIVE_MAX_ROWS`（20000）、`EXPORT_FILE_RETENTION_DAYS`（7）、`EXPORT_CLEANUP_CRON`（每天 02:30）。导出目录不会提交 Git。
 
 第七阶段已在隔离的 MySQL Community Server 8.4.10 LTS 上完成完整初始化、历史结构升级、V4_001-V4_006 重复执行、应用启动和五角色 API 烟测。验证脚本见 `scripts/verify-mysql.ps1`，结果见 `doc/testing/end-to-end-regression-report.md`。
-
-人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。项目没有使用 Spring Data JPA。
 
 ## 数据库
 

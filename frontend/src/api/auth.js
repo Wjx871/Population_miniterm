@@ -8,16 +8,10 @@ export function login(data) {
   });
 }
 
-export function getCurrentUser() {
+export function register(data) {
   return request({
-    url: '/auth/me',
-    method: 'get',
-  });
-}
-
-export function logout() {
-  return request({
-    url: '/auth/logout',
+    url: '/auth/register',
     method: 'post',
+    data,
   });
 }

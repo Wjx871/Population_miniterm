@@ -1,148 +1,32 @@
 <template>
-  <div class="dashboard-container">
-    <div class="page-header">
-      <div class="header-left">
-        <h1>工作台</h1>
-        <p class="subtitle">欢迎使用人口数据库管理系统，今日系统运行平稳。</p>
-      </div>
-    </div>
-    
-    <div class="stats-grid">
-      <el-card shadow="hover" class="stat-card" @click="$router.push('/residence-permits/expiring')">
-        <template #header>
-          <div class="card-header">
-            <span>系统状态</span>
-            <el-icon class="icon-success"><CircleCheck /></el-icon>
-          </div>
-        </template>
-        <div class="stat-value" :class="{'text-success': health === '正常运行', 'text-placeholder': health === '暂无数据'}">
-          {{ health }}
-        </div>
-      </el-card>
-      
-      <el-card shadow="hover" class="stat-card">
-        <template #header>
-          <div class="card-header">
-            <span>总常驻人口</span>
-            <el-icon class="icon-primary"><User /></el-icon>
-          </div>
-        </template>
-        <div class="stat-value" :class="{'text-placeholder': totalPersons === '暂无数据'}">
-          {{ totalPersons }}
-        </div>
-      </el-card>
-
-      <el-card shadow="hover" class="stat-card">
-        <template #header>
-          <div class="card-header">
-            <span>迁入登记总数</span>
-            <el-icon class="icon-warning"><Switch /></el-icon>
-          </div>
-        </template>
-        <div class="stat-value" :class="{'text-placeholder': migrationsIn === '暂无数据'}">
-          {{ migrationsIn }}
-        </div>
-      </el-card>
-
-      <el-card shadow="hover" class="stat-card">
-        <template #header>
-          <div class="card-header">
-            <span>即将过期证件</span>
-            <el-icon class="icon-danger"><Warning /></el-icon>
-          </div>
-        </template>
-        <div class="stat-value" :class="{'text-placeholder': expireSoon === '暂无数据'}">
-          {{ expireSoon }}
-        </div>
-      </el-card>
-    </div>
+  <div class="dashboard-page"><header class="hero"><div><p class="eyebrow">OPERATIONS DESK</p><h1>工作台</h1><p>欢迎，{{ userStore.displayName }}。以下均为当前授权范围内的实时聚合数据。</p><small>更新时间：{{ formatDateTime(overview.generatedAt) || '未加载' }}</small></div><el-button :icon="Refresh" :loading="refreshing" @click="refresh">刷新数据</el-button></header>
+    <section class="stat-grid"><DashboardStatCard label="当前户籍人口" :value="overview.registeredPopulation" :icon="User"/><DashboardStatCard label="在册流动人口" :value="overview.activeFloatingPopulation" :icon="UserFilled"/><DashboardStatCard label="有效居住证" :value="overview.activeResidencePermits" :icon="Postcard"/><DashboardStatCard v-if="can('approval:view')" label="待审批" :value="overview.pendingApprovals" :icon="Finished"/><DashboardStatCard v-if="can('residence-permit:expiry:view')" label="即将到期居住证" :value="overview.expiringResidencePermits" :icon="Warning"/><DashboardStatCard label="近{{ overview.periodDays || 30 }}日迁入" :value="overview.migrationInPeriod" :icon="TrendCharts"/><DashboardStatCard label="近{{ overview.periodDays || 30 }}日迁出" :value="overview.migrationOutPeriod" :icon="TrendCharts"/></section>
+    <section class="content-grid"><QuickActionPanel :actions="quickActions"/><WorkItemList title="待审批事项" :items="pending.items" :error="pending.error" :retry="can('approval:view')" @retry="loadWorkItems"/><WorkItemList title="我的近期申请" :items="applications.items" :error="applications.error" :retry="can('application:view')" @retry="loadWorkItems"/><WorkItemList title="即将到期居住证" :items="expiring.items" :error="expiring.error" :retry="can('residence-permit:expiry:view')" @retry="loadWorkItems"/></section>
+    <section class="chart-card"><div class="section-heading"><div><h2>近 30 日迁移趋势</h2><p>仅统计已完成迁移业务</p></div><el-button link type="primary" @click="$router.push('/statistics/dashboard')">查看数据大屏</el-button></div><MigrationTrendChart :points="charts.migrationTrend"/></section>
   </div>
 </template>
-
 <script setup>
-import { ref, onMounted } from 'vue';
-import { CircleCheck, User, Switch, Warning } from '@element-plus/icons-vue';
-import { getSystemHealth, getPersonsStatistics, getMigrationsInStatistics } from '../../api/dashboard';
-import { getExpiring } from '../../api/floatingResidence';
+import { computed, onMounted, reactive, ref } from 'vue'
+import { Refresh, User, UserFilled, Postcard, Finished, Warning, TrendCharts, Search, DataAnalysis, Switch } from '@element-plus/icons-vue'
+import { useUserStore } from '../../stores/user'
+import { PERMISSIONS } from '../../constants/permissions'
+import { formatDateTime } from '../../utils/date'
+import { getDashboardCharts, getDashboardOverview } from '../../api/dashboard'
+import { getPendingApprovals } from '../../api/approvals'
+import { getApplicationPage } from '../../api/applications'
+import { getExpiringResidencePermits } from '../../api/floatingResidence'
+import { normalizeDashboardCharts, normalizeDashboardOverview } from '../../adapters/dashboard'
+import DashboardStatCard from './components/DashboardStatCard.vue'
+import QuickActionPanel from './components/QuickActionPanel.vue'
+import WorkItemList from './components/WorkItemList.vue'
+import MigrationTrendChart from './components/MigrationTrendChart.vue'
 
-const health = ref('检查中...');
-const totalPersons = ref('加载中...');
-const migrationsIn = ref('加载中...');
-const expireSoon = ref('加载中...');
-
-onMounted(async () => {
-  try {
-    const res = await getSystemHealth();
-    health.value = res?.status || '正常运行';
-  } catch (e) {
-    health.value = '暂无数据';
-  }
-
-  try {
-    const res = await getPersonsStatistics();
-    totalPersons.value = res?.total !== undefined ? res.total : '暂无数据';
-  } catch (e) {
-    totalPersons.value = '暂无数据';
-  }
-
-  try {
-    const res = await getMigrationsInStatistics();
-    migrationsIn.value = res?.total !== undefined ? res.total : '暂无数据';
-  } catch (e) {
-    migrationsIn.value = '暂无数据';
-  }
-
-  try {
-    const res = await getExpiring();
-    expireSoon.value = Array.isArray(res) ? res.length : '暂无数据';
-  } catch (e) {
-    expireSoon.value = '暂无数据';
-  }
-});
+const userStore=useUserStore(); const refreshing=ref(false); const overview=reactive(normalizeDashboardOverview()); const charts=reactive(normalizeDashboardCharts()); const pending=reactive({items:[],error:false});const applications=reactive({items:[],error:false});const expiring=reactive({items:[],error:false})
+const can=(permission)=>userStore.hasPermission(permission)
+const quickActions=computed(()=>[{label:'人口综合查询',to:'/queries/comprehensive',icon:Search,permission:PERMISSIONS.POPULATION_VIEW},{label:'数据大屏',to:'/statistics/dashboard',icon:DataAnalysis,permission:PERMISSIONS.STATISTICS_VIEW},{label:'发起迁入',to:'/migrations/in/apply',icon:Switch,permission:'migration:in:create'},{label:'发起迁出',to:'/migrations/out/apply',icon:Switch,permission:'migration:out:create'}].filter(x=>can(x.permission)))
+async function loadSummary(){const [overviewResult,chartsResult]=await Promise.allSettled([getDashboardOverview(),getDashboardCharts({days:30,regionLimit:8})]);if(overviewResult.status==='fulfilled')Object.assign(overview,normalizeDashboardOverview(overviewResult.value));if(chartsResult.status==='fulfilled')Object.assign(charts,normalizeDashboardCharts(chartsResult.value))}
+async function loadWorkItems(){const jobs=[];if(can('approval:view'))jobs.push(['pending',getPendingApprovals()]);if(can('application:view'))jobs.push(['applications',getApplicationPage({current:1,size:5})]);if(can('residence-permit:expiry:view'))jobs.push(['expiring',getExpiringResidencePermits({days:30})]);const results=await Promise.allSettled(jobs.map(([,job])=>job));results.forEach((result,index)=>{const key=jobs[index][0];const target={pending,applications,expiring}[key];target.error=result.status==='rejected';if(result.status!=='fulfilled')return;const data=result.value;if(key==='pending')target.items=Array.isArray(data)?data.slice(0,5).map(x=>({id:x.approvalId,title:x.title||x.applicationNo,meta:x.status||'待审批',to:`/approvals/${x.approvalId}`})):[];if(key==='applications'){const rows=Array.isArray(data?.content)?data.content:[];target.items=rows.slice(0,5).map(x=>({id:x.applicationId,title:x.title||x.applicationNo,meta:x.status||'',to:`/applications/${x.applicationId}`}))}if(key==='expiring')target.items=(Array.isArray(data)?data:[]).slice(0,5).map(x=>({id:x.permitId,title:x.personName||x.maskedPermitNo,meta:`剩余 ${x.remainingDays ?? '—'} 天`,to:`/residence-permits/${x.permitId}`}))})}
+async function refresh(){refreshing.value=true;try{await Promise.all([loadSummary(),loadWorkItems()])}finally{refreshing.value=false}}
+onMounted(refresh)
 </script>
-
-<style scoped>
-.dashboard-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.page-header {
-  margin-bottom: 20px;
-}
-.page-header h1 {
-  font-size: 24px;
-  margin-bottom: 8px;
-}
-.subtitle {
-  color: var(--color-ink-muted);
-  font-size: 14px;
-}
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-}
-.stat-card {
-  border-radius: 8px;
-}
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-  color: var(--color-ink-muted);
-}
-.stat-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: var(--color-ink);
-  margin-top: 10px;
-}
-.text-success { color: var(--color-success); }
-.text-placeholder { color: var(--color-ink-lighter); font-size: 20px; font-weight: normal; }
-.icon-success { color: var(--color-success); font-size: 18px; }
-.icon-primary { color: var(--color-primary); font-size: 18px; }
-.icon-warning { color: var(--color-warning); font-size: 18px; }
-.icon-danger { color: var(--color-danger); font-size: 18px; }
-</style>
+<style scoped>.dashboard-page{display:flex;flex-direction:column;gap:16px}.hero{display:flex;justify-content:space-between;align-items:flex-end;padding:22px 24px;border-radius:var(--radius-large);color:#fff;background:linear-gradient(120deg,#102a5c,#1e40af)}.hero h1{color:#fff;font-size:26px;margin:3px 0 6px}.hero p{color:#dbeafe}.hero small{display:block;margin-top:12px;color:#bfdbfe}.eyebrow{font-size:11px;letter-spacing:.14em;font-weight:700}.stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.content-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.chart-card{padding:18px;border-radius:var(--radius-large);background:#fff;border:1px solid var(--color-border)}.section-heading{display:flex;justify-content:space-between}.section-heading h2{font-size:16px}.section-heading p{font-size:12px;color:var(--color-ink-muted);margin-top:4px}@media(max-width:1200px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:760px){.hero{align-items:flex-start;gap:16px;flex-direction:column}.stat-grid,.content-grid{grid-template-columns:1fr}}</style>

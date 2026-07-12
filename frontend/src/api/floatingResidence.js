@@ -1,19 +1,84 @@
 import request from './request'
-export const createFloatingApplication=d=>request.post('/floating-registrations/applications',d)
-export const updateFloatingApplication=(id,d)=>request.put(`/floating-registrations/applications/${id}`,d)
-export const getFloatingApplication=id=>request.get(`/floating-registrations/applications/${id}`)
-export const executeFloating=(id,version)=>request.post(`/floating-registrations/applications/${id}/execute`,{version})
-export const getFloatingPopulations=p=>request.get('/floating-populations',{params:p})
-export const getFloatingPopulation=id=>request.get(`/floating-populations/${id}`)
-export const closeFloating=(id,d)=>request.post(`/floating-populations/${id}/close`,d)
-export const firstIssue=d=>request.post('/residence-permits/applications/first-issue',d)
-export const endorseApplication=(id,d)=>request.post(`/residence-permits/applications/${id}/endorsement`,d)
-export const cancelApplication=(id,d)=>request.post(`/residence-permits/applications/${id}/cancellation`,d)
-export const getPermitApplication=id=>request.get(`/residence-permits/applications/${id}`)
-export const issuePermit=(id,d)=>request.post(`/residence-permits/applications/${id}/issue`,d)
-export const endorsePermit=(id,version)=>request.post(`/residence-permits/applications/${id}/endorse`,{version})
-export const cancelPermit=(id,version)=>request.post(`/residence-permits/applications/${id}/cancel`,{version})
-export const getPermits=p=>request.get('/residence-permits',{params:p})
-export const getPermit=id=>request.get(`/residence-permits/${id}`)
-export const getPermitLogs=id=>request.get(`/residence-permits/${id}/logs`)
-export const getExpiring=p=>request.get('/residence-permits/expiring',{params:p})
+import { toSpringPageParams } from '../utils/page'
+
+// ==================== 流动登记专业申请 (7) ====================
+
+export function createFloatingApplication(payload) {
+  return request({ url: '/floating-registrations/applications', method: 'post', data: payload })
+}
+
+export function updateFloatingApplication(applicationId, payload) {
+  return request({ url: `/floating-registrations/applications/${applicationId}`, method: 'put', data: payload })
+}
+
+export function getFloatingApplicationDetail(applicationId) {
+  return request({ url: `/floating-registrations/applications/${applicationId}`, method: 'get' })
+}
+
+export function executeFloatingApplication(applicationId, version) {
+  return request({ url: `/floating-registrations/applications/${applicationId}/execute`, method: 'post', data: { version } })
+}
+
+export function getFloatingPopulationPage(params) {
+  return request({ url: '/floating-populations', method: 'get', params: toSpringPageParams(params) })
+}
+
+export function getFloatingPopulationById(floatingId) {
+  return request({ url: `/floating-populations/${floatingId}`, method: 'get' })
+}
+
+export function closeFloatingPopulation(floatingId, payload) {
+  return request({ url: `/floating-populations/${floatingId}/close`, method: 'post', data: payload })
+}
+
+// ==================== 居住证专业申请与执行 (8) ====================
+
+export function createPermitFirstIssueApplication(payload) {
+  return request({ url: '/residence-permits/applications/first-issue', method: 'post', data: payload })
+}
+
+export function createPermitEndorsementApplication(permitId, payload) {
+  return request({ url: `/residence-permits/applications/${permitId}/endorsement`, method: 'post', data: payload })
+}
+
+export function createPermitCancellationApplication(permitId, payload) {
+  return request({ url: `/residence-permits/applications/${permitId}/cancellation`, method: 'post', data: payload })
+}
+
+export function updatePermitApplication(applicationId, payload) {
+  return request({ url: `/residence-permits/applications/${applicationId}`, method: 'put', data: payload })
+}
+
+export function getPermitApplicationDetail(applicationId) {
+  return request({ url: `/residence-permits/applications/${applicationId}`, method: 'get' })
+}
+
+export function issueResidencePermit(applicationId, payload) {
+  return request({ url: `/residence-permits/applications/${applicationId}/issue`, method: 'post', data: payload })
+}
+
+export function endorseResidencePermit(applicationId, version) {
+  return request({ url: `/residence-permits/applications/${applicationId}/endorse`, method: 'post', data: { version } })
+}
+
+export function cancelResidencePermitApplication(applicationId, version) {
+  return request({ url: `/residence-permits/applications/${applicationId}/cancel`, method: 'post', data: { version } })
+}
+
+// ==================== 正式居住证查询 (4) ====================
+
+export function getResidencePermitPage(params) {
+  return request({ url: '/residence-permits', method: 'get', params: toSpringPageParams(params) })
+}
+
+export function getResidencePermitById(permitId) {
+  return request({ url: `/residence-permits/${permitId}`, method: 'get' })
+}
+
+export function getResidencePermitLogs(permitId) {
+  return request({ url: `/residence-permits/${permitId}/logs`, method: 'get' })
+}
+
+export function getExpiringResidencePermits(params) {
+  return request({ url: '/residence-permits/expiring', method: 'get', params })
+}

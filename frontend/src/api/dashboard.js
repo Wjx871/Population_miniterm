@@ -1,17 +1,9 @@
 import request from './request'
 
-export function getSystemHealth() {
-  return request({ url: '/system/health', method: 'get' })
+export function getDashboardOverview(params = {}) {
+  return request({ url: '/dashboard/overview', method: 'get', params })
 }
 
-export function getPersonsStatistics() {
-  return request({ url: '/persons/statistics', method: 'get' })
-}
-
-export function getMigrationsInStatistics() {
-  return request({ url: '/migrations/in/statistics', method: 'get' })
-}
-
-export function getCertificatesExpireSoon() {
-  return request({ url: '/certificates/expire-soon', method: 'get' })
+export function getDashboardCharts(params = {}) {
+  return request({ url: '/dashboard/charts', method: 'get', params })
 }

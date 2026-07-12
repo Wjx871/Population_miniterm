@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wjx871.population.query.ComprehensiveQueryMapper">
+  <sql id="personScope">
+    <if test="scope.dataScope.name() != 'ALL'">
+      <choose>
+        <when test="scope.dataScope.name() == 'SELF'">
+          AND EXISTS (
+            SELECT 1 FROM business_application a
+            WHERE a.target_person_id = p.person_id
+              AND a.applicant_user_id = #{scope.userId}
+          )
+        </when>
+        <when test="scope.dataScope.name() == 'DEPARTMENT'">
+          AND EXISTS (
+            SELECT 1 FROM business_application a
+            WHERE a.target_person_id = p.person_id
+              AND a.applicant_department_id = #{scope.departmentId}
+          )
+        </when>
+        <otherwise>
+          AND (
+            EXISTS (
+              SELECT 1 FROM residence rs
+              WHERE rs.person_id = p.person_id
+                AND SUBSTRING(rs.region_code, 1, 2) = SUBSTRING(#{scope.regionCode}, 1, 2)
+            )
+            OR EXISTS (
+              SELECT 1 FROM business_application a
+              WHERE a.target_person_id = p.person_id
+                AND SUBSTRING(a.applicant_region_code, 1, 2) = SUBSTRING(#{scope.regionCode}, 1, 2)
+            )
+          )
+        </otherwise>
+      </choose>
+    </if>
+  </sql>
+
+  <!-- 最近迁移：聚合 JOIN，避免相关派生表引用外层 p.person_id。
+       同日迁入/迁出时 last_migration_direction 确定性取 OUT。 -->
+  <sql id="summaryColumns">
+    p.person_id,
+    p.name,
+    p.gender,
+    p.birth_date,
+    p.id_card AS masked_identity_no,
+    p.phone AS masked_phone,
+    p.current_status_code AS person_status,
+    r.household_id,
+    h.household_no,
+    hp.name AS head_person_name,
+    hm.relationship,
+    CASE WHEN h.head_person_id = p.person_id THEN TRUE ELSE FALSE END AS household_head,
+    r.region_code AS current_region_code,
+    NULL AS current_region_name,
+    r.registered_address AS current_address,
+    r.status AS residence_status,
+    f.floating_id,
+    f.status AS floating_status,
+    f.arrival_date,
+    rp.permit_id,
+    rp.permit_no AS masked_permit_no,
+    rp.status AS permit_status,
+    rp.valid_until AS permit_valid_until,
+    CASE
+      WHEN latest_in.last_in_date IS NULL AND latest_out.last_out_date IS NULL THEN NULL
+      WHEN latest_out.last_out_date IS NULL THEN latest_in.last_in_date
+      WHEN latest_in.last_in_date IS NULL THEN latest_out.last_out_date
+      WHEN latest_out.last_out_date &gt;= latest_in.last_in_date THEN latest_out.last_out_date
+      ELSE latest_in.last_in_date
+    END AS last_migration_date,
+    CASE
+      WHEN latest_in.last_in_date IS NULL AND latest_out.last_out_date IS NULL THEN NULL
+      WHEN latest_out.last_out_date IS NULL THEN 'IN'
+      WHEN latest_in.last_in_date IS NULL THEN 'OUT'
+      WHEN latest_out.last_out_date &gt;= latest_in.last_in_date THEN 'OUT'
+      ELSE 'IN'
+    END AS last_migration_direction
+  </sql>
+
+  <sql id="summaryJoins">
+    FROM person p
+    LEFT JOIN residence r
+      ON r.person_id = p.person_id AND r.status = 'ACTIVE'
+    LEFT JOIN household h
+      ON h.household_id = r.household_id
+    LEFT JOIN person hp
+      ON hp.person_id = h.head_person_id
+    LEFT JOIN household_member hm
+      ON hm.household_id = r.household_id
+     AND hm.person_id = p.person_id
+     AND hm.status = 'ACTIVE'
+    LEFT JOIN floating_population f
+      ON f.person_id = p.person_id
+     AND f.status = 'ACTIVE'
+     AND f.current_flag = 1
+    LEFT JOIN residence_permit rp
+      ON rp.person_id = p.person_id
+     AND rp.status = 'ACTIVE'
+     AND rp.current_flag = 1
+    LEFT JOIN (
+      SELECT person_id, MAX(in_date) AS last_in_date
+      FROM migration_in
+      WHERE business_status = 'COMPLETED'
+      GROUP BY person_id
+    ) latest_in ON latest_in.person_id = p.person_id
+    LEFT JOIN (
+      SELECT person_id, MAX(out_date) AS last_out_date
+      FROM migration_out
+      WHERE business_status = 'COMPLETED'
+      GROUP BY person_id
+    ) latest_out ON latest_out.person_id = p.person_id
+  </sql>
+
+  <sql id="summaryFilters">
+    <where>
+      <if test="keyword != null">
+        AND (
+          p.name LIKE CONCAT('%', #{keyword}, '%')
+          OR p.id_card LIKE CONCAT('%', #{keyword}, '%')
+          OR h.household_no LIKE CONCAT('%', #{keyword}, '%')
+          OR rp.permit_no LIKE CONCAT('%', #{keyword}, '%')
+        )
+      </if>
+      <if test="personStatus != null">AND p.current_status_code = #{personStatus}</if>
+      <if test="regionCode != null">AND r.region_code = #{regionCode}</if>
+      <if test="residenceStatus != null">AND r.status = #{residenceStatus}</if>
+      <if test="floatingStatus != null">AND f.status = #{floatingStatus}</if>
+      <if test="permitStatus != null">AND rp.status = #{permitStatus}</if>
+      <include refid="personScope"/>
+    </where>
+  </sql>
+
+  <select id="countSummaries" resultType="long">
+    SELECT COUNT(*)
+    <include refid="summaryJoins"/>
+    <include refid="summaryFilters"/>
+  </select>
+
+  <select id="selectSummaries" resultType="com.wjx871.population.query.ComprehensivePersonSummaryView">
+    SELECT <include refid="summaryColumns"/>
+    <include refid="summaryJoins"/>
+    <include refid="summaryFilters"/>
+    ORDER BY ${orderBy} ${direction}
+    LIMIT #{limit} OFFSET #{offset}
+  </select>
+
+  <select id="selectScopedSummary" resultType="com.wjx871.population.query.ComprehensivePersonSummaryView">
+    SELECT <include refid="summaryColumns"/>
+    <include refid="summaryJoins"/>
+    WHERE p.person_id = #{personId}
+    <include refid="personScope"/>
+  </select>
+
+  <select id="selectCurrentHousehold" resultType="com.wjx871.population.query.CurrentHouseholdView">
+    SELECT h.household_id, h.household_no, hp.name AS head_person_name, hm.relationship,
+           CASE WHEN h.head_person_id = #{personId} THEN TRUE ELSE FALSE END AS household_head,
+           h.status, h.address, h.region_code
+    FROM residence r
+    JOIN household h ON h.household_id = r.household_id
+    LEFT JOIN person hp ON hp.person_id = h.head_person_id
+    LEFT JOIN household_member hm
+      ON hm.household_id = h.household_id
+     AND hm.person_id = #{personId}
+     AND hm.status = 'ACTIVE'
+    WHERE r.person_id = #{personId} AND r.status = 'ACTIVE'
+  </select>
+
+  <select id="selectCurrentResidence" resultType="com.wjx871.population.query.CurrentResidenceView">
+    SELECT residence_id, person_id, household_id, registered_address, region_code,
+           register_type_code, register_date, start_date, status
+    FROM residence
+    WHERE person_id = #{personId} AND status = 'ACTIVE'
+  </select>
+
+  <select id="selectActiveFloating" resultType="com.wjx871.population.query.CurrentFloatingView">
+    SELECT floating_id, registration_no, status, current_region_code, current_address,
+           arrival_date, planned_leave_date
+    FROM floating_population
+    WHERE person_id = #{personId} AND status = 'ACTIVE' AND current_flag = 1
+  </select>
+
+  <select id="selectCurrentPermit" resultType="com.wjx871.population.query.CurrentPermitView">
+    SELECT permit_id, permit_no AS masked_permit_no, status, issue_region_code, valid_from, valid_until
+    FROM residence_permit
+    WHERE person_id = #{personId} AND status = 'ACTIVE' AND current_flag = 1
+  </select>
+
+  <select id="selectMigrationHistory" resultType="com.wjx871.population.query.MigrationHistoryView">
+    SELECT x.direction, x.migration_id, x.migration_type, x.business_date,
+           x.from_region_code, x.to_region_code, x.address, x.business_status
+    FROM (
+      SELECT 'IN' AS direction, in_id AS migration_id, migration_type, in_date AS business_date,
+             from_region_code, to_region_code, from_address AS address, business_status
+      FROM migration_in
+      WHERE person_id = #{personId} AND business_status = 'COMPLETED'
+      UNION ALL
+      SELECT 'OUT' AS direction, out_id AS migration_id, migration_type, out_date AS business_date,
+             from_region_code, to_region_code, to_address AS address, business_status
+      FROM migration_out
+      WHERE person_id = #{personId} AND business_status = 'COMPLETED'
+    ) x
+    ORDER BY x.business_date DESC
+    LIMIT #{limit}
+  </select>
+</mapper>

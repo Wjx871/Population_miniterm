@@ -1,46 +1,49 @@
 @echo off
-title PDMS Startup (Frontend & Backend)
+setlocal
+title PDMS Frontend
 
-cd /d "%~dp0"
+set "FRONTEND_DIR=%~dp0frontend"
 
-echo [Info] Checking port 8080 (Backend)...
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8080') do (
-    if not "%%a"=="" (
-        echo [Info] Port 8080 is in use by process PID %%a. Terminating...
-        taskkill /F /PID %%a >nul 2>&1
-    )
-)
-
-echo [Info] Checking port 5180 (Frontend)...
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5180') do (
-    if not "%%a"=="" (
-        echo [Info] Port 5180 is in use by process PID %%a. Terminating...
-        taskkill /F /PID %%a >nul 2>&1
-    )
-)
-
-echo [Info] Starting Spring Boot Backend in a new window...
-start "PDMS Backend" cmd /k ".\mvnw spring-boot:run"
-
-echo [Info] Waiting 10 seconds for Backend to initialize...
-timeout /T 10 /NOBREAK >nul
-
-cd frontend
-
-echo [Info] Checking and installing frontend dependencies...
-call npm install
-if %errorlevel% neq 0 (
-    echo [Error] Failed to install dependencies!
+if not exist "%FRONTEND_DIR%\package.json" (
+    echo [Error] Frontend directory or package.json was not found:
+    echo         %FRONTEND_DIR%
     pause
-    exit /b %errorlevel%
+    exit /b 1
 )
-echo [Info] Dependencies checked/installed successfully!
-echo.
 
-echo [Info] Starting Vite Dev Server...
-echo [Info] Note: The backend is running in a separate pop-up window. Close it when you want to stop the backend.
-echo Press Ctrl+C in this window to stop the frontend.
+where npm >nul 2>&1
+if errorlevel 1 (
+    echo [Error] npm was not found. Install Node.js 20 or later and reopen this terminal.
+    pause
+    exit /b 1
+)
+
+cd /d "%FRONTEND_DIR%"
+
+if not exist "node_modules" (
+    echo [Info] node_modules is missing. Installing frontend dependencies...
+    call npm install
+    if errorlevel 1 (
+        echo [Error] Failed to install frontend dependencies.
+        pause
+        exit /b 1
+    )
+) else (
+    echo [Info] Frontend dependencies are available.
+)
+
+echo.
+echo [Info] Starting the Vite frontend only...
+echo [Info] The backend is not started or stopped by this script.
+echo [Info] Press Ctrl+C to stop the frontend server.
 echo.
 call npm run dev
+set "EXIT_CODE=%errorlevel%"
 
-pause
+if not "%EXIT_CODE%"=="0" (
+    echo.
+    echo [Error] The frontend server exited with code %EXIT_CODE%.
+    pause
+)
+
+exit /b %EXIT_CODE%

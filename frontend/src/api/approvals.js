@@ -1,6 +1,21 @@
 import request from './request'
-export const listPending = () => request({ url: '/approvals/pending', method: 'get' })
-export const listProcessed = () => request({ url: '/approvals/processed', method: 'get' })
-export const getApproval = (id) => request({ url: `/approvals/${id}`, method: 'get' })
-export const approve = (id, data) => request({ url: `/approvals/${id}/approve`, method: 'post', data })
-export const reject = (id, data) => request({ url: `/approvals/${id}/reject`, method: 'post', data })
+
+export function getPendingApprovals() {
+  return request({ url: '/approvals/pending', method: 'get' })
+}
+
+export function getProcessedApprovals() {
+  return request({ url: '/approvals/processed', method: 'get' })
+}
+
+export function getApprovalDetail(approvalId) {
+  return request({ url: `/approvals/${approvalId}`, method: 'get' })
+}
+
+export function approveApproval(approvalId, payload) {
+  return request({ url: `/approvals/${approvalId}/approve`, method: 'post', data: payload })
+}
+
+export function rejectApproval(approvalId, payload) {
+  return request({ url: `/approvals/${approvalId}/reject`, method: 'post', data: payload })
+}
