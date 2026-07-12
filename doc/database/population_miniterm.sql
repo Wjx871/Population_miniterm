@@ -176,7 +176,10 @@ CREATE TABLE IF NOT EXISTS household_member (
     relationship VARCHAR(30) NOT NULL,
     join_date DATE NOT NULL,
     leave_date DATE NULL,
-    status VARCHAR(20) NOT NULL DEFAULT '有效',
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    cancel_reason VARCHAR(500) NULL,
+    cancelled_at DATETIME NULL,
+    version INT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (member_id),
@@ -281,6 +284,7 @@ CREATE TABLE IF NOT EXISTS certificate (
     PRIMARY KEY (certificate_id),
     UNIQUE KEY uk_certificate_no (certificate_no),
     KEY idx_certificate_person_id (person_id),
+    KEY idx_certificate_type_status_expire (certificate_type,status,expire_date),
     CONSTRAINT fk_certificate_person FOREIGN KEY (person_id) REFERENCES person (person_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -647,6 +651,8 @@ INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p
 INSERT INTO data_dictionary(dict_type,dict_code,dict_name,sort_no,status) VALUES('CERTIFICATE_TYPE','PASSPORT','护照',10,'ENABLED'),('CERTIFICATE_TYPE','DRIVER_LICENSE','机动车驾驶证',20,'ENABLED'),('CERTIFICATE_TYPE','OTHER','其他证件',99,'ENABLED'),('ETHNICITY','HAN','汉族',10,'ENABLED'),('HOUSEHOLD_RELATIONSHIP','HEAD','户主',10,'ENABLED'),('HOUSEHOLD_RELATIONSHIP','SPOUSE','配偶',20,'ENABLED'),('HOUSEHOLD_TYPE','FAMILY','家庭户',10,'ENABLED'),('MIGRATION_REASON','WORK','工作迁移',10,'ENABLED'),('CANCELLATION_REASON','DEATH','死亡',10,'ENABLED'),('FLOATING_RESIDENCE_REASON','WORK','务工',10,'ENABLED'),('KEY_POPULATION_TYPE','OTHER','其他',99,'ENABLED') ON DUPLICATE KEY UPDATE dict_name=VALUES(dict_name),sort_no=VALUES(sort_no);
 INSERT INTO sys_permission(permission_code,permission_name,module_name,permission_type,status) VALUES('dictionary:view','查看数据字典','DICTIONARY','API','ENABLED'),('dictionary:manage','维护数据字典','DICTIONARY','API','ENABLED') ON DUPLICATE KEY UPDATE permission_name=VALUES(permission_name),status='ENABLED';
 INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE p.permission_code='dictionary:view' OR (r.role_code='SYSTEM_ADMIN' AND p.permission_code='dictionary:manage');
+INSERT INTO sys_permission(permission_code,permission_name,module_name,permission_type,status) VALUES('certificate:edit','维护通用证件','CERTIFICATE','API','ENABLED') ON DUPLICATE KEY UPDATE permission_name=VALUES(permission_name),status='ENABLED';
+INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE p.permission_code='certificate:edit' AND r.role_code IN('POPULATION_MANAGER','SYSTEM_ADMIN');
 DELIMITER $$
 CREATE PROCEDURE phase08_add_index(IN p_table VARCHAR(64), IN p_index VARCHAR(64), IN p_ddl TEXT)
 BEGIN

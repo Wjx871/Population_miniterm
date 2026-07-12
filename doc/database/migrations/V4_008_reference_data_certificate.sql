@@ -27,6 +27,24 @@ DELIMITER $$
 CREATE PROCEDURE phase09_add_column(IN p_table VARCHAR(64),IN p_column VARCHAR(64),IN p_ddl TEXT)
 BEGIN IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=p_table AND column_name=p_column) THEN SET @phase09_ddl=p_ddl;PREPARE phase09_stmt FROM @phase09_ddl;EXECUTE phase09_stmt;DEALLOCATE PREPARE phase09_stmt;END IF;END$$
 DELIMITER ;
+CALL phase09_add_column('certificate','version','ALTER TABLE certificate ADD COLUMN version INT NOT NULL DEFAULT 0 AFTER status');
+CALL phase09_add_column('certificate','cancel_reason','ALTER TABLE certificate ADD COLUMN cancel_reason VARCHAR(500) NULL AFTER status');
+CALL phase09_add_column('certificate','cancelled_at','ALTER TABLE certificate ADD COLUMN cancelled_at DATETIME NULL AFTER cancel_reason');
+UPDATE certificate SET status=CASE WHEN status IN('有效','ACTIVE') THEN 'ACTIVE' WHEN status IN('注销','CANCELLED') THEN 'CANCELLED' ELSE status END;
+DROP PROCEDURE IF EXISTS phase09_add_column;
+DROP PROCEDURE IF EXISTS phase09_add_index;
+DELIMITER $$
+CREATE PROCEDURE phase09_add_index(IN p_table VARCHAR(64),IN p_index VARCHAR(64),IN p_ddl TEXT)
+BEGIN IF NOT EXISTS(SELECT 1 FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name=p_table AND index_name=p_index) THEN SET @phase09_ddl=p_ddl;PREPARE phase09_stmt FROM @phase09_ddl;EXECUTE phase09_stmt;DEALLOCATE PREPARE phase09_stmt;END IF;END$$
+DELIMITER ;
+CALL phase09_add_index('certificate','idx_certificate_type_status_expire','CREATE INDEX idx_certificate_type_status_expire ON certificate(certificate_type,status,expire_date)');
+DROP PROCEDURE IF EXISTS phase09_add_index;
+INSERT INTO sys_permission(permission_code,permission_name,module_name,permission_type,status) VALUES('certificate:edit','维护通用证件','CERTIFICATE','API','ENABLED') ON DUPLICATE KEY UPDATE permission_name=VALUES(permission_name),status='ENABLED';
+INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE p.permission_code='certificate:edit' AND r.role_code IN('POPULATION_MANAGER','SYSTEM_ADMIN');
+DELIMITER $$
+CREATE PROCEDURE phase09_add_column(IN p_table VARCHAR(64),IN p_column VARCHAR(64),IN p_ddl TEXT)
+BEGIN IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=p_table AND column_name=p_column) THEN SET @phase09_ddl=p_ddl;PREPARE phase09_stmt FROM @phase09_ddl;EXECUTE phase09_stmt;DEALLOCATE PREPARE phase09_stmt;END IF;END$$
+DELIMITER ;
 CALL phase09_add_column('data_dictionary','version','ALTER TABLE data_dictionary ADD COLUMN version INT NOT NULL DEFAULT 0 AFTER status');
 UPDATE data_dictionary SET status=CASE WHEN status IN('启用','ENABLED') THEN 'ENABLED' WHEN status IN('停用','DISABLED') THEN 'DISABLED' ELSE status END;
 INSERT INTO data_dictionary(dict_type,dict_code,dict_name,sort_no,status) VALUES
