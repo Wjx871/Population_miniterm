@@ -47,7 +47,49 @@ $env:DB_PASSWORD='<通过安全方式设置>'
 
 `doc/database/demo_data.sql` 只用于可丢弃的课程演示环境，包含可重复执行的虚构人员、户籍、流动人口和即将到期居住证数据，不得用于生产。
 
-## 启动后端
+## Windows 一键启动（推荐）
+
+课程本地开发环境推荐使用一键启动脚本，无需手动设置环境变量。
+
+### 首次配置
+
+```cmd
+copy config\start.local.env.example start.local.env
+```
+
+用记事本编辑项目根目录的 `start.local.env`，至少填写 `DB_PASSWORD`。该文件已被 `.gitignore` 忽略，不会提交。
+
+### 启动
+
+双击项目根目录的 `start.bat` 即可一键启动前后端。根目录只保留这一处入口，具体实现位于 `scripts/windows/`：
+
+| 脚本 | 作用 |
+|------|------|
+| `start.bat` | 根目录统一入口，调用一键启动流程（推荐） |
+| `scripts/windows/start_all.bat` | 独立窗口启动后端，等待就绪后启动前端 |
+| `scripts/windows/start_backend.bat` | 仅启动后端 |
+| `scripts/windows/start_frontend.bat` | 仅启动前端（会探测后端是否在线，未就绪时给出警告） |
+
+### 端口配置
+
+默认端口：后端 `http://127.0.0.1:8080`，前端 `http://localhost:5180`。
+
+如需自定义端口，修改项目根目录的 `start.local.env`：
+
+```
+SERVER_PORT=18080
+FRONTEND_PORT=15180
+```
+
+修改 `SERVER_PORT` 后，一键启动脚本的后端探测和 Vite 代理目标都会自动同步，无需手动修改 `vite.config.js`。
+
+### 注意事项
+
+- `start.local.env`、`.env.backend`、`frontend/.env` 均为本地文件，已被 `.gitignore` 忽略，不得提交。
+- 关闭前端窗口只停止前端；后端在独立窗口运行，需单独关闭。
+- Vite 使用 `strictPort: true`，端口被占用时会直接报错而非自动切换端口。
+
+## 启动后端（手动）
 
 JWT 使用 HMAC 密钥，生产或共享环境必须通过环境变量提供至少 32 个 UTF-8 字节的随机密钥：
 
@@ -61,15 +103,15 @@ $env:JWT_EXPIRE_MINUTES="120"
 
 `application.properties` 中仅有本地开发占位密钥，不能用于生产。默认后端地址为 `http://localhost:8080`。
 
-## 启动前端
+## 启动前端（手动）
 
 ```powershell
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-Vite 默认将 `/api` 代理到 `http://127.0.0.1:8080`。
+Vite 将 `/api` 代理到后端地址（默认 `http://127.0.0.1:8080`），代理目标由 `scripts/windows/start_frontend.bat` 通过 `VITE_BACKEND_TARGET` 传入，也可在 `start.local.env` 中通过 `SERVER_PORT` 控制。
 
 ## 登录与测试账号
 
@@ -96,7 +138,7 @@ Vite 默认将 `/api` 代理到 `http://127.0.0.1:8080`。
 ```powershell
 .\mvnw.cmd test
 cd frontend
-npm install
+npm ci
 npm run build
 ```
 
