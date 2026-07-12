@@ -7,7 +7,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -74,10 +73,4 @@ public class PersonController {
         Person result=personService.update(id, request);audit.record(CurrentUserContext.requireUser().userId(),"PERSON_UPDATE","SUCCESS",null,http);return ApiResponse.ok(result);
     }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('population:edit')")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id,HttpServletRequest http) {
-        personService.delete(id);audit.record(CurrentUserContext.requireUser().userId(),"PERSON_LOGICAL_DELETE","SUCCESS",null,http);
-    }
 }
