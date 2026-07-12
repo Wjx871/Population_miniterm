@@ -1,0 +1,8 @@
+package com.wjx871.population.household;
+import com.wjx871.population.person.Person; import com.wjx871.population.security.DataScopeCriteria; import java.util.*; import org.apache.ibatis.annotations.*;
+@Mapper public interface HouseholdMapper {
+long count(@Param("no")String no,@Param("head")String head,@Param("address")String address,@Param("region")String region,@Param("type")String type,@Param("status")String status,@Param("scope")DataScopeCriteria scope);
+List<Household> search(@Param("no")String no,@Param("head")String head,@Param("address")String address,@Param("region")String region,@Param("type")String type,@Param("status")String status,@Param("scope")DataScopeCriteria scope,@Param("limit")int limit,@Param("offset")long offset,@Param("orderBy")String orderBy);
+Optional<Household> findScoped(@Param("id")Long id,@Param("scope")DataScopeCriteria scope); Optional<Household> lock(Long id); Optional<Person> lockPerson(Long id); Optional<HouseholdMember> lockMember(Long id); Optional<HouseholdMember> activeMemberByPerson(Long id); Optional<HouseholdMember> activeHead(Long id); List<HouseholdMember> members(Long id);
+long countNo(String no); int insertHousehold(Household h); int updateHousehold(Household h); int insertMember(HouseholdMember m); int updateMember(HouseholdMember m); int leaveMember(@Param("id")Long id,@Param("date")java.time.LocalDate date,@Param("version")Integer version); int updateRelationship(@Param("id")Long id,@Param("relationship")String relationship,@Param("version")Integer version); int changeHead(@Param("id")Long id,@Param("personId")Long personId,@Param("version")Integer version); long countResidence(Long personId); long countMigration(Long personId);
+}
