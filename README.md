@@ -41,8 +41,8 @@ Population_System/
     ├── controller/                      # 控制器层（26 个 Controller）
     ├── dto/                             # 数据传输对象（16 个）
     │   ├── 通用：PageDTO / PageVO / Result / LoginDTO / LoginVO / RegisterDTO
-    │   └── 业务：PersonCreateDTO / PersonUpdateDTO / PersonQueryDTO /
-    │          HouseholdCreateDTO / HouseholdMemberDTO / HouseholdMemberTransferDTO /
+    │   └── 业务：PersonCreateDTO（必带 applicationId）/ PersonUpdateDTO / PersonQueryDTO /
+    │          HouseholdCreateDTO（必带 applicationId）/ HouseholdMemberDTO / HouseholdMemberTransferDTO /
     │          ResidenceRegisterDTO / MigrationInDTO / MigrationOutDTO / CancellationDTO
     ├── entity/                          # 数据库实体（25 个，与表一一对应）
     ├── exception/                       # 全局异常处理
@@ -201,10 +201,45 @@ http://localhost:8080/doc.html
 
 ### 业务申请与材料
 
+业务申请与材料是"必交闸门"的入口，新增人口 / 立户 / 迁入迁出 都必须先建业务申请、上传材料并核验通过，再发起业务。
+
+#### 接口
+
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| * | `/api/business-applications` | 业务申请单 CRUD |
-| * | `/api/application-materials` | 申请材料 CRUD |
+| GET    | `/api/business-applications/{id}` | 业务申请详情 |
+| POST   | `/api/business-applications` | 创建业务申请草稿，返回 `applicationId` |
+| PUT    | `/api/business-applications/{id}/submit` | 提交申请（DRAFT → SUBMITTED） |
+| GET    | `/api/application-materials?applicationId=` | 列出某申请下的全部材料 |
+| POST   | `/api/application-materials` | 上传一份材料（`materialTypeCode`、`requiredFlag` 等见 `MATERIAL_TYPE` 字典） |
+| PUT    | `/api/application-materials/{id}/verify?verifierId=&passed=` | L1/L2 核验：通过则 `verify_status=VERIFIED`，驳回则 `REJECTED` |
+| DELETE | `/api/application-materials/{id}` | 撤回某份材料（仅在 UNVERIFIED 时允许） |
+
+#### 业务必交材料闸门（最低必交规则）
+
+`ApplicationMaterialService#assertRequiredVerified(applicationId, businessType)` 是统一闸门，被 `PersonServiceImpl#createPerson`、`HouseholdServiceImpl#establishHousehold` 与 `ApprovalGateServiceImpl#approve` 在事务内调用。规则与《数据库设计v4.0_Cursor详细说明.md》§7 对齐：
+
+| 业务类型 (`businessType`) | AND 必交 | OR 备选组（任一即可） |
+|--------------------------|----------|---------------------|
+| `PERSON_REGISTER` / `PERSON_CREATE` | `IDENTITY_DOC` | — |
+| `HOUSEHOLD_ESTABLISH` / `HOUSEHOLD_CREATE` | `IDENTITY_DOC` | `HOUSEHOLD_BOOKLET` / `RESIDENCE_PROOF` |
+| `MIGRATION_IN_*` / `MIGRATION_OUT_*` | `IDENTITY_DOC`、`MIGRATION_CERT` | — |
+| 其它业务 | 直接放行 | — |
+
+校验要求：每份必交材料必须 `required_flag=1` 且 `verify_status=VERIFIED`。任一缺失或处于 `UNVERIFIED` / `REJECTED` 状态时，调用方收到 `code=400` 的 `BizException`，消息形如：
+
+```
+业务[HOUSEHOLD_ESTABLISH]缺少最低必交材料且未核验通过：身份证明（materialTypeCode=IDENTITY_DOC）。
+请先通过业务申请 ID=200 提交并完成核验。
+```
+
+#### 标准调用顺序（L2 经办 → L3 审批 → 落库）
+
+1. `POST /api/business-applications` → 拿到 `applicationId`
+2. `POST /api/application-materials`（按业务必交清单上传材料）→ 拿到 `materialId`
+3. `PUT /api/application-materials/{id}/verify?passed=true` → `verify_status=VERIFIED`
+4. `POST /api/persons` 或 `POST /api/households/establish`，请求体里**必带** `applicationId`；闸门通过后落库
+5. L3 审批通过（`/api/sys-approval-requests/{approvalId}/approve`）时再次调用同一闸门，未通过则驳回
 
 ### 审批流
 
@@ -276,7 +311,7 @@ http://localhost:8080/doc.html
 | `key_population` | 重点人口 |
 | `certificate` | 证件信息 |
 | `business_application` | 业务申请单 |
-| `application_material` | 申请材料 |
+| `application_material` | 申请材料（与 `application_material` 同名表），关键字段：`material_type_code`（`MATERIAL_TYPE` 字典）、`required_flag`（0/1，闸门只校验 `=1`）、`verify_status`（`UNVERIFIED`/`VERIFIED`/`REJECTED`）、`file_hash`（完整性/去重） |
 | `sys_approval_request` | 审批请求 |
 | `sys_approval_log` | 审批日志 |
 | `cancellation_record` | 注销记录 |
@@ -285,6 +320,32 @@ http://localhost:8080/doc.html
 | `data_export_log` | 数据导出日志 |
 
 > 表 `is_deleted` 字段启用 MyBatis-Plus 逻辑删除（`0` 有效，`1` 删除）。
+
+## 测试
+
+`src/test/java/com/example/population/` 下以单测为主（Mockito + ReflectionTestUtils 注入 MyBatis-Plus `baseMapper`，无需真实数据库）。
+
+```bash
+# 跑全部测试
+mvn test
+
+# 跑材料必交闸门相关测试
+mvn -q test -Dtest='ApplicationMaterialGateTest,PersonServiceTest,HouseholdServiceTest,SimpleCrudServiceTest'
+
+# 仅编译生产代码（不跑测试）
+mvn -q -DskipTests compile
+
+# 编译测试代码但不跑
+mvn -q -DskipTests test-compile
+```
+
+| 测试类 | 覆盖点 |
+|--------|--------|
+| `ApplicationMaterialGateTest` | `assertRequiredVerified`：PERSON/HOUSEHOLD/MIGRATION 的 AND/OR 必交；UNVERIFIED/REJECTED/未传 applicationId/未知业务类型 等 11 个场景 |
+| `PersonServiceTest` | `createPerson` 失败链：身份证格式、手机号格式、重复身份证号、唯一键冲突兜底、材料闸门 |
+| `HouseholdServiceTest` | `establishHousehold`：户号冲突、户主自动建关系、户主不存在、闸门 |
+| `SimpleCrudServiceTest` | `ResidencePermit.cancel` / `KeyPopulation.release` / `BusinessApplication.submit+getDetail` / `ApplicationMaterial.verify` |
+| `PermissionSmokeTest` | JWT 签发+解析全字段、`PermissionCache` 读写（依赖 Redis，缺失时跳过） |
 
 ## 辅助脚本
 
