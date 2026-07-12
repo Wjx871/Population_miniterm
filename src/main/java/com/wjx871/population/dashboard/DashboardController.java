@@ -17,7 +17,7 @@ public class DashboardController {
     private final DashboardService service;
 
     @GetMapping("/overview")
-    @PreAuthorize("hasAuthority('population:view')")
+    @PreAuthorize("hasAuthority('statistics:view')")
     public ApiResponse<DashboardOverviewView> overview(
             @RequestParam(defaultValue = "30") @Min(7) @Max(365) int periodDays,
             @RequestParam(defaultValue = "30") @Min(1) @Max(365) int expiryDays) {
@@ -25,7 +25,7 @@ public class DashboardController {
     }
 
     @GetMapping("/charts")
-    @PreAuthorize("hasAuthority('population:view')")
+    @PreAuthorize("hasAuthority('statistics:view')")
     public ApiResponse<DashboardChartsView> charts(
             @RequestParam(defaultValue = "30") @Min(7) @Max(90) int days,
             @RequestParam(defaultValue = "8") @Min(1) @Max(20) int regionLimit) {

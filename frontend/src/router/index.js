@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Login from '../views/Login.vue';
+import { PERMISSIONS } from '../constants/permissions';
+import { resolveLandingPath } from '../utils/routeAccess';
 
 const routes = [
   {
@@ -18,10 +20,10 @@ const routes = [
         path: 'home',
         name: 'Dashboard',
         component: () => import('../views/dashboard/Dashboard.vue'),
-        meta: { 
+        meta: {
           title: '工作台',
           minLevel: 1,
-          permission: 'population:view',
+          permission: PERMISSIONS.STATISTICS_VIEW,
           menu: true,
           group: '工作台',
           order: 1,
@@ -32,13 +34,13 @@ const routes = [
         path: 'queries/comprehensive',
         name: 'ComprehensiveQuery',
         component: () => import('../views/query/ComprehensiveQuery.vue'),
-        meta: { title: '人口综合查询', minLevel: 1, permission: 'population:view', menu: true, group: '查询统计', order: 35, icon: 'Search' }
+        meta: { title: '人口综合查询', minLevel: 1, permission: PERMISSIONS.POPULATION_VIEW, menu: true, group: '查询统计', order: 35, icon: 'Search' }
       },
       {
         path: 'statistics/dashboard',
         name: 'DataDashboard',
         component: () => import('../views/dashboard/DataDashboard.vue'),
-        meta: { title: '数据大屏', minLevel: 1, permission: 'population:view', menu: true, group: '查询统计', order: 36, icon: 'DataAnalysis' }
+        meta: { title: '数据大屏', minLevel: 1, permission: PERMISSIONS.STATISTICS_VIEW, menu: true, group: '查询统计', order: 36, icon: 'DataAnalysis' }
       },
       { 
         path: 'persons', 
@@ -355,6 +357,14 @@ const router = createRouter({
 
 import { useUserStore } from '../stores/user';
 
+function resolveAuthedLanding(userStore) {
+  return resolveLandingPath(
+    userStore.permissions,
+    userStore.permissionLevel,
+    router.getRoutes()
+  );
+}
+
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
   // 1. 设置页面标题
@@ -369,14 +379,21 @@ router.beforeEach((to, from, next) => {
     return next({ path: '/login', query: { redirect: to.fullPath } });
   }
 
-  // 3. 已登录访问 /login 时跳转 /home
+  // 3. 已登录访问 /login 时跳转到首个可访问页面（避免无 statistics:view 时卡在 /home）
   if (to.path === '/login' && userStore.isLoggedIn) {
-    return next('/home');
+    return next(resolveAuthedLanding(userStore));
   }
 
   // 4. 对需要授权的页面进行角色与权限校验
   if (requiresAuth && to.path !== '/403' && to.path !== '/404') {
     if (!userStore.canAccess(to.meta)) {
+      // 默认落地页无权限时，直接转到可访问页，避免 /home <-> /403 循环
+      if (to.path === '/home') {
+        const landing = resolveAuthedLanding(userStore);
+        if (landing !== '/home') {
+          return next({ path: landing, replace: true });
+        }
+      }
       return next({ path: '/403', query: { from: to.fullPath }, replace: true });
     }
   }

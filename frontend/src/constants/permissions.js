@@ -2,6 +2,10 @@ import { ROLE_CODE } from './roles'
 
 export const PERMISSIONS = Object.freeze({
   DASHBOARD_VIEW: 'dashboard:view',
+  /** 人口综合查询 */
+  POPULATION_VIEW: 'population:view',
+  /** 工作台与数据统计大屏 */
+  STATISTICS_VIEW: 'statistics:view',
   PERSON_VIEW: 'person:view',
   PERSON_CREATE: 'person:create',
   PERSON_UPDATE: 'person:update',
@@ -59,7 +63,8 @@ export const PERMISSIONS = Object.freeze({
 
 export const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
   [ROLE_CODE.NORMAL_USER]: [
-    'population:view',
+    PERMISSIONS.POPULATION_VIEW,
+    PERMISSIONS.STATISTICS_VIEW,
     PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.PERSON_VIEW,
     PERMISSIONS.HOUSEHOLD_VIEW,
@@ -72,7 +77,8 @@ export const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
     PERMISSIONS.CERTIFICATE_VIEW
   ],
   [ROLE_CODE.HOUSEHOLD_ADMIN]: [
-    'population:view',
+    PERMISSIONS.POPULATION_VIEW,
+    PERMISSIONS.STATISTICS_VIEW,
     PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.PERSON_VIEW,
     PERMISSIONS.PERSON_CREATE,

@@ -164,6 +164,7 @@ import {
 } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { useUserStore } from '../stores/user';
+import { resolveLandingPath } from '../utils/routeAccess';
 
 const router = useRouter();
 const route = useRoute();
@@ -221,7 +222,12 @@ const handleLoginSubmit = () => {
       if (redirect && typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//') && redirect !== '/login') {
         router.replace(redirect);
       } else {
-        router.replace('/home');
+        const landing = resolveLandingPath(
+          userStore.permissions,
+          userStore.permissionLevel,
+          router.getRoutes()
+        );
+        router.replace(landing);
       }
     } catch (error) {
       errorMessage.value = error.message || '账号或密码验证失败';

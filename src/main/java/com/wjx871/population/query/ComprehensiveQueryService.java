@@ -17,6 +17,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class ComprehensiveQueryService {
     private static final int MAX_PAGE_SIZE = 100;
+    private static final String ACTIVE_STATUS = "ACTIVE";
+
     private final ComprehensiveQueryMapper mapper;
     private final SensitiveDataMaskingService masking;
 
@@ -31,9 +33,9 @@ public class ComprehensiveQueryService {
         String normalizedKeyword = trimToNull(keyword);
         String normalizedPersonStatus = trimToNull(personStatus);
         String normalizedRegion = trimToNull(regionCode);
-        String normalizedResidenceStatus = trimToNull(residenceStatus);
-        String normalizedFloatingStatus = trimToNull(floatingStatus);
-        String normalizedPermitStatus = trimToNull(permitStatus);
+        String normalizedResidenceStatus = requireActiveOrNull(residenceStatus, "户籍状态");
+        String normalizedFloatingStatus = requireActiveOrNull(floatingStatus, "流动登记状态");
+        String normalizedPermitStatus = requireActiveOrNull(permitStatus, "居住证状态");
         long total = mapper.countSummaries(normalizedKeyword, normalizedPersonStatus, normalizedRegion,
                 normalizedResidenceStatus, normalizedFloatingStatus, normalizedPermitStatus, scope);
         List<ComprehensivePersonSummaryView> rows = mapper.selectSummaries(normalizedKeyword, normalizedPersonStatus,
@@ -73,18 +75,33 @@ public class ComprehensiveQueryService {
             profile.getCurrentHousehold().setAddress(masking.address(profile.getCurrentHousehold().getAddress()));
         }
         if (profile.getCurrentResidence() != null) {
-            profile.getCurrentResidence().setRegisteredAddress(masking.address(profile.getCurrentResidence().getRegisteredAddress()));
+            profile.getCurrentResidence().setRegisteredAddress(
+                    masking.address(profile.getCurrentResidence().getRegisteredAddress()));
         }
         if (profile.getActiveFloating() != null) {
-            profile.getActiveFloating().setCurrentAddress(masking.address(profile.getActiveFloating().getCurrentAddress()));
+            profile.getActiveFloating().setCurrentAddress(
+                    masking.address(profile.getActiveFloating().getCurrentAddress()));
         }
         if (profile.getCurrentPermit() != null) {
-            profile.getCurrentPermit().setMaskedPermitNo(masking.permitAlways(profile.getCurrentPermit().getMaskedPermitNo()));
+            profile.getCurrentPermit().setMaskedPermitNo(
+                    masking.permitAlways(profile.getCurrentPermit().getMaskedPermitNo()));
         }
     }
 
     private static String trimToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    /**
+     * M5 综合查询仅支持当前有效关联记录：null/空表示不叠加状态过滤，ACTIVE 表示显式当前有效。
+     */
+    private static String requireActiveOrNull(String value, String label) {
+        String normalized = trimToNull(value);
+        if (normalized == null || ACTIVE_STATUS.equals(normalized)) {
+            return normalized;
+        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "M5 综合查询仅支持当前有效" + label + " ACTIVE");
     }
 
     private record SortSpec(String column, String direction) {

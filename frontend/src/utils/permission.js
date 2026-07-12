@@ -44,14 +44,7 @@ export function getRoleLevel(normalizedRoleCode) {
   return ROLE_LEVEL[normalizedRoleCode] || 1
 }
 
-/**
- * 检查是否拥有权限
- */
-export function checkPermission(userPermissions, targetPermission) {
-  if (!userPermissions || !Array.isArray(userPermissions)) return false
-  if (userPermissions.includes('*')) return true
-  return userPermissions.includes(targetPermission)
-}
+export { checkPermission, canAccessRouteMeta, resolveLandingPath } from './routeAccess'
 
 /**
  * 检查是否拥有任意一个权限
