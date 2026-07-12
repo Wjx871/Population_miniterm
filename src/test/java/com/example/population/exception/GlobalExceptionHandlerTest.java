@@ -141,10 +141,12 @@ class GlobalExceptionHandlerTest {
         MethodParameter param = methodParam("setName", String.class);
         MethodArgumentNotValidException ex = new MethodArgumentNotValidException(param, br);
 
-        Result<Void> resp = handler.handleValidation(ex);
+        ResponseEntity<Result<Void>> resp = handler.handleValidation(ex);
 
-        assertThat(resp.getCode()).isEqualTo(400);
-        assertThat(resp.getMessage()).contains("姓名不能为空").contains("手机号格式错误");
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().getCode()).isEqualTo(400);
+        assertThat(resp.getBody().getMessage()).contains("姓名不能为空").contains("手机号格式错误");
     }
 
     @Test

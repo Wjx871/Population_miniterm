@@ -79,30 +79,34 @@ public class GlobalExceptionHandler {
     // ---------------- 参数校验 ----------------
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public Result<Void> handleValidation(MethodArgumentNotValidException ex) {
+    public ResponseEntity<Result<Void>> handleValidation(MethodArgumentNotValidException ex) {
         String msg = ex.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
         log.warn("参数校验失败: {}", msg);
-        return Result.error(HttpStatus.BAD_REQUEST.value(), msg);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Result.error(HttpStatus.BAD_REQUEST.value(), msg));
     }
 
     @ExceptionHandler(BindException.class)
-    public Result<Void> handleBind(BindException ex) {
+    public ResponseEntity<Result<Void>> handleBind(BindException ex) {
         String msg = ex.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
-        return Result.error(HttpStatus.BAD_REQUEST.value(), msg);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Result.error(HttpStatus.BAD_REQUEST.value(), msg));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public Result<Void> handleConstraint(ConstraintViolationException ex) {
-        return Result.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+    public ResponseEntity<Result<Void>> handleConstraint(ConstraintViolationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Result.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public Result<Void> handleIllegalArg(IllegalArgumentException ex) {
-        return Result.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+    public ResponseEntity<Result<Void>> handleIllegalArg(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Result.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
     }
 
     // ---------------- 业务异常 ----------------

@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: population_miniterm_test
+  datasource:
+    # 与 application.yml 保持一致；本项目 CI / 本地无 DB 时 PermissionSmokeTest 会失败，
+    # 这是项目历史遗留问题（不属于本次集成测试新增的内容）。
+    url: jdbc:mysql://127.0.0.1:3306/population_miniterm?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: Zhao123@
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+
+server:
+  port: 0
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.example.population.entity
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: is_deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+jwt:
+  secret: test-secret-key-for-jwt-unit-testing-must-be-long-enough
+  expiration: 86400000
+
+knife4j:
+  enable: false
+
+logging:
+  level:
+    root: WARN
+    com.example.population: WARN
