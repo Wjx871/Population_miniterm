@@ -105,22 +105,17 @@ public class MigrationOutServiceImpl extends ServiceImpl<MigrationOutMapper, Mig
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean complete(Long outId, Long operatorId) {
-        // 1. 加锁迁出记录
-        MigrationOut out = baseMapper.findByApplicationIdForUpdate(outId);
+        // 1. 加锁迁出记录（按主键 outId），防并发重入
+        MigrationOut out = baseMapper.findByOutIdForUpdate(outId);
         if (out == null) {
             throw new NotFoundException("迁出记录[" + outId + "]不存在");
         }
         if (out.getCompletedAt() != null) {
             throw new BizException(409, "该迁出记录已办结，不可重复提交");
         }
-        // 强制刷新 outId 关联字段（注意业务以 outId 为标识，但 mapper 用 applicationId 加锁）
-        MigrationOut outByPk = baseMapper.selectById(outId);
-        if (outByPk == null) {
-            throw new NotFoundException("迁出记录[" + outId + "]不存在");
-        }
-        Long personId = outByPk.getPersonId();
-        Long fromHouseholdId = outByPk.getFromHouseholdId();
-        LocalDate outDate = outByPk.getOutDate();
+        Long personId = out.getPersonId();
+        Long fromHouseholdId = out.getFromHouseholdId();
+        LocalDate outDate = out.getOutDate();
 
         // 2. 锁住 person 与当前登记
         Person person = personMapper.selectById(personId);
@@ -139,14 +134,14 @@ public class MigrationOutServiceImpl extends ServiceImpl<MigrationOutMapper, Mig
                     person.getIdentityTypeCode(),
                     person.getIdentityNo(),
                     "MIGRATION_OUT",
-                    outByPk.getReasonCode(),
+                    out.getReasonCode(),
                     outDate,
                     operatorId,
-                    outByPk.getApplicationId(),
+                    out.getApplicationId(),
                     fromHousehold
             );
             archiveMapper.insert(snapshot);
-            outByPk.setArchiveId(snapshot.getArchiveId());
+            out.setArchiveId(snapshot.getArchiveId());
 
             // 4. 删除当前登记
             registrationMapper.deleteByPersonAndId(personId, oldReg.getRegistrationId());
@@ -158,9 +153,9 @@ public class MigrationOutServiceImpl extends ServiceImpl<MigrationOutMapper, Mig
         }
 
         // 6. 回写迁出记录
-        outByPk.setOperatorId(operatorId);
-        outByPk.setCompletedAt(LocalDateTime.now());
-        return updateById(outByPk);
+        out.setOperatorId(operatorId);
+        out.setCompletedAt(LocalDateTime.now());
+        return updateById(out);
     }
 
     @Override

@@ -40,17 +40,12 @@ public class ResidenceRegistrationServiceImpl
     public ResidenceRegistration register(ResidenceRegisterDTO dto) {
         dto.validate();
 
-        // 1. 加锁校验 person
-        Person person = personMapper.findByIdentityForUpdate(
-                /* 不通过号码校验，仅以 personId 校验放这里 */ null, null);
-        // 实际上 personId 直接 selectById 也行；这里用 findByIdentityForUpdate 复用基类对号码场景
-        // 简化：直接 selectById
-        person = personMapper.selectById(dto.getPersonId());
+        Person person = personMapper.selectById(dto.getPersonId());
         if (person == null) {
             throw new NotFoundException("人口[" + dto.getPersonId() + "]不存在");
         }
 
-        // 2. 加锁查重：FOR UPDATE 锁住所查行（无则锁空）
+        // 加锁查重：FOR UPDATE 锁住所查行（无则锁空），防止并发 INSERT 绕过一人一条约束
         ResidenceRegistration existing = baseMapper.findByPersonForUpdate(dto.getPersonId());
         if (existing != null) {
             throw new PersonAlreadyHasRegistrationException(dto.getPersonId());
