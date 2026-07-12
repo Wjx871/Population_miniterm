@@ -481,7 +481,7 @@ INSERT INTO residents (
     '张三',
     'MALE',
     '1999-01-01',
-    '110101199901010011',
+    '110101199901010010',
     '13800138000',
     '北京市',
     '北京市',
@@ -628,3 +628,19 @@ INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p
  (r.role_code='POPULATION_MANAGER' AND p.permission_code IN('data:export:normal','data:export:sensitive:apply','data:export:log:view','certificate:view')) OR
  (r.role_code='HOUSEHOLD_MANAGER' AND p.permission_code IN('sensitive-data:view-full','data:export:normal','data:export:sensitive:apply','data:export:sensitive:execute','data:export:sensitive:download','data:export:log:view','certificate:view')) OR
  (r.role_code='APPROVER' AND p.permission_code IN('data:export:log:view','data:export:sensitive:download','certificate:view')) OR r.role_code='SYSTEM_ADMIN';
+
+-- Phase 08: canonical person model and household master-data access paths.
+-- The legacy residents table is retained for upgraded databases, but production Java no longer reads or writes it.
+DROP PROCEDURE IF EXISTS phase08_add_index;
+DELIMITER $$
+CREATE PROCEDURE phase08_add_index(IN p_table VARCHAR(64), IN p_index VARCHAR(64), IN p_ddl TEXT)
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name=p_table AND index_name=p_index) THEN
+    SET @phase08_ddl=p_ddl; PREPARE phase08_stmt FROM @phase08_ddl; EXECUTE phase08_stmt; DEALLOCATE PREPARE phase08_stmt;
+  END IF;
+END$$
+DELIMITER ;
+CALL phase08_add_index('household','idx_household_region_status','CREATE INDEX idx_household_region_status ON household(region_code,status)');
+CALL phase08_add_index('household_member','idx_household_member_household_status','CREATE INDEX idx_household_member_household_status ON household_member(household_id,status)');
+CALL phase08_add_index('household_member','idx_household_member_person_status','CREATE INDEX idx_household_member_person_status ON household_member(person_id,status)');
+DROP PROCEDURE IF EXISTS phase08_add_index;

@@ -6,7 +6,7 @@
 
 系统现支持申请制迁入/迁出、单级审批后的显式业务执行、当前户籍唯一登记、家庭成员同步、迁出历史快照、户主变更及同市跨区批次关联。操作顺序为：创建迁移草稿 → 上传必需材料 → 提交/审批 → 授权经办人确认执行。审批通过不会自动改变户籍。
 
-增量升级依次执行 `doc/database/migrations` 下的 `V4_001` 至 `V4_006`。数据库通过 `DB_URL/DB_USERNAME/DB_PASSWORD`，JWT 通过 `JWT_SECRET` 配置，上传目录通过 `APP_UPLOAD_DIR` 配置。演示账号仍为 `viewer/population/household/approver/admin`，课程环境初始密码 `123456`。
+增量升级依次执行 `doc/database/migrations` 下的 `V4_001` 至 `V4_007`。数据库通过 `DB_URL/DB_USERNAME/DB_PASSWORD`，JWT 通过 `JWT_SECRET` 配置，上传目录通过 `APP_UPLOAD_DIR` 配置。演示账号仍为 `viewer/population/household/approver/admin`，课程环境初始密码 `123456`。
 
 ## 第四阶段：注销管理
 
@@ -26,6 +26,10 @@
 
 第七阶段已在隔离的 MySQL Community Server 8.4.10 LTS 上完成完整初始化、历史结构升级、V4_001-V4_006 重复执行、应用启动和五角色 API 烟测。验证脚本见 `scripts/verify-mysql.ps1`，结果见 `doc/testing/end-to-end-regression-report.md`。
 
+第八阶段以 `person` 为唯一正式人口主模型，停用旧 `/api/residents` 和对应生产 Mapper，并禁止普通人口删除；人员注销继续走既有注销申请、审批和显式执行流程。新增 GB 11643 身份证校验，以及 `/api/households` 家庭户分页、详情、维护、成员离户和事务性户主变更接口。升级脚本为 `V4_007_household_master_data.sql`。
+
+第八阶段已在隔离的 MySQL Community Server 8.4.10 上完成全新初始化、从 V4_006 历史状态连续三次执行 V4_007、应用启动、API/权限/数据范围、一致性和原业务回归验收。legacy `residents` 表保留但生产代码零依赖；完整证据见 `doc/testing/phase-08-household-master-data-test-report.md`。
+
 ## 数据库
 
 新环境在 MySQL 8 中执行：
@@ -34,7 +38,7 @@
 mysql -u root -p < doc/database/population_miniterm.sql
 ```
 
-已有数据库在备份后按文件名顺序执行 V4_001 至 V4_006。也可以先在明确命名的测试库中运行：
+已有数据库在备份后按文件名顺序执行 V4_001 至 V4_007。也可以先在明确命名的测试库中运行：
 
 ```powershell
 $env:DB_URL='jdbc:mysql://127.0.0.1:3306/population_miniterm_upgrade'
@@ -144,6 +148,6 @@ npm run build
 
 ## 当前阶段边界
 
-当前已提供登录、JWT、三级权限、数据范围、业务申请、材料上传、单级审批、迁入迁出、注销、流动人口、居住证、普通/敏感导出和审计闭环。专业业务审批通过后仍需授权人员显式执行。
+当前已提供登录、JWT、三级权限、数据范围、统一 person 人口主模型、严格身份证校验、家庭户与成员管理、安全户主变更、业务申请、材料上传、单级审批、迁入迁出、注销、流动人口、居住证、普通/敏感导出和审计闭环。专业业务审批通过后仍需授权人员显式执行。
 
 尚未实现重点人口完整业务、刑满释放恢复登记、多级审批、消息队列、微服务、云存储、实体制卡、政务平台对接、短信和邮件。这些内容不属于当前验收范围。

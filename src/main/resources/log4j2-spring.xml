@@ -29,11 +29,6 @@
             <AppenderRef ref="ApplicationFile"/>
         </Logger>
 
-        <Logger name="com.wjx871.population.resident.ResidentMapper" level="DEBUG" additivity="false">
-            <AppenderRef ref="Console"/>
-            <AppenderRef ref="ApplicationFile"/>
-        </Logger>
-
         <Root level="INFO">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="ApplicationFile"/>

@@ -14,7 +14,7 @@ import java.time.LocalDate;
 public record PersonRequest(
         @NotBlank @Size(max = 50) String name,
         @NotBlank @Size(max = 1) String gender,
-        @NotBlank @Pattern(regexp = "^[0-9Xx]{18}$") String idCard,
+        @NotBlank @Size(min = 18, max = 18) String idCard,
         LocalDate birthDate,
         @Size(max = 30) String ethnicity,
         @Pattern(regexp = "^$|^1[3-9]\\d{9}$|^[0-9\\-]{7,20}$") String phone,

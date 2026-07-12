@@ -39,10 +39,16 @@ public class OperationLogService {
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void recordTransactional(Long userId, String operationType, HttpServletRequest request) {
+        recordTransactional(userId, operationType, "APPROVAL", operationType, request);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordTransactional(Long userId, String operationType, String moduleName, String detail,
+                                    HttpServletRequest request) {
         operationLogMapper.insert(OperationLog.builder().userId(userId).operationType(operationType)
-                .moduleName("APPROVAL").requestPath(request.getRequestURI()).requestMethod(request.getMethod())
+                .moduleName(moduleName).requestPath(request.getRequestURI()).requestMethod(request.getMethod())
                 .operationResult("SUCCESS").ipAddress(clientIp(request))
-                .userAgent(truncate(request.getHeader("User-Agent"), 500)).detail(masking.auditDetail(operationType)).build());
+                .userAgent(truncate(request.getHeader("User-Agent"), 500)).detail(masking.auditDetail(detail)).build());
     }
 
     public String clientIp(HttpServletRequest request) {
