@@ -39,11 +39,16 @@ Population_System/
     ├── PopulationApplication.java       # 启动类
     ├── config/                          # 配置类（MyBatis-Plus 分页、Web 配置等）
     ├── controller/                      # 控制器层（26 个 Controller）
-    ├── dto/                             # 数据传输对象（16 个）
+    ├── dto/                             # 数据传输对象（39 个：基础 16 + P0 白名单 23）
     │   ├── 通用：PageDTO / PageVO / Result / LoginDTO / RegisterDTO
     │   └── 业务：PersonCreateDTO（必带 applicationId）/ PersonUpdateDTO / PersonQueryDTO /
     │          HouseholdCreateDTO（必带 applicationId）/ HouseholdMemberDTO / HouseholdMemberTransferDTO /
     │          ResidenceRegisterDTO / MigrationInDTO / MigrationOutDTO / CancellationDTO
+    │   └── P0 白名单（Sprint 3）：*UpdateDTO / *CreateDTO，用于阻断 Mass Assignment
+    │          （SysUser / SysRole / SysDepartment / SysPermission / AdminRegion /
+    │           HouseholdMember / ResidenceRegistration / BusinessApplication /
+    │           ApplicationMaterial / Certificate / KeyPopulation / FloatingPopulation /
+    │           ResidencePermit / DataDictionary）
     ├── entity/                          # 数据库实体（25 个，与表一一对应）
     ├── exception/                       # 全局异常处理
     │   ├── GlobalExceptionHandler.java  # @RestControllerAdvice 统一处理
@@ -73,16 +78,44 @@ Population_System/
 - MySQL 8.0+
 - Redis 6.0+（可选）
 
-### 2. 数据库配置
+### 2. 数据库与密钥配置
 
-修改 `src/main/resources/application.yml`：
+`src/main/resources/application.yml` 已将敏感信息外部化为环境变量占位符。**禁止将真实密钥提交到 Git 或写入 YAML**。
+
+#### 2.1 必填环境变量
+
+| 变量 | 用途 | 备注 |
+|------|------|------|
+| `DB_PASSWORD` | MySQL 密码 | 必填，无默认；缺启动报错 |
+| `JWT_SECRET`  | JWT 签名密钥 | 必填，HS256 ≥ 256 bit，建议 `openssl rand -base64 64` 生成 |
+| `CORS_ALLOWED_ORIGINS` | 跨域白名单 | 逗号分隔；默认 `http://localhost:5173,http://localhost:8081` |
+| `CORS_ALLOW_CREDENTIALS` | 是否带凭据 | 默认 `false`；生产建议保持关闭 |
+
+#### 2.2 示例：本地开发（PowerShell）
+
+```powershell
+$env:DB_PASSWORD   = "your_strong_password"
+$env:JWT_SECRET    = (openssl rand -base64 64)
+$env:CORS_ALLOWED_ORIGINS = "http://localhost:5173"
+```
+
+#### 2.3 application.yml 片段（节选）
 
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/population_miniterm?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: your_password
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:population_miniterm}?...
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}    # 必须通过环境变量注入
+
+jwt:
+  secret: ${JWT_SECRET:}         # ≥ 256 bit
+  expiration: ${JWT_EXPIRATION_MS:1800000}        # access token 30 min
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION_MS:604800000}  # refresh token 7d
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8081}
+  allow-credentials: ${CORS_ALLOW_CREDENTIALS:false}
 ```
 
 ### 3. 初始化数据库
@@ -150,8 +183,9 @@ http://localhost:8080/doc.html
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/api/auth/login` | 用户登录，返回 token |
-| POST | `/api/auth/logout` | 登出（前端清 token 即可） |
+| POST | `/api/auth/login` | 用户登录，返回 `{accessToken, refreshToken, expiresIn, tokenType:"Bearer"}` |
+| POST | `/api/auth/refresh` | 用 refresh token 换发新 access token；**会从 DB 重新加载最新权限四元组**，解决改权限/角色后旧 token 仍生效的问题 |
+| POST | `/api/auth/logout` | 登出（前端清 token；如需服务端吊销，可扩展为把当前 `jti` 写入 `TokenBlacklist`） |
 | GET  | `/api/auth/me` | 获取当前登录用户 |
 
 ### 人口档案 `/api/persons`
@@ -285,9 +319,13 @@ http://localhost:8080/doc.html
 
 ## 鉴权说明
 
-- 除 `/api/auth/login` 外，访问其他接口需在请求头携带：`Authorization: Bearer <token>`
-- Token 由 `JwtAuthInterceptor` 校验，签发密钥与有效期见 `application.yml` 的 `jwt.*`
+- 除 `/api/auth/login` 外，访问其他接口需在请求头携带：`Authorization: Bearer <accessToken>`
+- **Access token** 默认 30 分钟过期；**Refresh token** 默认 7 天过期，只能用于 `/api/auth/refresh`，不能直接访问业务接口
+- 每个 token 携带 `jti`（UUID）和 `type`（`access` / `refresh`）双字段
+- `JwtAuthInterceptor` 会校验 token 类型、签名、有效期，并查询 `TokenBlacklist`（Redis）拒绝已吊销的 `jti`
+- 用户的权限四元组 (`userId / roleCode / permCodes / dataScope`) 会在签发 access token 时写入 claims；调用 `/api/auth/refresh` 时**从 DB 重新加载最新值**，确保权限变更立即生效
 - 未通过鉴权时由 `GlobalExceptionHandler` 统一返回错误码
+- 业务级权限（细粒度到 `module:action`）由 `@RequiresPermission` 切面强制，详见《数据库设计v4.0_Cursor详细说明.md》权限章节
 
 ## 数据库表
 
@@ -372,7 +410,8 @@ powershell -ExecutionPolicy Bypass -File scripts/count-lines.ps1
 
 ### 2026-07-12 — Sprint 3：P0 安全修复（第二批）
 
-基于深度代码评审落地的 P0 安全修复，覆盖**凭证安全 / 鉴权 / 数据完整性**三大类。完整提交待发布。
+基于深度代码评审落地的 P0 安全修复，覆盖**凭证安全 / 鉴权 / 数据完整性**三大类。
+**分支：`household-migration`；提交：`78d2081 fix(security): Sprint 3 — close all P0 issues`；60 文件 +2553/-196。**
 
 #### 凭证与密钥（修复 1/2）
 
