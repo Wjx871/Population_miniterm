@@ -1,12 +1,12 @@
 @echo off
-setlocal EnableExtensions EnableDelayedExpansion
+setlocal EnableExtensions
 chcp 65001 >nul 2>&1
 title 人口数据库管理系统 - 后端启动
 
 REM ============================================================
 REM  人口数据库管理系统（Population Miniterm）后端一键启动
 REM  - 检查 Java 17+ / Maven Wrapper
-REM  - 加载 start.local.env（不覆盖外部已设的环境变量）
+REM  - 加载 start.local.env（不覆盖外部已设环境变量）
 REM  - 默认 MySQL: localhost:3306/population_miniterm
 REM  - 默认端口: 8080（可通过 SERVER_PORT 修改）
 REM ============================================================
@@ -45,7 +45,47 @@ for /f "tokens=*" %%v in ('java -version 2^>^&1') do (
 )
 :java_version_printed
 
-REM ---------- 3. 校验 JDK 版本 >= 17 ----------
+REM ---------- 3. 加载本地 env 文件（勿提交密码） ----------
+REM 加载优先级：
+REM   1) 当前进程已设置的变量（最高，不覆盖）
+REM   2) start.local.env（推荐）
+REM   3) .env.backend（备选）
+REM   4) 脚本默认值（最低，后续设置）
+REM 注意：此处不开启 EnableDelayedExpansion，避免配置值中的 ! 被错误解析
+if exist "%ROOT_DIR%\start.local.env" (
+    echo [信息] 加载 start.local.env ...
+    for /f "usebackq tokens=1,* delims== eol=#" %%a in ("%ROOT_DIR%\start.local.env") do (
+        if not "%%a"=="" (
+            if not defined %%a set "%%a=%%b"
+        )
+    )
+) else if exist "%ROOT_DIR%\.env.backend" (
+    echo [信息] 加载 .env.backend ...
+    for /f "usebackq tokens=1,* delims== eol=#" %%a in ("%ROOT_DIR%\.env.backend") do (
+        if not "%%a"=="" (
+            if not defined %%a set "%%a=%%b"
+        )
+    )
+) else (
+    echo [提示] 未找到 start.local.env 或 .env.backend。
+    echo        若 MySQL 有密码，请先:
+    echo          copy start.local.env.example start.local.env
+    echo          编辑 start.local.env 填写 DB_PASSWORD
+    echo.
+)
+
+REM ---------- 4. 默认环境变量（仅设置未定义的变量） ----------
+if not defined DB_USERNAME set "DB_USERNAME=root"
+if not defined DB_PASSWORD set "DB_PASSWORD="
+if not defined DB_URL set "DB_URL=jdbc:mysql://localhost:3306/population_miniterm?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true"
+if not defined SERVER_PORT set "SERVER_PORT=8080"
+if not defined JWT_SECRET set "JWT_SECRET=local-development-jwt-secret-change-before-production-2026"
+if not defined JWT_EXPIRE_MINUTES set "JWT_EXPIRE_MINUTES=120"
+
+REM env 加载完成后再开启延迟展开，避免配置值中的 ! 被错误解析
+setlocal EnableDelayedExpansion
+
+REM ---------- 5. 校验 JDK 版本 >= 17 ----------
 set "JAVA_MAJOR="
 for /f "tokens=3" %%v in ('java -version 2^>^&1 ^| findstr /i "version"') do (
     set "JAVA_VER_RAW=%%v"
@@ -71,42 +111,6 @@ if not defined JAVA_MAJOR (
 ) else (
     echo [信息] JDK 主版本: !JAVA_MAJOR!  ^(^>= 17，符合要求^)
 )
-
-REM ---------- 4. 加载本地 env 文件（勿提交密码） ----------
-REM 加载优先级：
-REM   1) 当前进程已设置的变量（最高，不覆盖）
-REM   2) start.local.env（推荐）
-REM   3) .env.backend（备选）
-REM   4) 脚本默认值（最低，后续设置）
-if exist "%ROOT_DIR%\start.local.env" (
-    echo [信息] 加载 start.local.env ...
-    for /f "usebackq tokens=1,* delims== eol=#" %%a in ("%ROOT_DIR%\start.local.env") do (
-        if not "%%a"=="" (
-            if not defined %%a set "%%a=%%b"
-        )
-    )
-) else if exist "%ROOT_DIR%\.env.backend" (
-    echo [信息] 加载 .env.backend ...
-    for /f "usebackq tokens=1,* delims== eol=#" %%a in ("%ROOT_DIR%\.env.backend") do (
-        if not "%%a"=="" (
-            if not defined %%a set "%%a=%%b"
-        )
-    )
-) else (
-    echo [提示] 未找到 start.local.env 或 .env.backend。
-    echo        若 MySQL 有密码，请先:
-    echo          copy start.local.env.example start.local.env
-    echo          编辑 start.local.env 填写 DB_PASSWORD
-    echo.
-)
-
-REM ---------- 5. 默认环境变量（仅设置未定义的变量） ----------
-if not defined DB_USERNAME set "DB_USERNAME=root"
-if not defined DB_PASSWORD set "DB_PASSWORD="
-if not defined DB_URL set "DB_URL=jdbc:mysql://localhost:3306/population_miniterm?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true"
-if not defined SERVER_PORT set "SERVER_PORT=8080"
-if not defined JWT_SECRET set "JWT_SECRET=local-development-jwt-secret-change-before-production-2026"
-if not defined JWT_EXPIRE_MINUTES set "JWT_EXPIRE_MINUTES=120"
 
 REM ---------- 6. 密码警告 ----------
 if "!DB_PASSWORD!"=="" (

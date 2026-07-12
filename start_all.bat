@@ -1,5 +1,5 @@
 @echo off
-setlocal EnableExtensions EnableDelayedExpansion
+setlocal EnableExtensions
 chcp 65001 >nul 2>&1
 title 人口数据库管理系统 - 一键启动前后端
 
@@ -33,6 +33,9 @@ if exist "%ROOT_DIR%\start.local.env" (
 REM ---------- 默认端口（仅设置未定义的变量） ----------
 if not defined SERVER_PORT set "SERVER_PORT=8080"
 if not defined FRONTEND_PORT set "FRONTEND_PORT=5180"
+
+REM env 加载完成后再开启延迟展开，避免配置值中的 ! 被错误解析
+setlocal EnableDelayedExpansion
 
 set "BACKEND_URL=http://127.0.0.1:!SERVER_PORT!"
 set "FRONTEND_URL=http://localhost:!FRONTEND_PORT!"

@@ -1,5 +1,5 @@
 @echo off
-setlocal EnableExtensions EnableDelayedExpansion
+setlocal EnableExtensions
 chcp 65001 >nul 2>&1
 title 人口数据库管理系统 - 前端启动
 
@@ -39,7 +39,29 @@ if not exist "%FRONTEND_DIR%\vite.config.js" (
     goto :fail
 )
 
-REM ---------- 2. 检查 Node / npm ----------
+REM ---------- 2. 加载本地 env 文件（与 start_backend.bat 同一套配置） ----------
+REM 注意：此处不开启 EnableDelayedExpansion，避免配置值中的 ! 被错误解析
+if exist "%ROOT_DIR%\start.local.env" (
+    for /f "usebackq tokens=1,* delims== eol=#" %%a in ("%ROOT_DIR%\start.local.env") do (
+        if not "%%a"=="" (
+            if not defined %%a set "%%a=%%b"
+        )
+    )
+) else if exist "%ROOT_DIR%\.env.backend" (
+    for /f "usebackq tokens=1,* delims== eol=#" %%a in ("%ROOT_DIR%\.env.backend") do (
+        if not "%%a"=="" (
+            if not defined %%a set "%%a=%%b"
+        )
+    )
+)
+
+if not defined SERVER_PORT set "SERVER_PORT=8080"
+if not defined FRONTEND_PORT set "FRONTEND_PORT=5180"
+
+REM env 加载完成后再开启延迟展开，避免配置值中的 ! 被错误解析
+setlocal EnableDelayedExpansion
+
+REM ---------- 3. 检查 Node / npm ----------
 where node >nul 2>&1
 if errorlevel 1 (
     echo [错误] 未找到 node。请安装 Node.js 18+（建议 20 LTS），并重新打开终端。
@@ -74,28 +96,9 @@ if defined NODE_MAJOR (
     echo [警告] 无法解析 Node 版本，跳过版本校验。
 )
 
-REM ---------- 3. 加载本地 env 文件（与 start_backend.bat 同一套配置） ----------
-if exist "%ROOT_DIR%\start.local.env" (
-    for /f "usebackq tokens=1,* delims== eol=#" %%a in ("%ROOT_DIR%\start.local.env") do (
-        if not "%%a"=="" (
-            if not defined %%a set "%%a=%%b"
-        )
-    )
-) else if exist "%ROOT_DIR%\.env.backend" (
-    for /f "usebackq tokens=1,* delims== eol=#" %%a in ("%ROOT_DIR%\.env.backend") do (
-        if not "%%a"=="" (
-            if not defined %%a set "%%a=%%b"
-        )
-    )
-)
-
-if not defined SERVER_PORT set "SERVER_PORT=8080"
-if not defined FRONTEND_PORT set "FRONTEND_PORT=5180"
-
+REM ---------- 4. 设置 Vite 环境变量（由 vite.config.js 读取） ----------
 set "BACKEND_URL=http://127.0.0.1:!SERVER_PORT!"
 set "FRONTEND_URL=http://localhost:!FRONTEND_PORT!"
-
-REM ---------- 4. 设置 Vite 环境变量（由 vite.config.js 读取） ----------
 set "VITE_DEV_PORT=!FRONTEND_PORT!"
 set "VITE_BACKEND_TARGET=http://127.0.0.1:!SERVER_PORT!"
 
