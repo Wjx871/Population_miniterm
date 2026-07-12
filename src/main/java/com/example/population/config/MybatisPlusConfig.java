@@ -29,6 +29,7 @@ public class MybatisPlusConfig {
                 this.strictInsertFill(metaObject, "updatedAt", LocalDateTime.class, now);
                 this.strictInsertFill(metaObject, "uploadedAt", LocalDateTime.class, now);
                 this.strictInsertFill(metaObject, "submittedAt", LocalDateTime.class, now);
+                this.strictInsertFill(metaObject, "loginTime", LocalDateTime.class, now);
             }
 
             @Override

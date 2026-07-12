@@ -127,7 +127,10 @@ INSERT INTO sys_permission (permission_code, permission_name, module_name, actio
 ('material:manage', '申请材料维护', 'MATERIAL', 'CREATE', 2, 1),
 ('material:verify', '申请材料核验', 'MATERIAL', 'APPROVE', 3, 0),
 -- Audit log permissions
-('log:query', '审计日志查询', 'LOG', 'QUERY', 2, 0)
+('log:query', '审计日志查询', 'LOG', 'QUERY', 2, 0),
+-- Login log permissions
+('loginLog:query', '登录日志查询', 'LOGIN_LOG', 'QUERY', 2, 0),
+('loginLog:delete', '登录日志清理', 'LOGIN_LOG', 'DELETE', 3, 1)
 ON DUPLICATE KEY UPDATE permission_name = VALUES(permission_name);
 
 -- =====================================================
@@ -161,7 +164,8 @@ AND p.permission_code IN (
     'application:query', 'application:manage',
     'registration:query', 'registration:manage',
     'archive:query', 'material:query', 'material:manage',
-    'log:query'
+    'log:query',
+    'loginLog:query'
 )
 ON DUPLICATE KEY UPDATE role_id = VALUES(role_id);
 
@@ -205,7 +209,8 @@ AND p.permission_code IN (
     'archive:query', 'archive:manage',
     'region:query', 'region:manage',
     'material:query', 'material:manage', 'material:verify',
-    'log:query'
+    'log:query',
+    'loginLog:query', 'loginLog:delete'
 )
 ON DUPLICATE KEY UPDATE role_id = VALUES(role_id);
 

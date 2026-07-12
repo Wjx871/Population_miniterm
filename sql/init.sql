@@ -402,6 +402,15 @@ INSERT INTO data_dictionary (dict_type, dict_code, dict_label, sort_no, status, 
 ('SENSITIVE_LEVEL', 'L3', '高敏', 3, 'ENABLED', '高敏导出必须关联审批')
 ON DUPLICATE KEY UPDATE dict_label = VALUES(dict_label);
 
+-- =====================================================
+-- 40. LOGIN_STATUS (3 items)
+-- =====================================================
+INSERT INTO data_dictionary (dict_type, dict_code, dict_label, sort_no, status, remark) VALUES
+('LOGIN_STATUS', 'SUCCESS', '登录成功', 1, 'ENABLED', '登录成功'),
+('LOGIN_STATUS', 'FAILED',  '登录失败', 2, 'ENABLED', '用户名或密码错误等'),
+('LOGIN_STATUS', 'LOCKED',  '账号停用', 3, 'ENABLED', '账号被管理员停用')
+ON DUPLICATE KEY UPDATE dict_label = VALUES(dict_label);
+
 -- Re-enable foreign key checks
 SET FOREIGN_KEY_CHECKS = 1;
 
