@@ -18,6 +18,8 @@ import com.example.population.mapper.PersonMapper;
 import com.example.population.mapper.ResidenceArchiveMapper;
 import com.example.population.mapper.ResidenceRegistrationMapper;
 import com.example.population.service.MigrationOutService;
+import com.example.population.util.PageUtil;
+import com.example.population.util.SafeLike;
 import com.example.population.util.SnapshotCopier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,12 +60,13 @@ public class MigrationOutServiceImpl extends ServiceImpl<MigrationOutMapper, Mig
     @Override
     public IPage<MigrationOut> page(long current, long size, String keyword, String outTypeCode,
                                     String fromRegionCode, LocalDate startDate, LocalDate endDate) {
-        Page<MigrationOut> page = new Page<>(current, size);
+        Page<MigrationOut> page = PageUtil.clamp(current, size);
         com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<MigrationOut> w =
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
-        if (StringUtils.hasText(keyword)) {
-            w.like(MigrationOut::getToAddress, keyword)
-                    .or().like(MigrationOut::getTransferBatchNo, keyword);
+        String safeKw = SafeLike.escape(keyword);
+        if (safeKw != null && !safeKw.isEmpty()) {
+            w.and(w2 -> w2.like(MigrationOut::getToAddress, safeKw)
+                    .or().like(MigrationOut::getTransferBatchNo, safeKw));
         }
         if (StringUtils.hasText(outTypeCode)) {
             w.eq(MigrationOut::getOutTypeCode, outTypeCode);

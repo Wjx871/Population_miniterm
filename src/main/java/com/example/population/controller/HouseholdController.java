@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.ApprovalDraftDTO;
 import com.example.population.dto.HouseholdCreateDTO;
+import com.example.population.dto.HouseholdUpdateDTO;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.Household;
@@ -84,12 +85,10 @@ public class HouseholdController {
     }
 
     @RequiresPermission("household:update")
-    @Operation(summary = "更新家庭户")
+    @Operation(summary = "更新家庭户（白名单字段）")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody Household h) {
-        h.setHouseholdId(id);
-        householdService.updateById(h);
-        return Result.success();
+    public Result<Household> update(@PathVariable Long id, @Valid @RequestBody HouseholdUpdateDTO dto) {
+        return Result.success(householdService.updateHousehold(id, dto));
     }
 
     @RequiresPermission("household:update")
@@ -108,11 +107,14 @@ public class HouseholdController {
         return Result.success();
     }
 
-    @RequiresPermission("household:update")
-    @Operation(summary = "删除家庭户（软删已禁用，请走 /disable）")
+    /**
+     * 家庭户不再提供物理/逻辑删除端点。销户请走 {@code PUT /{id}/disable}，
+     * 否则将抛 405，避免绕过业务工作流直接销毁户档案。
+     */
+    @Operation(summary = "禁用：不再支持物理/逻辑删除，请走 /disable 销户")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {
-        householdService.removeById(id);
-        return Result.success();
+        throw new com.example.population.exception.BizException(405,
+                "家庭户删除已禁用，请使用 PUT /api/households/{id}/disable 走销户流程");
     }
 }

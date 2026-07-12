@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.population.entity.SysDepartment;
 import com.example.population.mapper.SysDepartmentMapper;
 import com.example.population.service.SysDepartmentService;
+import com.example.population.util.PageUtil;
+import com.example.population.util.SafeLike;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -15,11 +17,12 @@ public class SysDepartmentServiceImpl extends ServiceImpl<SysDepartmentMapper, S
 
     @Override
     public IPage<SysDepartment> page(long current, long size, String keyword, String regionCode, Long parentId) {
-        Page<SysDepartment> page = new Page<>(current, size);
+        Page<SysDepartment> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<SysDepartment> w = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(keyword)) {
-            w.like(SysDepartment::getDepartmentName, keyword)
-                    .or().like(SysDepartment::getDepartmentCode, keyword);
+        String safeKw = SafeLike.escape(keyword);
+        if (safeKw != null && !safeKw.isEmpty()) {
+            w.and(w2 -> w2.like(SysDepartment::getDepartmentName, safeKw)
+                    .or().like(SysDepartment::getDepartmentCode, safeKw));
         }
         if (StringUtils.hasText(regionCode)) {
             w.eq(SysDepartment::getRegionCode, regionCode);

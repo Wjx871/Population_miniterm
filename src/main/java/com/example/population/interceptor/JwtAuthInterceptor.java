@@ -1,14 +1,17 @@
 package com.example.population.interceptor;
 
+import com.example.population.dto.Result;
 import com.example.population.util.JwtUtil;
 import com.example.population.util.PermissionCache;
 import com.example.population.util.SecurityContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -37,6 +40,7 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
 
     private final JwtUtil jwtUtil;
     private final PermissionCache permissionCache;
+    private final ObjectMapper objectMapper;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -48,11 +52,11 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
             token = token.substring(7);
         }
         if (token == null || token.isEmpty()) {
-            writeUnauthorized(response, "未登录或令牌缺失");
+            writeUnauthorized(request, response, "未登录或令牌缺失");
             return false;
         }
         if (!jwtUtil.isValid(token)) {
-            writeUnauthorized(response, "令牌无效或已过期");
+            writeUnauthorized(request, response, "令牌无效或已过期");
             return false;
         }
         try {
@@ -68,7 +72,7 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
 
             // 关键安全卡点：本版本要求 token 必须包含完整权限字段，否则视为旧 token 强制重登
             if (uid == null || uname == null || permLevel == null || roleCode == null || dataScope == null) {
-                writeUnauthorized(response, "令牌格式过旧，请重新登录");
+                writeUnauthorized(request, response, "令牌格式过旧，请重新登录");
                 return false;
             }
 
@@ -95,7 +99,7 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
             request.setAttribute(ATTR_SECURITY_CONTEXT, ctx);
         } catch (Exception e) {
             log.warn("解析 token 失败: {}", e.getMessage());
-            writeUnauthorized(response, "令牌解析失败");
+            writeUnauthorized(request, response, "令牌解析失败");
             return false;
         }
         return true;
@@ -108,9 +112,14 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
         SecurityContext.clear();
     }
 
-    private void writeUnauthorized(HttpServletResponse response, String message) throws java.io.IOException {
+    private void writeUnauthorized(HttpServletRequest request, HttpServletResponse response, String message) throws java.io.IOException {
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
-        response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"code\":401,\"message\":\"" + message + "\"}");
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        if (request != null) {
+            log.warn("unauthorized ip={} ua={} reason={}",
+                    request.getRemoteAddr(), request.getHeader("User-Agent"), message);
+        }
+        response.getWriter().write(objectMapper.writeValueAsString(Result.error(HttpStatus.UNAUTHORIZED.value(), message)));
     }
 }

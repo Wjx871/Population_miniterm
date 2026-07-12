@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.population.dto.HouseholdCreateDTO;
+import com.example.population.dto.HouseholdUpdateDTO;
 import com.example.population.entity.Household;
 import com.example.population.entity.HouseholdMember;
 import com.example.population.entity.Person;
@@ -17,6 +18,8 @@ import com.example.population.mapper.HouseholdMemberMapper;
 import com.example.population.mapper.PersonMapper;
 import com.example.population.service.ApplicationMaterialService;
 import com.example.population.service.HouseholdService;
+import com.example.population.util.PageUtil;
+import com.example.population.util.SafeLike;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,11 +39,12 @@ public class HouseholdServiceImpl extends ServiceImpl<HouseholdMapper, Household
 
     @Override
     public IPage<Household> page(long current, long size, String keyword, String regionCode, String status) {
-        Page<Household> page = new Page<>(current, size);
+        Page<Household> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<Household> w = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(keyword)) {
-            w.like(Household::getHouseholdNo, keyword)
-                    .or().like(Household::getRegisteredAddress, keyword);
+        String safeKw = SafeLike.escape(keyword);
+        if (safeKw != null && !safeKw.isEmpty()) {
+            w.and(w2 -> w2.like(Household::getHouseholdNo, safeKw)
+                    .or().like(Household::getRegisteredAddress, safeKw));
         }
         if (StringUtils.hasText(regionCode)) {
             w.eq(Household::getRegionCode, regionCode);
@@ -104,6 +108,35 @@ public class HouseholdServiceImpl extends ServiceImpl<HouseholdMapper, Household
                 log.info("户主关系已存在，跳过");
             }
         }
+        return h;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Household updateHousehold(Long householdId, HouseholdUpdateDTO dto) {
+        Household h = baseMapper.selectById(householdId);
+        if (h == null) {
+            throw new NotFoundException("家庭户[" + householdId + "]不存在");
+        }
+        if (StringUtils.hasText(dto.getHouseholdTypeCode())) {
+            h.setHouseholdTypeCode(dto.getHouseholdTypeCode());
+        }
+        if (dto.getHeadPersonId() != null) {
+            h.setHeadPersonId(dto.getHeadPersonId());
+        }
+        if (StringUtils.hasText(dto.getRegisteredAddress())) {
+            h.setRegisteredAddress(dto.getRegisteredAddress());
+        }
+        if (StringUtils.hasText(dto.getRegionCode())) {
+            h.setRegionCode(dto.getRegionCode());
+        }
+        if (dto.getDepartmentId() != null) {
+            h.setDepartmentId(dto.getDepartmentId());
+        }
+        if (StringUtils.hasText(dto.getStatus())) {
+            h.setStatus(dto.getStatus());
+        }
+        updateById(h);
         return h;
     }
 

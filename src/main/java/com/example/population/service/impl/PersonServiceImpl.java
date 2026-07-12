@@ -12,6 +12,8 @@ import com.example.population.exception.NotFoundException;
 import com.example.population.mapper.PersonMapper;
 import com.example.population.service.ApplicationMaterialService;
 import com.example.population.service.PersonService;
+import com.example.population.util.PageUtil;
+import com.example.population.util.SafeLike;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
@@ -28,10 +30,10 @@ public class PersonServiceImpl extends ServiceImpl<PersonMapper, Person> impleme
 
     @Override
     public IPage<Person> queryPage(PersonQueryDTO q) {
-        Page<Person> page = new Page<>(q.getCurrent(), q.getSize());
+        Page<Person> page = PageUtil.clamp(q.getCurrent(), q.getSize());
         LambdaQueryWrapper<Person> w = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(q.getName())) {
-            w.like(Person::getName, q.getName());
+            SafeLike.apply(w, Person::getName, q.getName());
         }
         if (StringUtils.hasText(q.getIdentityType())) {
             w.eq(Person::getIdentityTypeCode, q.getIdentityType());
@@ -49,7 +51,7 @@ public class PersonServiceImpl extends ServiceImpl<PersonMapper, Person> impleme
             w.eq(Person::getRecordStatusCode, q.getStatus());
         }
         if (StringUtils.hasText(q.getPhone())) {
-            w.like(Person::getPhone, q.getPhone());
+            SafeLike.apply(w, Person::getPhone, q.getPhone());
         }
         if (q.getBirthDateStart() != null) {
             w.ge(Person::getBirthDate, q.getBirthDateStart());
@@ -72,7 +74,8 @@ public class PersonServiceImpl extends ServiceImpl<PersonMapper, Person> impleme
         dto.validate();
         // 最低必交材料闸门：要求对应的业务申请已上传身份证明并完成核验
         applicationMaterialService.assertRequiredVerified(dto.getApplicationId(), "PERSON_REGISTER");
-        Person existing = baseMapper.findByIdentity(dto.getIdentityTypeCode(), dto.getIdentityNo());
+        // 走行锁查重，避免 SELECT-then-INSERT 竞态（FOR UPDATE 仅在事务内有效）
+        Person existing = baseMapper.findByIdentityForUpdate(dto.getIdentityTypeCode(), dto.getIdentityNo());
         if (existing != null) {
             throw new com.example.population.exception.DuplicateException(
                     "人口[" + dto.getIdentityNo() + "]已存在");

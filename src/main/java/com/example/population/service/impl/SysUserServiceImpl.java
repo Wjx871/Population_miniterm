@@ -16,8 +16,10 @@ import com.example.population.mapper.SysRolePermissionMapper;
 import com.example.population.mapper.SysUserMapper;
 import com.example.population.service.SysUserService;
 import com.example.population.util.JwtUtil;
+import com.example.population.util.PageUtil;
 import com.example.population.util.PasswordEncoder;
 import com.example.population.util.PermissionCache;
+import com.example.population.util.SafeLike;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -117,11 +119,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     @Override
     public IPage<SysUser> page(long current, long size, String keyword, Long roleId, Long departmentId) {
-        Page<SysUser> page = new Page<>(current, size);
+        Page<SysUser> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<SysUser> w = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(keyword)) {
-            w.like(SysUser::getUsername, keyword)
-                    .or().like(SysUser::getRealName, keyword);
+        String safeKw = SafeLike.escape(keyword);
+        if (safeKw != null && !safeKw.isEmpty()) {
+            w.and(w2 -> w2.like(SysUser::getUsername, safeKw)
+                    .or().like(SysUser::getRealName, safeKw));
         }
         if (roleId != null) {
             w.eq(SysUser::getRoleId, roleId);

@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.population.entity.FloatingPopulation;
 import com.example.population.mapper.FloatingPopulationMapper;
 import com.example.population.service.FloatingPopulationService;
+import com.example.population.util.PageUtil;
+import com.example.population.util.SafeLike;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -17,11 +19,12 @@ public class FloatingPopulationServiceImpl extends ServiceImpl<FloatingPopulatio
     @Override
     public IPage<FloatingPopulation> page(long current, long size, String keyword, String currentRegionCode,
                                           String status, Long personId) {
-        Page<FloatingPopulation> page = new Page<>(current, size);
+        Page<FloatingPopulation> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<FloatingPopulation> w = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(keyword)) {
-            w.like(FloatingPopulation::getCurrentAddress, keyword)
-                    .or().like(FloatingPopulation::getSourceAddress, keyword);
+        String safeKw = SafeLike.escape(keyword);
+        if (safeKw != null && !safeKw.isEmpty()) {
+            w.and(w2 -> w2.like(FloatingPopulation::getCurrentAddress, safeKw)
+                    .or().like(FloatingPopulation::getSourceAddress, safeKw));
         }
         if (StringUtils.hasText(currentRegionCode)) {
             w.eq(FloatingPopulation::getCurrentRegionCode, currentRegionCode);

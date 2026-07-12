@@ -235,7 +235,7 @@ class CancellationRecordServiceTest {
         when(baseMapper.selectById(1L)).thenReturn(rec);
         when(baseMapper.countOutstandingApplicationsByHousehold(10L)).thenReturn(0L);
         when(baseMapper.countCurrentMembers(10L)).thenReturn(0L);
-        when(householdMapper.selectById(10L)).thenReturn(null);
+        when(householdMapper.selectByIdForUpdate(10L)).thenReturn(null);
 
         assertThatThrownBy(() -> service.completeHouseholdCancellation(1L, 9L))
                 .isInstanceOf(NotFoundException.class);

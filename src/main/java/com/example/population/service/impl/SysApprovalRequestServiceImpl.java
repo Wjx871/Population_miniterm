@@ -9,6 +9,7 @@ import com.example.population.entity.SysApprovalRequest;
 import com.example.population.mapper.SysApprovalLogMapper;
 import com.example.population.mapper.SysApprovalRequestMapper;
 import com.example.population.service.SysApprovalRequestService;
+import com.example.population.util.PageUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,10 +24,11 @@ public class SysApprovalRequestServiceImpl extends ServiceImpl<SysApprovalReques
         implements SysApprovalRequestService {
 
     private final SysApprovalLogMapper approvalLogMapper;
+    private final com.example.population.mapper.SysApprovalRequestMapper approvalRequestMapper;
 
     @Override
     public IPage<SysApprovalRequest> page(long current, long size, String status, Long currentApproverId) {
-        Page<SysApprovalRequest> page = new Page<>(current, size);
+        Page<SysApprovalRequest> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<SysApprovalRequest> w = new LambdaQueryWrapper<>();
         if (status != null && !status.isEmpty()) {
             w.eq(SysApprovalRequest::getStatus, status);
@@ -41,15 +43,16 @@ public class SysApprovalRequestServiceImpl extends ServiceImpl<SysApprovalReques
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean approve(Long approvalId, Long approverId, String comment) {
-        SysApprovalRequest req = this.getById(approvalId);
+        // 行锁审批单，阻断并发 approve/reject；仅事务内有效
+        SysApprovalRequest req = approvalRequestMapper.selectByIdForUpdate(approvalId);
         if (req == null || !"PENDING".equalsIgnoreCase(req.getStatus())) {
             return false;
         }
-        Long nextStep = approvalLogMapper.selectCount(new LambdaQueryWrapper<SysApprovalLog>()
-                .eq(SysApprovalLog::getApprovalId, approvalId)) + 1;
+        Integer maxStep = approvalLogMapper.selectMaxStepNo(approvalId);
+        int nextStep = (maxStep == null ? 0 : maxStep) + 1;
         SysApprovalLog log = new SysApprovalLog();
         log.setApprovalId(approvalId);
-        log.setStepNo(nextStep.intValue());
+        log.setStepNo(nextStep);
         log.setApproverUserId(approverId);
         log.setActionCode("APPROVE");
         log.setComment(comment);
@@ -64,15 +67,15 @@ public class SysApprovalRequestServiceImpl extends ServiceImpl<SysApprovalReques
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean reject(Long approvalId, Long approverId, String comment) {
-        SysApprovalRequest req = this.getById(approvalId);
+        SysApprovalRequest req = approvalRequestMapper.selectByIdForUpdate(approvalId);
         if (req == null || !"PENDING".equalsIgnoreCase(req.getStatus())) {
             return false;
         }
-        Long nextStep = approvalLogMapper.selectCount(new LambdaQueryWrapper<SysApprovalLog>()
-                .eq(SysApprovalLog::getApprovalId, approvalId)) + 1;
+        Integer maxStep = approvalLogMapper.selectMaxStepNo(approvalId);
+        int nextStep = (maxStep == null ? 0 : maxStep) + 1;
         SysApprovalLog log = new SysApprovalLog();
         log.setApprovalId(approvalId);
-        log.setStepNo(nextStep.intValue());
+        log.setStepNo(nextStep);
         log.setApproverUserId(approverId);
         log.setActionCode("REJECT");
         log.setComment(comment);

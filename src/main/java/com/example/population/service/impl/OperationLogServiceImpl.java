@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.population.entity.OperationLog;
 import com.example.population.mapper.OperationLogMapper;
 import com.example.population.service.OperationLogService;
+import com.example.population.util.PageUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -17,7 +18,7 @@ public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, Ope
     @Override
     public IPage<OperationLog> page(long current, long size, Long userId,
                                     String operationTypeCode, String moduleName) {
-        Page<OperationLog> page = new Page<>(current, size);
+        Page<OperationLog> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<OperationLog> w = new LambdaQueryWrapper<>();
         if (userId != null) {
             w.eq(OperationLog::getUserId, userId);

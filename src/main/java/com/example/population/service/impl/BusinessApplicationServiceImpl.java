@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.population.entity.BusinessApplication;
 import com.example.population.mapper.BusinessApplicationMapper;
 import com.example.population.service.BusinessApplicationService;
+import com.example.population.util.PageUtil;
+import com.example.population.util.SafeLike;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -17,11 +19,12 @@ public class BusinessApplicationServiceImpl extends ServiceImpl<BusinessApplicat
     @Override
     public IPage<BusinessApplication> page(long current, long size, String keyword, String status,
                                            String businessTypeCode, Long submitUserId, Long handlingDepartmentId) {
-        Page<BusinessApplication> page = new Page<>(current, size);
+        Page<BusinessApplication> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<BusinessApplication> w = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(keyword)) {
-            w.like(BusinessApplication::getApplicationNo, keyword)
-                    .or().like(BusinessApplication::getApplicantName, keyword);
+        String safeKw = SafeLike.escape(keyword);
+        if (safeKw != null && !safeKw.isEmpty()) {
+            w.and(w2 -> w2.like(BusinessApplication::getApplicationNo, safeKw)
+                    .or().like(BusinessApplication::getApplicantName, safeKw));
         }
         if (StringUtils.hasText(status)) {
             w.eq(BusinessApplication::getStatus, status);

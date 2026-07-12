@@ -16,6 +16,11 @@ public interface PersonMapper extends BaseMapper<Person> {
                                    @Param("identityNo") String identityNo);
 
     /**
+     * 按主键加行锁，仅在事务内有效。
+     */
+    Person selectByIdForUpdate(@Param("id") Long id);
+
+    /**
      * 非加锁版本，service 层做常规查重 / 校验。
      */
     Person findByIdentity(@Param("identityTypeCode") String identityTypeCode,

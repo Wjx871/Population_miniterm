@@ -20,6 +20,7 @@ import com.example.population.mapper.PersonMapper;
 import com.example.population.mapper.ResidenceArchiveMapper;
 import com.example.population.mapper.ResidenceRegistrationMapper;
 import com.example.population.service.CancellationRecordService;
+import com.example.population.util.PageUtil;
 import com.example.population.util.SnapshotCopier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +46,7 @@ public class CancellationRecordServiceImpl
 
     @Override
     public IPage<CancellationRecord> page(long current, long size, String cancelObjectType, String cancelReasonCode) {
-        Page<CancellationRecord> page = new Page<>(current, size);
+        Page<CancellationRecord> page = PageUtil.clamp(current, size);
         com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<CancellationRecord> w =
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
         if (StringUtils.hasText(cancelObjectType)) {
@@ -191,9 +192,13 @@ public class CancellationRecordServiceImpl
             throw new HouseholdHasOutstandingApplicationException("家庭户", rec.getHouseholdId());
         }
 
-        Household household = householdMapper.selectById(rec.getHouseholdId());
+        // 行锁户档案：阻止两个 L3 并发销户；FOR UPDATE 仅在事务内有效
+        Household household = householdMapper.selectByIdForUpdate(rec.getHouseholdId());
         if (household == null) {
             throw new NotFoundException("家庭户[" + rec.getHouseholdId() + "]不存在");
+        }
+        if ("CANCELLED".equalsIgnoreCase(household.getStatus())) {
+            throw new BizException(409, "家庭户已处于 CANCELLED 状态");
         }
 
         // 写户级归档快照（不依赖 person，household_cancel_archive 类型）

@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.population.entity.ResidenceArchive;
 import com.example.population.mapper.ResidenceArchiveMapper;
 import com.example.population.service.ResidenceArchiveService;
+import com.example.population.util.PageUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -16,7 +17,7 @@ public class ResidenceArchiveServiceImpl extends ServiceImpl<ResidenceArchiveMap
 
     @Override
     public IPage<ResidenceArchive> page(long current, long size, Long personId, Long householdId, String archiveTypeCode) {
-        Page<ResidenceArchive> page = new Page<>(current, size);
+        Page<ResidenceArchive> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<ResidenceArchive> w = new LambdaQueryWrapper<>();
         if (personId != null) {
             w.eq(ResidenceArchive::getPersonId, personId);

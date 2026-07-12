@@ -56,7 +56,7 @@ public class CancellationRecordController {
     }
 
     @RequiresLevel(3)
-    @RequiresPermission({"cancellation:person", "cancellation:household"})
+    @RequiresPermission(value = {"cancellation:person", "cancellation:household"}, all = true)
     @Operation(summary = "新增注销/销户记录（不办结）")
     @PostMapping
     public Result<CancellationRecord> create(@Valid @RequestBody CancellationDTO dto) {
@@ -82,19 +82,21 @@ public class CancellationRecordController {
     }
 
     @RequiresLevel(3)
-    @Operation(summary = "兼容旧 PUT /{id}")
+    @Operation(summary = "兼容旧 PUT /{id}：禁用，请走 /complete-person 或 /complete-household 办结")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody CancellationRecord r) {
-        r.setCancelId(id);
-        cancellationService.updateById(r);
-        return Result.success();
+    public Result<Void> update(@PathVariable Long id, @RequestBody(required = false) CancellationRecord r) {
+        throw new com.example.population.exception.BizException(405,
+                "注销记录不支持通用 PUT 更新；办结请使用 /complete-person 或 /complete-household");
     }
 
+    /**
+     * 禁用：注销记录不支持删除（审计要求）。
+     */
     @RequiresLevel(3)
-    @Operation(summary = "删除注销记录")
+    @Operation(summary = "禁用：删除注销记录")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {
-        cancellationService.removeById(id);
-        return Result.success();
+        throw new com.example.population.exception.BizException(405,
+                "注销记录为审计凭证，不支持删除");
     }
 }

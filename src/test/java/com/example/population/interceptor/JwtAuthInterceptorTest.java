@@ -3,6 +3,7 @@ package com.example.population.interceptor;
 import com.example.population.util.JwtUtil;
 import com.example.population.util.PermissionCache;
 import com.example.population.util.SecurityContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
@@ -52,7 +53,7 @@ class JwtAuthInterceptorTest {
 
         permissionCache = mock(PermissionCache.class);
 
-        interceptor = new JwtAuthInterceptor(jwtUtil, permissionCache);
+        interceptor = new JwtAuthInterceptor(jwtUtil, permissionCache, new ObjectMapper());
 
         // 清理 ThreadLocal，避免用例间污染
         SecurityContext.clear();

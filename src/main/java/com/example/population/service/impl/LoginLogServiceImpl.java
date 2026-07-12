@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.population.entity.LoginLog;
 import com.example.population.mapper.LoginLogMapper;
 import com.example.population.service.LoginLogService;
+import com.example.population.util.PageUtil;
+import com.example.population.util.SafeLike;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,13 +47,13 @@ public class LoginLogServiceImpl extends ServiceImpl<LoginLogMapper, LoginLog>
     @Override
     public IPage<LoginLog> page(long current, long size, Long userId, String username,
                                 String loginStatus, LocalDateTime startTime, LocalDateTime endTime) {
-        Page<LoginLog> page = new Page<>(current, size);
+        Page<LoginLog> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<LoginLog> w = new LambdaQueryWrapper<>();
         if (userId != null) {
             w.eq(LoginLog::getUserId, userId);
         }
         if (StringUtils.hasText(username)) {
-            w.like(LoginLog::getUsername, username);
+            SafeLike.apply(w, LoginLog::getUsername, username);
         }
         if (StringUtils.hasText(loginStatus)) {
             w.eq(LoginLog::getLoginStatus, loginStatus);

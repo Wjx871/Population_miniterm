@@ -79,7 +79,7 @@ class PersonServiceTest {
     @DisplayName("合法 DTO → 写入并返回实体")
     void create_ok() {
         PersonCreateDTO dto = validDto();
-        when(baseMapper.findByIdentity(dto.getIdentityTypeCode(), dto.getIdentityNo())).thenReturn(null);
+        when(baseMapper.findByIdentityForUpdate(dto.getIdentityTypeCode(), dto.getIdentityNo())).thenReturn(null);
 
         Person saved = service.createPerson(dto);
 
@@ -94,7 +94,7 @@ class PersonServiceTest {
         PersonCreateDTO dto = validDto();
         Person existing = new Person();
         existing.setPersonId(99L);
-        when(baseMapper.findByIdentity(dto.getIdentityTypeCode(), dto.getIdentityNo())).thenReturn(existing);
+        when(baseMapper.findByIdentityForUpdate(dto.getIdentityTypeCode(), dto.getIdentityNo())).thenReturn(existing);
 
         assertThatThrownBy(() -> service.createPerson(dto))
                 .isInstanceOf(DuplicateException.class)
@@ -129,7 +129,7 @@ class PersonServiceTest {
     @DisplayName("DB DuplicateKeyException 被翻译为 DuplicateException")
     void create_dbDuplicate() {
         PersonCreateDTO dto = validDto();
-        when(baseMapper.findByIdentity(dto.getIdentityTypeCode(), dto.getIdentityNo())).thenReturn(null);
+        when(baseMapper.findByIdentityForUpdate(dto.getIdentityTypeCode(), dto.getIdentityNo())).thenReturn(null);
         org.mockito.Mockito.doThrow(new DuplicateKeyException("uk fail"))
                 .when(baseMapper).insert(any(Person.class));
 
@@ -144,7 +144,7 @@ class PersonServiceTest {
         PersonCreateDTO dto = validDto();
         dto.setIdentityTypeCode("PASSPORT");
         dto.setIdentityNo("P12345678");  // 非 ID_CARD 不走 IdCardValidator
-        when(baseMapper.findByIdentity(eq("PASSPORT"), eq("P12345678"))).thenReturn(null);
+        when(baseMapper.findByIdentityForUpdate(eq("PASSPORT"), eq("P12345678"))).thenReturn(null);
 
         Person saved = service.createPerson(dto);
         assertThat(saved.getIdentityTypeCode()).isEqualTo("PASSPORT");
@@ -155,7 +155,7 @@ class PersonServiceTest {
     void create_phoneOptional() {
         PersonCreateDTO dto = validDto();
         dto.setPhone(null);
-        when(baseMapper.findByIdentity(any(), any())).thenReturn(null);
+        when(baseMapper.findByIdentityForUpdate(any(), any())).thenReturn(null);
 
         Person saved = service.createPerson(dto);
         assertThat(saved.getPhone()).isNull();

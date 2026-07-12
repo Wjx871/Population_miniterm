@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.population.entity.Certificate;
 import com.example.population.mapper.CertificateMapper;
 import com.example.population.service.CertificateService;
+import com.example.population.util.PageUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -16,7 +17,7 @@ public class CertificateServiceImpl extends ServiceImpl<CertificateMapper, Certi
     @Override
     public IPage<Certificate> page(long current, long size, Long personId,
                                    String certificateTypeCode, String certificateStatus) {
-        Page<Certificate> page = new Page<>(current, size);
+        Page<Certificate> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<Certificate> w = new LambdaQueryWrapper<>();
         if (personId != null) {
             w.eq(Certificate::getPersonId, personId);

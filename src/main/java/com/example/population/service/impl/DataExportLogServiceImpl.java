@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.population.entity.DataExportLog;
 import com.example.population.mapper.DataExportLogMapper;
 import com.example.population.service.DataExportLogService;
+import com.example.population.util.PageUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -17,7 +18,7 @@ public class DataExportLogServiceImpl extends ServiceImpl<DataExportLogMapper, D
     @Override
     public IPage<DataExportLog> page(long current, long size, Long userId,
                                      String exportTypeCode, Integer sensitivityLevel) {
-        Page<DataExportLog> page = new Page<>(current, size);
+        Page<DataExportLog> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<DataExportLog> w = new LambdaQueryWrapper<>();
         if (userId != null) {
             w.eq(DataExportLog::getUserId, userId);

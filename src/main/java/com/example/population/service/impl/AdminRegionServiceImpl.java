@@ -8,6 +8,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.population.entity.AdminRegion;
 import com.example.population.mapper.AdminRegionMapper;
 import com.example.population.service.AdminRegionService;
+import com.example.population.util.PageUtil;
+import com.example.population.util.SafeLike;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -18,10 +20,12 @@ public class AdminRegionServiceImpl extends ServiceImpl<AdminRegionMapper, Admin
 
     @Override
     public IPage<AdminRegion> page(long current, long size, String keyword, String levelCode) {
-        Page<AdminRegion> page = new Page<>(current, size);
+        Page<AdminRegion> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<AdminRegion> w = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(keyword)) {
-            w.like(AdminRegion::getRegionName, keyword).or().like(AdminRegion::getRegionCode, keyword);
+        String safeKw = SafeLike.escape(keyword);
+        if (safeKw != null && !safeKw.isEmpty()) {
+            w.and(w2 -> w2.like(AdminRegion::getRegionName, safeKw)
+                    .or().like(AdminRegion::getRegionCode, safeKw));
         }
         if (StringUtils.hasText(levelCode)) {
             w.eq(AdminRegion::getRegionLevelCode, levelCode);

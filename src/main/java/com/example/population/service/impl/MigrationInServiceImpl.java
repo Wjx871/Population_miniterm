@@ -18,6 +18,8 @@ import com.example.population.mapper.PersonMapper;
 import com.example.population.mapper.ResidenceArchiveMapper;
 import com.example.population.mapper.ResidenceRegistrationMapper;
 import com.example.population.service.MigrationInService;
+import com.example.population.util.PageUtil;
+import com.example.population.util.SafeLike;
 import com.example.population.util.SnapshotCopier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,12 +46,13 @@ public class MigrationInServiceImpl extends ServiceImpl<MigrationInMapper, Migra
     @Override
     public IPage<MigrationIn> page(long current, long size, String keyword, String inTypeCode,
                                    String toRegionCode, LocalDate startDate, LocalDate endDate) {
-        Page<MigrationIn> page = new Page<>(current, size);
+        Page<MigrationIn> page = PageUtil.clamp(current, size);
         com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<MigrationIn> w =
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
-        if (StringUtils.hasText(keyword)) {
-            w.like(MigrationIn::getFromAddress, keyword)
-                    .or().like(MigrationIn::getTransferBatchNo, keyword);
+        String safeKw = SafeLike.escape(keyword);
+        if (safeKw != null && !safeKw.isEmpty()) {
+            w.and(w2 -> w2.like(MigrationIn::getFromAddress, safeKw)
+                    .or().like(MigrationIn::getTransferBatchNo, safeKw));
         }
         if (StringUtils.hasText(inTypeCode)) {
             w.eq(MigrationIn::getInTypeCode, inTypeCode);
@@ -105,19 +108,25 @@ public class MigrationInServiceImpl extends ServiceImpl<MigrationInMapper, Migra
         if (in.getCompletedAt() != null) {
             throw new BizException(409, "该迁入记录已办结");
         }
-        Person person = personMapper.selectById(in.getPersonId());
+        // 行锁人口档案：阻止同一人口的并发迁入 / 注销 / 户籍变更
+        Person person = personMapper.selectByIdForUpdate(in.getPersonId());
         if (person == null) {
             throw new NotFoundException("人口[" + in.getPersonId() + "]不存在");
         }
-        Household targetHousehold = householdMapper.selectById(in.getToHouseholdId());
+        // 行锁目标户：与换户主/销户互斥
+        Household targetHousehold = householdMapper.selectByIdForUpdate(in.getToHouseholdId());
         if (targetHousehold == null) {
             throw new NotFoundException("目标家庭户[" + in.getToHouseholdId() + "]不存在");
+        }
+        if ("CANCELLED".equalsIgnoreCase(targetHousehold.getStatus())) {
+            throw new BizException(409, "目标家庭户[" + in.getToHouseholdId() + "]已销户，无法迁入");
         }
 
         // 1. 同市跨区：先把旧登记归档
         ResidenceRegistration oldReg = registrationMapper.findByPersonForUpdate(in.getPersonId());
         if (oldReg != null && "CROSS_DISTRICT".equalsIgnoreCase(in.getInTypeCode())) {
-            Household fromHousehold = householdMapper.selectById(oldReg.getHouseholdId());
+            // 锁源户籍户，避免被并发销户
+            Household fromHousehold = householdMapper.selectByIdForUpdate(oldReg.getHouseholdId());
             ResidenceArchive snapshot = SnapshotCopier.fromRegistration(
                     oldReg,
                     person.getName(),
@@ -160,7 +169,13 @@ public class MigrationInServiceImpl extends ServiceImpl<MigrationInMapper, Migra
         hm.setJoinDate(in.getInDate());
         hm.setMemberStatus("CURRENT");
         hm.setSourceApplicationId(in.getApplicationId());
-        householdMemberMapper.insert(hm);
+        try {
+            householdMemberMapper.insert(hm);
+        } catch (org.springframework.dao.DuplicateKeyException dup) {
+            // 该人口的 CURRENT 行已存在（已被并发迁入 / 历史脏数据）
+            throw new BizException(409,
+                    "人口[" + in.getPersonId() + "]在目标户中已存在当前成员关系，请先办迁移/注销");
+        }
 
         in.setNewRegistrationId(newReg.getRegistrationId());
         in.setOperatorId(operatorId);

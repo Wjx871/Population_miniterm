@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.population.entity.KeyPopulation;
 import com.example.population.mapper.KeyPopulationMapper;
 import com.example.population.service.KeyPopulationService;
+import com.example.population.util.PageUtil;
+import com.example.population.util.SafeLike;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -19,11 +21,12 @@ public class KeyPopulationServiceImpl extends ServiceImpl<KeyPopulationMapper, K
     @Override
     public IPage<KeyPopulation> page(long current, long size, String keyword, String keyTypeCode,
                                      String managementLevelCode, String status, Long responsibleDepartmentId) {
-        Page<KeyPopulation> page = new Page<>(current, size);
+        Page<KeyPopulation> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<KeyPopulation> w = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(keyword)) {
-            w.like(KeyPopulation::getSourceBasisSummary, keyword)
-                    .or().like(KeyPopulation::getRemark, keyword);
+        String safeKw = SafeLike.escape(keyword);
+        if (safeKw != null && !safeKw.isEmpty()) {
+            w.and(w2 -> w2.like(KeyPopulation::getSourceBasisSummary, safeKw)
+                    .or().like(KeyPopulation::getRemark, safeKw));
         }
         if (StringUtils.hasText(keyTypeCode)) {
             w.eq(KeyPopulation::getKeyTypeCode, keyTypeCode);

@@ -3,6 +3,7 @@ package com.example.population.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.population.dto.HouseholdCreateDTO;
+import com.example.population.dto.HouseholdUpdateDTO;
 import com.example.population.entity.Household;
 
 public interface HouseholdService extends IService<Household> {
@@ -15,6 +16,11 @@ public interface HouseholdService extends IService<Household> {
      * 立户。事务内校验户号唯一。
      */
     Household establishHousehold(HouseholdCreateDTO dto);
+
+    /**
+     * 白名单更新家庭户。仅允许修改 DTO 中暴露的字段。
+     */
+    Household updateHousehold(Long householdId, HouseholdUpdateDTO dto);
 
     /**
      * 更换户主。事务内：旧户主 relationship_code -> OTHER；新房主 -> HEAD；household.head_person_id 更新。

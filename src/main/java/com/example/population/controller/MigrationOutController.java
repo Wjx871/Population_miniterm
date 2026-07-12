@@ -93,19 +93,20 @@ public class MigrationOutController {
     }
 
     @RequiresPermission("migration:out:create")
-    @Operation(summary = "兼容旧 PUT /{id}")
+    @Operation(summary = "兼容旧 PUT /{id}：禁用，请走 /complete 办结或重新 POST 新建")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody MigrationOut m) {
-        m.setOutId(id);
-        migrationOutService.updateById(m);
-        return Result.success();
+    public Result<Void> update(@PathVariable Long id, @RequestBody(required = false) MigrationOut m) {
+        throw new com.example.population.exception.BizException(405,
+                "迁出记录不支持通用 PUT 更新；办结请使用 PUT /api/migration-out/{id}/complete");
     }
 
-    @RequiresPermission("migration:out:create")
-    @Operation(summary = "删除迁出记录")
+    /**
+     * 禁用：迁出记录不支持删除，办结后由归档流程负责状态保持。
+     */
+    @Operation(summary = "禁用：删除迁出记录")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {
-        migrationOutService.removeById(id);
-        return Result.success();
+        throw new com.example.population.exception.BizException(405,
+                "迁出记录不支持删除；如需撤回，请联系 L3 走驳回流程");
     }
 }

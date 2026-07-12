@@ -12,6 +12,14 @@
         FOR UPDATE
     </select>
 
+    <select id="selectByIdForUpdate" resultType="com.example.population.entity.Person">
+        SELECT * FROM person
+        WHERE person_id = #{id}
+          AND is_deleted = 0
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
     <select id="findByIdentity" resultType="com.example.population.entity.Person">
         SELECT * FROM person
         WHERE identity_type_code = #{identityTypeCode}

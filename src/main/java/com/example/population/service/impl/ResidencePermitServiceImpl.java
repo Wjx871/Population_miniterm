@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.population.entity.ResidencePermit;
 import com.example.population.mapper.ResidencePermitMapper;
 import com.example.population.service.ResidencePermitService;
+import com.example.population.util.PageUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -19,7 +20,7 @@ public class ResidencePermitServiceImpl extends ServiceImpl<ResidencePermitMappe
     @Override
     public IPage<ResidencePermit> page(long current, long size, Long personId,
                                        String permitTypeCode, String permitStatus) {
-        Page<ResidencePermit> page = new Page<>(current, size);
+        Page<ResidencePermit> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<ResidencePermit> w = new LambdaQueryWrapper<>();
         if (personId != null) {
             w.eq(ResidencePermit::getPersonId, personId);
