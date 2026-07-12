@@ -1,9 +1,16 @@
 name: Frontend CI
 
 on:
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
   push:
     branches:
       - feat/frontend-population
+      - develop
     paths:
       - "frontend/**"
       - ".github/workflows/frontend-ci.yml"
@@ -34,7 +41,7 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run unit tests
         run: npm run test:unit

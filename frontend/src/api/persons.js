@@ -49,14 +49,3 @@ export function deletePerson(id) {
     method: 'delete',
   })
 }
-
-/**
- * 人口统计接口契约待后端确认。
- * 工作台等模块若仍引用，失败时由调用方自行处理，不得伪造数据。
- */
-export function getPersonStatistics() {
-  return request({
-    url: '/persons/statistics',
-    method: 'get',
-  })
-}

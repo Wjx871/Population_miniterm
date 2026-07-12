@@ -323,7 +323,7 @@ const routes = [
           title: '数据字典',
           minLevel: 3,
           permission: 'dictionary:view',
-          menu: true,
+          menu: false,
           group: '系统管理',
           order: 41,
           icon: 'Setting'
