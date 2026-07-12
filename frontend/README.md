@@ -14,18 +14,25 @@
 
 ## Windows 一键启动（推荐）
 
-在项目根目录（非 `frontend/`）双击以下脚本即可：
+在项目根目录（非 `frontend/`）双击：
+
+```text
+start.bat
+```
+
+根目录仅保留这一处启动入口，具体脚本统一放在 `scripts/windows/`：
 
 | 脚本 | 作用 |
 |------|------|
-| `start_all.bat` | 等待后端就绪后启动前端（推荐） |
-| `start_backend.bat` | 仅启动后端 |
-| `start_frontend.bat` | 仅启动前端（会探测后端是否在线） |
+| `start.bat` | 一键启动前后端（推荐） |
+| `scripts/windows/start_all.bat` | 等待后端就绪后启动前端 |
+| `scripts/windows/start_backend.bat` | 仅启动后端 |
+| `scripts/windows/start_frontend.bat` | 仅启动前端（会探测后端是否在线） |
 
-首次使用前，复制配置并填写数据库密码：
+首次使用前，在项目根目录复制配置并填写数据库密码：
 
 ```cmd
-copy start.local.env.example start.local.env
+copy config\start.local.env.example start.local.env
 ```
 
 `start.local.env` 含密码，已被 `.gitignore` 忽略，不会提交。
@@ -54,7 +61,7 @@ npm run build
 ## 前后端联调
 
 - 前端请求基地址由 `VITE_API_BASE_URL` 配置，默认值为 `/api`；可参考 `.env.example`。
-- 开发环境会将 `/api` 代理到后端地址（默认 `http://127.0.0.1:8080`），代理目标由启动脚本通过 `VITE_BACKEND_TARGET` 环境变量传入，也可在 `start.local.env` 中通过 `SERVER_PORT` 控制。
+- 开发环境会将 `/api` 代理到后端地址（默认 `http://127.0.0.1:8080`），代理目标由 `scripts/windows/start_frontend.bat` 通过 `VITE_BACKEND_TARGET` 环境变量传入，也可在 `start.local.env` 中通过 `SERVER_PORT` 控制。
 - 前端分页状态使用 `current`（从 1 开始），请求层会转换为 Spring `Pageable` 的 `page`（从 0 开始）和 `size`。
 
 ## 开发约定
