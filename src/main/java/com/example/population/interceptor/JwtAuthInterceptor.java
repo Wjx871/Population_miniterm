@@ -4,6 +4,7 @@ import com.example.population.dto.Result;
 import com.example.population.util.JwtUtil;
 import com.example.population.util.PermissionCache;
 import com.example.population.util.SecurityContext;
+import com.example.population.util.TokenBlacklist;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +24,8 @@ import java.util.Set;
  * 每请求处理：
  * <ol>
  *   <li>校验 token 合法性</li>
+ *   <li>校验 token 类型必须是 access（拒绝 refresh token 直接访问 API）</li>
+ *   <li>校验 jti 未在 {@link TokenBlacklist} 中（支持改密码/改权限后主动吊销）</li>
  *   <li>解析 claims：uid / uname / permLevel / roleCode / dataScope / permCodes</li>
  *   <li>写入 SecurityContext（ThreadLocal）和 request attribute</li>
  * </ol>
@@ -40,6 +43,7 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
 
     private final JwtUtil jwtUtil;
     private final PermissionCache permissionCache;
+    private final TokenBlacklist tokenBlacklist;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -61,6 +65,20 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
         }
         try {
             Claims claims = jwtUtil.parse(token);
+
+            // 强制类型校验：只有 access token 才能访问 API 端点
+            String tokenType = jwtUtil.extractStringClaim(claims, "type");
+            if (!JwtUtil.TOKEN_TYPE_ACCESS.equals(tokenType)) {
+                writeUnauthorized(request, response, "令牌类型非法，请使用 access token 访问");
+                return false;
+            }
+
+            // jti 主动吊销校验
+            String jti = jwtUtil.extractStringClaim(claims, "jti");
+            if (tokenBlacklist.isRevoked(jti)) {
+                writeUnauthorized(request, response, "令牌已被吊销，请重新登录");
+                return false;
+            }
 
             Long uid = claims.get("uid", Long.class);
             String uname = jwtUtil.extractStringClaim(claims, "uname");

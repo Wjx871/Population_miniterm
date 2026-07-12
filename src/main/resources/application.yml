@@ -2,9 +2,11 @@ spring:
   application:
     name: population_miniterm
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/population_miniterm?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: Zhao123@
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:population_miniterm}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    # DB 密码必须通过环境变量 DB_PASSWORD 注入，禁止硬编码到仓库或 YAML
+    # 部署时务必设置：export DB_PASSWORD='<your-strong-password>'
+    password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jackson:
     time-zone: GMT+8
@@ -15,13 +17,13 @@ spring:
       max-request-size: 10MB
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
       database: 0
       timeout: 5000ms
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   servlet:
     context-path: /
     encoding:
@@ -43,13 +45,27 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 jwt:
-  secret: population-miniterm-secret-key-2024-very-long-and-secure
-  expiration: 86400000
+  # JWT 签名密钥必须 ≥ 256 bit (HS256 最低)，建议 ≥ 512 bit
+  # 用 `openssl rand -base64 64` 生成强随机值，并通过环境变量 JWT_SECRET 注入
+  # 严禁把真实密钥提交到 Git 仓库或 YAML
+  secret: ${JWT_SECRET:}
+  # 访问令牌生命周期缩短到 30 分钟（1800000 ms），降低令牌泄露窗口
+  expiration: ${JWT_EXPIRATION_MS:1800000}
+  # 刷新令牌生命周期：7 天（604800000 ms）
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION_MS:604800000}
 
 knife4j:
   enable: true
   setting:
     language: zh_cn
+
+cors:
+  # CORS 白名单：从环境变量注入，逗号分隔。生产环境务必配置具体的前端域名。
+  # 示例：export CORS_ALLOWED_ORIGINS="https://admin.example.com,https://ops.example.com"
+  # 默认本地开发保留 http://localhost:5173 / 8081
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8081}
+  # 关闭凭据跨域（避免与通配符/未严格限制的来源组合导致 CSRF）
+  allow-credentials: ${CORS_ALLOW_CREDENTIALS:false}
 
 logging:
   level:

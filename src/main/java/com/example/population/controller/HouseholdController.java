@@ -76,12 +76,15 @@ public class HouseholdController {
         return Result.success("已提交审批，等待 L3 审批", data);
     }
 
-    @RequiresPermission("household:create")
-    @Operation(summary = "新增家庭户（兼容旧 POST /）")
+    /**
+     * 旧 POST / 端点已禁用：避免 Mass Assignment（外部可注入任意 Household 字段）。
+     * 新增请走 {@code POST /api/households/establish} 业务流（带 applicationId 材料闸门）。
+     */
+    @Operation(summary = "禁用：旧 POST / 直接落库，请走 /establish 业务流")
     @PostMapping
-    public Result<Void> create(@RequestBody Household h) {
-        householdService.save(h);
-        return Result.success();
+    public Result<Void> create() {
+        throw new com.example.population.exception.BizException(405,
+                "家庭户新增已禁用通用 POST / 接口；请使用 POST /api/households/establish 走业务流（含材料闸门）");
     }
 
     @RequiresPermission("household:update")

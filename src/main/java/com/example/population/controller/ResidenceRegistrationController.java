@@ -2,6 +2,7 @@ package com.example.population.controller;
 
 import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.ResidenceRegisterDTO;
+import com.example.population.dto.ResidenceRegistrationUpdateDTO;
 import com.example.population.dto.Result;
 import com.example.population.entity.Household;
 import com.example.population.entity.Person;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -63,19 +65,24 @@ public class ResidenceRegistrationController {
     }
 
     @RequiresPermission("registration:manage")
-    @Operation(summary = "更新户籍登记（极少使用，请走归档+新增）")
+    @Operation(summary = "更新户籍登记（白名单字段；极少使用，请走归档+新增）")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody ResidenceRegistration r) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody ResidenceRegistrationUpdateDTO dto) {
+        ResidenceRegistration r = new ResidenceRegistration();
+        BeanUtils.copyProperties(dto, r);
         r.setRegistrationId(id);
         registrationService.updateById(r);
         return Result.success();
     }
 
+    /**
+     * 禁用：删除当前户籍登记（业务上请走迁出/注销）。
+     */
     @RequiresPermission("registration:manage")
-    @Operation(summary = "删除当前户籍登记（业务上请走迁出/注销，此方法仅做诊断）")
+    @Operation(summary = "禁用：删除当前户籍登记，请走迁出/注销")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {
-        registrationService.removeById(id);
-        return Result.success();
+        throw new com.example.population.exception.BizException(405,
+                "户籍登记为业务档案，不支持通用删除；请走迁出/注销流程");
     }
 }

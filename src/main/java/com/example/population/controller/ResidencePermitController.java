@@ -4,12 +4,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
+import com.example.population.dto.ResidencePermitCreateDTO;
+import com.example.population.dto.ResidencePermitUpdateDTO;
 import com.example.population.entity.ResidencePermit;
 import com.example.population.service.ResidencePermitService;
 import com.example.population.util.PageUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "居住凭证")
@@ -40,10 +44,24 @@ public class ResidencePermitController {
     }
 
     @RequiresPermission("permit:apply")
-    @Operation(summary = "签发凭证")
+    @Operation(summary = "签发凭证（白名单字段）")
     @PostMapping
-    public Result<Void> create(@RequestBody ResidencePermit p) {
+    public Result<Void> create(@Valid @RequestBody ResidencePermitCreateDTO dto) {
+        ResidencePermit p = new ResidencePermit();
+        BeanUtils.copyProperties(dto, p);
+        if (p.getPermitStatus() == null) p.setPermitStatus("VALID");
         permitService.save(p);
+        return Result.success();
+    }
+
+    @RequiresPermission("permit:apply")
+    @Operation(summary = "更新凭证（白名单字段）")
+    @PutMapping("/{id}")
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody ResidencePermitUpdateDTO dto) {
+        ResidencePermit p = new ResidencePermit();
+        BeanUtils.copyProperties(dto, p);
+        p.setPermitId(id);
+        permitService.updateById(p);
         return Result.success();
     }
 
@@ -56,7 +74,7 @@ public class ResidencePermitController {
     }
 
     @RequiresPermission("permit:apply")
-    @Operation(summary = "删除凭证")
+    @Operation(summary = "禁用：删除凭证（审计要求保留）")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {
         permitService.removeById(id);

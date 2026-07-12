@@ -370,6 +370,98 @@ powershell -ExecutionPolicy Bypass -File scripts/count-lines.ps1
 
 ## 更新日志
 
+### 2026-07-12 — Sprint 3：P0 安全修复（第二批）
+
+基于深度代码评审落地的 P0 安全修复，覆盖**凭证安全 / 鉴权 / 数据完整性**三大类。完整提交待发布。
+
+#### 凭证与密钥（修复 1/2）
+
+| 项 | 改动 |
+|---|---|
+| `application.yml` | 数据库密码 / JWT 密钥改为 `${DB_PASSWORD}` / `${JWT_SECRET}` 占位符；强制通过环境变量注入，删除硬编码 `Zhao123@` 与 `population-miniterm-secret-key-2024-...` |
+| `JwtUtil.init()` | 启动期校验密钥长度 ≥ 32 byte（HS256 最低），未配置或过短直接 fail-fast |
+| `JwtUtil` | 缩短 access token 到 30 min（1800000 ms），引入 7 天 refresh token；每个 token 含 `jti`（UUID） + `type`（access / refresh）双字段 |
+| `TokenBlacklist`（新增） | 基于 Redis 的 jti 黑名单，支持主动吊销单个 access token |
+| `AuthController.refresh` | 新增 `/api/auth/refresh` 端点：拿 refresh token 换发新 access token，**重新从 DB 加载最新权限四元组**，解决改权限/角色后旧 token 仍生效的问题 |
+| `JwtAuthInterceptor` | 强制 access token 类型校验；每次请求校验 jti 未被吊销 |
+
+#### 密码哈希（修复 2）
+
+| 项 | 改动 |
+|---|---|
+| `pom.xml` | 新增 `spring-security-crypto` 依赖（仅用 BCryptPasswordEncoder，不启用完整 Spring Security 过滤器链） |
+| `PasswordEncoder` | 主算法替换为 **BCrypt（cost = 12）**；老 `sha256$<hex>$<base64salt>` 格式向前兼容（`matches` 自动识别）；`SysUserServiceImpl#login` 在登录成功后**自动升级**老 hash 为 BCrypt |
+| 老算法 | 显式 `getBytes(StandardCharsets.UTF_8)`（不再用平台默认字符集）；常量时间比较避免时序攻击 |
+
+#### CORS 误配（修复 3）
+
+| 项 | 改动 |
+|---|---|
+| `application.yml` | 新增 `cors.allowed-origins` 与 `cors.allow-credentials` 配置项，默认从 `CORS_ALLOWED_ORIGINS` / `CORS_ALLOW_CREDENTIALS` 环境变量注入 |
+| `CorsConfig` | 拒绝通配符 `*` + `allowCredentials=true` 组合（教科书级 CORS 误配）；配置含 `*` 时自动关闭凭据并 WARN；空配置时直接拒绝所有跨域请求 |
+
+#### 权限缓存失效（修复 5）
+
+| 项 | 改动 |
+|---|---|
+| `SysRolePermissionServiceImpl.assignPermissions` | 改完权限后查 `sys_user` 找出该角色的所有 userId，循环 `permissionCache.evict(uid)` |
+| `SysUserServiceImpl.updateRole / disableUser / resetPassword` | 角色变更 / 停用 / 重置密码后立即 `permissionCache.evict(userId)` |
+
+#### 审批草稿注入（修复 6）
+
+| 项 | 改动 |
+|---|---|
+| `sql/schema.sql`（sys_approval_request） | 新增 `business_type VARCHAR(50)` / `business_id BIGINT` / `payload_json JSON` 三列；`payload_json` 用 JSON 类型（结构化、可索引），`apply_reason` 仅承载用户自由文本 |
+| `sql/migration_20260712_p0_approval_struct.sql`（新增） | 存量数据回填：把旧 `apply_reason` 中的 `[BT=...][PID=...][APPID=...][REASON=...]xxx` 回填到新独立列（幂等可重跑） |
+| `SysApprovalRequest` 实体 | 新增 `businessType / businessId / payloadJson` 字段 |
+| `ApprovalGateServiceImpl` | 移除 `buildApplyReason / parseApplyReason / extractTag` 字符串拼接逻辑；新提交写独立列；解析时优先独立列，旧格式仅做兜底（迁移期兼容）。**消除用户输入含 `[BT=PERSON_UPDATE]` 触发的草稿劫持漏洞** |
+
+#### Mass Assignment 白名单（修复 7）
+
+12+ Controller 的 `update(@RequestBody X entity)` 全部改造为 `update(@RequestBody XUpdateDTO dto)` + `BeanUtils.copyProperties` 模式；新增以下 DTO：
+
+| DTO | 字段白名单 |
+|---|---|
+| `SysUserUpdateDTO` | realName / phone / roleId / departmentId / status；passwordHash / username / lastLoginAt / isDeleted 不可改 |
+| `SysRoleUpdateDTO` / `SysRoleCreateDTO` | roleName / permissionLevel(1-3) / dataScopeCode / description / status；roleCode 不可改 |
+| `SysDepartmentUpdateDTO` / `SysDepartmentCreateDTO` | departmentName / departmentTypeCode / regionCode / parentId / status |
+| `SysPermissionUpdateDTO` / `SysPermissionCreateDTO` | permissionName / moduleName / actionCode / sensitivityLevel(0-3) / approvalRequired(0/1) |
+| `AdminRegionUpdateDTO` / `AdminRegionCreateDTO` | regionName / levelCode / parentCode / enabled |
+| `HouseholdMemberUpdateDTO` | relationshipCode / joinDate / memberStatus；迁出请走 `/leave` |
+| `ResidenceRegistrationUpdateDTO` | registerTypeCode / registerDate / registeredAddress / regionCode / startDate |
+| `BusinessApplicationUpdateDTO` / `BusinessApplicationCreateDTO` | businessTypeCode / applicantName / applicantIdentityType / applicantIdentityNo / applicantPhone / targetPersonId / targetHouseholdId / handlingDepartmentId / status / currentStep |
+| `ApplicationMaterialUpdateDTO` / `ApplicationMaterialCreateDTO` | materialTypeCode / materialName / materialNo / fileName / storageUri / fileHash / requiredFlag |
+| `CertificateUpdateDTO` / `CertificateCreateDTO` | certificateTypeCode / certificateNo / issueAuthority / issueDate / validFrom / validUntil / certificateStatus |
+| `KeyPopulationUpdateDTO` / `KeyPopulationCreateDTO` | keyTypeCode / managementLevelCode / registerDate / manageStartDate / manageEndDate / sourceBasisSummary / responsibleDepartmentId / responsibleUserId / status / remark |
+| `FloatingPopulationUpdateDTO` / `FloatingPopulationCreateDTO` | sourceRegionCode / sourceAddress / currentRegionCode / currentAddress / arrivalDate / registerDate / plannedLeaveDate / actualLeaveDate / residenceReasonCode / employmentSchool / landlordName / landlordPhone / status |
+| `ResidencePermitUpdateDTO` / `ResidencePermitCreateDTO` | permitTypeCode / permitNo / issueAuthority / issueDate / validFrom / validUntil / permitStatus / cancelDate |
+| `DataDictionaryUpdateDTO` / `DataDictionaryCreateDTO` | dictLabel / sortNo / status / remark |
+
+#### 业务工作流旁路阻断（修复 8）
+
+| 端点 | 阻断方式 |
+|---|---|
+| `DELETE /api/sys-users/{id}` | 抛 405，提示走 `PUT /api/sys-users/{id}/disable` 业务流；新增 `/disable` 与 `/role` 端点 |
+| `DELETE /api/household-members/{id}` | 抛 405，提示走 `/leave` |
+| `DELETE /api/residence-registrations/{id}` | 抛 405，提示走迁出/注销流程 |
+| `POST /api/households`（旧兼容） | 抛 405，统一走 `/establish` 业务流（含材料闸门） |
+
+#### 测试
+
+`mvn test`：**247 个测试，0 失败，0 错误**（Sprint 2 的 232 个 + Sprint 3 新增的 15 个）。新增单测：
+- `PasswordEncoderTest` —— BCrypt 主算法 + 老 SHA-256 兼容 + 异常输入降级（5 用例）
+- `JwtUtilTest` —— 追加 access/refresh 双 token 类型 + jti UUID 格式 + refresh TTL（3 用例）
+- `JwtAuthInterceptorTest` —— 追加 refresh token 拒绝访问 API + jti 黑名单吊销（3 用例）
+- `ApprovalGateServiceStructuredFieldsTest` —— submit 写独立列 + 攻击注入不可劫持 + 旧格式兜底兼容（4 用例）
+
+#### 部署注意事项
+
+- 必须设置 `JWT_SECRET`（≥ 256 bit，建议 `openssl rand -base64 64` 生成）
+- 必须设置 `DB_PASSWORD`（真实数据库密码，禁止再用 `Zhao123@`）
+- 必须设置 `CORS_ALLOWED_ORIGINS`（生产环境前端域名，逗号分隔）
+- 数据库需要先跑迁移脚本 `sql/migration_20260712_p0_approval_struct.sql` 再启动应用
+- 旧 SHA-256 密码哈希会在用户下次成功登录后自动升级为 BCrypt；不需要批量脚本迁移
+
 ### 2026-07-12 — Sprint 2：写入路径加固 & 防御性闸门
 
 基于深度代码评审的 P0/P1 修复落地，聚焦 **数据一致性 + 权限正确性 + DoS 防护**。完整提交：`f944612 refactor(core): harden write paths and add LIKE/size guards`。

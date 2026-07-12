@@ -1,12 +1,16 @@
 package com.example.population.controller;
 
 import com.example.population.annotation.RequiresPermission;
+import com.example.population.dto.DataDictionaryCreateDTO;
+import com.example.population.dto.DataDictionaryUpdateDTO;
 import com.example.population.dto.Result;
 import com.example.population.entity.DataDictionary;
 import com.example.population.service.DataDictionaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -48,24 +52,29 @@ public class DataDictionaryController {
     }
 
     @RequiresPermission("dictionary:manage")
-    @Operation(summary = "新增字典项")
+    @Operation(summary = "新增字典项（白名单字段）")
     @PostMapping
-    public Result<Void> create(@RequestBody DataDictionary dict) {
+    public Result<Void> create(@Valid @RequestBody DataDictionaryCreateDTO dto) {
+        DataDictionary dict = new DataDictionary();
+        BeanUtils.copyProperties(dto, dict);
+        if (dict.getStatus() == null) dict.setStatus("ENABLED");
         dictionaryService.save(dict);
         return Result.success();
     }
 
     @RequiresPermission("dictionary:manage")
-    @Operation(summary = "更新字典项")
+    @Operation(summary = "更新字典项（白名单字段）")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody DataDictionary dict) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody DataDictionaryUpdateDTO dto) {
+        DataDictionary dict = new DataDictionary();
+        BeanUtils.copyProperties(dto, dict);
         dict.setDictId(id);
         dictionaryService.updateById(dict);
         return Result.success();
     }
 
     @RequiresPermission("dictionary:manage")
-    @Operation(summary = "删除字典项")
+    @Operation(summary = "禁用：删除字典项（业务上请改 DISABLED 状态）")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {
         dictionaryService.removeById(id);

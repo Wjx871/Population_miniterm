@@ -37,12 +37,19 @@ import java.util.UUID;
 /**
  * 审批联动实现（虚拟草稿 + 复用现有 sys_approval_request / sys_approval_log 表）。
  * <p>
- * 关键：
+ * 关键变更（P0-6）：
  * <ul>
- *   <li>{@link #submit}：把 payload 序列化进 applyReason 字段（沿用现有列）</li>
- *   <li>{@link #approve}：按 businessType dispatch，反序列化 payload，调对应 Service</li>
+ *   <li>草稿载荷由 sys_approval_request 的独立列 {@code business_type / business_id / payload_json / apply_reason}
+ *       分别承载，移除旧的 {@code buildApplyReason / parseApplyReason / extractTag} 字符串拼接逻辑，
+ *       杜绝用户输入含 {@code [BT=PERSON_UPDATE]} / {@code [REASON=]} 触发的"草稿劫持"漏洞</li>
+ *   <li>{@link #submit}：把 payload 写入 payload_json（JSON 列）；apply_reason 只写用户自由文本</li>
+ *   <li>{@link #approve}：按 business_type dispatch，反序列化 payload_json，调对应 Service</li>
  *   <li>{@link #reject}：仅写状态 + 日志，不动业务数据</li>
  * </ul>
+ * <p>
+ * 兼容：旧 apply_reason 中含 {@code [BT=...][PID=...][APPID=...][REASON=...]}xxx 格式的存量数据
+ *      已被 {@code sql/migration_20260712_p0_approval_struct.sql} 回填到独立列，应用层读取时
+ *      优先看独立列；如全为空再尝试从 apply_reason 旧格式解析（兜底）。
  */
 @Slf4j
 @Service
@@ -88,21 +95,29 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
             throw new BizException(500, "提交审批失败（业务单占位）：" + e.getMessage());
         }
 
-        // 2) 再写 sys_approval_request
+        // 2) 再写 sys_approval_request：载荷拆成独立列
         SysApprovalRequest req = new SysApprovalRequest();
         req.setApprovalNo("AP" + System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 4).toUpperCase());
         req.setApplicationId(ba.getApplicationId());
         req.setRequiredLevel(3);
         req.setStatus("PENDING");
-        req.setApplyReason(buildApplyReason(draft));
+        req.setBusinessType(draft.getBusinessType());
+        req.setBusinessId(draft.getBusinessId());
+        // payloadJson 必须是合法 JSON；如调用方传 null，写空 JSON 对象
+        req.setPayloadJson(draft.getPayloadJson() == null || draft.getPayloadJson().isEmpty()
+                ? "{}" : draft.getPayloadJson());
+        // apply_reason 仅承载用户自由文本（不超过 500 字符，匹配 schema）
+        String reason = draft.getApplyReason() == null ? "" : draft.getApplyReason();
+        req.setApplyReason(reason.length() > 500 ? reason.substring(0, 500) : reason);
         try {
             requestMapper.insert(req);
         } catch (Exception e) {
             log.error("写入审批单失败", e);
             throw new BizException(500, "提交审批失败：" + e.getMessage());
         }
-        log.info("提交审批单 approvalId={} applicationId={} businessType={} applyUserId={}",
-                req.getApprovalId(), ba.getApplicationId(), draft.getBusinessType(), sc.getUserId());
+        log.info("提交审批单 approvalId={} applicationId={} businessType={} businessId={} applyUserId={}",
+                req.getApprovalId(), ba.getApplicationId(), draft.getBusinessType(),
+                draft.getBusinessId(), sc.getUserId());
         return req.getApprovalId();
     }
 
@@ -125,7 +140,7 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
             throw new BizException(409, "审批单当前状态非 PENDING，无法审批");
         }
 
-        ApprovalDraftDTO draft = parseApplyReason(req.getApplyReason());
+        ApprovalDraftDTO draft = loadDraft(req);
 
         // 落地前的材料闸门：若前端在草稿里挂了 applicationId 且业务类型有最低必交要求，
         // 必须全部材料已 VERIFIED 才允许真实落地。
@@ -204,7 +219,37 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
     }
 
     /**
-     * 按 businessType 反序列化 payload，调用对应 Service。
+     * 从 sys_approval_request 加载草稿。
+     * <p>
+     * 优先使用独立列；如为旧数据（独立列为空但 apply_reason 含旧格式标记）走
+     * {@link #parseLegacyReason(String)} 兜底解析。
+     */
+    private ApprovalDraftDTO loadDraft(SysApprovalRequest req) {
+        ApprovalDraftDTO draft = new ApprovalDraftDTO();
+        draft.setBusinessType(req.getBusinessType());
+        draft.setBusinessId(req.getBusinessId());
+        draft.setApplicationId(req.getApplicationId());
+        draft.setPayloadJson(req.getPayloadJson());
+        draft.setApplyReason(req.getApplyReason());
+
+        // 兜底：旧数据无独立列
+        if (draft.getBusinessType() == null && req.getApplyReason() != null
+                && req.getApplyReason().startsWith("[BT=")) {
+            try {
+                return parseLegacyReason(req.getApplyReason());
+            } catch (Exception e) {
+                log.warn("审批单[{}]的旧 apply_reason 解析失败：{}", req.getApprovalId(), e.getMessage());
+            }
+        }
+
+        if (draft.getBusinessType() == null) {
+            throw new BizException(400, "审批单[" + req.getApprovalId() + "]业务类型缺失");
+        }
+        return draft;
+    }
+
+    /**
+     * 按 businessType 反序列化 payload_json，调用对应 Service。
      */
     private Long dispatchLanding(ApprovalDraftDTO draft, SecurityContext sc) throws Exception {
         if (draft == null || draft.getBusinessType() == null) {
@@ -212,6 +257,9 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
         }
         String type = draft.getBusinessType();
         String json = draft.getPayloadJson();
+        if (json == null || json.isEmpty()) {
+            json = "{}";
+        }
 
         return switch (type) {
             case "PERSON_CREATE" -> {
@@ -241,57 +289,36 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
     }
 
     /**
-     * 把 draft 拼成单条字符串塞进 applyReason 字段。
-     * 格式：{@code [BT=PERSON_CREATE][PID=123][APPID=1][REASON=xxx]}payloadJson
+     * 兜底：旧格式 {@code [BT=...][PID=...][APPID=...][REASON=...]payloadJson} 解析。
+     * <p>
+     * 注意：仅作向后兼容，新提交一律使用独立列；本方法不会再被 {@link #submit} 调用。
      */
-    private String buildApplyReason(ApprovalDraftDTO d) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[BT=").append(d.getBusinessType()).append(']');
-        if (d.getBusinessId() != null) {
-            sb.append("[PID=").append(d.getBusinessId()).append(']');
+    private ApprovalDraftDTO parseLegacyReason(String s) {
+        if (s == null || s.isEmpty()) {
+            throw new BizException(400, "审批单草稿字段为空");
         }
-        if (d.getApplicationId() != null) {
-            sb.append("[APPID=").append(d.getApplicationId()).append(']');
-        }
-        String r = d.getApplyReason() == null ? "" : d.getApplyReason();
-        sb.append("[REASON=").append(r).append(']');
-        String pj = d.getPayloadJson() == null ? "" : d.getPayloadJson();
-        sb.append(pj);
-        return sb.toString();
-    }
-
-    /**
-     * 解析 applyReason 字符串回 ApprovalDraftDTO。
-     */
-    private ApprovalDraftDTO parseApplyReason(String s) {
-        if (s == null || s.isEmpty()) throw new BizException(400, "审批单草稿字段为空");
-        try {
-            String bt = extractTag(s, "BT");
-            String pid = extractTag(s, "PID");
-            String appId = extractTag(s, "APPID");
-            String reason = extractTag(s, "REASON");
-            String sepIdx = "";
-            // payload 是 [REASON=xxx] 之后的所有字符
-            int idx = s.indexOf("[REASON=");
-            if (idx >= 0) {
-                int end = s.indexOf(']', idx);
-                if (end >= 0) {
-                    sepIdx = s.substring(end + 1);
-                }
+        String bt = extractLegacyTag(s, "BT");
+        String pid = extractLegacyTag(s, "PID");
+        String appId = extractLegacyTag(s, "APPID");
+        String reason = extractLegacyTag(s, "REASON");
+        String payload = "";
+        int idx = s.indexOf("[REASON=");
+        if (idx >= 0) {
+            int end = s.indexOf(']', idx);
+            if (end >= 0) {
+                payload = s.substring(end + 1);
             }
-            ApprovalDraftDTO d = new ApprovalDraftDTO();
-            d.setBusinessType(bt);
-            if (!pid.isEmpty()) d.setBusinessId(Long.parseLong(pid));
-            if (!appId.isEmpty()) d.setApplicationId(Long.parseLong(appId));
-            d.setApplyReason(reason);
-            d.setPayloadJson(sepIdx);
-            return d;
-        } catch (Exception e) {
-            throw new BizException(500, "解析审批草稿失败：" + e.getMessage(), e);
         }
+        ApprovalDraftDTO d = new ApprovalDraftDTO();
+        d.setBusinessType(bt);
+        if (!pid.isEmpty()) d.setBusinessId(Long.parseLong(pid));
+        if (!appId.isEmpty()) d.setApplicationId(Long.parseLong(appId));
+        d.setApplyReason(reason);
+        d.setPayloadJson(payload);
+        return d;
     }
 
-    private String extractTag(String s, String tag) {
+    private String extractLegacyTag(String s, String tag) {
         String open = "[" + tag + "=";
         int i = s.indexOf(open);
         if (i < 0) return "";

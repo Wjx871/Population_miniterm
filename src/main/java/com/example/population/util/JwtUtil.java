@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * JWT 工具。
@@ -27,9 +28,15 @@ import java.util.Set;
  *   <li>permCodes : Set&lt;String&gt;，当前用户拥有的所有 permissionCode</li>
  * </ul>
  * 切面/拦截器从 token 里读这些字段即可，不需要每次请求都查 DB。
+ * <p>
+ * 同时为 access token 引入 jti + type 字段，refresh token 单独签发，type=refresh；
+ * 配合 {@link TokenBlacklist} 可对单个 access token 实现主动吊销（黑名单）。
  */
 @Component
 public class JwtUtil {
+
+    public static final String TOKEN_TYPE_ACCESS = "access";
+    public static final String TOKEN_TYPE_REFRESH = "refresh";
 
     @Value("${jwt.secret}")
     private String secret;
@@ -37,19 +44,43 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private long expiration;
 
+    @Value("${jwt.refresh-expiration:604800000}")
+    private long refreshExpiration;
+
     private SecretKey key;
 
     @PostConstruct
     public void init() {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        if (secret == null || secret.isEmpty()) {
+            throw new IllegalStateException(
+                    "jwt.secret 未配置：请通过环境变量 JWT_SECRET 注入（≥256 bit 随机值，生产环境 ≥512 bit）");
+        }
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < 32) {
+            // HS256 至少需要 256 bit = 32 byte
+            throw new IllegalStateException(
+                    "jwt.secret 过短（" + keyBytes.length + " bytes，HS256 至少需要 32 bytes / 256 bit）；"
+                            + "请用 `openssl rand -base64 64` 重新生成 ≥512 bit 随机值");
+        }
+        this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
     public long getExpirationSeconds() {
         return expiration;
     }
 
+    public long getRefreshExpirationSeconds() {
+        return refreshExpiration;
+    }
+
     /**
-     * 签发 token（最小集合：uid/uname + 权限四元组）。
+     * 签发 access token（短命，含完整权限四元组）。
+     * <p>
+     * payload 中追加：
+     * <ul>
+     *   <li>jti  : UUID，全局唯一，可被 {@link TokenBlacklist} 拉黑实现主动吊销</li>
+     *   <li>type : "access"</li>
+     * </ul>
      */
     public String generate(Long userId,
                            String username,
@@ -58,30 +89,55 @@ public class JwtUtil {
                            String roleCode,
                            String dataScopeCode,
                            Set<String> permissionCodes) {
+        return build(userId, username, realName, permissionLevel, roleCode, dataScopeCode,
+                permissionCodes, TOKEN_TYPE_ACCESS, expiration);
+    }
+
+    /**
+     * 签发 refresh token（长命，仅承载 uid + type，权限信息由 Redis 中的最新值兜底）。
+     */
+    public String generateRefresh(Long userId, String username) {
+        return build(userId, username, null, null, null, null,
+                null, TOKEN_TYPE_REFRESH, refreshExpiration);
+    }
+
+    private String build(Long userId,
+                         String username,
+                         String realName,
+                         Integer permissionLevel,
+                         String roleCode,
+                         String dataScopeCode,
+                         Set<String> permissionCodes,
+                         String tokenType,
+                         long ttlMillis) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("uid", userId);
         claims.put("uname", username);
-        if (realName != null) {
-            claims.put("realName", realName);
-        }
-        if (permissionLevel != null) {
-            claims.put("permLevel", permissionLevel);
-        }
-        if (roleCode != null) {
-            claims.put("roleCode", roleCode);
-        }
-        if (dataScopeCode != null) {
-            claims.put("dataScope", dataScopeCode);
-        }
-        if (permissionCodes != null && !permissionCodes.isEmpty()) {
-            claims.put("permCodes", permissionCodes);
+        claims.put("type", tokenType);
+        claims.put("jti", UUID.randomUUID().toString());
+        if (TOKEN_TYPE_ACCESS.equals(tokenType)) {
+            if (realName != null) {
+                claims.put("realName", realName);
+            }
+            if (permissionLevel != null) {
+                claims.put("permLevel", permissionLevel);
+            }
+            if (roleCode != null) {
+                claims.put("roleCode", roleCode);
+            }
+            if (dataScopeCode != null) {
+                claims.put("dataScope", dataScopeCode);
+            }
+            if (permissionCodes != null && !permissionCodes.isEmpty()) {
+                claims.put("permCodes", permissionCodes);
+            }
         }
         Date now = new Date();
         return Jwts.builder()
                 .claims(claims)
                 .subject(username)
                 .issuedAt(now)
-                .expiration(new Date(now.getTime() + expiration))
+                .expiration(new Date(now.getTime() + ttlMillis))
                 .signWith(key)
                 .compact();
     }

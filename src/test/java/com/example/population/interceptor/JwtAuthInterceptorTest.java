@@ -3,6 +3,7 @@ package com.example.population.interceptor;
 import com.example.population.util.JwtUtil;
 import com.example.population.util.PermissionCache;
 import com.example.population.util.SecurityContext;
+import com.example.population.util.TokenBlacklist;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -41,6 +42,7 @@ class JwtAuthInterceptorTest {
 
     private JwtUtil jwtUtil;
     private PermissionCache permissionCache;
+    private TokenBlacklist tokenBlacklist;
     private JwtAuthInterceptor interceptor;
 
     @BeforeEach
@@ -49,11 +51,14 @@ class JwtAuthInterceptorTest {
         ReflectionTestUtils.setField(jwtUtil, "secret",
                 "population-miniterm-secret-key-2024-very-long-and-secure");
         ReflectionTestUtils.setField(jwtUtil, "expiration", 86_400_000L);
+        ReflectionTestUtils.setField(jwtUtil, "refreshExpiration", 604_800_000L);
         jwtUtil.init();
 
         permissionCache = mock(PermissionCache.class);
+        tokenBlacklist = mock(TokenBlacklist.class);
+        when(tokenBlacklist.isRevoked(org.mockito.ArgumentMatchers.any())).thenReturn(false);
 
-        interceptor = new JwtAuthInterceptor(jwtUtil, permissionCache, new ObjectMapper());
+        interceptor = new JwtAuthInterceptor(jwtUtil, permissionCache, tokenBlacklist, new ObjectMapper());
 
         // 清理 ThreadLocal，避免用例间污染
         SecurityContext.clear();
@@ -294,5 +299,57 @@ class JwtAuthInterceptorTest {
         assertThat(resp.getStatus()).isEqualTo(401);
         // 实际可能落到"无效或已过期"或"解析失败"任一支线，断言 code=401 即可
         assertThat(resp.getContentAsString()).contains("\"code\":401");
+    }
+
+    // ---------- Sprint 3 P0-1：token 类型校验 + jti 黑名单 ----------
+
+    @Test
+    @DisplayName("refresh token 直接访问 API → 401（拒绝非 access 类型）")
+    void preHandle_refreshTokenRejected() throws Exception {
+        String refreshToken = jwtUtil.generateRefresh(1L, "alice");
+
+        MockHttpServletRequest req = new MockHttpServletRequest("GET", "/api/persons");
+        req.addHeader("Authorization", "Bearer " + refreshToken);
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+
+        boolean ok = interceptor.preHandle(req, resp, new Object());
+
+        assertThat(ok).isFalse();
+        assertThat(resp.getStatus()).isEqualTo(401);
+        assertThat(resp.getContentAsString()).contains("令牌类型非法");
+    }
+
+    @Test
+    @DisplayName("jti 在 TokenBlacklist 中 → 401（主动吊销生效）")
+    void preHandle_revokedJtiRejected() throws Exception {
+        String token = genToken(1L, "alice", 2, "L2_HANDLE", "DEPARTMENT", null);
+        // 模拟该 jti 被吊销
+        when(tokenBlacklist.isRevoked(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
+
+        MockHttpServletRequest req = new MockHttpServletRequest("GET", "/api/persons");
+        req.addHeader("Authorization", "Bearer " + token);
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+
+        boolean ok = interceptor.preHandle(req, resp, new Object());
+
+        assertThat(ok).isFalse();
+        assertThat(resp.getStatus()).isEqualTo(401);
+        assertThat(resp.getContentAsString()).contains("已被吊销");
+    }
+
+    @Test
+    @DisplayName("jti 未在 TokenBlacklist 中 → 200（正常放行）")
+    void preHandle_unrevokedJtiPasses() throws Exception {
+        // 默认 mock tokenBlacklist.isRevoked(any) 返回 false（setUp 已配置）
+        String token = genToken(1L, "alice", 2, "L2_HANDLE", "DEPARTMENT", null);
+
+        MockHttpServletRequest req = new MockHttpServletRequest("GET", "/api/persons");
+        req.addHeader("Authorization", "Bearer " + token);
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+
+        boolean ok = interceptor.preHandle(req, resp, new Object());
+
+        assertThat(ok).isTrue();
+        assertThat(resp.getStatus()).isEqualTo(200);
     }
 }

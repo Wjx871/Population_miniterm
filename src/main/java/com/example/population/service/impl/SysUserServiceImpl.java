@@ -58,6 +58,40 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             throw new BizException(403, "账号已停用");
         }
 
+        // 迁移期：登录成功且仍使用 legacy SHA-256 时自动升级为 BCrypt
+        if (PasswordEncoder.needsUpgrade(user.getPasswordHash())) {
+            try {
+                user.setPasswordHash(PasswordEncoder.encode(dto.getPassword()));
+                this.updateById(user);
+                log.info("用户[{}]密码哈希已从 SHA-256 升级为 BCrypt", user.getUsername());
+            } catch (Exception e) {
+                log.warn("用户[{}]密码哈希升级失败，下次登录将重试: {}", user.getUsername(), e.getMessage());
+            }
+        }
+
+        Map<String, Object> result = buildLoginPayload(user);
+        user.setLastLoginAt(LocalDateTime.now());
+        this.updateById(user);
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> issueAccessTokenForUser(Long userId) {
+        SysUser user = this.getById(userId);
+        if (user == null) {
+            throw new BizException(404, "用户[" + userId + "]不存在");
+        }
+        if (!"ENABLED".equalsIgnoreCase(user.getStatus())) {
+            throw new BizException(403, "账号已停用");
+        }
+        // 重新从 DB 加载最新权限四元组（refresh 接口专用，不写 lastLoginAt）
+        return buildLoginPayload(user);
+    }
+
+    /**
+     * 加载角色 + 权限码 + 签发 token + 写 Redis 缓存；所有"获得新 access token"的入口共用此逻辑。
+     */
+    private Map<String, Object> buildLoginPayload(SysUser user) {
         SysRole role = roleMapper.selectById(user.getRoleId());
         if (role == null) {
             throw new BizException(500, "用户角色未配置 (userId=" + user.getUserId() + ")");
@@ -73,10 +107,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
         permissionCache.put(user.getUserId(), permCodes, jwtUtil.getExpirationSeconds());
 
-        user.setLastLoginAt(LocalDateTime.now());
-        this.updateById(user);
-
-        String token = jwtUtil.generate(user.getUserId(), user.getUsername(), user.getRealName(), permLevel, roleCode, dataScope, permCodes);
+        String token = jwtUtil.generate(user.getUserId(), user.getUsername(), user.getRealName(),
+                permLevel, roleCode, dataScope, permCodes);
 
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
@@ -143,6 +175,53 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             return false;
         }
         user.setPasswordHash(PasswordEncoder.encode(newPassword));
-        return this.updateById(user);
+        boolean ok = this.updateById(user);
+        if (ok) {
+            // 改密后立即清除该用户的权限缓存（防止旧 token 内嵌 permCodes 继续生效）
+            // 注：access token 中 jti 需要主动吊销才能立刻失效，本接口仅清理 Redis 中缓存；
+            // access token 中的 permCodes 不变但只要它和 role 对应就仍然可访问到对应接口；
+            // 真正即时失效需要配合 TokenBlacklist（更彻底的方案是缩短 access token 寿命）。
+            permissionCache.evict(userId);
+        }
+        return ok;
+    }
+
+    @Override
+    public Set<Long> updateRole(Long userId, Long newRoleId) {
+        if (userId == null) {
+            throw new BizException(400, "userId 缺失");
+        }
+        SysUser user = this.getById(userId);
+        if (user == null) {
+            throw new BizException(404, "用户[" + userId + "]不存在");
+        }
+        if (newRoleId != null) {
+            SysRole role = roleMapper.selectById(newRoleId);
+            if (role == null) {
+                throw new BizException(400, "角色[" + newRoleId + "]不存在");
+            }
+        }
+        Long oldRoleId = user.getRoleId();
+        user.setRoleId(newRoleId);
+        boolean ok = this.updateById(user);
+        if (ok && (oldRoleId == null || !oldRoleId.equals(newRoleId))) {
+            // 角色变更：清权限缓存
+            permissionCache.evict(userId);
+        }
+        return Collections.singleton(userId);
+    }
+
+    @Override
+    public boolean disableUser(Long userId) {
+        SysUser user = this.getById(userId);
+        if (user == null) {
+            return false;
+        }
+        user.setStatus("DISABLED");
+        boolean ok = this.updateById(user);
+        if (ok) {
+            permissionCache.evict(userId);
+        }
+        return ok;
     }
 }

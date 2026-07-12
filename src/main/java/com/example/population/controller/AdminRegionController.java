@@ -2,6 +2,8 @@ package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.population.annotation.RequiresPermission;
+import com.example.population.dto.AdminRegionCreateDTO;
+import com.example.population.dto.AdminRegionUpdateDTO;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.AdminRegion;
@@ -9,7 +11,9 @@ import com.example.population.service.AdminRegionService;
 import com.example.population.util.PageUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -55,17 +59,21 @@ public class AdminRegionController {
     }
 
     @RequiresPermission("region:manage")
-    @Operation(summary = "新增区划")
+    @Operation(summary = "新增区划（白名单字段）")
     @PostMapping
-    public Result<Void> create(@RequestBody AdminRegion region) {
+    public Result<Void> create(@Valid @RequestBody AdminRegionCreateDTO dto) {
+        AdminRegion region = new AdminRegion();
+        BeanUtils.copyProperties(dto, region);
         regionService.save(region);
         return Result.success();
     }
 
     @RequiresPermission("region:manage")
-    @Operation(summary = "更新区划")
+    @Operation(summary = "更新区划（白名单字段）")
     @PutMapping("/{code}")
-    public Result<Void> update(@PathVariable String code, @RequestBody AdminRegion region) {
+    public Result<Void> update(@PathVariable String code, @Valid @RequestBody AdminRegionUpdateDTO dto) {
+        AdminRegion region = new AdminRegion();
+        BeanUtils.copyProperties(dto, region);
         region.setRegionCode(code);
         regionService.updateById(region);
         return Result.success();

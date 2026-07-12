@@ -2,6 +2,8 @@ package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.population.annotation.RequiresPermission;
+import com.example.population.dto.FloatingPopulationCreateDTO;
+import com.example.population.dto.FloatingPopulationUpdateDTO;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.FloatingPopulation;
@@ -9,7 +11,9 @@ import com.example.population.service.FloatingPopulationService;
 import com.example.population.util.PageUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "流动人口")
@@ -41,24 +45,29 @@ public class FloatingPopulationController {
     }
 
     @RequiresPermission("floating:register")
-    @Operation(summary = "新增登记")
+    @Operation(summary = "新增登记（白名单字段）")
     @PostMapping
-    public Result<Void> create(@RequestBody FloatingPopulation f) {
+    public Result<Void> create(@Valid @RequestBody FloatingPopulationCreateDTO dto) {
+        FloatingPopulation f = new FloatingPopulation();
+        BeanUtils.copyProperties(dto, f);
+        if (f.getStatus() == null) f.setStatus("ACTIVE");
         floatingService.save(f);
         return Result.success();
     }
 
     @RequiresPermission("floating:register")
-    @Operation(summary = "更新登记")
+    @Operation(summary = "更新登记（白名单字段）")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody FloatingPopulation f) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody FloatingPopulationUpdateDTO dto) {
+        FloatingPopulation f = new FloatingPopulation();
+        BeanUtils.copyProperties(dto, f);
         f.setFloatingId(id);
         floatingService.updateById(f);
         return Result.success();
     }
 
     @RequiresPermission("floating:register")
-    @Operation(summary = "删除登记")
+    @Operation(summary = "禁用：删除登记（审计要求保留）")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {
         floatingService.removeById(id);

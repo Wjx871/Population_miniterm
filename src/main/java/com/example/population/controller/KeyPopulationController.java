@@ -2,6 +2,8 @@ package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.population.annotation.RequiresPermission;
+import com.example.population.dto.KeyPopulationCreateDTO;
+import com.example.population.dto.KeyPopulationUpdateDTO;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.KeyPopulation;
@@ -9,7 +11,9 @@ import com.example.population.service.KeyPopulationService;
 import com.example.population.util.PageUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "重点人口")
@@ -42,17 +46,22 @@ public class KeyPopulationController {
     }
 
     @RequiresPermission("key:register")
-    @Operation(summary = "新增重点登记")
+    @Operation(summary = "新增重点登记（白名单字段）")
     @PostMapping
-    public Result<Void> create(@RequestBody KeyPopulation k) {
+    public Result<Void> create(@Valid @RequestBody KeyPopulationCreateDTO dto) {
+        KeyPopulation k = new KeyPopulation();
+        BeanUtils.copyProperties(dto, k);
+        if (k.getStatus() == null) k.setStatus("ACTIVE");
         keyService.save(k);
         return Result.success();
     }
 
     @RequiresPermission("key:register")
-    @Operation(summary = "更新重点登记")
+    @Operation(summary = "更新重点登记（白名单字段）")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody KeyPopulation k) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody KeyPopulationUpdateDTO dto) {
+        KeyPopulation k = new KeyPopulation();
+        BeanUtils.copyProperties(dto, k);
         k.setKeyId(id);
         keyService.updateById(k);
         return Result.success();
@@ -67,7 +76,7 @@ public class KeyPopulationController {
     }
 
     @RequiresPermission("key:register")
-    @Operation(summary = "删除重点登记")
+    @Operation(summary = "禁用：删除重点登记（审计要求保留）")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {
         keyService.removeById(id);

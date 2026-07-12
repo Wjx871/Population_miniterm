@@ -5,6 +5,7 @@ import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.RegisterDTO;
 import com.example.population.dto.Result;
+import com.example.population.dto.SysUserUpdateDTO;
 import com.example.population.entity.SysUser;
 import com.example.population.service.SysUserService;
 import com.example.population.util.PageUtil;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "系统用户")
@@ -67,11 +69,13 @@ public class SysUserController {
     }
 
     @RequiresPermission("user:manage")
-    @Operation(summary = "更新用户")
+    @Operation(summary = "更新用户（白名单字段）")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody SysUser u) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody SysUserUpdateDTO dto) {
+        // 白名单拷贝：userId / username / passwordHash / lastLoginAt / isDeleted / createdAt / updatedAt 不可被外部覆盖
+        SysUser u = new SysUser();
+        BeanUtils.copyProperties(dto, u);
         u.setUserId(id);
-        u.setPasswordHash(null);
         userService.updateById(u);
         return Result.success();
     }
@@ -85,10 +89,30 @@ public class SysUserController {
     }
 
     @RequiresPermission("user:manage")
-    @Operation(summary = "删除用户")
+    @Operation(summary = "停用用户（业务流：保留审计轨迹，不物理/逻辑删除）")
+    @PutMapping("/{id}/disable")
+    public Result<Void> disable(@PathVariable Long id) {
+        userService.disableUser(id);
+        return Result.success();
+    }
+
+    @RequiresPermission("user:manage")
+    @Operation(summary = "修改用户角色（业务流：会清权限缓存）")
+    @PutMapping("/{id}/role")
+    public Result<Void> updateRole(@PathVariable Long id, @RequestParam Long roleId) {
+        userService.updateRole(id, roleId);
+        return Result.success();
+    }
+
+    /**
+     * 物理/逻辑删除已禁用：审计要求保留 sys_user 全量历史。如需停用请走
+     * {@code PUT /api/sys-users/{id}/disable}。
+     */
+    @RequiresPermission("user:manage")
+    @Operation(summary = "禁用：删除用户，请走 /disable")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {
-        userService.removeById(id);
-        return Result.success();
+        throw new com.example.population.exception.BizException(405,
+                "系统用户删除已禁用，请使用 PUT /api/sys-users/{id}/disable 走停用流程");
     }
 }

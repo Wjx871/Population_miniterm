@@ -40,6 +40,7 @@ class JwtUtilTest {
         ReflectionTestUtils.setField(jwtUtil, "secret",
                 "population-miniterm-secret-key-2024-very-long-and-secure");
         ReflectionTestUtils.setField(jwtUtil, "expiration", 86_400_000L);
+        ReflectionTestUtils.setField(jwtUtil, "refreshExpiration", 604_800_000L);
         jwtUtil.init();
         signingKey = io.jsonwebtoken.security.Keys.hmacShaKeyFor(
                 "population-miniterm-secret-key-2024-very-long-and-secure"
@@ -197,5 +198,46 @@ class JwtUtilTest {
     void getExpirationSeconds() {
         ReflectionTestUtils.setField(jwtUtil, "expiration", 3_600_000L);
         assertThat(jwtUtil.getExpirationSeconds()).isEqualTo(3_600_000L);
+    }
+
+    // ---------- access / refresh 双令牌类型 ----------
+
+    @Test
+    @DisplayName("access token 自动写入 type=access + jti（UUID）")
+    void accessToken_hasTypeAndJti() {
+        String token = jwtUtil.generate(1L, "alice", null, 2, "L2_HANDLE", "DEPARTMENT", null);
+        Claims claims = jwtUtil.parse(token);
+
+        String type = jwtUtil.extractStringClaim(claims, "type");
+        String jti = jwtUtil.extractStringClaim(claims, "jti");
+
+        assertThat(type).isEqualTo(JwtUtil.TOKEN_TYPE_ACCESS);
+        assertThat(jti).isNotEmpty();
+        // UUID 格式：8-4-4-4-12
+        assertThat(jti).matches("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
+    }
+
+    @Test
+    @DisplayName("refresh token: type=refresh，且不含 permLevel / roleCode / dataScope / permCodes")
+    void refreshToken_minimalClaims() {
+        String token = jwtUtil.generateRefresh(7L, "bob");
+        Claims claims = jwtUtil.parse(token);
+
+        assertThat(jwtUtil.extractStringClaim(claims, "type")).isEqualTo(JwtUtil.TOKEN_TYPE_REFRESH);
+        assertThat(jwtUtil.extractPermLevel(claims)).isNull();
+        assertThat(jwtUtil.extractStringClaim(claims, "roleCode")).isNull();
+        assertThat(jwtUtil.extractStringClaim(claims, "dataScope")).isNull();
+        assertThat(jwtUtil.extractPermCodes(claims)).isEmpty();
+        assertThat(jwtUtil.extractStringClaim(claims, "jti")).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("refresh token 寿命比 access token 长（7d vs 30min 默认）")
+    void refreshToken_longerLifetime() {
+        long refreshTtl = jwtUtil.getRefreshExpirationSeconds();
+        long accessTtl = jwtUtil.getExpirationSeconds();
+        assertThat(refreshTtl).isGreaterThan(accessTtl);
+        // 默认 7d = 604800000 ms
+        assertThat(refreshTtl).isEqualTo(604_800_000L);
     }
 }

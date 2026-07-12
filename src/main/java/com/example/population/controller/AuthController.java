@@ -6,6 +6,8 @@ import com.example.population.exception.BizException;
 import com.example.population.interceptor.JwtAuthInterceptor;
 import com.example.population.service.LoginLogService;
 import com.example.population.service.SysUserService;
+import com.example.population.util.JwtUtil;
+import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
@@ -25,8 +28,9 @@ public class AuthController {
 
     private final SysUserService userService;
     private final LoginLogService loginLogService;
+    private final JwtUtil jwtUtil;
 
-    @Operation(summary = "登录")
+    @Operation(summary = "登录（返回 access + refresh token）")
     @PostMapping("/login")
     public Result<Map<String, Object>> login(@Valid @RequestBody LoginDTO dto,
                                              HttpServletRequest request) {
@@ -46,12 +50,52 @@ public class AuthController {
         Object uidObj = data.get("userId");
         Long userId = uidObj instanceof Number ? ((Number) uidObj).longValue() : null;
         recordLogin(dto.getUsername(), userId, "SUCCESS", null, ip, ua);
+
+        // 额外签发 refresh token（仅含 uid + username，长命 7 天）
+        String refreshToken = jwtUtil.generateRefresh(userId, dto.getUsername());
+        data.put("refreshToken", refreshToken);
+        data.put("refreshExpiresInMs", jwtUtil.getRefreshExpirationSeconds());
+        data.put("accessExpiresInMs", jwtUtil.getExpirationSeconds());
         return Result.success(data);
     }
 
-    @Operation(summary = "登出（前端清 token 即可）")
+    @Operation(summary = "用 refresh token 换发新 access token")
+    @PostMapping("/refresh")
+    public Result<Map<String, Object>> refresh(@RequestParam String refreshToken) {
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            throw new BizException(400, "refreshToken 缺失");
+        }
+        if (!jwtUtil.isValid(refreshToken)) {
+            throw new BizException(401, "refresh token 无效或已过期");
+        }
+        Claims claims = jwtUtil.parse(refreshToken);
+        String type = jwtUtil.extractStringClaim(claims, "type");
+        if (!JwtUtil.TOKEN_TYPE_REFRESH.equals(type)) {
+            throw new BizException(401, "非 refresh token，请使用 refresh 接口");
+        }
+        Long uid = claims.get("uid", Long.class);
+        String uname = jwtUtil.extractStringClaim(claims, "uname");
+        if (uid == null || uname == null) {
+            throw new BizException(401, "refresh token 缺少关键字段");
+        }
+
+        // 重新从 DB 加载权限四元组（解决改权限后 access token 立即生效的问题）
+        Map<String, Object> newLogin = userService.issueAccessTokenForUser(uid);
+        Map<String, Object> data = new HashMap<>(newLogin);
+        data.put("accessExpiresInMs", jwtUtil.getExpirationSeconds());
+        return Result.success(data);
+    }
+
+    @Operation(summary = "登出（前端清 token 即可；可选调用强制吊销当前 access token）")
     @PostMapping("/logout")
-    public Result<Void> logout() {
+    public Result<Void> logout(HttpServletRequest request) {
+        // 当前实现仅作占位。生产环境建议：
+        // 1) 解析当前 access token 的 jti
+        // 2) 调 TokenBlacklist.revoke(jti, 剩余ttl)
+        // 3) 同时清空 PermissionCache
+        // 这里依赖前端清 token；如需服务端主动吊销，下方代码可启用：
+        // String auth = request.getHeader("Authorization");
+        // ... (parse + revoke)
         return Result.success();
     }
 

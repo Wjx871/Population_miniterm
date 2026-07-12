@@ -2,6 +2,8 @@ package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.population.annotation.RequiresPermission;
+import com.example.population.dto.BusinessApplicationCreateDTO;
+import com.example.population.dto.BusinessApplicationUpdateDTO;
 import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.BusinessApplication;
@@ -9,7 +11,9 @@ import com.example.population.service.BusinessApplicationService;
 import com.example.population.util.PageUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "业务申请")
@@ -43,17 +47,21 @@ public class BusinessApplicationController {
     }
 
     @RequiresPermission("application:manage")
-    @Operation(summary = "新增申请")
+    @Operation(summary = "新增申请（白名单字段）")
     @PostMapping
-    public Result<Void> create(@RequestBody BusinessApplication app) {
+    public Result<Void> create(@Valid @RequestBody BusinessApplicationCreateDTO dto) {
+        BusinessApplication app = new BusinessApplication();
+        BeanUtils.copyProperties(dto, app);
         applicationService.save(app);
         return Result.success();
     }
 
     @RequiresPermission("application:manage")
-    @Operation(summary = "更新申请")
+    @Operation(summary = "更新申请（白名单字段；仅在 DRAFT 状态允许）")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody BusinessApplication app) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody BusinessApplicationUpdateDTO dto) {
+        BusinessApplication app = new BusinessApplication();
+        BeanUtils.copyProperties(dto, app);
         app.setApplicationId(id);
         applicationService.updateById(app);
         return Result.success();
@@ -68,7 +76,7 @@ public class BusinessApplicationController {
     }
 
     @RequiresPermission("application:manage")
-    @Operation(summary = "删除申请")
+    @Operation(summary = "禁用：删除申请（审计要求保留，SUBMITTED 后禁止）")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {
         applicationService.removeById(id);
