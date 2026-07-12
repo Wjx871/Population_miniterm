@@ -368,6 +368,77 @@ powershell -ExecutionPolicy Bypass -File scripts/count-lines.ps1
 - `数据字典_v4.0.md` —— 字典全集与业务含义
 - `测试用例_事务边界.md` —— 迁入 / 迁出 / 注销等事务边界用例
 
+## 更新日志
+
+### 2026-07-12 — Sprint 2：写入路径加固 & 防御性闸门
+
+基于深度代码评审的 P0/P1 修复落地，聚焦 **数据一致性 + 权限正确性 + DoS 防护**。完整提交：`f944612 refactor(core): harden write paths and add LIKE/size guards`。
+
+#### 写入路径白名单（修复 Mass Assignment）
+
+| Controller | 改动 |
+|---|---|
+| `PUT /api/households/{id}` | 新增 `HouseholdUpdateDTO`，仅暴露 `householdTypeCode / headPersonId / registeredAddress / regionCode / departmentId / status`；走 `HouseholdService.updateHousehold`，户号等不可变字段不再可被外部覆盖 |
+| `PUT /api/persons/{id}` | 维持既有 `PersonUpdateDTO` 白名单（已在 Sprint 1 引入） |
+
+#### 禁止绕过业务流的 CRUD（HTTP 405）
+
+下列端点原本直接调用 `IService.updateById / removeById`，可绕过业务校验破坏不变量。现统一返回 `405` 并提示走业务流：
+
+| 端点 | 替代业务流 |
+|---|---|
+| `DELETE /api/households/{id}` | `PUT /api/households/{id}/disable` |
+| `PUT /api/migration-out/{id}`、`DELETE /api/migration-out/{id}` | `POST /api/migration-out`（新建）/ `PUT /api/migration-out/{id}/complete`（办结）/ 审批驳回 |
+| `PUT /api/migration-in/{id}`、`DELETE /api/migration-in/{id}` | 同上 |
+| `PUT /api/cancellation-records/{id}`、`DELETE /api/cancellation-records/{id}` | `/complete-person`、`/complete-household` |
+
+#### 并发一致性（行锁 & 唯一约束）
+
+| Service | 修复 |
+|---|---|
+| `CancellationRecordServiceImpl.completeHouseholdCancellation` | 新增 `HouseholdMapper.selectByIdForUpdate`，事务入口先锁户档案行；两 L3 并发销户现在串行化 |
+| `PersonServiceImpl.createPerson` | 由 `findByIdentity`（非锁）改为 `findByIdentityForUpdate`，杜绝 SELECT-then-INSERT 竞态 |
+| `SysApprovalRequestServiceImpl.approve / reject` | 新增 `SysApprovalRequestMapper.selectByIdForUpdate` + `SysApprovalLogMapper.selectMaxStepNo`；并发审批用 `MAX(step_no)+1` 替代 `COUNT()+1`，配合 `schema.sql` 已有的 `uk_approval_step` 唯一约束，杜绝重复步骤号 |
+| `MigrationInServiceImpl.complete` | `householdMemberMapper.insert(hm)` 包 try/catch `DuplicateKeyException` 并翻译为 `BizException(409)`，避免并发场景的 500 |
+
+#### 权限切面强化
+
+| 端点 | 修复 |
+|---|---|
+| `POST /api/cancellation-records` | `@RequiresPermission(value = {"cancellation:person", "cancellation:household"}, all = true)`，从 OR 改为 AND 语义 |
+| `POST /api/approval-gate/approve/{id}` / `/reject/{id}` | 新增 `@RequiresPermission("approval:approve")`，L3 不再能跨业务域审批 |
+
+#### DoS 防护
+
+| 工具类 | 应用范围 |
+|---|---|
+| `util.SafeLike`（新增） | 转义 `% _ \`，长度上限 64；11 个 Service 的 page 查询 `keyword` 入参全部接入（`Person` / `Household` / `MigrationOut` / `MigrationIn` / `KeyPopulation` / `FloatingPopulation` / `BusinessApplication` / `LoginLog` / `SysUser` / `SysDepartment` / `AdminRegion`）。`keyword=%` 不再触发全表扫描 |
+| `PageUtil.clamp`（强化） | 钳制 `size ∈ [1, 200]`；17 个 Service 的 page 方法入口统一接入（`Person` / `Household` / `MigrationOut` / `MigrationIn` / `CancellationRecord` / `KeyPopulation` / `FloatingPopulation` / `BusinessApplication` / `Certificate` / `ResidencePermit` / `ResidenceArchive` / `LoginLog` / `OperationLog` / `DataExportLog` / `SysUser` / `SysDepartment` / `AdminRegion`） |
+
+#### 鉴权响应修正
+
+`JwtAuthInterceptor.writeUnauthorized` 改用 `ObjectMapper.writeValueAsString(Result.error(...))` 序列化 401 响应体，避免字符串拼接导致的 JSON 转义漏洞；同时记录 `ip / user-agent / reason`，便于审计暴力破解。
+
+#### 测试
+
+`mvn test`：**232 个测试，0 失败，0 错误**。涉及更新的单测：
+- `JwtAuthInterceptorTest` —— 适配 `ObjectMapper` 注入
+- `PersonServiceTest` —— 适配 `findByIdentityForUpdate`
+- `CancellationRecordServiceTest` —— 适配 `householdMapper.selectByIdForUpdate`
+
+#### 部署注意事项
+
+`@RequiresPermission("approval:approve")` 是新增权限码，需要在 `sys_permission` 表种入并分配给 L3 角色，否则现有 L3 用户将无法审批：
+```sql
+INSERT INTO sys_permission (permission_code, permission_name, module_code, enabled_flag)
+VALUES ('approval:approve', '审批通过/驳回', 'APPROVAL', 1);
+-- 再插入到 sys_role_permission 关联到 L3_APPROVE 角色
+```
+
+### 2026-07-12 — Sprint 1：P0 安全修复（已合并）
+
+详见提交 `b85b6c9 fix(core): resolve P0 concurrency bug, dead code and HTTP status mapping` 与后续测试提交 `f1f7687 test(core): cover P0 fixes for migration-out lock and exception handler`。
+
 ## License
 
 MIT
