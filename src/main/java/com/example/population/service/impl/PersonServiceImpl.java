@@ -10,6 +10,7 @@ import com.example.population.dto.PersonUpdateDTO;
 import com.example.population.entity.Person;
 import com.example.population.exception.NotFoundException;
 import com.example.population.mapper.PersonMapper;
+import com.example.population.service.ApplicationMaterialService;
 import com.example.population.service.PersonService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,8 @@ import org.springframework.util.StringUtils;
 @Service
 @RequiredArgsConstructor
 public class PersonServiceImpl extends ServiceImpl<PersonMapper, Person> implements PersonService {
+
+    private final ApplicationMaterialService applicationMaterialService;
 
     @Override
     public IPage<Person> queryPage(PersonQueryDTO q) {
@@ -67,6 +70,8 @@ public class PersonServiceImpl extends ServiceImpl<PersonMapper, Person> impleme
     @Transactional(rollbackFor = Exception.class)
     public Person createPerson(PersonCreateDTO dto) {
         dto.validate();
+        // 最低必交材料闸门：要求对应的业务申请已上传身份证明并完成核验
+        applicationMaterialService.assertRequiredVerified(dto.getApplicationId(), "PERSON_REGISTER");
         Person existing = baseMapper.findByIdentity(dto.getIdentityTypeCode(), dto.getIdentityNo());
         if (existing != null) {
             throw new com.example.population.exception.DuplicateException(

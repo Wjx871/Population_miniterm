@@ -65,10 +65,12 @@ public class HouseholdController {
         }
         ApprovalDraftDTO draft = new ApprovalDraftDTO();
         draft.setBusinessType("HOUSEHOLD_ESTABLISH");
+        draft.setApplicationId(dto.getApplicationId());
         draft.setPayloadJson(objectMapper.writeValueAsString(dto));
         Long approvalId = approvalGateService.submit(draft);
         Map<String, Object> data = new HashMap<>();
         data.put("approvalId", approvalId);
+        data.put("applicationId", dto.getApplicationId());
         data.put("directLanding", false);
         return Result.success("已提交审批，等待 L3 审批", data);
     }

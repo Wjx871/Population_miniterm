@@ -16,6 +16,7 @@ import com.example.population.exception.NotFoundException;
 import com.example.population.mapper.BusinessApplicationMapper;
 import com.example.population.mapper.SysApprovalLogMapper;
 import com.example.population.mapper.SysApprovalRequestMapper;
+import com.example.population.service.ApplicationMaterialService;
 import com.example.population.service.ApprovalGateService;
 import com.example.population.service.HouseholdService;
 import com.example.population.service.MigrationInService;
@@ -52,6 +53,7 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
     private final SysApprovalLogMapper logMapper;
     private final BusinessApplicationMapper businessApplicationMapper;
     private final ObjectMapper objectMapper;
+    private final ApplicationMaterialService applicationMaterialService;
 
     @Autowired
     private ApplicationContext ctx;
@@ -124,6 +126,13 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
         }
 
         ApprovalDraftDTO draft = parseApplyReason(req.getApplyReason());
+
+        // 落地前的材料闸门：若前端在草稿里挂了 applicationId 且业务类型有最低必交要求，
+        // 必须全部材料已 VERIFIED 才允许真实落地。
+        if (draft.getApplicationId() != null) {
+            applicationMaterialService.assertRequiredVerified(draft.getApplicationId(), draft.getBusinessType());
+        }
+
         Long landedId;
         try {
             landedId = dispatchLanding(draft, sc);
@@ -233,13 +242,16 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
 
     /**
      * 把 draft 拼成单条字符串塞进 applyReason 字段。
-     * 格式：{@code [BT=PERSON_CREATE][PID=123][REASON=xxx]}payloadJson
+     * 格式：{@code [BT=PERSON_CREATE][PID=123][APPID=1][REASON=xxx]}payloadJson
      */
     private String buildApplyReason(ApprovalDraftDTO d) {
         StringBuilder sb = new StringBuilder();
         sb.append("[BT=").append(d.getBusinessType()).append(']');
         if (d.getBusinessId() != null) {
             sb.append("[PID=").append(d.getBusinessId()).append(']');
+        }
+        if (d.getApplicationId() != null) {
+            sb.append("[APPID=").append(d.getApplicationId()).append(']');
         }
         String r = d.getApplyReason() == null ? "" : d.getApplyReason();
         sb.append("[REASON=").append(r).append(']');
@@ -256,6 +268,7 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
         try {
             String bt = extractTag(s, "BT");
             String pid = extractTag(s, "PID");
+            String appId = extractTag(s, "APPID");
             String reason = extractTag(s, "REASON");
             String sepIdx = "";
             // payload 是 [REASON=xxx] 之后的所有字符
@@ -269,6 +282,7 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
             ApprovalDraftDTO d = new ApprovalDraftDTO();
             d.setBusinessType(bt);
             if (!pid.isEmpty()) d.setBusinessId(Long.parseLong(pid));
+            if (!appId.isEmpty()) d.setApplicationId(Long.parseLong(appId));
             d.setApplyReason(reason);
             d.setPayloadJson(sepIdx);
             return d;

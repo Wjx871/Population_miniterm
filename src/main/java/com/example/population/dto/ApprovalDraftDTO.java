@@ -46,4 +46,15 @@ public class ApprovalDraftDTO implements Serializable {
     /** 申请人提交的简短理由。 */
     @Schema(description = "申请理由")
     private String applyReason;
+
+    /**
+     * 业务申请的 applicationId（可选）。
+     * <p>
+     * 用于关联前端提前在 POST /api/business-applications 创建的业务申请主单，
+     * 配合 application_material 的最低必交材料校验。
+     * <p>
+     * 一旦传入，审批落地（approve）前会要求该 applicationId 下所有必交材料均已 VERIFIED。
+     */
+    @Schema(description = "业务申请 ID（用于材料必交校验）")
+    private Long applicationId;
 }

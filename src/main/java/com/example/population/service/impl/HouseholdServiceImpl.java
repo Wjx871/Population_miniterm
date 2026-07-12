@@ -15,6 +15,7 @@ import com.example.population.exception.NotFoundException;
 import com.example.population.mapper.HouseholdMapper;
 import com.example.population.mapper.HouseholdMemberMapper;
 import com.example.population.mapper.PersonMapper;
+import com.example.population.service.ApplicationMaterialService;
 import com.example.population.service.HouseholdService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ public class HouseholdServiceImpl extends ServiceImpl<HouseholdMapper, Household
 
     private final HouseholdMemberMapper householdMemberMapper;
     private final PersonMapper personMapper;
+    private final ApplicationMaterialService applicationMaterialService;
 
     @Override
     public IPage<Household> page(long current, long size, String keyword, String regionCode, String status) {
@@ -66,6 +68,8 @@ public class HouseholdServiceImpl extends ServiceImpl<HouseholdMapper, Household
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Household establishHousehold(HouseholdCreateDTO dto) {
+        // 最低必交材料闸门：身份证明 + 户口簿/住所证明（二选一）必须齐备且已核验
+        applicationMaterialService.assertRequiredVerified(dto.getApplicationId(), "HOUSEHOLD_ESTABLISH");
         Household existing = baseMapper.findByHouseholdNoForUpdate(dto.getHouseholdNo());
         if (existing != null) {
             throw new DuplicateException("户号[" + dto.getHouseholdNo() + "]已被占用");

@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -27,6 +28,8 @@ import java.time.LocalDate;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,6 +39,7 @@ import static org.mockito.Mockito.when;
  *   - establishHousehold: 户号冲突、户主自动建关系、户主不存在
  *   - changeHead: 户不存在、新户主非本户成员、正常换户主
  *   - disableHousehold: 仍有成员禁止销户、正常销户
+ *   - 材料必交闸门: 由 ApplicationMaterialGateTest 覆盖
  */
 @ExtendWith(MockitoExtension.class)
 class HouseholdServiceTest {
@@ -43,17 +47,21 @@ class HouseholdServiceTest {
     @Mock private HouseholdMapper baseMapper;
     @Mock private HouseholdMemberMapper householdMemberMapper;
     @Mock private PersonMapper personMapper;
+    @Mock private ApplicationMaterialService applicationMaterialService;
 
     private HouseholdServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new HouseholdServiceImpl(householdMemberMapper, personMapper);
+        service = new HouseholdServiceImpl(householdMemberMapper, personMapper, applicationMaterialService);
         ReflectionTestUtils.setField(service, "baseMapper", baseMapper);
+        Mockito.lenient().doNothing().when(applicationMaterialService)
+                .assertRequiredVerified(anyLong(), anyString());
     }
 
     private HouseholdCreateDTO validDto() {
         HouseholdCreateDTO dto = new HouseholdCreateDTO();
+        dto.setApplicationId(1L);
         dto.setHouseholdNo("H110101001");
         dto.setHouseholdTypeCode("FAMILY");
         dto.setHeadPersonId(100L);

@@ -23,14 +23,18 @@ import java.time.LocalDate;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 /**
  * PersonServiceImpl 单测。重点覆盖 createPerson 的 fail-fast 校验链:
+ *   - 业务申请必传 + 材料必交闸门
  *   - 身份证格式
  *   - 手机号格式
  *   - 重复身份证号
@@ -42,16 +46,23 @@ class PersonServiceTest {
     @Mock
     private PersonMapper baseMapper;
 
+    @Mock
+    private ApplicationMaterialService applicationMaterialService;
+
     private PersonServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new PersonServiceImpl();
+        service = new PersonServiceImpl(applicationMaterialService);
         ReflectionTestUtils.setField(service, "baseMapper", baseMapper);
+        // 默认让材料闸门放行，避免污染 create_ok / create_dbDuplicate / update_partial 等用例
+        Mockito.lenient().doNothing().when(applicationMaterialService)
+                .assertRequiredVerified(anyLong(), anyString());
     }
 
     private PersonCreateDTO validDto() {
         PersonCreateDTO dto = new PersonCreateDTO();
+        dto.setApplicationId(1L);
         dto.setName("张三");
         dto.setGenderCode("MALE");
         dto.setIdentityTypeCode("ID_CARD");

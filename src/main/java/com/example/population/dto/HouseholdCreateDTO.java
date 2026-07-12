@@ -14,6 +14,18 @@ import java.time.LocalDate;
 @Schema(description = "家庭户立户入参")
 public class HouseholdCreateDTO {
 
+    /**
+     * 关联的业务申请主单 ID（必填）。
+     * <p>
+     * 调用方需先 POST /api/business-applications 创建申请草稿，
+     * 再 POST /api/application-materials 上传身份证明 + 户口簿/住所证明、由核验岗材料 VERIFIED，
+     * 最后携带此 applicationId 调 POST /api/households/establish（新增入户）。
+     */
+    @NotNull(message = "业务申请 ID（applicationId）不能为空；请先创建业务申请并上传身份证明 + 户口簿/住所证明")
+    @Schema(description = "业务申请主单 ID（必填，关联 business_application.application_id）",
+            example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Long applicationId;
+
     @NotBlank
     @Size(max = 30)
     @Pattern(regexp = "^[A-Z0-9]{6,30}$", message = "户号须为大写字母与数字，长度 6-30")
