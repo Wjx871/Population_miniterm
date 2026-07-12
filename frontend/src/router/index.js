@@ -21,12 +21,24 @@ const routes = [
         meta: { 
           title: '工作台',
           minLevel: 1,
-          permission: 'dashboard:view',
+          permission: 'population:view',
           menu: true,
           group: '工作台',
           order: 1,
           icon: 'HomeFilled'
         }
+      },
+      {
+        path: 'queries/comprehensive',
+        name: 'ComprehensiveQuery',
+        component: () => import('../views/query/ComprehensiveQuery.vue'),
+        meta: { title: '人口综合查询', minLevel: 1, permission: 'population:view', menu: true, group: '查询统计', order: 35, icon: 'Search' }
+      },
+      {
+        path: 'statistics/dashboard',
+        name: 'DataDashboard',
+        component: () => import('../views/dashboard/DataDashboard.vue'),
+        meta: { title: '数据大屏', minLevel: 1, permission: 'population:view', menu: true, group: '查询统计', order: 36, icon: 'DataAnalysis' }
       },
       { 
         path: 'persons', 

@@ -82,7 +82,7 @@
 <script setup>
 import { computed } from 'vue';
 import { 
-  Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Menu, Document, Finished, Collection
+  Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Menu, Document, Finished, Collection, Search, DataAnalysis, TrendCharts
 } from '@element-plus/icons-vue';
 import { useUserStore } from '../stores/user';
 import { ROLE_BADGE_TYPE } from '../constants/roles';
@@ -145,6 +145,7 @@ function getGroupIcon(groupName) {
     '人口户籍': 'User',
     '业务办理': 'Switch',
     '扩展业务': 'StarFilled',
+    '查询统计': 'DataAnalysis',
     '系统管理': 'Setting'
   };
   return map[groupName] || 'Menu';
@@ -168,12 +169,12 @@ const handleLogout = () => {
 <script>
 // 图标组件注册供动态解析
 import { 
-  Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Menu, Document, Finished, Collection
+  Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Menu, Document, Finished, Collection, Search, DataAnalysis, TrendCharts
 } from '@element-plus/icons-vue';
 
 export default {
   components: {
-    Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Menu, Document, Finished, Collection
+    Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Menu, Document, Finished, Collection, Search, DataAnalysis, TrendCharts
   }
 }
 </script>
