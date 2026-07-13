@@ -34,6 +34,8 @@
 
 第十阶段完成重点人口建档申请、通用材料与审批、审批后显式建档、解除申请与显式解除、当前记录和追加式历史。数据范围、脱敏、审计和幂等约束完整，审批不会自动修改重点人口业务表。升级脚本为 `V4_009_key_population.sql`。
 
+第十阶段最终门禁已在 H2 和 MySQL Community Server 8.4.10 上验证 viewer 只读权限、建档/解除双线程并发 execute、历史唯一性和中途异常完整回滚；真实 MySQL 并发结果为一个成功、一个 409。详细证据见 `doc/testing/phase-10-key-population-test-report.md`。
+
 ## 数据库
 
 新环境在 MySQL 8 中执行：
