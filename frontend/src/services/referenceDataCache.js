@@ -51,13 +51,25 @@ export async function getCachedRegionTree(includeInactive = false) {
     return cache.get(key)
   }
 
-  const promise = getRegionTreeFn().then(res => {
-    const data = res.data || res
-    return normalizeRegionTree(data, includeInactive)
-  }).catch(err => {
-    cache.delete(key) // 失败不污染缓存
-    throw err
-  })
+  // silent: 区划是筛选辅助数据，403 不由全局拦截器抢先弹窗
+  // 兼容测试 mock：无参调用 getRegionTreeFn()
+  const loadTree = () => {
+    try {
+      return getRegionTreeFn({ silent: true })
+    } catch {
+      return getRegionTreeFn()
+    }
+  }
+  const promise = Promise.resolve()
+    .then(() => loadTree())
+    .then((res) => {
+      const data = res?.data || res
+      return normalizeRegionTree(data, includeInactive)
+    })
+    .catch((err) => {
+      cache.delete(key) // 失败不污染缓存
+      throw err
+    })
 
   cache.set(key, promise)
   return promise

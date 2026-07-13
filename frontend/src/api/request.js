@@ -38,7 +38,10 @@ function handleUnauthorized() {
 }
 
 function handleForbidden(message, config) {
-  ElMessage.error(message || '无权执行该操作')
+  // silent: 由业务组件自行提示，避免与页面级错误叠成双弹窗
+  if (!config?.silent) {
+    ElMessage.error(message || '无权执行该操作')
+  }
   if (config?.redirectOn403) {
     import('../router/index.js').then((m) => {
       const router = m.default
