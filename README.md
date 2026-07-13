@@ -1,5 +1,7 @@
 # Population Miniterm
 
+当前后端发布候选版本为 Backend V1.0.0：课程设计级、可完整演示和原生部署的单体后端。正式 API 总索引见 `doc/api/backend-api-index.md`，部署与运维见 `doc/deployment/backend-v1-deployment.md`。
+
 后端已进入 Phase 11：提供综合人口/家庭户/迁移历史查询、统一统计口径、只读日志查询，以及默认关闭、故障可降级的 Redis 缓存与 JWT 注销撤销。MySQL 始终是唯一事实来源；Redis 不保存人口敏感业务数据。详见 `doc/development/phase-11-query-redis-summary.md`。
 
 人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。

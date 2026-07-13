@@ -10,7 +10,7 @@
 
 ```powershell
 .\mvnw.cmd clean package
-java -jar target\population-miniterm-0.0.1-SNAPSHOT.jar
+java -jar target\population-miniterm-1.0.0.jar
 ```
 
 PowerShell 示例：
@@ -24,7 +24,7 @@ $env:REDIS_ENABLED='false'
 $env:APP_UPLOAD_DIR='.\data\uploads'
 $env:EXPORT_DIR='.\data\exports'
 $env:LOG_DIR='.\logs'
-java -jar target\population-miniterm-0.0.1-SNAPSHOT.jar
+java -jar target\population-miniterm-1.0.0.jar
 ```
 
 访问 `GET /api/health`，确认 database=UP；启用 Redis 时还应为 redisStatus=UP。应用会在首次文件操作时使用配置的上传/导出目录；运行账户必须拥有创建和读写权限。生产环境不得使用演示账号密码。

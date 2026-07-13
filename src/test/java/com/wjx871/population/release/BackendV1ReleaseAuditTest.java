@@ -29,7 +29,7 @@ class BackendV1ReleaseAuditTest {
     @Test void architectureRemainsFrozen() throws Exception {
         String pom = Files.readString(ROOT.resolve("pom.xml"));
         String production = text(ROOT.resolve("src/main/java"));
-        assertThat(pom).contains("<java.version>17</java.version>", "spring-boot-starter-security")
+        assertThat(pom).contains("<version>1.0.0</version>", "<java.version>17</java.version>", "spring-boot-starter-security")
                 .doesNotContain("mybatis-plus");
         assertThat(production).doesNotContain("ApprovalGate");
     }
