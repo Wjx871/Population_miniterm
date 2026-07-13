@@ -14,11 +14,14 @@ import com.example.population.entity.FloatingPopulation;
 import com.example.population.entity.Person;
 import com.example.population.exception.BizException;
 import com.example.population.exception.NotFoundException;
+import com.example.population.exception.PhoneInvalidException;
 import com.example.population.mapper.FloatingPopulationMapper;
 import com.example.population.mapper.PersonMapper;
 import com.example.population.service.FloatingPopulationService;
 import com.example.population.util.DataScopeHelper;
+import com.example.population.util.DictionaryValidator;
 import com.example.population.util.PageUtil;
+import com.example.population.util.PhoneValidator;
 import com.example.population.util.SafeLike;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +40,7 @@ public class FloatingPopulationServiceImpl extends ServiceImpl<FloatingPopulatio
         implements FloatingPopulationService {
 
     private final PersonMapper personMapper;
+    private final DictionaryValidator dictionaryValidator;
 
     @Override
     @DataScope(DataScope.Type.MIGRATION)
@@ -91,13 +95,38 @@ public class FloatingPopulationServiceImpl extends ServiceImpl<FloatingPopulatio
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FloatingPopulation createFloating(FloatingPopulationCreateDTO dto) {
-        // 1. 人员存在性
+        // 1. 字典合法性
+        if (StringUtils.hasText(dto.getResidenceReasonCode())) {
+            dictionaryValidator.assertDictEnabled("RESIDENCE_REASON",
+                    dto.getResidenceReasonCode(), "居住原因");
+        }
+        // 2. 房东电话格式
+        if (StringUtils.hasText(dto.getLandlordPhone())) {
+            try {
+                PhoneValidator.assertValid(dto.getLandlordPhone());
+            } catch (PhoneInvalidException e) {
+                throw new PhoneInvalidException("房东电话格式错误: " + e.getMessage());
+            }
+        }
+        // 3. 人员存在性
         Person person = personMapper.selectById(dto.getPersonId());
         if (person == null) {
             throw new NotFoundException("人口[" + dto.getPersonId() + "]不存在，请先维护人口基础信息");
         }
+        // 4. 校验 person 自身的手机号/身份证号格式（P1-3：流动人口登记时联动校验）
+        if (StringUtils.hasText(person.getPhone())) {
+            try {
+                PhoneValidator.assertValid(person.getPhone());
+            } catch (PhoneInvalidException e) {
+                throw new PhoneInvalidException(
+                        "人口[" + dto.getPersonId() + "] 登记手机号格式错误，请先到人口档案更新");
+            }
+        }
+        if ("ID_CARD".equalsIgnoreCase(person.getIdentityTypeCode())) {
+            com.example.population.util.IdCardValidator.assertValid(person.getIdentityNo());
+        }
 
-        // 2. 日期范围校验
+        // 5. 日期范围校验
         LocalDate arrival = dto.getArrivalDate();
         LocalDate register = dto.getRegisterDate();
         LocalDate planned = dto.getPlannedLeaveDate();
@@ -108,7 +137,7 @@ public class FloatingPopulationServiceImpl extends ServiceImpl<FloatingPopulatio
             throw new BizException(400, "预计离开日期不得早于到达日期");
         }
 
-        // 3. 同一人员不应存在多条有效（ACTIVE）流动记录（§3.18）
+        // 6. 同一人员不应存在多条有效（ACTIVE）流动记录（§3.18）
         List<FloatingPopulation> existing = baseMapper.listByPersonForUpdate(dto.getPersonId());
         for (FloatingPopulation f : existing) {
             if ("ACTIVE".equalsIgnoreCase(f.getStatus())) {
@@ -118,7 +147,7 @@ public class FloatingPopulationServiceImpl extends ServiceImpl<FloatingPopulatio
             }
         }
 
-        // 4. 入参映射
+        // 7. 入参映射
         FloatingPopulation entity = new FloatingPopulation();
         BeanUtils.copyProperties(dto, entity);
         if (!StringUtils.hasText(entity.getStatus())) {
@@ -133,7 +162,7 @@ public class FloatingPopulationServiceImpl extends ServiceImpl<FloatingPopulatio
         }
         baseMapper.insert(entity);
 
-        // 5. 状态联动：人口档案状态 → FLOATING（§2.2.6 第 5 步）
+        // 8. 状态联动：人口档案状态 → FLOATING（§2.2.6 第 5 步）
         if (!"FLOATING".equalsIgnoreCase(person.getRecordStatusCode())
                 && "ACTIVE".equalsIgnoreCase(person.getRecordStatusCode())) {
             person.setRecordStatusCode("FLOATING");
