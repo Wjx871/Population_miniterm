@@ -48,13 +48,14 @@ class MigrationOutServiceCompleteTest {
     @Mock private HouseholdMemberMapper memberMapper;
     @Mock private ResidenceRegistrationMapper regMapper;
     @Mock private ResidenceArchiveMapper archiveMapper;
+    @Mock private com.example.population.util.DictionaryValidator dictionaryValidator;
 
     private MigrationOutServiceImpl service;
 
     @BeforeEach
     void setUp() {
         service = new MigrationOutServiceImpl(personMapper, householdMapper, memberMapper,
-                regMapper, archiveMapper);
+                regMapper, archiveMapper, dictionaryValidator);
         ReflectionTestUtils.setField(service, "baseMapper", outMapper);
     }
 
@@ -204,6 +205,9 @@ class MigrationOutServiceCompleteTest {
         p.setName(name);
         p.setIdentityTypeCode("ID_CARD");
         p.setIdentityNo("110101199001011234");
+        // P1 强化：complete() 在写迁出前要求人口档案状态必须 ACTIVE。
+        // 这里给测试 helper 默认补 ACTIVE，避免单测因 mock 缺字段而误挂。
+        p.setRecordStatusCode("ACTIVE");
         return p;
     }
 }

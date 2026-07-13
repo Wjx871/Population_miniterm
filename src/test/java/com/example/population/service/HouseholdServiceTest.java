@@ -48,12 +48,14 @@ class HouseholdServiceTest {
     @Mock private HouseholdMemberMapper householdMemberMapper;
     @Mock private PersonMapper personMapper;
     @Mock private ApplicationMaterialService applicationMaterialService;
+    @Mock private com.example.population.util.DictionaryValidator dictionaryValidator;
 
     private HouseholdServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new HouseholdServiceImpl(householdMemberMapper, personMapper, applicationMaterialService);
+        service = new HouseholdServiceImpl(householdMemberMapper, personMapper, applicationMaterialService,
+                dictionaryValidator);
         ReflectionTestUtils.setField(service, "baseMapper", baseMapper);
         Mockito.lenient().doNothing().when(applicationMaterialService)
                 .assertRequiredVerified(anyLong(), anyString());

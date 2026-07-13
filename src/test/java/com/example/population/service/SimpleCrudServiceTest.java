@@ -7,6 +7,7 @@ import com.example.population.entity.ResidencePermit;
 import com.example.population.mapper.ApplicationMaterialMapper;
 import com.example.population.mapper.BusinessApplicationMapper;
 import com.example.population.mapper.KeyPopulationMapper;
+import com.example.population.mapper.PersonMapper;
 import com.example.population.mapper.ResidencePermitMapper;
 import com.example.population.service.impl.ApplicationMaterialServiceImpl;
 import com.example.population.service.impl.BusinessApplicationServiceImpl;
@@ -75,19 +76,26 @@ class SimpleCrudServiceTest {
     // ---------- KeyPopulation ----------
 
     @Mock private KeyPopulationMapper keyMapper;
+    @Mock private PersonMapper personMapper;
+    @Mock private BusinessApplicationMapper businessApplicationMapper;
+    @Mock private com.example.population.util.DictionaryValidator dictionaryValidator;
     private KeyPopulationServiceImpl keyService;
 
     @BeforeEach
     void setUpKey() {
-        keyService = new KeyPopulationServiceImpl();
+        keyService = new KeyPopulationServiceImpl(personMapper, businessApplicationMapper, dictionaryValidator);
         ReflectionTestUtils.setField(keyService, "baseMapper", keyMapper);
     }
 
     @Test
-    @DisplayName("KeyPopulation.release: 不存在 → false")
+    @DisplayName("KeyPopulation.release: 不存在 → NotFoundException")
     void keyRelease_missing() {
         when(keyMapper.selectById(1L)).thenReturn(null);
-        assertThat(keyService.release(1L, 99L)).isFalse();
+        // release 严格校验：找不到记录时直接抛 NotFoundException，
+        // 与其它 Service（如 HouseholdServiceImpl.changeHead）保持一致。
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> keyService.release(1L, 99L))
+                .isInstanceOf(com.example.population.exception.NotFoundException.class)
+                .hasMessageContaining("重点记录[1]");
     }
 
     @Test
@@ -97,6 +105,8 @@ class SimpleCrudServiceTest {
         k.setKeyId(1L);
         k.setStatus("ACTIVE");
         when(keyMapper.selectById(1L)).thenReturn(k);
+        // release() 还会校验解除申请单是否存在（releaseApplicationId 不为空时）
+        when(businessApplicationMapper.selectById(99L)).thenReturn(new com.example.population.entity.BusinessApplication());
         when(keyMapper.updateById(any(KeyPopulation.class))).thenReturn(1);
 
         boolean ok = keyService.release(1L, 99L);
