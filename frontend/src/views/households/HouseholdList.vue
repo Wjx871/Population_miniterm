@@ -9,7 +9,7 @@
         <el-button
           type="primary"
           :icon="Plus"
-          v-permission="'household:create'"
+          v-permission="'household:edit'"
           @click="openCreateDialog"
         >
           开户立户
@@ -68,7 +68,7 @@
               size="small"
               type="primary"
               link
-              v-permission="'household:update'"
+              v-permission="'household:edit'"
               @click="openEditDialog(row)"
             >
               编辑
@@ -153,6 +153,7 @@ const editMeta = reactive({
   headPersonName: '',
   headPersonId: null,
   status: '',
+  version: null,
 })
 
 const fetchList = async () => {
@@ -199,10 +200,14 @@ const openCreateDialog = () => {
     headPersonName: '',
     headPersonId: null,
     status: '',
+    version: null,
   })
   formModel.value = {
+    householdNo: '',
     headPersonId: null,
     address: '',
+    regionCode: '',
+    householdType: '',
     establishDate: '',
   }
   dialogVisible.value = true
@@ -219,23 +224,21 @@ const openEditDialog = async (row) => {
   submitting.value = true
   dialogVisible.value = true
   try {
-    // 优先请求最新详情；接口不可用时回退列表行结构字段
-    let detail = normalizeHousehold(row)
-    try {
-      const res = await getHouseholdById(row.id)
-      detail = normalizeHousehold(res)
-    } catch (error) {
-      console.error('加载家庭户详情失败，使用列表行数据', error)
-    }
+    const res = await getHouseholdById(row.id)
+    const detail = normalizeHousehold(res)
 
     Object.assign(editMeta, {
       householdNo: detail.householdNo,
       headPersonName: detail.headPersonName,
       headPersonId: detail.headPersonId,
       status: detail.status,
+      version: detail.version,
     })
     formModel.value = {
+      householdNo: detail.householdNo,
       address: detail.address,
+      regionCode: detail.regionCode,
+      householdType: detail.householdType,
       establishDate: formatDate(detail.establishDate),
     }
     householdFormRef.value?.clearValidate()
@@ -257,7 +260,7 @@ const submitForm = async () => {
   try {
     if (isEdit.value) {
       // 基础编辑不含户主与状态
-      const payload = toUpdateHouseholdPayload(form)
+      const payload = toUpdateHouseholdPayload(form, editMeta)
       await updateHousehold(editingId.value, payload)
       ElMessage.success('修改成功')
     } else {

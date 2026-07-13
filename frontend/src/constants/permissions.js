@@ -11,10 +11,7 @@ export const PERMISSIONS = Object.freeze({
   STATISTICS_VIEW: 'statistics:view',
   
   HOUSEHOLD_VIEW: 'household:view',
-  HOUSEHOLD_CREATE: 'household:create',
-  HOUSEHOLD_UPDATE: 'household:update',
-  HOUSEHOLD_MEMBER_MANAGE: 'household:member:manage',
-  HOUSEHOLD_DELETE: 'household:delete',
+  HOUSEHOLD_EDIT: 'household:edit',
   
   MIGRATION_VIEW: 'migration:view',
   MIGRATION_IN_CREATE: 'migration:in:create',

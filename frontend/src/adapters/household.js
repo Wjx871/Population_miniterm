@@ -1,4 +1,4 @@
-import { toDatePayload } from '../utils/date'
+import { toDatePayload } from '../utils/date.js'
 
 function pickFirst(...values) {
   for (const value of values) {
@@ -31,10 +31,12 @@ export function normalizeHousehold(raw) {
       headPersonId: null,
       headPersonName: '',
       address: '',
+      regionCode: '',
       householdType: null,
       status: '',
       establishDate: null,
       memberCount: 0,
+      version: null,
       regionName: null,
       departmentName: null,
     }
@@ -46,10 +48,12 @@ export function normalizeHousehold(raw) {
     headPersonId: pickFirst(raw.headPersonId, raw.headId),
     headPersonName: trimOrEmpty(raw.headPersonName || raw.headName),
     address: trimOrEmpty(raw.address),
+    regionCode: trimOrEmpty(raw.regionCode),
     householdType: raw.householdType ?? null,
     status: trimOrEmpty(raw.status),
     establishDate: raw.establishDate ?? null,
-    memberCount: toNumberOrZero(raw.memberCount),
+    memberCount: toNumberOrZero(raw.activeMemberCount ?? raw.memberCount),
+    version: raw.version ?? null,
     regionName: raw.regionName ?? null,
     departmentName: raw.departmentName ?? null,
   }
@@ -111,8 +115,11 @@ export function normalizeHouseholdMembers(records, headPersonId = null) {
 
 export function toCreateHouseholdPayload(form = {}) {
   return {
+    householdNo: trimOrEmpty(form.householdNo),
     headPersonId: form.headPersonId ?? null,
     address: trimOrEmpty(form.address),
+    regionCode: trimOrEmpty(form.regionCode),
+    householdType: trimOrEmpty(form.householdType),
     establishDate: toDatePayload(form.establishDate),
   }
 }
@@ -120,9 +127,15 @@ export function toCreateHouseholdPayload(form = {}) {
 /**
  * 基础信息编辑：不含户主、状态、成员列表。
  */
-export function toUpdateHouseholdPayload(form = {}) {
+export function toUpdateHouseholdPayload(form = {}, latestDetail = {}) {
+  const detail = normalizeHousehold(latestDetail)
+  if (!detail.status || detail.version === null) throw new Error('最新家庭户详情缺少状态或版本，无法提交更新')
   return {
     address: trimOrEmpty(form.address),
+    regionCode: trimOrEmpty(form.regionCode),
+    householdType: trimOrEmpty(form.householdType),
     establishDate: toDatePayload(form.establishDate),
+    status: detail.status,
+    version: detail.version,
   }
 }

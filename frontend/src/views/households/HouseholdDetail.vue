@@ -15,10 +15,13 @@
         <el-button
           type="primary"
           :icon="Plus"
-          v-permission="'household:member:manage'"
+          v-permission="'household:edit'"
           @click="openAddDialog"
         >
           添加成员
+        </el-button>
+        <el-button v-permission="'household:edit'" :disabled="!headCandidates.length" @click="openHeadDialog">
+          变更户主
         </el-button>
       </div>
     </div>
@@ -96,7 +99,7 @@
               type="danger"
               link
               :disabled="row.isHead"
-              v-permission="'household:member:manage'"
+              v-permission="'household:edit'"
               @click="handleRemove(row)"
             >
               移出
@@ -145,6 +148,19 @@
         </el-form-item>
       </el-form>
     </FormDialog>
+
+    <FormDialog v-model:visible="headDialogVisible" title="变更户主" :loading="headSubmitting" @confirm="submitHeadChange">
+      <el-form ref="headFormRef" :model="headForm" :rules="headRules" label-width="100px">
+        <el-form-item label="新户主" prop="newHeadPersonId">
+          <el-select v-model="headForm.newHeadPersonId" placeholder="请选择当前有效成员" style="width:100%">
+            <el-option v-for="member in headCandidates" :key="member.personId" :label="member.personName" :value="member.personId" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="变更原因" prop="reason">
+          <el-input v-model.trim="headForm.reason" type="textarea" maxlength="500" show-word-limit />
+        </el-form-item>
+      </el-form>
+    </FormDialog>
   </div>
 </template>
 
@@ -163,6 +179,7 @@ import {
   getHouseholdMembers,
   addHouseholdMember,
   leaveHouseholdMember,
+  changeHouseholdHead,
 } from '../../api/households'
 import {
   normalizeHousehold,
@@ -178,6 +195,15 @@ const infoLoading = ref(false)
 const membersLoading = ref(false)
 const householdInfo = ref(normalizeHousehold(null))
 const members = ref([])
+const headDialogVisible = ref(false)
+const headSubmitting = ref(false)
+const headFormRef = ref(null)
+const headForm = reactive({ newHeadPersonId: null, reason: '' })
+const headRules = {
+  newHeadPersonId: [{ required: true, message: '请选择新户主', trigger: 'change' }],
+  reason: [{ required: true, message: '请输入变更原因', trigger: 'blur' }],
+}
+const headCandidates = computed(() => members.value.filter((member) => !member.isHead && member.status === 'ACTIVE'))
 
 const dialogVisible = ref(false)
 const submitting = ref(false)
@@ -255,6 +281,29 @@ const openAddDialog = () => {
   })
   dialogVisible.value = true
   formRef.value?.clearValidate()
+}
+
+function openHeadDialog() {
+  Object.assign(headForm, { newHeadPersonId: null, reason: '' })
+  headDialogVisible.value = true
+  headFormRef.value?.clearValidate()
+}
+
+async function submitHeadChange() {
+  if (!await headFormRef.value?.validate()) return
+  headSubmitting.value = true
+  try {
+    await changeHouseholdHead(householdId, {
+      newHeadPersonId: headForm.newHeadPersonId,
+      reason: headForm.reason,
+      version: householdInfo.value.version,
+    })
+    ElMessage.success('户主变更成功')
+    headDialogVisible.value = false
+    await loadAll()
+  } finally {
+    headSubmitting.value = false
+  }
 }
 
 const submitForm = () => {
