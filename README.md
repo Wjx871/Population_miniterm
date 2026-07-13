@@ -130,7 +130,24 @@ cors:
   allow-credentials: ${CORS_ALLOW_CREDENTIALS:false}
 ```
 
-### 3. 初始化数据库
+### 4. 本地配置文件（可选）
+
+如需将敏感配置保存到本地文件（替代环境变量），可创建 `src/main/resources/application-local.yml`：
+
+```yaml
+jwt:
+  secret: your-256-bit-secret-here
+```
+
+> 该文件已加入 `.gitignore`，不会被提交到 Git。
+
+启动时指定 `local` profile：
+
+```powershell
+mvn "spring-boot:run" "-Dspring-boot.run.profiles=local"
+```
+
+### 5. 初始化数据库
 
 `sql/` 目录下脚本分工如下：
 
@@ -155,7 +172,7 @@ mysql -u root -p population_miniterm < sql/views.sql
 
 > 旧版教程中提到的 `population_miniterm.sql` 已按职责拆分为上述多文件，请使用 `schema.sql` 作为 DDL 入口。
 
-### 4. 运行项目
+### 6. 运行项目
 
 ```bash
 mvn spring-boot:run
@@ -163,7 +180,7 @@ mvn spring-boot:run
 
 启动成功后，服务监听 `http://localhost:8080`。
 
-### 5. 访问 API 文档
+### 7. 访问 API 文档
 
 启动后访问 Knife4j 文档：
 

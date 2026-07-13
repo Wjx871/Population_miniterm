@@ -22,3 +22,6 @@ logs/
 
 # Spring Boot 运行时输出
 springboot.err
+
+# 本地配置文件（包含敏感信息）
+application-local.yml
