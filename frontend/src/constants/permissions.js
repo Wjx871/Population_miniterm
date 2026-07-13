@@ -52,6 +52,17 @@ export const PERMISSIONS = Object.freeze({
   KEY_POPULATION_VIEW: 'key-population:view',
   KEY_POPULATION_APPLY: 'key-population:apply',
   KEY_POPULATION_EXECUTE: 'key-population:execute',
+
+  CANCELLATION_VIEW: 'cancellation:view',
+  CANCELLATION_PERSON_CREATE: 'cancellation:person:create',
+  CANCELLATION_HOUSEHOLD_CREATE: 'cancellation:household:create',
+  CANCELLATION_EXECUTE: 'cancellation:execute',
+
+  DATA_EXPORT_NORMAL: 'data:export:normal',
+  DATA_EXPORT_SENSITIVE_APPLY: 'data:export:sensitive:apply',
+  DATA_EXPORT_SENSITIVE_EXECUTE: 'data:export:sensitive:execute',
+  DATA_EXPORT_SENSITIVE_DOWNLOAD: 'data:export:sensitive:download',
+  DATA_EXPORT_LOG_VIEW: 'data:export:log:view',
   
   CERTIFICATE_VIEW: 'certificate:view',
   CERTIFICATE_EDIT: 'certificate:edit',

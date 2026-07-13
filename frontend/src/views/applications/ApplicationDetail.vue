@@ -20,6 +20,7 @@
     <MigrationDetailPanel v-if="migrationDetail" :detail="migrationDetail" :person="migrationPerson" />
     <FloatingResidenceDetailPanel v-if="floatingDetail" mode="floating" :detail="floatingDetailBody" :subject="floatingSubject" />
     <FloatingResidenceDetailPanel v-if="permitDetail" mode="permit" :detail="permitDetailBody" :subject="permitSubject" />
+    <SpecializedDetailPanel v-if="directDetail" :business-type="application?.businessType" :detail="directDetail" />
     <div v-if="canExecute" class="execute-bar">
       <span>{{ executeLabelText }}</span>
       <el-button type="success" :loading="executing" @click="openExecuteDialog">执行{{ executeLabelShort }}</el-button>
@@ -27,7 +28,7 @@
 
     <el-card shadow="never">
       <template #header>申请材料</template>
-      <MaterialUploader v-if="isDraft && isMigrationApplication && canUpload" :application-id="applicationId" :material-options="materialOptions" :material-rule-text="materialRuleText" @uploaded="load" />
+      <MaterialUploader v-if="isDraft && handler && materialOptions.length && canUpload" :application-id="applicationId" :material-options="materialOptions" :material-rule-text="materialRuleText" @uploaded="load" />
       <MaterialList :materials="materials" :can-delete="isDraft && canDelete" @changed="load" />
     </el-card>
     <el-card shadow="never"><template #header>审批轨迹</template><ApprovalTimeline :logs="logs" /></el-card>
@@ -48,6 +49,7 @@ import ApplicationActionBar from '../../components/business/ApplicationActionBar
 import MigrationDetailPanel from '../migrations/components/MigrationDetailPanel.vue'
 import FloatingResidenceDetailPanel from '../floating/components/FloatingResidenceDetailPanel.vue'
 import FloatingResidenceExecuteDialog from '../floating/components/FloatingResidenceExecuteDialog.vue'
+import SpecializedDetailPanel from './components/SpecializedDetailPanel.vue'
 import { cancelDraftApplication, getApplicationApprovalLogs, getApplicationDetail, submitApplication, withdrawApplication } from '../../api/applications'
 import { getMaterials } from '../../api/materials'
 import { getPersonById } from '../../api/persons'
@@ -75,6 +77,7 @@ const migrationDetail = ref(null)
 const migrationPerson = ref(null)
 const floatingDetail = ref(null)
 const permitDetail = ref(null)
+const directDetail = ref(null)
 const materials = ref([])
 const logs = ref([])
 const executeVisible = ref(false)
@@ -87,6 +90,7 @@ const getProfessionalDetail = () => {
   if (isMigrationApplication.value) return migrationDetail.value
   if (isFloatingApplication.value) return floatingDetail.value
   if (isPermitApplication.value) return permitDetail.value
+  if (isDirectApplication.value) return directDetail.value
   return null
 }
 
@@ -99,6 +103,7 @@ const hasExecutableVersion = computed(() => {
 const isMigrationApplication = computed(() => handler.value?.family === 'migration')
 const isFloatingApplication = computed(() => handler.value?.family === 'floating')
 const isPermitApplication = computed(() => handler.value?.family === 'permit')
+const isDirectApplication = computed(() => handler.value?.family === 'direct')
 
 const migration = computed(() => getMigrationRecord(migrationDetail.value))
 const floatingDetailBody = computed(() => floatingDetail.value?.professional)
@@ -134,6 +139,7 @@ const canExecute = computed(() => {
       if (isMigrationApplication.value && !migrationDetail.value?.executable) return false
       if (isFloatingApplication.value && !floatingDetail.value?.executable) return false
       if (isPermitApplication.value && !permitDetail.value?.executable) return false
+      if (isDirectApplication.value && directDetail.value?.executable === false) return false
       return true
     }
   }
@@ -144,6 +150,7 @@ const executeLabelText = computed(() => {
   if (isMigrationApplication.value) return '执行后会重新读取申请与迁移状态，确认均为"已办结"才显示成功。'
   if (isFloatingApplication.value) return '执行后将生成正式流动登记记录。'
   if (isPermitApplication.value) return '执行后将生成/变更正式居住证状态。'
+  if (isDirectApplication.value) return '审批通过后仍须由具备执行权限的专业角色显式执行。'
   return ''
 })
 
@@ -186,8 +193,9 @@ async function load() {
     migrationPerson.value = null
     floatingDetail.value = null
     permitDetail.value = null
+    directDetail.value = null
     if (handler.value) {
-      const rawDetail = await handler.value.loadDetail(applicationId.value)
+      const rawDetail = await handler.value.loadDetail(applicationId.value, application.value?.businessType)
       if (isMigrationApplication.value) {
         migrationDetail.value = rawDetail
         materials.value = materialResult || migrationDetail.value?.materials || []
@@ -201,6 +209,10 @@ async function load() {
         permitDetail.value = normalizePermitProfessional(rawDetail)
         materials.value = materialResult || permitDetail.value?.materials || []
         logs.value = logResult || permitDetail.value?.approvalLogs || []
+      } else if (isDirectApplication.value) {
+        directDetail.value = rawDetail
+        materials.value = materialResult || rawDetail?.materials || []
+        logs.value = logResult || rawDetail?.approvalLogs || []
       }
     }
     return true
@@ -263,7 +275,7 @@ function openExecuteDialog() {
     if (meta?.mode === 'direct-confirm') {
       executeType.value = EXECUTE_TYPE.FLOATING_EXECUTE
       executeVersion.value = meta?.version
-      executeMigration()
+      executeDirect()
       return
     }
     
@@ -279,8 +291,9 @@ function openExecuteDialog() {
   }
 }
 
-async function executeMigration() {
-  await ElMessageBox.confirm('执行会由后端变更当前户籍并生成归档，确认继续吗？', '执行迁移', { type: 'warning' })
+async function executeDirect() {
+  const message = isMigrationApplication.value ? '执行会由后端变更当前户籍并生成归档，确认继续吗？' : '执行将落地专业业务记录且不可由前端撤销，确认继续吗？'
+  await ElMessageBox.confirm(message, '执行专业业务', { type: 'warning' })
   executing.value = true
   try {
     const bt = application.value?.businessType

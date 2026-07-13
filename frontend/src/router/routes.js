@@ -152,6 +152,12 @@ export const routes = [
         meta: { title: '迁出申请', type: 'out', minLevel: 1, permission: 'migration:out:create', menu: false, activeMenu: '/migrations/out', group: '业务办理' }
       },
       {
+        path: 'cancellations',
+        name: 'CancellationManagement',
+        component: () => import('../views/cancellations/CancellationManagement.vue'),
+        meta: { title: '注销业务管理', minLevel: 1, permission: PERMISSIONS.CANCELLATION_VIEW, menu: true, group: '业务办理', order: 22.5, icon: 'Document' }
+      },
+      {
         path: 'approvals',
         name: 'ApprovalList',
         component: () => import('../views/approvals/ApprovalList.vue'),
@@ -291,16 +297,22 @@ export const routes = [
       { 
         path: 'key-population', 
         name: 'KeyPopulation', 
-        component: { template: '<div>重点人口管理正在建设中...</div>' }, 
+        component: () => import('../views/keyPopulation/KeyPopulationManagement.vue'),
         meta: { 
           title: '重点人口管理',
-          minLevel: 2,
-          permission: 'key:view',
-          menu: false,
+          minLevel: 1,
+          permission: PERMISSIONS.KEY_POPULATION_VIEW,
+          menu: true,
           group: '扩展业务',
           order: 31,
           icon: 'StarFilled'
         } 
+      },
+      {
+        path: 'exports',
+        name: 'ExportManagement',
+        component: () => import('../views/exports/ExportManagement.vue'),
+        meta: { title: '数据导出管理', minLevel: 1, permission: PERMISSIONS.DATA_EXPORT_LOG_VIEW, menu: true, group: '扩展业务', order: 33, icon: 'Document' }
       },
       { 
         path: 'certificates', 
