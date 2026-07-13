@@ -17,7 +17,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import { getCachedDictionary } from '../../services/referenceDataCache.js'
 
 const props = defineProps({
@@ -43,13 +43,37 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'change'])
+const emit = defineEmits(['update:modelValue', 'change', 'load-error'])
 
 const options = ref([])
+const loading = ref(false)
+const requestId = ref(0)
+let disposed = false
 
-const loadOptions = async () => {
-  if (props.type) {
-    options.value = await getCachedDictionary(props.type, false) // active only
+onUnmounted(() => {
+  disposed = true
+})
+
+async function loadOptions() {
+  if (!props.type) return
+  const currentRequest = ++requestId.value
+  loading.value = true
+
+  try {
+    const result = await getCachedDictionary(props.type, false)
+
+    if (!disposed && currentRequest === requestId.value) {
+      options.value = result
+    }
+  } catch (error) {
+    if (!disposed && currentRequest === requestId.value) {
+      options.value = []
+      emit('load-error', error)
+    }
+  } finally {
+    if (!disposed && currentRequest === requestId.value) {
+      loading.value = false
+    }
   }
 }
 

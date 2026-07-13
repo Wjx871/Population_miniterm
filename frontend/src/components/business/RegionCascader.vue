@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { getCachedRegionTree } from '../../services/referenceDataCache.js'
 
 const props = defineProps({
@@ -38,7 +38,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'change'])
+const emit = defineEmits(['update:modelValue', 'change', 'load-error'])
 
 const options = ref([])
 const cascaderProps = ref({
@@ -49,9 +49,37 @@ const cascaderProps = ref({
   checkStrictly: props.checkStrictly
 })
 
-onMounted(async () => {
-  options.value = await getCachedRegionTree(false) // active only
+const loading = ref(false)
+const requestId = ref(0)
+let disposed = false
+
+onUnmounted(() => {
+  disposed = true
 })
+
+async function loadOptions() {
+  const currentRequest = ++requestId.value
+  loading.value = true
+
+  try {
+    const result = await getCachedRegionTree(false)
+
+    if (!disposed && currentRequest === requestId.value) {
+      options.value = result
+    }
+  } catch (error) {
+    if (!disposed && currentRequest === requestId.value) {
+      options.value = []
+      emit('load-error', error)
+    }
+  } finally {
+    if (!disposed && currentRequest === requestId.value) {
+      loading.value = false
+    }
+  }
+}
+
+onMounted(loadOptions)
 
 const handleChange = (val) => {
   emit('update:modelValue', val)

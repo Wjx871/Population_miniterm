@@ -24,3 +24,30 @@ export function normalizeDictionaryList(items, includeInactive = false) {
   if (includeInactive) return normalized
   return normalized.filter(item => !item.disabled)
 }
+
+export function toDictionaryQueryParams(query) {
+  return {
+    dictionaryType: query.dictType || undefined,
+    dictionaryCode: query.dictCode || undefined,
+    keyword: query.keyword || undefined,
+    status: query.status || undefined,
+    page: Math.max((query.current || 1) - 1, 0),
+    size: query.size || 10,
+  }
+}
+
+export function toDictionaryCreatePayload(form) {
+  return {
+    dictionaryType: form.dictType,
+    dictionaryCode: form.dictCode,
+    displayName: form.dictName,
+    sortNo: form.sortNo,
+  }
+}
+
+export function toDictionaryUpdatePayload(form) {
+  return {
+    ...toDictionaryCreatePayload(form),
+    version: form.version
+  }
+}

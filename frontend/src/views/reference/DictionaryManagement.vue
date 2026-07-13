@@ -6,7 +6,7 @@
         <p class="subtitle">管理系统各类业务下拉选项。禁用的选项不会在新建表单中出现。</p>
       </div>
       <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="openCreateDialog">新增字典项</el-button>
+        <el-button v-permission="PERMISSIONS.DICTIONARY_MANAGE" type="primary" :icon="Plus" @click="openCreateDialog">新增字典项</el-button>
       </div>
     </div>
 
@@ -96,6 +96,7 @@ import { clearAllReferenceCache } from '../../services/referenceDataCache';
 import { normalizePageResult } from '../../utils/page';
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError';
 import { PERMISSIONS } from '../../constants/permissions';
+import { toDictionaryQueryParams, toDictionaryCreatePayload, toDictionaryUpdatePayload } from '../../adapters/dictionary';
 
 const loading = ref(false);
 const tableData = ref([]);
@@ -111,7 +112,7 @@ const query = reactive({
 const fetchList = async () => {
   loading.value = true;
   try {
-    const res = await getDictionaryPage(query);
+    const res = await getDictionaryPage(toDictionaryQueryParams(query));
     const page = normalizePageResult(res);
     tableData.value = page.records;
     total.value = page.total;
@@ -178,7 +179,7 @@ const openEditDialog = async (row) => {
       id: detail.dictId || detail.id,
       dictType: detail.dictType,
       dictCode: detail.dictCode,
-      dictName: detail.dictName,
+      dictName: detail.displayName || detail.dictName,
       sortNo: detail.sortNo || 0,
       version: detail.version
     });
@@ -196,19 +197,11 @@ const submitForm = () => {
     
     submitting.value = true;
     try {
-      const payload = {
-        dictType: form.dictType,
-        dictCode: form.dictCode,
-        dictName: form.dictName,
-        sortNo: form.sortNo,
-        version: form.version
-      };
-
       if (isEdit.value) {
-        await updateDictionaryItem(form.id, payload);
+        await updateDictionaryItem(form.id, toDictionaryUpdatePayload(form));
         ElMessage.success('修改成功');
       } else {
-        await createDictionaryItem(payload);
+        await createDictionaryItem(toDictionaryCreatePayload(form));
         ElMessage.success('新增成功');
       }
       

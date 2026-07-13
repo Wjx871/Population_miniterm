@@ -6,7 +6,7 @@
         <p class="subtitle">管理系统的行政区划层级。禁用的区划不会在地址选择器中出现。</p>
       </div>
       <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="openCreateDialog">新增区划</el-button>
+        <el-button v-permission="PERMISSIONS.REGION_MANAGE" type="primary" :icon="Plus" @click="openCreateDialog">新增区划</el-button>
       </div>
     </div>
 
@@ -55,10 +55,24 @@
           <el-input v-model="form.regionCode" :disabled="isEdit" placeholder="唯一区划代码" />
         </el-form-item>
         <el-form-item label="区划名称" prop="regionName">
-          <el-input v-model="form.regionName" placeholder="区划名称" />
+          <el-input v-model="form.regionName" placeholder="如：北京市" />
         </el-form-item>
-        <el-form-item label="上级代码" prop="parentCode">
-          <el-input v-model="form.parentCode" placeholder="顶层可为空" />
+        <el-form-item label="上级区划" prop="parentCode">
+          <RegionCascader
+            v-model="form.parentCode"
+            placeholder="顶层可为空"
+            :check-strictly="true"
+            @change="handleParentChange"
+          />
+        </el-form-item>
+        <el-form-item label="区划层级" prop="regionLevel">
+          <el-input-number v-model="form.regionLevel" :min="1" :max="10" />
+        </el-form-item>
+        <el-form-item label="完整名称" prop="fullName">
+          <el-input v-model="form.fullName" placeholder="如：北京市海淀区" />
+        </el-form-item>
+        <el-form-item label="排序号" prop="sortNo">
+          <el-input-number v-model="form.sortNo" :min="0" :max="999" />
         </el-form-item>
       </el-form>
     </FormDialog>
@@ -71,9 +85,10 @@ import { Plus } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import FormDialog from '../../components/common/FormDialog.vue';
 import StatusTag from '../../components/common/StatusTag.vue';
+import RegionCascader from '../../components/business/RegionCascader.vue';
 import { getRegionTree, getRegionDetail, createRegion, updateRegion, enableRegion, disableRegion } from '../../api/regions';
-import { normalizeRegionTree } from '../../adapters/region';
-import { clearAllReferenceCache } from '../../services/referenceDataCache';
+import { normalizeRegionTree, findRegionPath } from '../../adapters/region';
+import { getCachedRegionTree, clearAllReferenceCache } from '../../services/referenceDataCache';
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError';
 import { PERMISSIONS } from '../../constants/permissions';
 
@@ -107,6 +122,9 @@ const form = reactive({
   regionCode: '',
   regionName: '',
   parentCode: '',
+  regionLevel: 1,
+  fullName: '',
+  sortNo: 0,
   version: 0
 });
 
@@ -115,12 +133,33 @@ const rules = {
   regionName: [{ required: true, message: '请输入区划名称', trigger: 'blur' }]
 };
 
+const handleParentChange = async (val) => {
+  if (!val) {
+    form.regionLevel = 1;
+    return;
+  }
+  try {
+    const tree = await getCachedRegionTree(true);
+    const path = findRegionPath(tree, val);
+    form.regionLevel = path.length + 1;
+    if (!form.fullName) {
+      const parentName = path.map(p => p.label).join('');
+      form.fullName = parentName + form.regionName;
+    }
+  } catch (error) {
+    console.error('Failed to resolve parent path', error);
+  }
+};
+
 const openCreateDialog = () => {
   isEdit.value = false;
   Object.assign(form, {
     regionCode: '',
     regionName: '',
     parentCode: '',
+    regionLevel: 1,
+    fullName: '',
+    sortNo: 0,
     version: 0
   });
   dialogVisible.value = true;
@@ -137,6 +176,9 @@ const openEditDialog = async (row) => {
       regionCode: detail.regionCode,
       regionName: detail.regionName,
       parentCode: detail.parentCode || '',
+      regionLevel: detail.regionLevel || 1,
+      fullName: detail.fullName || '',
+      sortNo: detail.sortNo || 0,
       version: detail.version
     });
     dialogVisible.value = true;
@@ -157,10 +199,13 @@ const submitForm = () => {
         regionCode: form.regionCode,
         regionName: form.regionName,
         parentCode: form.parentCode || null,
-        version: form.version
+        regionLevel: form.regionLevel,
+        fullName: form.fullName,
+        sortNo: form.sortNo
       };
 
       if (isEdit.value) {
+        payload.version = form.version;
         await updateRegion(form.regionCode, payload);
         ElMessage.success('修改成功');
       } else {
