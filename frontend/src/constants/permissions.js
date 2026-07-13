@@ -9,6 +9,7 @@ export const PERMISSIONS = Object.freeze({
   
   /** 工作台与数据统计大屏 */
   STATISTICS_VIEW: 'statistics:view',
+  LOG_VIEW: 'log:view',
   
   HOUSEHOLD_VIEW: 'household:view',
   HOUSEHOLD_EDIT: 'household:edit',
@@ -48,9 +49,9 @@ export const PERMISSIONS = Object.freeze({
   RESIDENCE_PERMIT_LOG_VIEW: 'residence-permit:log:view',
   RESIDENCE_PERMIT_EXPIRY_VIEW: 'residence-permit:expiry:view',
   
-  KEY_VIEW: 'key:view',
-  KEY_APPLY: 'key:apply',
-  KEY_MANAGE: 'key:manage',
+  KEY_POPULATION_VIEW: 'key-population:view',
+  KEY_POPULATION_APPLY: 'key-population:apply',
+  KEY_POPULATION_EXECUTE: 'key-population:execute',
   
   CERTIFICATE_VIEW: 'certificate:view',
   CERTIFICATE_EDIT: 'certificate:edit',

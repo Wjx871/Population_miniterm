@@ -10,11 +10,14 @@
     </div>
     <SearchPanel @search="search" @reset="reset">
       <el-form :inline="true" :model="query">
-        <el-form-item label="综合关键词">
-          <el-input v-model="query.keyword" clearable placeholder="姓名、身份证号、户号或居住证号"/>
+        <el-form-item label="姓名">
+          <el-input v-model="query.name" clearable placeholder="人员姓名"/>
+        </el-form-item>
+        <el-form-item label="身份证号">
+          <el-input v-model="query.identityNo" clearable placeholder="支持完整或后端允许的查询值"/>
         </el-form-item>
         <el-form-item label="人员状态">
-          <el-input v-model="query.personStatus" clearable placeholder="如 REGISTERED"/>
+          <el-input v-model="query.currentStatus" clearable placeholder="如 REGISTERED"/>
         </el-form-item>
         <el-form-item label="行政区划">
           <RegionCascader v-model="query.regionCode" placeholder="选择区划" style="width: 160px" />
@@ -31,14 +34,17 @@
             <el-option label="当前有效 ACTIVE" value="ACTIVE"/>
           </el-select>
         </el-form-item>
-        <el-form-item label="居住证状态">
-          <el-select v-model="query.permitStatus" clearable placeholder="全部当前记录" style="width: 160px">
-            <el-option label="全部当前记录" value=""/>
-            <el-option label="当前有效 ACTIVE" value="ACTIVE"/>
-          </el-select>
+        <el-form-item label="证件类型">
+          <DictionarySelect v-model="query.certificateType" type="CERTIFICATE_TYPE" style="width: 160px" />
+        </el-form-item>
+        <el-form-item label="重点类型">
+          <DictionarySelect v-model="query.keyPopulationType" type="KEY_POPULATION_TYPE" style="width: 160px" />
         </el-form-item>
       </el-form>
     </SearchPanel>
+    <el-alert v-if="loadError" title="人口综合查询失败" type="error" show-icon :closable="false">
+      <el-button link type="primary" @click="fetchPage">重试</el-button>
+    </el-alert>
     <el-card shadow="never" class="result-card">
       <ComprehensiveResultTable :records="records" :loading="loading" @profile="openProfile"/>
       <AppPagination v-model:current="query.current" v-model:size="query.size" :total="total" @change="fetchPage"/>
@@ -52,24 +58,28 @@ import { Refresh } from '@element-plus/icons-vue'
 import SearchPanel from '../../components/common/SearchPanel.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
 import RegionCascader from '../../components/business/RegionCascader.vue'
+import DictionarySelect from '../../components/business/DictionarySelect.vue'
 import ComprehensiveResultTable from './components/ComprehensiveResultTable.vue'
 import ComprehensiveProfileDrawer from './components/ComprehensiveProfileDrawer.vue'
 import { getComprehensivePersonPage, getComprehensivePersonProfile } from '../../api/comprehensiveQuery'
 import { normalizeComprehensivePage, normalizeComprehensiveProfile } from '../../adapters/comprehensiveQuery'
 
 const query = reactive({
-  keyword: '',
-  personStatus: '',
+  name: '',
+  identityNo: '',
+  currentStatus: '',
   regionCode: '',
   residenceStatus: '',
   floatingStatus: '',
-  permitStatus: '',
+  certificateType: '',
+  keyPopulationType: '',
   current: 1,
   size: 10
 })
 const records = ref([])
 const total = ref(0)
 const loading = ref(false)
+const loadError = ref(false)
 const drawerVisible = ref(false)
 const profileLoading = ref(false)
 const profile = ref(null)
@@ -80,9 +90,9 @@ async function fetchPage() {
     const page = normalizeComprehensivePage(await getComprehensivePersonPage(query))
     records.value = page.records
     total.value = page.total
+    loadError.value = false
   } catch {
-    records.value = []
-    total.value = 0
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -95,12 +105,14 @@ function search() {
 
 function reset() {
   Object.assign(query, {
-    keyword: '',
-    personStatus: '',
+    name: '',
+    identityNo: '',
+    currentStatus: '',
     regionCode: '',
     residenceStatus: '',
     floatingStatus: '',
-    permitStatus: '',
+    certificateType: '',
+    keyPopulationType: '',
     current: 1
   })
   fetchPage()
