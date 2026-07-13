@@ -33,7 +33,13 @@
       />
     </el-form-item>
     <el-form-item label="民族" prop="ethnicity">
-      <DictionarySelect v-model="form.ethnicity" type="ETHNICITY" placeholder="请选择" style="width: 100%;" />
+      <DictionarySelect
+        v-model="form.ethnicity"
+        type="ETHNICITY"
+        value-mode="label"
+        placeholder="请选择民族"
+        style="width: 100%;"
+      />
     </el-form-item>
     <el-form-item label="联系电话" prop="phone">
       <el-input v-model="form.phone" placeholder="手机号（选填）" maxlength="20" />

@@ -1,6 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { normalizeDictionaryList, toDictionaryUpdatePayload } from '../src/adapters/dictionary.js'
+import {
+  normalizeDictionaryList,
+  toDictionaryUpdatePayload,
+  resolveDictionaryOptionValue,
+} from '../src/adapters/dictionary.js'
 
 test('dictionaryAdapter: maps exact fields and filters status when includeInactive is false', () => {
   const items = [
@@ -50,4 +54,26 @@ test('dictionaryAdapter: toDictionaryUpdatePayload only returns expected fields'
   assert.equal(payload.dictionaryType, undefined)
   assert.equal(payload.dictionaryCode, undefined)
   assert.equal(payload.status, undefined)
+})
+
+test('民族选择使用 label 模式提交中文名称', () => {
+  const item = {
+    value: 'HAN',
+    label: '汉族',
+  }
+
+  assert.equal(
+    resolveDictionaryOptionValue(item, 'label'),
+    '汉族'
+  )
+
+  assert.equal(
+    resolveDictionaryOptionValue(item, 'code'),
+    'HAN'
+  )
+
+  assert.equal(
+    resolveDictionaryOptionValue(item),
+    'HAN'
+  )
 })

@@ -52,3 +52,13 @@ export function toDictionaryUpdatePayload(form) {
     version: form.version
   }
 }
+
+/**
+ * 根据 valueMode 解析字典选项提交值
+ * @param {{ value?: string, label?: string } | null | undefined} item
+ * @param {'code' | 'label'} [valueMode='code']
+ * @returns {string | undefined}
+ */
+export function resolveDictionaryOptionValue(item, valueMode = 'code') {
+  return valueMode === 'label' ? item?.label : item?.value
+}

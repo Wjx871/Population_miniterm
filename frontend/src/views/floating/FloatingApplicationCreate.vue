@@ -40,7 +40,19 @@
           <el-input v-model="form.currentAddress" maxlength="255" show-word-limit placeholder="必填，最大255字符" />
         </el-form-item>
         <el-form-item label="居住事由" prop="residenceReasonCode">
-          <DictionarySelect v-model="form.residenceReasonCode" type="FLOATING_RESIDENCE_REASON" style="width:100%" @change="onReasonChange" />
+          <el-select
+            v-model="form.residenceReasonCode"
+            placeholder="请选择居住事由"
+            style="width: 100%"
+            @change="onReasonChange"
+          >
+            <el-option
+              v-for="(label, value) in RESIDENCE_REASON"
+              :key="value"
+              :label="label"
+              :value="value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="证明材料类型" prop="residenceProofType">
           <el-select v-model="form.residenceProofType" placeholder="请选择" style="width:100%">
@@ -113,7 +125,6 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PersonSelect from '../../components/business/PersonSelect.vue'
-import DictionarySelect from '../../components/business/DictionarySelect.vue'
 import RegionCascader from '../../components/business/RegionCascader.vue'
 import MaterialUploader from '../../components/business/MaterialUploader.vue'
 import MaterialList from '../../components/business/MaterialList.vue'
@@ -121,13 +132,17 @@ import { createFloatingApplication, updateFloatingApplication, getFloatingApplic
 import { submitApplication } from '../../api/applications'
 import { getMaterials } from '../../api/materials'
 import { normalizeFloatingProfessional } from '../../adapters/floating'
-import { getFloatingMaterialOptions, getFloatingMaterialRuleText, hasUploadedFloatingMaterials } from '../../constants/floatingResidence'
+import {
+  getFloatingMaterialOptions,
+  getFloatingMaterialRuleText,
+  hasUploadedFloatingMaterials,
+  RESIDENCE_REASON,
+  RESIDENCE_PROOF_TYPE,
+} from '../../constants/floatingResidence'
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
-import { RESIDENCE_PROOF_TYPE } from '../../constants/floatingResidence'
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
 import { useProfessionalDraftState } from '../../composables/useProfessionalDraftState'
-import { getDictionaryLabel } from '../../services/referenceDataCache.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -198,18 +213,19 @@ const materialRuleText = computed(() => getFloatingMaterialRuleText(form.residen
 const materialsReady = computed(() => hasUploadedFloatingMaterials(materials.value, form.residenceReasonCode))
 
 function onPersonSelect(person) { selectedPersonName.value = person?.name || ''; form.applicantPhone = person?.phone || '' }
-const onReasonChange = async (val) => {
-  if (!val) {
-    reasonLabel.value = ''
-    return
-  }
-  reasonLabel.value = await getDictionaryLabel('FLOATING_RESIDENCE_REASON', val)
+
+function onReasonChange(value) {
+  reasonLabel.value = RESIDENCE_REASON[value] || value || ''
   ElMessage.info('居住事由已变更，材料要求可能发生变化')
 }
 
-watch(() => form.residenceReasonCode, async (val) => {
-  reasonLabel.value = await getDictionaryLabel('FLOATING_RESIDENCE_REASON', val)
-}, { immediate: true })
+watch(
+  () => form.residenceReasonCode,
+  (value) => {
+    reasonLabel.value = RESIDENCE_REASON[value] || value || ''
+  },
+  { immediate: true }
+)
 
 watch(() => form.residenceProofType, (val) => {
   if (!val) {

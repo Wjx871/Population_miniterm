@@ -8,9 +8,9 @@
     filterable
     @update:model-value="handleChange"
   >
-    <!-- 保留历史数据的展示 -->
+    <!-- 保留历史数据的展示：同时识别编码与名称 -->
     <el-option
-      v-if="modelValue && !options.some(o => o.value === modelValue)"
+      v-if="modelValue && !options.some(matchesModelValue)"
       :label="modelValue"
       :value="modelValue"
       style="display: none"
@@ -19,7 +19,7 @@
       v-for="item in options"
       :key="item.value"
       :label="item.label"
-      :value="item.value"
+      :value="getOptionValue(item)"
     />
   </el-select>
 </template>
@@ -28,6 +28,7 @@
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getCachedDictionary } from '../../services/referenceDataCache.js'
+import { resolveDictionaryOptionValue } from '../../adapters/dictionary.js'
 
 const props = defineProps({
   modelValue: {
@@ -49,7 +50,16 @@ const props = defineProps({
   clearable: {
     type: Boolean,
     default: true
-  }
+  },
+  /**
+   * code  默认，提交 dictCode
+   * label 提交 dictName（用于民族等历史字段保存中文名）
+   */
+  valueMode: {
+    type: String,
+    default: 'code',
+    validator: (value) => ['code', 'label'].includes(value),
+  },
 })
 
 const emit = defineEmits(['update:modelValue', 'change', 'load-error'])
@@ -61,6 +71,14 @@ const requestId = ref(0)
 let disposed = false
 
 const effectiveDisabled = computed(() => props.disabled || loading.value || loadFailed.value)
+
+function getOptionValue(item) {
+  return resolveDictionaryOptionValue(item, props.valueMode)
+}
+
+function matchesModelValue(item) {
+  return item.value === props.modelValue || item.label === props.modelValue
+}
 
 onUnmounted(() => {
   disposed = true
