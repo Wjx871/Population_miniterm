@@ -40,14 +40,10 @@
           <el-input v-model="form.currentAddress" maxlength="255" show-word-limit placeholder="必填，最大255字符" />
         </el-form-item>
         <el-form-item label="居住事由" prop="residenceReasonCode">
-          <el-select v-model="form.residenceReasonCode" placeholder="请选择" style="width:100%" @change="onReasonChange">
-            <el-option v-for="(label, code) in RESIDENCE_REASON" :key="code" :label="label" :value="code" />
-          </el-select>
+          <DictionarySelect v-model="form.residenceReasonCode" type="RESIDENCE_REASON" style="width:100%" @change="onReasonChange" />
         </el-form-item>
         <el-form-item label="居住证明类型" prop="residenceProofType">
-          <el-select v-model="form.residenceProofType" placeholder="请选择" style="width:100%">
-            <el-option v-for="(label, code) in RESIDENCE_PROOF_TYPE" :key="code" :label="label" :value="code" />
-          </el-select>
+          <DictionarySelect v-model="form.residenceProofType" type="RESIDENCE_PROOF_TYPE" style="width:100%" />
         </el-form-item>
         <el-form-item label="到达日期" prop="arrivalDate">
           <el-date-picker v-model="form.arrivalDate" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" style="width:100%" />
@@ -94,8 +90,8 @@
         <el-descriptions-item label="联系电话">{{ form.applicantPhone || '-' }}</el-descriptions-item>
         <el-descriptions-item label="当前区划">{{ form.currentRegionCode }}</el-descriptions-item>
         <el-descriptions-item label="当前地址">{{ form.currentAddress }}</el-descriptions-item>
-        <el-descriptions-item label="居住事由">{{ RESIDENCE_REASON[form.residenceReasonCode] }}</el-descriptions-item>
-        <el-descriptions-item label="证明类型">{{ RESIDENCE_PROOF_TYPE[form.residenceProofType] }}</el-descriptions-item>
+        <el-descriptions-item label="居住事由">{{ reasonLabel || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="证明类型">{{ proofTypeLabel || '-' }}</el-descriptions-item>
         <el-descriptions-item label="到达日期">{{ form.arrivalDate }}</el-descriptions-item>
         <el-descriptions-item label="计划离开">{{ form.plannedLeaveDate || '-' }}</el-descriptions-item>
       </el-descriptions>
@@ -111,21 +107,23 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PersonSelect from '../../components/business/PersonSelect.vue'
+import DictionarySelect from '../../components/business/DictionarySelect.vue'
 import MaterialUploader from '../../components/business/MaterialUploader.vue'
 import MaterialList from '../../components/business/MaterialList.vue'
 import { createFloatingApplication, updateFloatingApplication, getFloatingApplicationDetail } from '../../api/floatingResidence'
 import { submitApplication } from '../../api/applications'
 import { getMaterials } from '../../api/materials'
 import { normalizeFloatingProfessional } from '../../adapters/floating'
-import { RESIDENCE_REASON, RESIDENCE_PROOF_TYPE, getFloatingMaterialOptions, getFloatingMaterialRuleText, hasUploadedFloatingMaterials } from '../../constants/floatingResidence'
+import { getFloatingMaterialOptions, getFloatingMaterialRuleText, hasUploadedFloatingMaterials } from '../../constants/floatingResidence'
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
 import { useProfessionalDraftState } from '../../composables/useProfessionalDraftState'
+import { getDictionaryLabel } from '../../services/referenceDataCache.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -147,6 +145,8 @@ const submitting = ref(false)
 const activeStep = ref(0)
 const materials = ref([])
 const selectedPersonName = ref('')
+const reasonLabel = ref('')
+const proofTypeLabel = ref('')
 const step1Ref = ref(null)
 const step2Ref = ref(null)
 
@@ -195,6 +195,14 @@ const materialsReady = computed(() => hasUploadedFloatingMaterials(materials.val
 
 function onPersonSelect(person) { selectedPersonName.value = person?.name || ''; form.applicantPhone = person?.phone || '' }
 function onReasonChange() { ElMessage.info('居住事由已变更，材料要求可能发生变化') }
+
+watch(() => form.residenceReasonCode, async (val) => {
+  reasonLabel.value = await getDictionaryLabel('RESIDENCE_REASON', val)
+}, { immediate: true })
+
+watch(() => form.residenceProofType, async (val) => {
+  proofTypeLabel.value = await getDictionaryLabel('RESIDENCE_PROOF_TYPE', val)
+}, { immediate: true })
 
 async function loadMaterials() {
   if (!applicationId.value) return

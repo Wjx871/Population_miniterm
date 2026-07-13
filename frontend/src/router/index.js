@@ -318,7 +318,7 @@ const routes = [
       { 
         path: 'dictionary', 
         name: 'Dictionary', 
-        component: { template: '<div>数据字典正在建设中...</div>' }, 
+        component: () => import('../views/reference/DictionaryManagement.vue'), 
         meta: { 
           title: '数据字典',
           minLevel: 3,
@@ -328,6 +328,20 @@ const routes = [
           order: 41,
           icon: 'Setting'
         } 
+      },
+      {
+        path: 'region',
+        name: 'Region',
+        component: () => import('../views/reference/RegionManagement.vue'),
+        meta: {
+          title: '行政区划',
+          minLevel: 3,
+          permission: 'dictionary:view',
+          menu: false,
+          group: '系统管理',
+          order: 42,
+          icon: 'Location'
+        }
       },
       {
         path: '403',

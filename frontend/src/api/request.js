@@ -1,10 +1,9 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
-import router from '../router'
-import { useUserStore } from '../stores/user'
+import { useUserStore } from '../stores/user.js'
 
 const request = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json;charset=UTF-8',
@@ -44,15 +43,18 @@ request.interceptors.response.use(
       const userStore = useUserStore()
       userStore.logout()
       ElMessage.error('登录状态已失效，请重新登录')
-      router.replace('/login')
+      import('../router/index.js').then(m => m.default.replace('/login'))
       return Promise.reject(new Error(result.message || '未授权'))
     }
 
     if (result.code === 403) {
       ElMessage.error(result.message || '无权执行该操作')
-      if (router.currentRoute.value.path !== '/403') {
-        router.replace({ path: '/403', query: { from: router.currentRoute.value.fullPath } })
-      }
+      import('../router/index.js').then(m => {
+        const router = m.default
+        if (router.currentRoute.value.path !== '/403') {
+          router.replace({ path: '/403', query: { from: router.currentRoute.value.fullPath } })
+        }
+      })
       return Promise.reject(new Error(result.message || '无权执行该操作'))
     }
 
@@ -67,13 +69,17 @@ request.interceptors.response.use(
     if (error.response?.status === 401) {
       const userStore = useUserStore()
       userStore.logout()
+      clearAllReferenceCache()
       ElMessage.error('登录状态已失效，请重新登录')
-      router.replace('/login')
+      import('../router/index.js').then(m => m.default.replace('/login'))
     } else if (error.response?.status === 403) {
       ElMessage.error('无权执行该操作 (403)')
-      if (router.currentRoute.value.path !== '/403') {
-        router.replace({ path: '/403', query: { from: router.currentRoute.value.fullPath } })
-      }
+      import('../router/index.js').then(m => {
+        const router = m.default
+        if (router.currentRoute.value.path !== '/403') {
+          router.replace({ path: '/403', query: { from: router.currentRoute.value.fullPath } })
+        }
+      })
     } else if (error.response?.status === 404) {
       ElMessage.error(`请求的接口不存在 (404): ${error.config?.url}`)
     } else {

@@ -13,12 +13,7 @@
     <SearchPanel @search="fetchList" @reset="resetQuery">
       <el-form :inline="true" :model="query" size="default">
         <el-form-item label="证件类型">
-          <el-select v-model="query.certificateType" placeholder="请选择证件类型" clearable style="width: 150px;">
-            <el-option v-for="t in dictTypes" :key="t.value" :label="t.label" :value="t.value" />
-            <el-option v-if="dictTypes.length === 0" label="护照" value="PASSPORT" />
-            <el-option v-if="dictTypes.length === 0" label="机动车驾驶证" value="DRIVER_LICENSE" />
-            <el-option v-if="dictTypes.length === 0" label="其他证件" value="OTHER" />
-          </el-select>
+          <DictionarySelect v-model="query.certificateType" type="CERTIFICATE_TYPE" placeholder="请选择证件类型" style="width: 150px;" />
         </el-form-item>
         <el-form-item label="证件状态">
           <el-select v-model="query.status" placeholder="全部" clearable style="width: 120px;">
@@ -115,9 +110,7 @@
           <el-input v-model="form.personName" disabled />
         </el-form-item>
         <el-form-item label="证件类型" prop="certificateType">
-          <el-select v-model="form.certificateType" style="width: 100%;" :disabled="dictTypes.length === 0">
-            <el-option v-for="t in dictTypes" :key="t.value" :label="t.label" :value="t.value" />
-          </el-select>
+          <DictionarySelect v-model="form.certificateType" type="CERTIFICATE_TYPE" style="width: 100%;" />
         </el-form-item>
         <el-form-item label="证件编号" prop="certificateNo">
           <el-input v-model="form.certificateNo" placeholder="请输入证件编号" />
@@ -155,9 +148,8 @@ import FormDialog from '../../components/common/FormDialog.vue';
 import StatusTag from '../../components/common/StatusTag.vue';
 import SensitiveText from '../../components/common/SensitiveText.vue';
 import PersonSelect from '../../components/business/PersonSelect.vue';
+import DictionarySelect from '../../components/business/DictionarySelect.vue';
 import { getCertificatePage, getCertificateById, createCertificate, updateCertificate, cancelCertificate } from '../../api/certificates';
-import { getDictionaryItems } from '../../api/dictionaries';
-import { normalizeDictionaryList } from '../../adapters/dictionary';
 import { containsMaskedValue, toCertificateCreatePayload, toCertificateUpdatePayload, toCertificateCancelPayload } from '../../adapters/certificate';
 import { formatDate } from '../../utils/date';
 import { normalizePageResult } from '../../utils/page';
@@ -166,7 +158,6 @@ import { getApiErrorMessage, isApiConflict } from '../../utils/apiError';
 const loading = ref(false);
 const tableData = ref([]);
 const total = ref(0);
-const dictTypes = ref([]);
 
 const query = reactive({
   certificateType: '',
@@ -189,16 +180,6 @@ const fetchList = async () => {
   }
 };
 
-const loadDict = async () => {
-  try {
-    const res = await getDictionaryItems('CERTIFICATE_TYPE');
-    const items = res?.data || res || [];
-    dictTypes.value = normalizeDictionaryList(items);
-  } catch (e) {
-    dictTypes.value = [];
-  }
-};
-
 const resetQuery = () => {
   query.certificateType = '';
   query.status = '';
@@ -207,7 +188,6 @@ const resetQuery = () => {
 };
 
 onMounted(() => {
-  loadDict();
   fetchList();
 });
 
