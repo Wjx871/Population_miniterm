@@ -3,9 +3,29 @@ import { createFloatingHandler } from './floatingHandler'
 import { createResidencePermitHandler } from './residencePermitHandler'
 
 import { getMigrationApplicationDetail, executeMigrationIn, executeMigrationOut } from '../../../api/migrations'
-import { getFloatingApplicationDetail, executeFloatingApplication, getPermitApplicationDetail, issueResidencePermit, endorseResidencePermit, cancelResidencePermitApplication } from '../../../api/floatingResidence'
-import { getMigrationMaterialOptions, getMigrationMaterialRuleText, hasCompleteMigrationMaterials } from '../../../constants/material'
-import { getFloatingMaterialOptions, getFloatingMaterialRuleText, getPermitMaterialOptions, getPermitMaterialRuleText, hasVerifiedFloatingMaterials, hasVerifiedPermitMaterials } from '../../../constants/floatingResidence'
+import {
+  getFloatingApplicationDetail,
+  executeFloatingApplication,
+  getPermitApplicationDetail,
+  issueResidencePermit,
+  endorseResidencePermit,
+  cancelResidencePermitApplication
+} from '../../../api/floatingResidence'
+import {
+  getMigrationMaterialOptions,
+  getMigrationMaterialRuleText,
+  hasCompleteMigrationMaterials
+} from '../../../constants/material'
+import {
+  getFloatingMaterialOptions,
+  getFloatingMaterialRuleText,
+  getPermitMaterialOptions,
+  getPermitMaterialRuleText,
+  hasVerifiedFloatingMaterials,
+  hasVerifiedPermitMaterials
+} from '../../../constants/floatingResidence'
+import { normalizeFloatingProfessional } from '../../../adapters/floating'
+import { normalizePermitProfessional } from '../../../adapters/residencePermit'
 
 const migrationHandler = createMigrationHandler({
   getMigrationApplicationDetail,
@@ -21,7 +41,8 @@ const floatingHandler = createFloatingHandler({
   executeFloatingApplication,
   getFloatingMaterialOptions,
   getFloatingMaterialRuleText,
-  hasVerifiedFloatingMaterials
+  hasVerifiedFloatingMaterials,
+  normalizeFloatingProfessional
 })
 
 const residencePermitHandler = createResidencePermitHandler({
@@ -31,7 +52,8 @@ const residencePermitHandler = createResidencePermitHandler({
   cancelResidencePermitApplication,
   getPermitMaterialOptions,
   getPermitMaterialRuleText,
-  hasVerifiedPermitMaterials
+  hasVerifiedPermitMaterials,
+  normalizePermitProfessional
 })
 
 const handlers = [migrationHandler, floatingHandler, residencePermitHandler]
@@ -43,4 +65,12 @@ export function getApplicationBusinessHandler(businessType) {
     }
   }
   return null
+}
+
+/** 供后续检查点注册新业务 Handler（避免重复两套分发） */
+export function registerApplicationBusinessHandler(handler) {
+  if (!handler || typeof handler.supports !== 'function') {
+    throw new Error('Invalid application business handler')
+  }
+  handlers.push(handler)
 }

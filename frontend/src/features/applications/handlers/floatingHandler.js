@@ -11,6 +11,13 @@ export function createFloatingHandler(services) {
       return await services.getFloatingApplicationDetail(applicationId)
     },
 
+    normalizeDetail(raw) {
+      if (services.normalizeFloatingProfessional) {
+        return services.normalizeFloatingProfessional(raw)
+      }
+      return raw || null
+    },
+
     getDisplayDetail(detail) {
       return detail?.professional || null
     },
@@ -19,42 +26,49 @@ export function createFloatingHandler(services) {
       return detail?.subject || null
     },
 
-    buildEditRoute({ applicationId, detail }) {
+    getDetailFields() {
+      return []
+    },
+
+    buildEditRoute({ applicationId }) {
       return {
         path: '/floating-population/apply',
         query: { applicationId }
       }
     },
 
-    getEditPermission(businessType) {
+    getEditPermission() {
       return 'floating:edit'
     },
 
-    getMaterialOptions({ businessType, detail }) {
+    getMaterialOptions({ detail }) {
       if (!services.getFloatingMaterialOptions) return []
       return services.getFloatingMaterialOptions(detail?.professional?.residenceReasonCode)
     },
 
-    getMaterialRuleText({ businessType, detail }) {
+    getMaterialRuleText({ detail }) {
       if (!services.getFloatingMaterialRuleText) return ''
       return services.getFloatingMaterialRuleText(detail?.professional?.residenceReasonCode)
     },
 
-    hasVerifiedMaterials({ businessType, detail, materials }) {
+    hasVerifiedMaterials({ detail, materials }) {
       if (!services.hasVerifiedFloatingMaterials) return false
       return services.hasVerifiedFloatingMaterials(materials, detail?.professional?.residenceReasonCode)
     },
 
-    getExecutionMeta({ businessType, detail }) {
+    getExecutionMeta({ detail }) {
       return {
         mode: 'dialog',
         permission: 'floating:execute',
-        type: '流动登记执行',
+        type: '流动登记',
+        title: '执行流动登记',
+        message: '执行后将生成正式流动登记记录。',
+        dialogType: 'FLOATING_EXECUTE',
         version: detail?.professional?.version
       }
     },
 
-    async execute({ businessType, applicationId, detail, payload }) {
+    async execute({ applicationId, detail, payload }) {
       if (!services.executeFloatingApplication) return null
       const version = payload?.version ?? detail?.professional?.version
       return await services.executeFloatingApplication(applicationId, version)
