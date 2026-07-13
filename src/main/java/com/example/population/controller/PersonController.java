@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.LogOperation;
 import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.ApprovalDraftDTO;
 import com.example.population.dto.PageVO;
@@ -12,6 +13,7 @@ import com.example.population.dto.Result;
 import com.example.population.entity.Person;
 import com.example.population.service.ApprovalGateService;
 import com.example.population.service.PersonService;
+import com.example.population.util.DateRangeValidator;
 import com.example.population.util.IdCardValidator;
 import com.example.population.util.MaskedSerializer;
 import com.example.population.util.PageUtil;
@@ -43,6 +45,7 @@ public class PersonController {
     @GetMapping
     public Result<PageVO<PersonVO>> page(PersonQueryDTO q,
                                          @RequestParam(value = "unmask", required = false) Boolean unmask) {
+        DateRangeValidator.assertStartBeforeEnd(q.getBirthDateStart(), q.getBirthDateEnd());
         applyUnmask(unmask);
         try {
             Page<Person> p = (Page<Person>) personService.queryPage(q);
@@ -120,6 +123,7 @@ public class PersonController {
     }
 
     @RequiresPermission({"person:create", "person:register"})
+    @LogOperation(module = "PERSON", type = "CREATE", targetTable = "person")
     @Operation(summary = "新增人口（审批流：L3 token 直接落库，L1/L2 返回 approvalId 待审批）")
     @PostMapping
     public Result<Map<String, Object>> create(@Valid @RequestBody PersonCreateDTO dto) throws Exception {
@@ -147,6 +151,7 @@ public class PersonController {
     }
 
     @RequiresPermission("person:update")
+    @LogOperation(module = "PERSON", type = "UPDATE", targetTable = "person", targetIdSpel = "#id")
     @Operation(summary = "更新人口基础信息（审批流：L3 直通，L1/L2 走审批）")
     @PutMapping("/{id}")
     public Result<Map<String, Object>> update(@PathVariable Long id, @Valid @RequestBody PersonUpdateDTO dto) throws Exception {
@@ -170,6 +175,7 @@ public class PersonController {
     }
 
     @RequiresPermission("person:update")
+    @LogOperation(module = "PERSON", type = "DELETE", targetTable = "person", targetIdSpel = "#id")
     @Operation(summary = "删除（软删，逻辑删除）")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {

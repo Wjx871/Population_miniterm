@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.LogOperation;
 import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.CertificateCreateDTO;
 import com.example.population.dto.CertificateUpdateDTO;
@@ -46,6 +47,7 @@ public class CertificateController {
     }
 
     @RequiresPermission("certificate:manage")
+    @LogOperation(module = "CERTIFICATE", type = "CREATE", targetTable = "certificate")
     @Operation(summary = "新增证件（含同类同号唯一性 + 自动判定有效/即将到期/已过期）")
     @PostMapping
     public Result<Certificate> create(@Valid @RequestBody CertificateCreateDTO dto) {
@@ -53,6 +55,7 @@ public class CertificateController {
     }
 
     @RequiresPermission("certificate:manage")
+    @LogOperation(module = "CERTIFICATE", type = "UPDATE", targetTable = "certificate", targetIdSpel = "#id")
     @Operation(summary = "更新证件（白名单字段；自动按 validUntil 重算状态）")
     @PutMapping("/{id}")
     public Result<Certificate> update(@PathVariable Long id, @Valid @RequestBody CertificateUpdateDTO dto) {
@@ -60,6 +63,7 @@ public class CertificateController {
     }
 
     @RequiresPermission("certificate:manage")
+    @LogOperation(module = "CERTIFICATE", type = "CANCEL", targetTable = "certificate", targetIdSpel = "#id")
     @Operation(summary = "注销证件")
     @PutMapping("/{id}/cancel")
     public Result<Void> cancel(@PathVariable Long id) {

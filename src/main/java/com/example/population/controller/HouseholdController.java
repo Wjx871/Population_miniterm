@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.LogOperation;
 import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.ApprovalDraftDTO;
 import com.example.population.dto.HouseholdCreateDTO;
@@ -52,6 +53,7 @@ public class HouseholdController {
     }
 
     @RequiresPermission({"household:create", "household:establish"})
+    @LogOperation(module = "HOUSEHOLD", type = "CREATE", targetTable = "household")
     @Operation(summary = "立户（审批流：L3 直通，L1/L2 走审批）")
     @PostMapping("/establish")
     public Result<Map<String, Object>> establish(@Valid @RequestBody HouseholdCreateDTO dto) throws Exception {
@@ -88,6 +90,7 @@ public class HouseholdController {
     }
 
     @RequiresPermission("household:update")
+    @LogOperation(module = "HOUSEHOLD", type = "UPDATE", targetTable = "household", targetIdSpel = "#id")
     @Operation(summary = "更新家庭户（白名单字段）")
     @PutMapping("/{id}")
     public Result<Household> update(@PathVariable Long id, @Valid @RequestBody HouseholdUpdateDTO dto) {
@@ -95,6 +98,7 @@ public class HouseholdController {
     }
 
     @RequiresPermission("household:update")
+    @LogOperation(module = "HOUSEHOLD", type = "CHANGE_HEAD", targetTable = "household", targetIdSpel = "#id")
     @Operation(summary = "更换户主")
     @PutMapping("/{id}/head")
     public Result<Void> changeHead(@PathVariable Long id, @RequestParam Long newHeadPersonId) {
@@ -103,6 +107,7 @@ public class HouseholdController {
     }
 
     @RequiresPermission("cancellation:household")
+    @LogOperation(module = "HOUSEHOLD", type = "DISABLE", targetTable = "household", targetIdSpel = "#id")
     @Operation(summary = "销户（停用户；前置校验无 CURRENT 成员）")
     @PutMapping("/{id}/disable")
     public Result<Void> disable(@PathVariable Long id, @RequestParam Long operatorId) {

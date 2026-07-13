@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.LogOperation;
 import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.KeyPopulationCreateDTO;
 import com.example.population.dto.KeyPopulationUpdateDTO;
@@ -77,6 +78,7 @@ public class KeyPopulationController {
     }
 
     @RequiresPermission("key:register")
+    @LogOperation(module = "KEY", type = "REGISTER", targetTable = "key_population")
     @Operation(summary = "新增重点登记（含同人同类型重复防护）")
     @PostMapping
     public Result<KeyPopulation> create(@Valid @RequestBody KeyPopulationCreateDTO dto) {
@@ -84,6 +86,7 @@ public class KeyPopulationController {
     }
 
     @RequiresPermission("key:register")
+    @LogOperation(module = "KEY", type = "UPDATE", targetTable = "key_population", targetIdSpel = "#id")
     @Operation(summary = "更新重点登记（白名单字段）")
     @PutMapping("/{id}")
     public Result<KeyPopulation> update(@PathVariable Long id, @Valid @RequestBody KeyPopulationUpdateDTO dto) {
@@ -95,6 +98,7 @@ public class KeyPopulationController {
     }
 
     @RequiresPermission("key:release")
+    @LogOperation(module = "KEY", type = "RELEASE", targetTable = "key_population", targetIdSpel = "#id")
     @Operation(summary = "解除重点管理")
     @PutMapping("/{id}/release")
     public Result<Void> release(@PathVariable Long id, @RequestParam Long releaseApplicationId) {

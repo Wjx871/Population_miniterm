@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.LogOperation;
 import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.ApprovalDraftDTO;
 import com.example.population.dto.MigrationOutDTO;
@@ -9,6 +10,7 @@ import com.example.population.dto.Result;
 import com.example.population.entity.MigrationOut;
 import com.example.population.service.ApprovalGateService;
 import com.example.population.service.MigrationOutService;
+import com.example.population.util.DateRangeValidator;
 import com.example.population.util.PageUtil;
 import com.example.population.util.SecurityContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,6 +46,7 @@ public class MigrationOutController {
                                              @RequestParam(required = false) String fromRegionCode,
                                              @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
                                              @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        DateRangeValidator.assertStartBeforeEnd(startDate, endDate);
         Page<MigrationOut> p = (Page<MigrationOut>) migrationOutService.page(current, size, keyword, outTypeCode, fromRegionCode, startDate, endDate);
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
@@ -63,6 +66,7 @@ public class MigrationOutController {
     }
 
     @RequiresPermission("migration:out:create")
+    @LogOperation(module = "MIGRATION", type = "OUT_CREATE", targetTable = "migration_out")
     @Operation(summary = "新增迁出登记（审批流：L3 直通，L1/L2 走审批）")
     @PostMapping
     public Result<Map<String, Object>> create(@Valid @RequestBody MigrationOutDTO dto) throws Exception {
@@ -85,6 +89,7 @@ public class MigrationOutController {
     }
 
     @RequiresPermission("migration:out:create")
+    @LogOperation(module = "MIGRATION", type = "OUT_COMPLETE", targetTable = "migration_out", targetIdSpel = "#id")
     @Operation(summary = "办结迁出（事务：归档、删登记、LEFT 成员）")
     @PutMapping("/{id}/complete")
     public Result<Void> complete(@PathVariable Long id, @RequestParam Long operatorId) {

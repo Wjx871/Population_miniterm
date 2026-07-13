@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.LogOperation;
 import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.FloatingLeaveDTO;
 import com.example.population.dto.FloatingPopulationCreateDTO;
@@ -45,6 +46,7 @@ public class FloatingPopulationController {
     }
 
     @RequiresPermission("floating:register")
+    @LogOperation(module = "FLOATING", type = "REGISTER", targetTable = "floating_population")
     @Operation(summary = "新增登记")
     @PostMapping
     public Result<FloatingPopulation> create(@Valid @RequestBody FloatingPopulationCreateDTO dto) {
@@ -52,6 +54,7 @@ public class FloatingPopulationController {
     }
 
     @RequiresPermission("floating:register")
+    @LogOperation(module = "FLOATING", type = "UPDATE", targetTable = "floating_population", targetIdSpel = "#id")
     @Operation(summary = "更新登记（白名单字段）")
     @PutMapping("/{id}")
     public Result<FloatingPopulation> update(@PathVariable Long id,
@@ -60,6 +63,7 @@ public class FloatingPopulationController {
     }
 
     @RequiresPermission("floating:register")
+    @LogOperation(module = "FLOATING", type = "LEAVE", targetTable = "floating_population", targetIdSpel = "#id")
     @Operation(summary = "离开登记（标记为 LEFT，写实际离开日期）")
     @PutMapping("/{id}/leave")
     public Result<FloatingPopulation> leave(@PathVariable Long id,

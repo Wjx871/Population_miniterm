@@ -8,9 +8,13 @@ import com.example.population.entity.OperationLog;
 import com.example.population.mapper.OperationLogMapper;
 import com.example.population.service.OperationLogService;
 import com.example.population.util.PageUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 @Service
 public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, OperationLog>
         implements OperationLogService {
@@ -31,5 +35,19 @@ public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, Ope
         }
         w.orderByDesc(OperationLog::getOperationTime);
         return this.page(page, w);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public void record(OperationLog log) {
+        if (log == null) {
+            return;
+        }
+        try {
+            this.save(log);
+        } catch (Exception ex) {
+            // 日志写入失败仅记录 warn，避免放大为业务异常
+            OperationLogServiceImpl.log.warn("operation_log 写入失败: {}", ex.getMessage());
+        }
     }
 }

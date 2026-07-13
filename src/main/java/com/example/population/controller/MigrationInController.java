@@ -1,6 +1,7 @@
 package com.example.population.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.population.annotation.LogOperation;
 import com.example.population.annotation.RequiresPermission;
 import com.example.population.dto.ApprovalDraftDTO;
 import com.example.population.dto.MigrationInDTO;
@@ -9,6 +10,7 @@ import com.example.population.dto.Result;
 import com.example.population.entity.MigrationIn;
 import com.example.population.service.ApprovalGateService;
 import com.example.population.service.MigrationInService;
+import com.example.population.util.DateRangeValidator;
 import com.example.population.util.PageUtil;
 import com.example.population.util.SecurityContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,6 +46,7 @@ public class MigrationInController {
                                             @RequestParam(required = false) String toRegionCode,
                                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
                                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        DateRangeValidator.assertStartBeforeEnd(startDate, endDate);
         Page<MigrationIn> p = (Page<MigrationIn>) migrationInService.page(current, size, keyword, inTypeCode, toRegionCode, startDate, endDate);
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
     }
@@ -63,6 +66,7 @@ public class MigrationInController {
     }
 
     @RequiresPermission("migration:in:create")
+    @LogOperation(module = "MIGRATION", type = "IN_CREATE", targetTable = "migration_in")
     @Operation(summary = "新增迁入登记（审批流：L3 直通，L1/L2 走审批）")
     @PostMapping
     public Result<Map<String, Object>> create(@Valid @RequestBody MigrationInDTO dto) throws Exception {
@@ -85,6 +89,7 @@ public class MigrationInController {
     }
 
     @RequiresPermission("migration:out:create")
+    @LogOperation(module = "MIGRATION", type = "IN_COMPLETE", targetTable = "migration_in", targetIdSpel = "#id")
     @Operation(summary = "办结迁入（事务：归档旧登记 → 写新登记 → 回填）")
     @PutMapping("/{id}/complete")
     public Result<Void> complete(@PathVariable Long id, @RequestParam Long operatorId) {
