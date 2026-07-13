@@ -9,7 +9,7 @@
 | 系统 | GET | `/api/system/health` | 仅全局认证 | `isAuthenticated()` | 无 | 无 | 否 |
 | 人口 | GET | `/api/persons`,`/{id}`,`/id-card/{idCard}` | 部分缺失 | `population:view` | ALL/REGION/DEPARTMENT/SELF | 身份证、手机、地址 | 查询不写敏感值 |
 | 人口 | POST/PUT/DELETE | `/api/persons/**` | 部分缺失 | `population:edit` | 详情范围；DELETE 仅逻辑状态 | 响应脱敏 | 业务日志 |
-| 旧居民演示 | GET/POST/PUT/DELETE | `/api/residents/**` | 无 | `population:view/edit` | 模块兼容 | 页面不作为新数据源 | 兼容 |
+| 旧居民演示 | — | `/api/residents/**` 已删除 | — | — | Phase 08 后不再兼容 | 不得作为正式数据源 | 已移除 |
 | 通用申请 | GET/POST/PUT/DELETE | `/api/applications/**` | 已有 | `application:view/create/edit` | 申请人、部门、区划 | 目标信息按业务 VO | CREATE/状态日志 |
 | 申请流转 | POST | `/submit`,`/withdraw` | 已有 | `application:submit/withdraw` | 本人 | 无 | 审批轨迹+操作日志 |
 | 材料 | GET/POST/DELETE | `/api/applications/*/materials`,`/api/materials/*` | 已有 | `material:view/upload/delete` | 继承申请范围 | 路径不返回、文件名过滤 | 核验/下载 |

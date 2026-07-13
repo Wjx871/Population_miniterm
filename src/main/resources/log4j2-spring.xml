@@ -2,7 +2,7 @@
 <Configuration status="WARN" monitorInterval="30">
     <Properties>
         <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %logger{36} - %msg%n</Property>
-        <Property name="LOG_DIR">logs</Property>
+        <Property name="LOG_DIR">${sys:LOG_DIR:-${env:LOG_DIR:-logs}}</Property>
         <Property name="APP_NAME">population-miniterm</Property>
     </Properties>
 
