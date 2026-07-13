@@ -3,6 +3,7 @@ package com.wjx871.population.cache;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JavaType;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -33,6 +34,15 @@ public class OptionalRedisService {
             warn(ex); return Optional.empty();
         }
     }
+    public <T> Optional<T> get(String key, JavaType type) {
+        if (!enabled()) return Optional.empty();
+        try {
+            String value = redis.opsForValue().get(key);
+            return value == null ? Optional.empty() : Optional.of(json.readValue(value, type));
+        } catch (RuntimeException | JsonProcessingException ex) {
+            warn(ex); return Optional.empty();
+        }
+    }
     public void put(String key, Object value, Duration ttl) {
         if (!enabled()) return;
         try { redis.opsForValue().set(key, json.writeValueAsString(value), ttl); }
@@ -51,6 +61,13 @@ public class OptionalRedisService {
     public void evict(String... keys) {
         if (!enabled()) return;
         for (String key : keys) try { redis.delete(key); } catch (RuntimeException ex) { warn(ex); }
+    }
+    public void evictPattern(String pattern) {
+        if (!enabled()) return;
+        try {
+            var keys = redis.keys(pattern);
+            if (keys != null && !keys.isEmpty()) redis.delete(keys);
+        } catch (RuntimeException ex) { warn(ex); }
     }
     public boolean ping() {
         if (!enabled()) return false;
