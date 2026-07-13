@@ -10,7 +10,7 @@
         <template v-if="isIn">
           <el-form-item label="迁出地行政区划"><el-input v-model.trim="form.fromRegionCode" :disabled="isReadonly" maxlength="20" /></el-form-item>
           <el-form-item label="迁出地地址" prop="fromAddress"><el-input v-model.trim="form.fromAddress" :disabled="isReadonly" maxlength="255" /></el-form-item>
-          <el-form-item label="迁入地行政区划" prop="toRegionCode"><el-input v-model.trim="form.toRegionCode" :disabled="isReadonly" maxlength="20" /></el-form-item>
+          <el-form-item label="迁入地行政区划" prop="toRegionCode"><RegionCascader v-model="form.toRegionCode" :disabled="isReadonly" /></el-form-item>
           <el-form-item label="目标家庭户" prop="toHouseholdId"><HouseholdSelect v-model="form.toHouseholdId" :disabled="isReadonly" /></el-form-item>
           <el-form-item label="迁入日期" prop="inDate"><el-date-picker v-model="form.inDate" type="date" value-format="YYYY-MM-DD" :disabled="isReadonly" /></el-form-item>
         </template>
@@ -44,6 +44,7 @@ import MemberCandidateSelect from '../../components/business/MemberCandidateSele
 import MaterialUploader from '../../components/business/MaterialUploader.vue'
 import MaterialList from '../../components/business/MaterialList.vue'
 import ApplicationActionBar from '../../components/business/ApplicationActionBar.vue'
+import RegionCascader from '../../components/business/RegionCascader.vue'
 import { createMigrationInApplication, createMigrationOutApplication, getMigrationApplicationDetail, updateMigrationInApplication, updateMigrationOutApplication } from '../../api/migrations'
 import { cancelDraftApplication, submitApplication, withdrawApplication } from '../../api/applications'
 import { MIGRATION_TYPE_OPTIONS } from '../../constants/migration'

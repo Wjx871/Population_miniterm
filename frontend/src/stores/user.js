@@ -1,22 +1,17 @@
 import { defineStore } from 'pinia'
 import { login as loginApi } from '../api/auth.js'
-import { ROLE_CODE, ROLE_LABEL, parseRoleLevel, resolvePermissionLevel } from '../constants/roles.js'
-import { normalizeRoleCode, resolvePermissions, checkPermission, checkAnyPermission } from '../utils/permission.js'
+import { ROLE_CODE, ROLE_LABEL } from '../constants/roles.js'
+import { checkPermission, checkAnyPermission } from '../utils/permission.js'
+import { normalizeLoginUser, normalizeStoredUser } from './userNormalizer.js'
+import { clearAllReferenceCache } from '../services/referenceDataCache.js'
 
-const STORAGE_KEY = 'population_user_v2'
+export const STORAGE_KEY = 'population_user_v2'
 
 function loadStorageUser() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return {}
-    const parsed = JSON.parse(raw)
-    // On load, always re-normalize to ensure integrity
-    const roleCode = normalizeRoleCode(parsed.roleCode, parsed.roleName)
-    
-    parsed.roleCode = roleCode
-    parsed.permissions = resolvePermissions(roleCode, parsed.permissions)
-    parsed.permissionLevel = resolvePermissionLevel(parsed.roleLevel, roleCode)
-    return parsed
+    return normalizeStoredUser(JSON.parse(raw))
   } catch {
     return {}
   }
@@ -33,9 +28,13 @@ export const useUserStore = defineStore('user', {
       realName: saved.realName || '',
       roleName: saved.roleName || '',
       roleCode: saved.roleCode || ROLE_CODE.QUERY_VIEWER,
-      roleLevel: saved.roleLevel || 'L1',
+      roleLevel: saved.roleLevel || '',
       permissionLevel: saved.permissionLevel || 1,
       permissions: saved.permissions || [],
+      dataScope: saved.dataScope || null,
+      departmentId: saved.departmentId || null,
+      departmentName: saved.departmentName || '',
+      regionCode: saved.regionCode || '',
     }
   },
 
@@ -48,35 +47,10 @@ export const useUserStore = defineStore('user', {
 
   actions: {
     setLoginInfo(loginVO) {
-      const user = loginVO.user || loginVO
-      this.accessToken = loginVO.token || loginVO.accessToken || ''
-      this.tokenType = loginVO.tokenType || 'Bearer'
-      this.userId = user.userId
-      this.username = user.username
-      this.realName = user.realName
-      this.roleName = user.roleName
-      this.roleLevel = user.roleLevel || 'L1'
-
-      // 角色归一化与权限计算
-      this.roleCode = normalizeRoleCode(user.roleCode, user.roleName)
+      const normalized = normalizeLoginUser(loginVO)
+      Object.assign(this, normalized)
       
-      this.permissionLevel = resolvePermissionLevel(this.roleLevel, this.roleCode)
-      
-      const hasApiPermissions = Array.isArray(user.permissions)
-      this.permissions = hasApiPermissions ? [...user.permissions] : []
-
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        accessToken: this.accessToken,
-        tokenType: this.tokenType,
-        userId: this.userId,
-        username: this.username,
-        realName: this.realName,
-        roleName: this.roleName,
-        roleCode: this.roleCode,
-        roleLevel: this.roleLevel,
-        permissionLevel: this.permissionLevel,
-        permissions: this.permissions
-      }))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized))
     },
 
     async login(form) {
@@ -93,12 +67,18 @@ export const useUserStore = defineStore('user', {
       this.realName = ''
       this.roleName = ''
       this.roleCode = ROLE_CODE.QUERY_VIEWER
-      this.roleLevel = 'L1'
+      this.roleLevel = ''
       this.permissionLevel = 1
       this.permissions = []
+      this.dataScope = null
+      this.departmentId = null
+      this.departmentName = ''
+      this.regionCode = ''
+      
       localStorage.removeItem(STORAGE_KEY)
       // Clean up legacy v1 storage if it exists
       localStorage.removeItem('population_user')
+      clearAllReferenceCache()
     },
 
     hasLevel(minLevel) {
