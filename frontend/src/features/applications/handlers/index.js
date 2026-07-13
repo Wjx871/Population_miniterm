@@ -3,6 +3,7 @@ import { createFloatingHandler } from './floatingHandler'
 import { createResidencePermitHandler } from './residencePermitHandler'
 import { createCancellationHandler } from './cancellationHandler'
 import { createExportHandler } from './exportHandler'
+import { createKeyPopulationHandler } from './keyPopulationHandler'
 
 import { getMigrationApplicationDetail, executeMigrationIn, executeMigrationOut } from '../../../api/migrations'
 import {
@@ -22,6 +23,14 @@ import {
   getExportApplicationDetail,
   executeSensitiveExport
 } from '../../../api/exports'
+import {
+  getRegisterApplicationDetail,
+  getReleaseApplicationDetail,
+  submitRegisterApplication,
+  submitReleaseApplication,
+  executeRegisterApplication,
+  executeReleaseApplication
+} from '../../../api/keyPopulation'
 import {
   getMigrationMaterialOptions,
   getMigrationMaterialRuleText,
@@ -49,6 +58,12 @@ import {
   getSensitiveExportMaterialRuleText,
   hasVerifiedSensitiveExportMaterials
 } from '../../../constants/export'
+import { normalizeKeyPopulationApplication } from '../../../adapters/keyPopulation'
+import {
+  getKeyPopulationMaterialOptions,
+  getKeyPopulationMaterialRuleText,
+  hasVerifiedKeyPopulationMaterials
+} from '../../../constants/keyPopulation'
 
 const migrationHandler = createMigrationHandler({
   getMigrationApplicationDetail,
@@ -98,12 +113,26 @@ const exportHandler = createExportHandler({
   hasVerifiedSensitiveExportMaterials
 })
 
+const keyPopulationHandler = createKeyPopulationHandler({
+  getRegisterApplicationDetail,
+  getReleaseApplicationDetail,
+  submitRegisterApplication,
+  submitReleaseApplication,
+  executeRegisterApplication,
+  executeReleaseApplication,
+  normalizeKeyPopulationApplication,
+  getKeyPopulationMaterialOptions,
+  getKeyPopulationMaterialRuleText,
+  hasVerifiedKeyPopulationMaterials
+})
+
 const handlers = [
   migrationHandler,
   floatingHandler,
   residencePermitHandler,
   cancellationHandler,
-  exportHandler
+  exportHandler,
+  keyPopulationHandler
 ]
 
 export function getApplicationBusinessHandler(businessType) {

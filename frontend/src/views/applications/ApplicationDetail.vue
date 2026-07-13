@@ -289,7 +289,10 @@ async function load() {
 
     const currentHandler = getApplicationBusinessHandler(application.value?.businessType)
     if (currentHandler) {
-      const rawDetail = await currentHandler.loadDetail(applicationId.value)
+      const rawDetail = await currentHandler.loadDetail(
+        applicationId.value,
+        application.value?.businessType
+      )
       const normalized = typeof currentHandler.normalizeDetail === 'function'
         ? currentHandler.normalizeDetail(rawDetail)
         : rawDetail

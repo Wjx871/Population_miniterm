@@ -1,6 +1,6 @@
 # 人口数据库管理系统前端
 
-本目录是人口数据库管理系统的 Vue 3 前端，提供登录、工作台、人口、户籍、迁入迁出、证件和用户管理页面。
+本目录是人口数据库管理系统的 Vue 3 前端，提供登录、工作台、人口、户籍、迁入迁出、注销、流动人口、居住证、重点人口、导出审计、操作/登录日志、综合查询、数据大屏、数据字典与行政区划等页面。
 
 ## 技术栈
 
@@ -69,4 +69,16 @@ npm run build
 - 开发分支：`feat/frontend-population`。
 - 所有前端源码和配置均位于 `frontend/`；不要在仓库根目录新增重复的 Vite、Vue 或 `src/` 文件。
 - 业务 API 必须复用 `src/api/request.js`，不要自行创建 Axios 实例或读取 Token。
+- 专业业务申请详情统一走 `/applications/:applicationId` + `features/applications/handlers`，不新增重复详情页。
+- 显式执行默认只提交真实 `version`；导出下载必须 `responseType: 'blob'` 且 `rawResponse: true`。
 - 不提交 `node_modules/`、`dist/`、本地环境文件或敏感信息。
+
+## 测试
+
+```bash
+npm run test:unit
+npm run build
+npm run check
+```
+
+单元测试使用 Node 原生 `node --test`，覆盖 payload/route/handler/权限契约。

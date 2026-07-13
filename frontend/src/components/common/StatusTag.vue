@@ -22,20 +22,29 @@ const props = defineProps({
   },
 });
 
+const EXTRA_STATUS_LABEL = Object.freeze({
+  RELEASED: '已解除',
+  FAILED: '失败',
+  EXPIRED: '已过期',
+  PROCESSING: '处理中',
+  ENABLED: '启用',
+  DISABLED: '停用',
+})
+
 const tagType = computed(() => {
   const v = props.value || '';
-  if (['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'PENDING'].includes(v)) return 'primary';
+  if (['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'PENDING', 'PROCESSING'].includes(v)) return 'primary';
   if (['APPROVED', 'VERIFIED', 'COMPLETED', 'ACTIVE', 'ENABLED'].includes(v)) return 'success';
-  if (['REJECTED'].includes(v)) return 'danger';
-  if (['WITHDRAWN', 'CANCELLED', 'LEFT', 'DISABLED'].includes(v)) return 'info';
+  if (['REJECTED', 'FAILED'].includes(v)) return 'danger';
+  if (['WITHDRAWN', 'CANCELLED', 'LEFT', 'DISABLED', 'RELEASED'].includes(v)) return 'info';
   if (['EXPIRED'].includes(v)) return 'warning';
   if (v.includes('正常') || v.includes('启用') || v.includes('有效') || v.includes('迁入')) {
     return 'success';
   }
-  if (v.includes('禁用') || v.includes('无效') || v.includes('三级')) {
+  if (v.includes('禁用') || v.includes('无效') || v.includes('三级') || v.includes('解除')) {
     return 'info';
   }
-  if (v.includes('死亡') || v.includes('迁出') || v.includes('过期') || v.includes('一级') || v.includes('注销')) {
+  if (v.includes('死亡') || v.includes('迁出') || v.includes('过期') || v.includes('一级') || v.includes('注销') || v.includes('失败')) {
     return 'danger';
   }
   if (v.includes('二级') || v.includes('即将到期')) {
@@ -45,16 +54,15 @@ const tagType = computed(() => {
 });
 
 const label = computed(() => {
-  if (props.value === 'ENABLED') return '启用';
-  if (props.value === 'DISABLED') return '停用';
-  if (props.value === 'ACTIVE') return '正常';
-
-  return (props.kind === 'approval' ? APPROVAL_STATUS[props.value] : null)
+  // 旧 kind 优先，保持流动/居住证等既有中文映射
+  const kindLabel = (props.kind === 'approval' ? APPROVAL_STATUS[props.value] : null)
     || (props.kind === 'material' ? MATERIAL_VERIFY_STATUS[props.value] : null)
     || (props.kind === 'floating' ? FLOATING_STATUS[props.value] : null)
     || (props.kind === 'residencePermit' ? RESIDENCE_PERMIT_STATUS[props.value] : null)
     || APPLICATION_STATUS[props.value]
-    || props.value
-    || '-';
+  if (kindLabel) return kindLabel
+  if (props.value === 'ACTIVE') return '有效'
+  if (EXTRA_STATUS_LABEL[props.value]) return EXTRA_STATUS_LABEL[props.value]
+  return props.value || '-'
 });
 </script>
