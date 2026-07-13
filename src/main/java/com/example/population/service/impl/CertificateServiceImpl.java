@@ -15,6 +15,7 @@ import com.example.population.mapper.CertificateMapper;
 import com.example.population.mapper.PersonMapper;
 import com.example.population.service.CertificateService;
 import com.example.population.util.PageUtil;
+import com.example.population.util.SafeLike;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -202,5 +203,20 @@ public class CertificateServiceImpl extends ServiceImpl<CertificateMapper, Certi
             warnDays = DEFAULT_WARN_DAYS;
         }
         return baseMapper.listExpiringCertificates(warnDays);
+    }
+
+    @Override
+    public IPage<Certificate> searchByCertNo(String keyword, long current, long size) {
+        Page<Certificate> page = PageUtil.clamp(current, size);
+        LambdaQueryWrapper<Certificate> w = new LambdaQueryWrapper<>();
+        String safe = SafeLike.escape(keyword);
+        if (safe == null || safe.isEmpty()) {
+            // 空关键字：不返回任何结果（综合查询必须传关键字）
+            return page.setRecords(java.util.Collections.emptyList());
+        }
+        w.and(w2 -> w2.like(Certificate::getCertificateNo, safe)
+                .or().like(Certificate::getIssueAuthority, safe));
+        w.orderByDesc(Certificate::getIssueDate);
+        return this.page(page, w);
     }
 }

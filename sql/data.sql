@@ -130,7 +130,9 @@ INSERT INTO sys_permission (permission_code, permission_name, module_name, actio
 ('log:query', '审计日志查询', 'LOG', 'QUERY', 2, 0),
 -- Login log permissions
 ('loginLog:query', '登录日志查询', 'LOGIN_LOG', 'QUERY', 2, 0),
-('loginLog:delete', '登录日志清理', 'LOGIN_LOG', 'DELETE', 3, 1)
+('loginLog:delete', '登录日志清理', 'LOGIN_LOG', 'DELETE', 3, 1),
+-- Comprehensive search (业务流程 §2.2.9 跨实体聚合查询)
+('query:comprehensive', '综合查询', 'QUERY', 'QUERY', 1, 0)
 ON DUPLICATE KEY UPDATE permission_name = VALUES(permission_name);
 
 -- =====================================================
@@ -142,7 +144,7 @@ SELECT r.role_id, p.permission_id
 FROM sys_role r
 CROSS JOIN sys_permission p
 WHERE r.role_code = 'L1_QUERY'
-AND p.permission_code IN ('person:query', 'household:query', 'migration:query', 'floating:query', 'permit:query', 'region:query', 'dictionary:query')
+AND p.permission_code IN ('person:query', 'household:query', 'migration:query', 'floating:query', 'permit:query', 'region:query', 'dictionary:query', 'query:comprehensive')
 ON DUPLICATE KEY UPDATE role_id = VALUES(role_id);
 
 -- L2_HANDLE: Basic + handling permissions
@@ -165,7 +167,8 @@ AND p.permission_code IN (
     'registration:query', 'registration:manage',
     'archive:query', 'material:query', 'material:manage',
     'log:query',
-    'loginLog:query'
+    'loginLog:query',
+    'query:comprehensive'
 )
 ON DUPLICATE KEY UPDATE role_id = VALUES(role_id);
 
@@ -210,7 +213,8 @@ AND p.permission_code IN (
     'region:query', 'region:manage',
     'material:query', 'material:manage', 'material:verify',
     'log:query',
-    'loginLog:query', 'loginLog:delete'
+    'loginLog:query', 'loginLog:delete',
+    'query:comprehensive'
 )
 ON DUPLICATE KEY UPDATE role_id = VALUES(role_id);
 

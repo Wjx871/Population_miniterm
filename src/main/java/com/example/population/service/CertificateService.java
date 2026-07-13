@@ -42,4 +42,15 @@ public interface CertificateService extends IService<Certificate> {
      * 即将到期 / 已过期证件清单（warnDays 内）。
      */
     java.util.List<Certificate> listExpiringCertificates(int warnDays);
+
+    /**
+     * 按证件编号或签发机关模糊搜索（用于 §2.2.9 综合查询 / 数据大屏）。
+     * <p>
+     * <ul>
+     *   <li>与 {@code page(...)} 行为一致：分页返回；不应用额外过滤；结果按签发日期倒序</li>
+     *   <li>统一通过 {@link com.example.population.util.SafeLike} 转义 LIKE 通配符，避免 DoS</li>
+     *   <li>单源最大返回条数受调用方控制（默认 10）</li>
+     * </ul>
+     */
+    IPage<Certificate> searchByCertNo(String keyword, long current, long size);
 }
