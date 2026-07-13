@@ -1,6 +1,7 @@
 import { createMigrationHandler } from './migrationHandler'
 import { createFloatingHandler } from './floatingHandler'
 import { createResidencePermitHandler } from './residencePermitHandler'
+import { createCancellationHandler } from './cancellationHandler'
 
 import { getMigrationApplicationDetail, executeMigrationIn, executeMigrationOut } from '../../../api/migrations'
 import {
@@ -11,6 +12,11 @@ import {
   endorseResidencePermit,
   cancelResidencePermitApplication
 } from '../../../api/floatingResidence'
+import {
+  getCancellationApplicationDetail,
+  executePersonCancellation,
+  executeHouseholdCancellation
+} from '../../../api/cancellations'
 import {
   getMigrationMaterialOptions,
   getMigrationMaterialRuleText,
@@ -24,8 +30,14 @@ import {
   hasVerifiedFloatingMaterials,
   hasVerifiedPermitMaterials
 } from '../../../constants/floatingResidence'
+import {
+  getCancellationMaterialOptions,
+  getCancellationMaterialRuleText,
+  hasVerifiedCancellationMaterials
+} from '../../../constants/cancellation'
 import { normalizeFloatingProfessional } from '../../../adapters/floating'
 import { normalizePermitProfessional } from '../../../adapters/residencePermit'
+import { normalizeCancellationProfessional } from '../../../adapters/cancellation'
 
 const migrationHandler = createMigrationHandler({
   getMigrationApplicationDetail,
@@ -56,7 +68,22 @@ const residencePermitHandler = createResidencePermitHandler({
   normalizePermitProfessional
 })
 
-const handlers = [migrationHandler, floatingHandler, residencePermitHandler]
+const cancellationHandler = createCancellationHandler({
+  getCancellationApplicationDetail,
+  executePersonCancellation,
+  executeHouseholdCancellation,
+  getCancellationMaterialOptions,
+  getCancellationMaterialRuleText,
+  hasVerifiedCancellationMaterials,
+  normalizeCancellationProfessional
+})
+
+const handlers = [
+  migrationHandler,
+  floatingHandler,
+  residencePermitHandler,
+  cancellationHandler
+]
 
 export function getApplicationBusinessHandler(businessType) {
   for (const handler of handlers) {

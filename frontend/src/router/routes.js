@@ -146,6 +146,47 @@ export const routes = [
         meta: { title: '审批详情', minLevel: 1, permission: 'approval:view', menu: false, activeMenu: '/approvals', group: '业务办理' }
       },
       {
+        path: 'cancellations',
+        name: 'Cancellations',
+        component: () => import('../views/cancellations/CancellationList.vue'),
+        meta: {
+          title: '注销管理',
+          minLevel: 1,
+          permission: PERMISSIONS.CANCELLATION_VIEW,
+          menu: true,
+          group: '业务办理',
+          order: 24,
+          icon: 'CircleClose'
+        }
+      },
+      {
+        path: 'cancellations/apply',
+        name: 'CancellationApply',
+        component: () => import('../views/cancellations/CancellationApplicationCreate.vue'),
+        meta: {
+          title: '注销申请',
+          minLevel: 1,
+          // 页面内按 person/household 创建权限细判；路由入口用 view 避免误拦
+          permission: PERMISSIONS.CANCELLATION_VIEW,
+          menu: false,
+          activeMenu: '/cancellations',
+          group: '业务办理'
+        }
+      },
+      {
+        path: 'household-archives',
+        name: 'HouseholdArchiveList',
+        component: () => import('../views/cancellations/HouseholdArchiveList.vue'),
+        meta: {
+          title: '家庭户归档',
+          minLevel: 1,
+          permission: PERMISSIONS.CANCELLATION_ARCHIVE_VIEW,
+          menu: false,
+          activeMenu: '/cancellations',
+          group: '业务办理'
+        }
+      },
+      {
         path: 'residence-archives',
         name: 'ResidenceArchiveList',
         component: () => import('../views/migrations/ResidenceArchiveList.vue'),
@@ -277,7 +318,7 @@ export const routes = [
         meta: { 
           title: '重点人口管理',
           minLevel: 2,
-          permission: 'key:view',
+          permission: PERMISSIONS.KEY_POPULATION_VIEW,
           menu: false,
           group: '扩展业务',
           order: 31,

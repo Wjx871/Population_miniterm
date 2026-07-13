@@ -51,10 +51,28 @@ export const PERMISSIONS = Object.freeze({
   RESIDENCE_PERMIT_LOG_VIEW: 'residence-permit:log:view',
   RESIDENCE_PERMIT_EXPIRY_VIEW: 'residence-permit:expiry:view',
   
-  KEY_VIEW: 'key:view',
-  KEY_APPLY: 'key:apply',
-  KEY_MANAGE: 'key:manage',
-  
+  /** 注销管理 */
+  CANCELLATION_VIEW: 'cancellation:view',
+  CANCELLATION_PERSON_CREATE: 'cancellation:person:create',
+  CANCELLATION_HOUSEHOLD_CREATE: 'cancellation:household:create',
+  CANCELLATION_EXECUTE: 'cancellation:execute',
+  CANCELLATION_ARCHIVE_VIEW: 'cancellation:archive:view',
+
+  /** 数据导出 */
+  DATA_EXPORT_NORMAL: 'data:export:normal',
+  DATA_EXPORT_SENSITIVE_APPLY: 'data:export:sensitive:apply',
+  DATA_EXPORT_SENSITIVE_EXECUTE: 'data:export:sensitive:execute',
+  DATA_EXPORT_SENSITIVE_DOWNLOAD: 'data:export:sensitive:download',
+  DATA_EXPORT_LOG_VIEW: 'data:export:log:view',
+
+  /** 重点人口（正式权限码，替换过时的 key:*） */
+  KEY_POPULATION_VIEW: 'key-population:view',
+  KEY_POPULATION_APPLY: 'key-population:apply',
+  KEY_POPULATION_EXECUTE: 'key-population:execute',
+
+  /** 日志查询 */
+  LOG_VIEW: 'log:view',
+
   CERTIFICATE_VIEW: 'certificate:view',
   CERTIFICATE_EDIT: 'certificate:edit',
   
