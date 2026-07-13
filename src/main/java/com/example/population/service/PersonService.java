@@ -22,4 +22,9 @@ public interface PersonService extends IService<Person> {
      * 更新人口基础信息。身份证号组合锁住不能改。
      */
     boolean updatePerson(Long personId, PersonUpdateDTO dto);
+
+    /**
+     * 按 ID 列表查询，应用数据范围过滤（设计文档 §6：人员列表须按部门/区划过滤）。
+     */
+    java.util.List<Person> listByIdsWithScope(java.util.List<Long> personIds);
 }

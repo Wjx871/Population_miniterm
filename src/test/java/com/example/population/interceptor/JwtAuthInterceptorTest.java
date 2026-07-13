@@ -1,5 +1,7 @@
 package com.example.population.interceptor;
 
+import com.example.population.mapper.SysDepartmentMapper;
+import com.example.population.service.AdminRegionService;
 import com.example.population.util.JwtUtil;
 import com.example.population.util.PermissionCache;
 import com.example.population.util.SecurityContext;
@@ -58,7 +60,10 @@ class JwtAuthInterceptorTest {
         tokenBlacklist = mock(TokenBlacklist.class);
         when(tokenBlacklist.isRevoked(org.mockito.ArgumentMatchers.any())).thenReturn(false);
 
-        interceptor = new JwtAuthInterceptor(jwtUtil, permissionCache, tokenBlacklist, new ObjectMapper());
+        AdminRegionService adminRegionService = mock(AdminRegionService.class);
+        SysDepartmentMapper departmentMapper = mock(SysDepartmentMapper.class);
+        interceptor = new JwtAuthInterceptor(jwtUtil, permissionCache, tokenBlacklist,
+                new ObjectMapper(), adminRegionService, departmentMapper);
 
         // 清理 ThreadLocal，避免用例间污染
         SecurityContext.clear();

@@ -1,6 +1,9 @@
 package com.example.population.interceptor;
 
 import com.example.population.dto.Result;
+import com.example.population.entity.AdminRegion;
+import com.example.population.service.AdminRegionService;
+import com.example.population.util.DataScopeContext;
 import com.example.population.util.JwtUtil;
 import com.example.population.util.PermissionCache;
 import com.example.population.util.SecurityContext;
@@ -45,6 +48,8 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
     private final PermissionCache permissionCache;
     private final TokenBlacklist tokenBlacklist;
     private final ObjectMapper objectMapper;
+    private final AdminRegionService adminRegionService;
+    private final com.example.population.mapper.SysDepartmentMapper departmentMapper;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -87,6 +92,7 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
             String roleCode = jwtUtil.extractStringClaim(claims, "roleCode");
             String dataScope = jwtUtil.extractStringClaim(claims, "dataScope");
             Set<String> permCodes = jwtUtil.extractPermCodes(claims);
+            Long deptId = jwtUtil.extractDeptId(claims);
 
             // 关键安全卡点：本版本要求 token 必须包含完整权限字段，否则视为旧 token 强制重登
             if (uid == null || uname == null || permLevel == null || roleCode == null || dataScope == null) {
@@ -109,12 +115,21 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
                     .permissionLevel(permLevel)
                     .roleCode(roleCode)
                     .dataScopeCode(dataScope)
+                    .departmentId(deptId)
                     .permissionCodes(permCodes)
                     .build();
             SecurityContext.set(ctx);
             request.setAttribute(ATTR_USER_ID, uid);
             request.setAttribute(ATTR_USERNAME, uname);
             request.setAttribute(ATTR_SECURITY_CONTEXT, ctx);
+
+            // P0: 写入数据范围上下文（DataScopeAspect 使用）
+            try {
+                DataScopeContext dsCtx = buildDataScopeContext(ctx);
+                DataScopeContext.set(dsCtx);
+            } catch (Exception e) {
+                log.warn("构建数据范围上下文失败 uid={} err={}", uid, e.getMessage());
+            }
         } catch (Exception e) {
             log.warn("解析 token 失败: {}", e.getMessage());
             writeUnauthorized(request, response, "令牌解析失败");
@@ -128,6 +143,69 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
                                 Object handler, Exception ex) {
         // 清理 ThreadLocal，防止线程复用导致串号
         SecurityContext.clear();
+        DataScopeContext.clear();
+    }
+
+    /**
+     * 根据 SecurityContext + sys_user.department_id 构造数据范围上下文。
+     * <p>
+     * 流程：
+     * <ol>
+     *   <li>从 SecurityContext 拿 dataScopeCode / departmentId</li>
+     *   <li>通过 sys_department.region_code 反查用户所属区划（departmentId → regionCode）</li>
+     *   <li>REGION 范围：构造 visibleRegionCodes（区划自身 + 所有下级）</li>
+     * </ol>
+     */
+    private DataScopeContext buildDataScopeContext(SecurityContext ctx) {
+        Long uid = ctx.getUserId();
+        Long departmentId = ctx.getDepartmentId();
+        String regionCode = null;
+        java.util.Set<String> visibleRegionCodes = null;
+
+        if (departmentId != null && departmentMapper != null) {
+            try {
+                com.example.population.entity.SysDepartment d = departmentMapper.selectById(departmentId);
+                if (d != null) {
+                    regionCode = d.getRegionCode();
+                }
+            } catch (Exception e) {
+                log.warn("解析部门区划失败 deptId={} err={}", departmentId, e.getMessage());
+            }
+        }
+
+        if (regionCode != null && "REGION".equalsIgnoreCase(ctx.getDataScopeCode())) {
+            visibleRegionCodes = collectDescendantRegions(regionCode);
+        }
+
+        return DataScopeContext.builder()
+                .dataScopeCode(ctx.getDataScopeCode())
+                .userId(uid)
+                .departmentId(departmentId)
+                .departmentRegionCode(regionCode)
+                .visibleRegionCodes(visibleRegionCodes)
+                .build();
+    }
+
+    /**
+     * 一次拉取 regionCode + 一级子节点 + 二级子节点，REGION 范围够用。
+     * <p>
+     * 如未来区划层级扩展到 5+ 层（街道、社区），改为一次性 SQL 拉全树。
+     */
+    private java.util.Set<String> collectDescendantRegions(String regionCode) {
+        java.util.Set<String> all = new java.util.HashSet<>();
+        if (regionCode == null) return all;
+        all.add(regionCode);
+        java.util.List<AdminRegion> children = adminRegionService.listChildren(regionCode);
+        if (children != null) {
+            for (AdminRegion c : children) {
+                all.add(c.getRegionCode());
+                java.util.List<AdminRegion> sub = adminRegionService.listChildren(c.getRegionCode());
+                if (sub != null) {
+                    for (AdminRegion s : sub) all.add(s.getRegionCode());
+                }
+            }
+        }
+        return all;
     }
 
     private void writeUnauthorized(HttpServletRequest request, HttpServletResponse response, String message) throws java.io.IOException {

@@ -529,6 +529,57 @@ class ApprovalGateServiceApproveTest {
                 .hasMessageContaining("PENDING");
     }
 
+    // ==================== P0 增量测试 ====================
+
+    @Test
+    @DisplayName("P0-3 approve: 申请人 = 审批人 → ForbiddenException（禁止自审）")
+    void approve_selfReviewForbidden() throws Exception {
+        SysApprovalRequest req = new SysApprovalRequest();
+        req.setApprovalId(30L);
+        req.setApplicationId(8L);
+        req.setStatus("PENDING");
+        req.setBusinessType("PERSON_CREATE");
+        PersonCreateDTO payload = new PersonCreateDTO();
+        payload.setName("张三");
+        payload.setIdentityTypeCode("ID_CARD");
+        payload.setIdentityNo("110101199001011237");
+        req.setApplyReason(buildReason("PERSON_CREATE", null, 8L, null, payload));
+        when(requestMapper.selectById(30L)).thenReturn(req);
+
+        BusinessApplication ba = new BusinessApplication();
+        ba.setApplicationId(8L);
+        ba.setSubmitUserId(99L); // 与当前审批人相同
+        when(businessApplicationMapper.selectById(8L)).thenReturn(ba);
+
+        assertThatThrownBy(() -> service.approve(30L, "OK"))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessageContaining("申请人不能审批自己的申请");
+
+        // 不应该触发业务落地
+        verify(ctx, never()).getBean(PersonService.class);
+    }
+
+    @Test
+    @DisplayName("P0-3 reject: 申请人 = 审批人 → ForbiddenException（禁止自驳）")
+    void reject_selfReviewForbidden() {
+        SysApprovalRequest req = new SysApprovalRequest();
+        req.setApprovalId(31L);
+        req.setApplicationId(9L);
+        req.setStatus("PENDING");
+        when(requestMapper.selectById(31L)).thenReturn(req);
+
+        BusinessApplication ba = new BusinessApplication();
+        ba.setApplicationId(9L);
+        ba.setSubmitUserId(99L);
+        when(businessApplicationMapper.selectById(9L)).thenReturn(ba);
+
+        assertThatThrownBy(() -> service.reject(31L, "材料不全"))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessageContaining("申请人不能驳回自己的申请");
+
+        verify(requestMapper, never()).updateById(any());
+    }
+
     // ---------- helpers ----------
 
     /**

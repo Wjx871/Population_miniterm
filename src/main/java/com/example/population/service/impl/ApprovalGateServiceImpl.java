@@ -140,6 +140,15 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
             throw new BizException(409, "审批单当前状态非 PENDING，无法审批");
         }
 
+        // P0: 申请人 ≠ 审批人 校验（设计文档 §6 / D-05：禁止"自己审自己"）
+        BusinessApplication applicant = businessApplicationMapper.selectById(req.getApplicationId());
+        if (applicant != null && applicant.getSubmitUserId() != null
+                && applicant.getSubmitUserId().equals(sc.getUserId())) {
+            log.warn("审批越权尝试：applicantUserId={} approverUserId={} approvalId={}",
+                    applicant.getSubmitUserId(), sc.getUserId(), approvalId);
+            throw new ForbiddenException("申请人不能审批自己的申请");
+        }
+
         ApprovalDraftDTO draft = loadDraft(req);
 
         // 落地前的材料闸门：若前端在草稿里挂了 applicationId 且业务类型有最低必交要求，
@@ -150,7 +159,7 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
 
         Long landedId;
         try {
-            landedId = dispatchLanding(draft, sc);
+            landedId = dispatchLanding(draft, sc, req.getApprovalId());
         } catch (Exception e) {
             log.error("审批落地业务失败 approvalId={}", approvalId, e);
             throw new BizException(500, "审批通过但落地失败：" + e.getMessage(), e);
@@ -196,16 +205,24 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
         if (!"PENDING".equalsIgnoreCase(req.getStatus())) {
             throw new BizException(409, "审批单当前状态非 PENDING，无法驳回");
         }
+        // P0: 申请人 ≠ 审批人（驳回也按同一原则）
+        BusinessApplication applicant = businessApplicationMapper.selectById(req.getApplicationId());
+        if (applicant != null && applicant.getSubmitUserId() != null
+                && applicant.getSubmitUserId().equals(sc.getUserId())) {
+            log.warn("驳回越权尝试：applicantUserId={} approverUserId={} approvalId={}",
+                    applicant.getSubmitUserId(), sc.getUserId(), approvalId);
+            throw new ForbiddenException("申请人不能驳回自己的申请");
+        }
         req.setStatus("REJECTED");
         req.setCurrentApproverId(sc.getUserId());
         req.setFinishedAt(LocalDateTime.now());
         requestMapper.updateById(req);
 
-        BusinessApplication ba = businessApplicationMapper.selectById(req.getApplicationId());
-        if (ba != null) {
-            ba.setStatus("REJECTED");
-            ba.setCompletedAt(LocalDateTime.now());
-            businessApplicationMapper.updateById(ba);
+        BusinessApplication ba2 = businessApplicationMapper.selectById(req.getApplicationId());
+        if (ba2 != null) {
+            ba2.setStatus("REJECTED");
+            ba2.setCompletedAt(LocalDateTime.now());
+            businessApplicationMapper.updateById(ba2);
         }
 
         SysApprovalLog logRow = new SysApprovalLog();
@@ -252,6 +269,10 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
      * 按 businessType 反序列化 payload_json，调用对应 Service。
      */
     private Long dispatchLanding(ApprovalDraftDTO draft, SecurityContext sc) throws Exception {
+        return dispatchLanding(draft, sc, null);
+    }
+
+    private Long dispatchLanding(ApprovalDraftDTO draft, SecurityContext sc, Long approvalId) throws Exception {
         if (draft == null || draft.getBusinessType() == null) {
             throw new BizException(400, "草稿 businessType 缺失");
         }
@@ -283,6 +304,16 @@ public class ApprovalGateServiceImpl implements ApprovalGateService {
             case "MIGRATION_OUT" -> {
                 MigrationOutDTO dto = objectMapper.readValue(json, MigrationOutDTO.class);
                 yield ctx.getBean(MigrationOutService.class).createMigrationOut(dto).getOutId();
+            }
+            case "SENSITIVE_EXPORT_L2", "SENSITIVE_EXPORT_L3" -> {
+                // 高敏导出审批通过 → 落 data_export_log 并返回 exportId
+                com.example.population.dto.DataExportRequestDTO exportReq =
+                        objectMapper.readValue(json, com.example.population.dto.DataExportRequestDTO.class);
+                int sensitivity = "SENSITIVE_EXPORT_L3".equals(type) ? 3 : 2;
+                com.example.population.entity.DataExportLog row =
+                        ctx.getBean(com.example.population.service.SensitiveExportService.class)
+                                .landApprovedExport(exportReq, sc, sensitivity, approvalId);
+                yield row.getExportId();
             }
             default -> throw new BizException(400, "未知业务类型：" + type);
         };

@@ -80,6 +80,7 @@ public class JwtUtil {
      * <ul>
      *   <li>jti  : UUID，全局唯一，可被 {@link TokenBlacklist} 拉黑实现主动吊销</li>
      *   <li>type : "access"</li>
+     *   <li>deptId : sys_user.department_id（P0：用于数据范围过滤，无需每请求再查 sys_user）</li>
      * </ul>
      */
     public String generate(Long userId,
@@ -89,8 +90,23 @@ public class JwtUtil {
                            String roleCode,
                            String dataScopeCode,
                            Set<String> permissionCodes) {
+        return generate(userId, username, realName, permissionLevel, roleCode, dataScopeCode,
+                permissionCodes, null);
+    }
+
+    /**
+     * 带 departmentId 的签发版本（P0 数据范围过滤使用）。
+     */
+    public String generate(Long userId,
+                           String username,
+                           String realName,
+                           Integer permissionLevel,
+                           String roleCode,
+                           String dataScopeCode,
+                           Set<String> permissionCodes,
+                           Long departmentId) {
         return build(userId, username, realName, permissionLevel, roleCode, dataScopeCode,
-                permissionCodes, TOKEN_TYPE_ACCESS, expiration);
+                permissionCodes, departmentId, TOKEN_TYPE_ACCESS, expiration);
     }
 
     /**
@@ -98,7 +114,7 @@ public class JwtUtil {
      */
     public String generateRefresh(Long userId, String username) {
         return build(userId, username, null, null, null, null,
-                null, TOKEN_TYPE_REFRESH, refreshExpiration);
+                null, null, TOKEN_TYPE_REFRESH, refreshExpiration);
     }
 
     private String build(Long userId,
@@ -108,6 +124,7 @@ public class JwtUtil {
                          String roleCode,
                          String dataScopeCode,
                          Set<String> permissionCodes,
+                         Long departmentId,
                          String tokenType,
                          long ttlMillis) {
         Map<String, Object> claims = new HashMap<>();
@@ -127,6 +144,9 @@ public class JwtUtil {
             }
             if (dataScopeCode != null) {
                 claims.put("dataScope", dataScopeCode);
+            }
+            if (departmentId != null) {
+                claims.put("deptId", departmentId);
             }
             if (permissionCodes != null && !permissionCodes.isEmpty()) {
                 claims.put("permCodes", permissionCodes);
@@ -195,5 +215,20 @@ public class JwtUtil {
             return set;
         }
         return Collections.emptySet();
+    }
+
+    /**
+     * 读取 departmentId（P0 数据范围过滤）。缺失返回 null。
+     */
+    public Long extractDeptId(Claims claims) {
+        Object v = claims.get("deptId");
+        if (v == null) return null;
+        if (v instanceof Long l) return l;
+        if (v instanceof Number n) return n.longValue();
+        try {
+            return Long.parseLong(v.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

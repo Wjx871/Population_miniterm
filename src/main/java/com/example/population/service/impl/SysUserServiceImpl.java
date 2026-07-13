@@ -108,7 +108,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         permissionCache.put(user.getUserId(), permCodes, jwtUtil.getExpirationSeconds());
 
         String token = jwtUtil.generate(user.getUserId(), user.getUsername(), user.getRealName(),
-                permLevel, roleCode, dataScope, permCodes);
+                permLevel, roleCode, dataScope, permCodes, user.getDepartmentId());
 
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);

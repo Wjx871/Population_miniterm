@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.population.annotation.DataScope;
+import com.example.population.dto.DataScopeQuery;
 import com.example.population.dto.HouseholdCreateDTO;
 import com.example.population.dto.HouseholdUpdateDTO;
 import com.example.population.entity.Household;
@@ -18,6 +20,7 @@ import com.example.population.mapper.HouseholdMemberMapper;
 import com.example.population.mapper.PersonMapper;
 import com.example.population.service.ApplicationMaterialService;
 import com.example.population.service.HouseholdService;
+import com.example.population.util.DataScopeHelper;
 import com.example.population.util.PageUtil;
 import com.example.population.util.SafeLike;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +41,7 @@ public class HouseholdServiceImpl extends ServiceImpl<HouseholdMapper, Household
     private final ApplicationMaterialService applicationMaterialService;
 
     @Override
+    @DataScope(DataScope.Type.HOUSEHOLD)
     public IPage<Household> page(long current, long size, String keyword, String regionCode, String status) {
         Page<Household> page = PageUtil.clamp(current, size);
         LambdaQueryWrapper<Household> w = new LambdaQueryWrapper<>();
@@ -52,6 +56,9 @@ public class HouseholdServiceImpl extends ServiceImpl<HouseholdMapper, Household
         if (StringUtils.hasText(status)) {
             w.eq(Household::getStatus, status);
         }
+        // P0: 应用数据范围过滤（设计文档 §6：禁止前端绕过权限）
+        // AND 关系：前端传入的 regionCode 是精确过滤；数据范围进一步限制到本部门/区划
+        DataScopeHelper.applyHouseholdScope(w, DataScopeQuery.fromCurrentContext());
         w.orderByDesc(Household::getCreatedAt);
         return this.page(page, w);
     }

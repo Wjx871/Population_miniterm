@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.population.annotation.DataScope;
+import com.example.population.dto.DataScopeQuery;
 import com.example.population.dto.PersonCreateDTO;
 import com.example.population.dto.PersonQueryDTO;
 import com.example.population.dto.PersonUpdateDTO;
@@ -12,6 +14,7 @@ import com.example.population.exception.NotFoundException;
 import com.example.population.mapper.PersonMapper;
 import com.example.population.service.ApplicationMaterialService;
 import com.example.population.service.PersonService;
+import com.example.population.util.DataScopeHelper;
 import com.example.population.util.PageUtil;
 import com.example.population.util.SafeLike;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Collections;
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,6 +35,7 @@ public class PersonServiceImpl extends ServiceImpl<PersonMapper, Person> impleme
     private final ApplicationMaterialService applicationMaterialService;
 
     @Override
+    @DataScope(DataScope.Type.PERSON)
     public IPage<Person> queryPage(PersonQueryDTO q) {
         Page<Person> page = PageUtil.clamp(q.getCurrent(), q.getSize());
         LambdaQueryWrapper<Person> w = new LambdaQueryWrapper<>();
@@ -59,6 +66,8 @@ public class PersonServiceImpl extends ServiceImpl<PersonMapper, Person> impleme
         if (q.getBirthDateEnd() != null) {
             w.le(Person::getBirthDate, q.getBirthDateEnd());
         }
+        // P0: 应用数据范围过滤（设计文档 §6：禁止前端绕过权限）
+        DataScopeHelper.applyPersonScope(w, DataScopeQuery.fromCurrentContext());
         w.orderByDesc(Person::getCreatedAt);
         return this.page(page, w);
     }
@@ -114,5 +123,18 @@ public class PersonServiceImpl extends ServiceImpl<PersonMapper, Person> impleme
         if (dto.getPhone() != null) p.setPhone(dto.getPhone());
         if (dto.getContactAddress() != null) p.setContactAddress(dto.getContactAddress());
         return updateById(p);
+    }
+
+    @Override
+    @DataScope(DataScope.Type.PERSON)
+    public java.util.List<Person> listByIdsWithScope(java.util.List<Long> personIds) {
+        if (personIds == null || personIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        LambdaQueryWrapper<Person> w = new LambdaQueryWrapper<>();
+        w.in(Person::getPersonId, personIds);
+        // P0: 强制应用数据范围
+        DataScopeHelper.applyPersonScope(w, DataScopeQuery.fromCurrentContext());
+        return this.list(w);
     }
 }
