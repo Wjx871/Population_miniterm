@@ -92,8 +92,7 @@ set /a waited=0
 set "BACKEND_READY=0"
 
 :wait_loop
-powershell -NoProfile -Command ^
-  "try { $null = Invoke-WebRequest -Uri '!BACKEND_URL!/api/auth/login' -Method POST -ContentType 'application/json' -Body '{}' -TimeoutSec 2 -UseBasicParsing; exit 0 } catch { if ($_.Exception.Response) { exit 0 } else { exit 1 } }" >nul 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%check_backend_health.ps1" -BackendBaseUrl "!BACKEND_URL!" -TimeoutSeconds 2 -Quiet >nul 2>&1
 if not errorlevel 1 (
     set "BACKEND_READY=1"
     goto :backend_ready

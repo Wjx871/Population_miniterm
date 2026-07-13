@@ -10,7 +10,7 @@
 
 系统现支持申请制迁入/迁出、单级审批后的显式业务执行、当前户籍唯一登记、家庭成员同步、迁出历史快照、户主变更及同市跨区批次关联。操作顺序为：创建迁移草稿 → 上传必需材料 → 提交/审批 → 授权经办人确认执行。审批通过不会自动改变户籍。
 
-增量升级依次执行 `doc/database/migrations` 下的 `V4_001` 至 `V4_007`。数据库通过 `DB_URL/DB_USERNAME/DB_PASSWORD`，JWT 通过 `JWT_SECRET` 配置，上传目录通过 `APP_UPLOAD_DIR` 配置。演示账号仍为 `viewer/population/household/approver/admin`，课程环境初始密码 `123456`。
+增量升级依次执行 `doc/database/migrations` 下的 `V4_001` 至 `V4_010`。数据库通过 `DB_URL/DB_USERNAME/DB_PASSWORD`，JWT 通过 `JWT_SECRET` 配置，上传目录通过 `APP_UPLOAD_DIR` 配置。演示账号仍为 `viewer/population/household/approver/admin`，课程环境初始密码 `123456`。
 
 ## 第四阶段：注销管理
 
@@ -48,7 +48,7 @@
 mysql -u root -p < doc/database/population_miniterm.sql
 ```
 
-已有数据库在备份后按文件名顺序执行 V4_001 至 V4_009。也可以先在明确命名的测试库中运行：
+已有数据库在备份后按文件名顺序执行 V4_001 至 V4_010。不得将初始化工具当作旧库升级工具。也可以先在明确命名的测试库中运行：
 
 ```powershell
 $env:DB_URL='jdbc:mysql://127.0.0.1:3306/population_miniterm_upgrade'
@@ -60,6 +60,22 @@ $env:DB_PASSWORD='<通过安全方式设置>'
 迁移保留已有业务表和数据，不使用 `DROP TABLE` 重建业务表。
 
 `doc/database/demo_data.sql` 只用于可丢弃的课程演示环境，包含可重复执行的虚构人员、户籍、流动人口和即将到期居住证数据，不得用于生产。
+
+### 显式数据库初始化与验证
+
+启动脚本不会静默执行建库或迁移。新建隔离验证库时，使用：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/windows/init_database.ps1 -Mode Fresh -DemoData
+```
+
+默认目标库为 `population_miniterm_integration_verify`。Fresh 永远拒绝非空数据库；已存在空库也必须显式传入 `-AllowExistingEmptyDatabase`。课程库 `population_miniterm` 默认拒绝，只有传入 `-AllowCourseDatabase` 并在交互中再次输入库名才会继续。源 SQL 不会被修改。
+
+只读验证已有可确认的数据库：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/windows/init_database.ps1 -Mode Verify -Database population_miniterm_integration_verify
+```
 
 ## Windows 一键启动（推荐）
 
@@ -80,9 +96,9 @@ copy config\start.local.env.example start.local.env
 | 脚本 | 作用 |
 |------|------|
 | `start.bat` | 根目录统一入口，调用一键启动流程（推荐） |
-| `scripts/windows/start_all.bat` | 独立窗口启动后端，等待就绪后启动前端 |
+| `scripts/windows/start_all.bat` | 独立窗口启动后端，验证 `/api/health` 的数据库状态后启动前端 |
 | `scripts/windows/start_backend.bat` | 仅启动后端 |
-| `scripts/windows/start_frontend.bat` | 仅启动前端（会探测后端是否在线，未就绪时给出警告） |
+| `scripts/windows/start_frontend.bat` | 仅启动前端（验证 `/api/health`；失败时需明确确认才继续） |
 
 ### 端口配置
 
@@ -96,6 +112,8 @@ FRONTEND_PORT=15180
 ```
 
 修改 `SERVER_PORT` 后，一键启动脚本的后端探测和 Vite 代理目标都会自动同步，无需手动修改 `vite.config.js`。
+
+前端 API 基址默认是 `/api`。启动脚本会显示 API 基址和代理目标；检测到非 `/api` 配置时只提示风险，不会覆盖本地 `.env`。
 
 ### 注意事项
 
@@ -126,6 +144,8 @@ npm run dev
 ```
 
 Vite 将 `/api` 代理到后端地址（默认 `http://127.0.0.1:8080`），代理目标由 `scripts/windows/start_frontend.bat` 通过 `VITE_BACKEND_TARGET` 传入，也可在 `start.local.env` 中通过 `SERVER_PORT` 控制。
+
+`npm run dev` 与 `start.bat` 才有 Vite 开发代理。`npm run preview` 和直接部署 `frontend/dist` 不提供该代理，必须由 Nginx 或网关配置同源 `/api` 反向代理；示例见 `config/nginx.population.conf.example`。
 
 ## 登录与测试账号
 
