@@ -1,5 +1,7 @@
 # Population Miniterm
 
+后端已进入 Phase 11：提供综合人口/家庭户/迁移历史查询、统一统计口径、只读日志查询，以及默认关闭、故障可降级的 Redis 缓存与 JWT 注销撤销。MySQL 始终是唯一事实来源；Redis 不保存人口敏感业务数据。详见 `doc/development/phase-11-query-redis-summary.md`。
+
 人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。
 
 ## 第三阶段：户籍迁移闭环
