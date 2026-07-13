@@ -1,10 +1,19 @@
 <template>
+  <el-input
+    v-if="usePlainInput"
+    :model-value="typeof modelValue === 'string' ? modelValue : ''"
+    :disabled="disabled"
+    :placeholder="plainPlaceholder"
+    clearable
+    @update:model-value="handleChange"
+  />
   <el-cascader
+    v-else
     :model-value="modelValue"
     :options="options"
     :props="cascaderProps"
     :disabled="effectiveDisabled"
-    :placeholder="loadFailed ? '加载失败' : placeholder"
+    :placeholder="loadFailed ? '区划暂不可用' : placeholder"
     :clearable="clearable"
     filterable
     @update:model-value="handleChange"
@@ -15,6 +24,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getCachedRegionTree } from '../../services/referenceDataCache.js'
+import { useUserStore } from '../../stores/user'
+import { PERMISSIONS } from '../../constants/permissions'
 
 const props = defineProps({
   modelValue: {
@@ -41,6 +52,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'change', 'load-error'])
 
+const userStore = useUserStore()
 const options = ref([])
 const cascaderProps = ref({
   value: 'value',
@@ -54,21 +66,34 @@ const loading = ref(false)
 const loadFailed = ref(false)
 const requestId = ref(0)
 let disposed = false
+let warnedOnce = false
 
-const effectiveDisabled = computed(() => props.disabled || loading.value || loadFailed.value)
+const canViewRegion = computed(() => userStore.hasPermission(PERMISSIONS.REGION_VIEW))
+const usePlainInput = computed(() => !canViewRegion.value || loadFailed.value)
+const plainPlaceholder = computed(() => {
+  if (!canViewRegion.value) return '请输入行政区划代码'
+  if (loadFailed.value) return '区划加载失败，可手输代码'
+  return props.placeholder
+})
+const effectiveDisabled = computed(() => props.disabled || loading.value)
 
 onUnmounted(() => {
   disposed = true
 })
 
 async function loadOptions() {
+  if (!canViewRegion.value) {
+    loadFailed.value = false
+    options.value = []
+    return
+  }
+
   const currentRequest = ++requestId.value
   loading.value = true
   loadFailed.value = false
 
   try {
     const result = await getCachedRegionTree(false)
-
     if (!disposed && currentRequest === requestId.value) {
       options.value = result
     }
@@ -76,7 +101,11 @@ async function loadOptions() {
     if (!disposed && currentRequest === requestId.value) {
       options.value = []
       loadFailed.value = true
-      ElMessage.error('加载行政区划失败')
+      // 只提示一次，且不再叠加全局 403 弹窗
+      if (!warnedOnce) {
+        warnedOnce = true
+        ElMessage.warning('行政区划筛选暂不可用，可手动输入区划代码继续查询')
+      }
       emit('load-error', error)
     }
   } finally {

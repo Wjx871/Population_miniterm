@@ -1,14 +1,24 @@
 <template>
   <div class="page-container" v-loading="loading">
     <div class="page-header">
-      <div><h1>申请详情</h1><p class="subtitle">审批通过不等于业务已办结，办结状态只能由后端执行结果确认。</p></div>
+      <div>
+        <h1>申请详情</h1>
+        <p class="subtitle">审批通过不等于业务已办结，办结状态只能由后端执行结果确认。</p>
+      </div>
       <el-button @click="router.back()">返回</el-button>
     </div>
 
     <el-card v-if="application" shadow="never">
-      <template #header><div class="card-header"><span>{{ application.applicationNo }}</span><StatusTag :value="application.status" kind="application" /></div></template>
+      <template #header>
+        <div class="card-header">
+          <span>{{ application.applicationNo }}</span>
+          <StatusTag :value="application.status" kind="application" />
+        </div>
+      </template>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="业务类型">{{ BUSINESS_TYPE_LABEL[application.businessType] || application.businessType }}</el-descriptions-item>
+        <el-descriptions-item label="业务类型">
+          {{ BUSINESS_TYPE_LABEL[application.businessType] || application.businessType }}
+        </el-descriptions-item>
         <el-descriptions-item label="申请人">{{ application.applicantName || '-' }}</el-descriptions-item>
         <el-descriptions-item label="申请标题">{{ application.title }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ formatDateTime(application.createdAt) }}</el-descriptions-item>
@@ -17,23 +27,78 @@
       </el-descriptions>
     </el-card>
 
-    <MigrationDetailPanel v-if="migrationDetail" :detail="migrationDetail" :person="migrationPerson" />
-    <FloatingResidenceDetailPanel v-if="floatingDetail" mode="floating" :detail="floatingDetailBody" :subject="floatingSubject" />
-    <FloatingResidenceDetailPanel v-if="permitDetail" mode="permit" :detail="permitDetailBody" :subject="permitSubject" />
+    <!-- 旧三类专用面板（行为保持不变） -->
+    <MigrationDetailPanel
+      v-if="handlerFamily === 'migration' && professionalDetail"
+      :detail="professionalDetail"
+      :person="migrationPerson"
+    />
+    <FloatingResidenceDetailPanel
+      v-if="handlerFamily === 'floating' && professionalDetail"
+      mode="floating"
+      :detail="displayDetail"
+      :subject="subjectDetail"
+    />
+    <FloatingResidenceDetailPanel
+      v-if="handlerFamily === 'permit' && professionalDetail"
+      mode="permit"
+      :detail="displayDetail"
+      :subject="subjectDetail"
+    />
+    <!-- 新业务统一字段面板 -->
+    <ProfessionalFieldsPanel
+      v-if="genericDetailFields.length"
+      :title="genericDetailTitle"
+      :fields="genericDetailFields"
+      :status="genericDetailStatus"
+      :status-kind="genericStatusKind"
+      :unavailable-reason="unavailableReason"
+    />
+
     <div v-if="canExecute" class="execute-bar">
-      <span>{{ executeLabelText }}</span>
-      <el-button type="success" :loading="executing" @click="openExecuteDialog">执行{{ executeLabelShort }}</el-button>
+      <span>{{ executeHintText }}</span>
+      <el-button type="success" :loading="executing" @click="openExecuteDialog">
+        执行{{ executeLabelShort }}
+      </el-button>
     </div>
 
     <el-card shadow="never">
       <template #header>申请材料</template>
-      <MaterialUploader v-if="isDraft && isMigrationApplication && canUpload" :application-id="applicationId" :material-options="materialOptions" :material-rule-text="materialRuleText" @uploaded="load" />
+      <MaterialUploader
+        v-if="canShowMaterialUploader"
+        :application-id="applicationId"
+        :material-options="materialOptions"
+        :material-rule-text="materialRuleText"
+        @uploaded="load"
+      />
       <MaterialList :materials="materials" :can-delete="isDraft && canDelete" @changed="load" />
     </el-card>
-    <el-card shadow="never"><template #header>审批轨迹</template><ApprovalTimeline :logs="logs" /></el-card>
-    <ApplicationActionBar :application="application" :loading="actionLoading" :specialized-edit-route="specializedEditRoute" :can-continue-specialized="canContinueSpecialized" @continue-specialized="continueSpecialized" @submit="submit" @withdraw="withdraw" @cancel="cancelDraft" />
+
+    <el-card shadow="never">
+      <template #header>审批轨迹</template>
+      <ApprovalTimeline :logs="logs" />
+    </el-card>
+
+    <ApplicationActionBar
+      :application="application"
+      :loading="actionLoading"
+      :can-submit="canSubmitSpecialized"
+      :specialized-edit-route="specializedEditRoute"
+      :can-continue-specialized="canContinueSpecialized"
+      @continue-specialized="continueSpecialized"
+      @submit="submit"
+      @withdraw="withdraw"
+      @cancel="cancelDraft"
+    />
   </div>
-  <FloatingResidenceExecuteDialog v-model="executeVisible" :execute-type="executeType" :version="executeVersion" :loading="executing" @confirm="handleExecute" />
+
+  <FloatingResidenceExecuteDialog
+    v-model="executeVisible"
+    :execute-type="executeDialogType"
+    :version="executeVersion"
+    :loading="executing"
+    @confirm="handleExecute"
+  />
 </template>
 
 <script setup>
@@ -45,18 +110,22 @@ import MaterialUploader from '../../components/business/MaterialUploader.vue'
 import MaterialList from '../../components/business/MaterialList.vue'
 import ApprovalTimeline from '../../components/business/ApprovalTimeline.vue'
 import ApplicationActionBar from '../../components/business/ApplicationActionBar.vue'
+import ProfessionalFieldsPanel from '../../components/business/ProfessionalFieldsPanel.vue'
 import MigrationDetailPanel from '../migrations/components/MigrationDetailPanel.vue'
 import FloatingResidenceDetailPanel from '../floating/components/FloatingResidenceDetailPanel.vue'
 import FloatingResidenceExecuteDialog from '../floating/components/FloatingResidenceExecuteDialog.vue'
-import { cancelDraftApplication, getApplicationApprovalLogs, getApplicationDetail, submitApplication, withdrawApplication } from '../../api/applications'
+import {
+  cancelDraftApplication,
+  getApplicationApprovalLogs,
+  getApplicationDetail,
+  submitApplication,
+  withdrawApplication
+} from '../../api/applications'
 import { getMaterials } from '../../api/materials'
 import { getPersonById } from '../../api/persons'
 import { getMigrationRecord } from '../../adapters/migration'
 import { normalizePerson } from '../../adapters/person'
-import { normalizeFloatingProfessional } from '../../adapters/floating'
-import { normalizePermitProfessional } from '../../adapters/residencePermit'
-import { BUSINESS_TYPE, BUSINESS_TYPE_LABEL } from '../../constants/application'
-import { EXECUTE_TYPE } from '../../constants/floatingResidence'
+import { BUSINESS_TYPE_LABEL } from '../../constants/application'
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { formatDateTime } from '../../utils/date'
@@ -66,141 +135,185 @@ import { getApplicationBusinessHandler } from '../../features/applications/handl
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+
 const applicationId = computed(() => route.params.applicationId)
 const loading = ref(false)
 const actionLoading = ref(false)
 const executing = ref(false)
 const application = ref(null)
-const migrationDetail = ref(null)
+/** 单一专业详情，不再按 family 拆多组 ref */
+const professionalDetail = ref(null)
 const migrationPerson = ref(null)
-const floatingDetail = ref(null)
-const permitDetail = ref(null)
 const materials = ref([])
 const logs = ref([])
 const executeVisible = ref(false)
-const executeType = ref('')
+const executeDialogType = ref('')
 const executeVersion = ref(null)
 
 const handler = computed(() => getApplicationBusinessHandler(application.value?.businessType))
+const handlerFamily = computed(() => handler.value?.family || '')
 
-const getProfessionalDetail = () => {
-  if (isMigrationApplication.value) return migrationDetail.value
-  if (isFloatingApplication.value) return floatingDetail.value
-  if (isPermitApplication.value) return permitDetail.value
-  return null
-}
-
-const hasExecutableVersion = computed(() => {
-  if (!handler.value) return false
-  const meta = handler.value.getExecutionMeta({ businessType: application.value?.businessType, detail: getProfessionalDetail() })
-  return Number.isInteger(meta?.version)
+const displayDetail = computed(() => {
+  if (!handler.value || !professionalDetail.value) return null
+  return handler.value.getDisplayDetail(professionalDetail.value)
 })
 
-const isMigrationApplication = computed(() => handler.value?.family === 'migration')
-const isFloatingApplication = computed(() => handler.value?.family === 'floating')
-const isPermitApplication = computed(() => handler.value?.family === 'permit')
+const subjectDetail = computed(() => {
+  if (!handler.value || !professionalDetail.value) return null
+  return handler.value.getSubject(professionalDetail.value)
+})
 
-const migration = computed(() => getMigrationRecord(migrationDetail.value))
-const floatingDetailBody = computed(() => floatingDetail.value?.professional)
-const floatingSubject = computed(() => floatingDetail.value?.subject)
-const permitDetailBody = computed(() => permitDetail.value?.professional)
-const permitSubject = computed(() => permitDetail.value?.subject)
+const executionMeta = computed(() => {
+  if (!handler.value) return null
+  return handler.value.getExecutionMeta({
+    businessType: application.value?.businessType,
+    detail: professionalDetail.value
+  })
+})
+
+const hasExecutableVersion = computed(() => Number.isInteger(executionMeta.value?.version))
+
 const isDraft = computed(() => application.value?.status === 'DRAFT')
 const canUpload = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_UPLOAD))
 const canDelete = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_DELETE))
+
+const materialOptions = computed(() => {
+  if (!handler.value) return []
+  return handler.value.getMaterialOptions({
+    businessType: application.value?.businessType,
+    detail: professionalDetail.value
+  }) || []
+})
+
+const materialRuleText = computed(() => {
+  if (!handler.value) return ''
+  return handler.value.getMaterialRuleText({
+    businessType: application.value?.businessType,
+    detail: professionalDetail.value
+  }) || ''
+})
+
+/** 草稿 + Handler 支持材料 + 上传权限（不再仅限 migration） */
+const canShowMaterialUploader = computed(() => {
+  return isDraft.value && canUpload.value && Boolean(handler.value) && materialOptions.value.length > 0
+})
+
 const specializedEditRoute = computed(() => {
-  if (handler.value) {
-    return handler.value.buildEditRoute({ applicationId: applicationId.value, detail: getProfessionalDetail() })
-  }
-  return null
+  if (!handler.value) return null
+  return handler.value.buildEditRoute({
+    applicationId: applicationId.value,
+    detail: professionalDetail.value
+  })
 })
 
 const canContinueSpecialized = computed(() => {
   if (!isDraft.value) return false
   if (!userStore.hasPermission(PERMISSIONS.APPLICATION_EDIT)) return false
-  if (handler.value) {
-    const permission = handler.value.getEditPermission(application.value?.businessType)
-    if (permission && userStore.hasPermission(permission)) return true
-  }
+  if (!handler.value) return false
+  if (!specializedEditRoute.value) return false
+  const permission = handler.value.getEditPermission(application.value?.businessType)
+  if (permission && userStore.hasPermission(permission)) return true
   return false
+})
+
+/** 提交按钮：必须满足 Handler 声明的全部权限（如重点人口 application:submit + key-population:apply） */
+const canSubmitSpecialized = computed(() => {
+  const permissions =
+    (typeof handler.value?.getSubmitPermissions === 'function'
+      ? handler.value.getSubmitPermissions(application.value?.businessType)
+      : null) || [PERMISSIONS.APPLICATION_SUBMIT]
+  return permissions.every((permission) => userStore.hasPermission(permission))
+})
+
+const isExecutableByBackend = computed(() => {
+  if (!professionalDetail.value) return false
+  // 后端统一返回 executable；缺省时旧数据兼容为 true（仅当已有 version）
+  if (professionalDetail.value.executable === false) return false
+  return true
 })
 
 const canExecute = computed(() => {
   if (application.value?.status !== 'APPROVED') return false
   if (!hasExecutableVersion.value) return false
-  if (handler.value) {
-    const meta = handler.value.getExecutionMeta({ businessType: application.value?.businessType, detail: getProfessionalDetail() })
-    if (meta?.permission && userStore.hasPermission(meta.permission)) {
-      if (isMigrationApplication.value && !migrationDetail.value?.executable) return false
-      if (isFloatingApplication.value && !floatingDetail.value?.executable) return false
-      if (isPermitApplication.value && !permitDetail.value?.executable) return false
-      return true
-    }
-  }
-  return false
+  if (!isExecutableByBackend.value) return false
+  const permission = executionMeta.value?.permission
+  return Boolean(permission && userStore.hasPermission(permission))
 })
 
-const executeLabelText = computed(() => {
-  if (isMigrationApplication.value) return '执行后会重新读取申请与迁移状态，确认均为"已办结"才显示成功。'
-  if (isFloatingApplication.value) return '执行后将生成正式流动登记记录。'
-  if (isPermitApplication.value) return '执行后将生成/变更正式居住证状态。'
-  return ''
+const executeHintText = computed(() => {
+  return executionMeta.value?.message
+    || '执行后将由后端正式变更业务状态，请确认信息无误。'
 })
 
-const executeLabelShort = computed(() => {
-  if (handler.value) {
-    const meta = handler.value.getExecutionMeta({ businessType: application.value?.businessType, detail: getProfessionalDetail() })
-    if (meta?.type) return meta.type
-  }
-  return '业务'
-})
+const executeLabelShort = computed(() => executionMeta.value?.type || '业务')
 
-const materialOptions = computed(() => {
-  if (handler.value) {
-    return handler.value.getMaterialOptions({ businessType: application.value?.businessType, detail: getProfessionalDetail() }) || []
+const genericDetailFields = computed(() => {
+  if (!handler.value || !professionalDetail.value) return []
+  // 旧三类使用专用面板，不走通用字段
+  if (['migration', 'floating', 'permit'].includes(handlerFamily.value)) return []
+  if (typeof handler.value.getDetailFields === 'function') {
+    return handler.value.getDetailFields(professionalDetail.value) || []
   }
   return []
 })
 
-const materialRuleText = computed(() => {
-  if (handler.value) {
-    return handler.value.getMaterialRuleText({ businessType: application.value?.businessType, detail: getProfessionalDetail() }) || ''
-  }
-  return ''
+const genericDetailTitle = computed(() => {
+  if (!handler.value || typeof handler.value.getDetailTitle !== 'function') return '专业业务信息'
+  return handler.value.getDetailTitle(professionalDetail.value) || '专业业务信息'
 })
+
+const genericDetailStatus = computed(() => {
+  if (!handler.value || typeof handler.value.getDetailStatus !== 'function') return ''
+  return handler.value.getDetailStatus(professionalDetail.value) || ''
+})
+
+const genericStatusKind = computed(() => {
+  if (!handler.value || typeof handler.value.getDetailStatusKind !== 'function') return 'application'
+  return handler.value.getDetailStatusKind() || 'application'
+})
+
+const unavailableReason = computed(() => professionalDetail.value?.unavailableReason || '')
 
 async function loadMigrationPerson(record) {
   migrationPerson.value = null
   if (!record?.personId) return
-  try { migrationPerson.value = normalizePerson(await getPersonById(record.personId)) } catch { /* detail remains usable without an optional name lookup */ }
+  try {
+    migrationPerson.value = normalizePerson(await getPersonById(record.personId))
+  } catch {
+    /* optional enrichment */
+  }
 }
 
 async function load() {
   loading.value = true
   try {
     application.value = await getApplicationDetail(applicationId.value)
-    const [materialResult, logResult] = await Promise.all([getMaterials(applicationId.value), getApplicationApprovalLogs(applicationId.value)])
+    const [materialResult, logResult] = await Promise.all([
+      getMaterials(applicationId.value),
+      getApplicationApprovalLogs(applicationId.value)
+    ])
     materials.value = materialResult || []
     logs.value = logResult || []
-    migrationDetail.value = null
+    professionalDetail.value = null
     migrationPerson.value = null
-    floatingDetail.value = null
-    permitDetail.value = null
-    if (handler.value) {
-      const rawDetail = await handler.value.loadDetail(applicationId.value)
-      if (isMigrationApplication.value) {
-        migrationDetail.value = rawDetail
-        materials.value = materialResult || migrationDetail.value?.materials || []
-        logs.value = logResult || migrationDetail.value?.approvalLogs || []
-        await loadMigrationPerson(getMigrationRecord(migrationDetail.value))
-      } else if (isFloatingApplication.value) {
-        floatingDetail.value = normalizeFloatingProfessional(rawDetail)
-        materials.value = materialResult || floatingDetail.value?.materials || []
-        logs.value = logResult || floatingDetail.value?.approvalLogs || []
-      } else if (isPermitApplication.value) {
-        permitDetail.value = normalizePermitProfessional(rawDetail)
-        materials.value = materialResult || permitDetail.value?.materials || []
-        logs.value = logResult || permitDetail.value?.approvalLogs || []
+
+    const currentHandler = getApplicationBusinessHandler(application.value?.businessType)
+    if (currentHandler) {
+      const rawDetail = await currentHandler.loadDetail(
+        applicationId.value,
+        application.value?.businessType
+      )
+      const normalized = typeof currentHandler.normalizeDetail === 'function'
+        ? currentHandler.normalizeDetail(rawDetail)
+        : rawDetail
+      professionalDetail.value = normalized
+
+      // 材料/日志优先通用接口，回退专业详情内嵌字段
+      materials.value = materialResult || normalized?.materials || []
+      logs.value = logResult || normalized?.approvalLogs || []
+
+      if (currentHandler.family === 'migration') {
+        await loadMigrationPerson(getMigrationRecord(normalized))
       }
     }
     return true
@@ -218,16 +331,31 @@ function continueSpecialized() {
 }
 
 async function submit() {
+  if (!canSubmitSpecialized.value) {
+    ElMessage.error('无权提交该申请')
+    return
+  }
   await ElMessageBox.confirm('提交后不能继续编辑草稿，确认提交吗？', '提交申请', { type: 'warning' })
   actionLoading.value = true
   try {
-    await submitApplication(applicationId.value)
+    const currentHandler = handler.value
+    if (currentHandler?.submit) {
+      await currentHandler.submit({
+        businessType: application.value.businessType,
+        applicationId: applicationId.value,
+        detail: professionalDetail.value
+      })
+    } else {
+      await submitApplication(applicationId.value)
+    }
     ElMessage.success('申请已提交')
     await load()
   } catch (error) {
     if (isApiConflict(error)) await load()
     ElMessage.error(getApiErrorMessage(error, '提交失败'))
-  } finally { actionLoading.value = false }
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 async function withdraw() {
@@ -240,7 +368,9 @@ async function withdraw() {
   } catch (error) {
     if (isApiConflict(error)) await load()
     ElMessage.error(getApiErrorMessage(error, '撤回失败'))
-  } finally { actionLoading.value = false }
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 async function cancelDraft() {
@@ -253,58 +383,71 @@ async function cancelDraft() {
   } catch (error) {
     if (isApiConflict(error)) await load()
     ElMessage.error(getApiErrorMessage(error, '取消草稿失败'))
-  } finally { actionLoading.value = false }
-}
-
-function openExecuteDialog() {
-  if (handler.value) {
-    const meta = handler.value.getExecutionMeta({ businessType: application.value?.businessType, detail: getProfessionalDetail() })
-    
-    if (meta?.mode === 'direct-confirm') {
-      executeType.value = EXECUTE_TYPE.FLOATING_EXECUTE
-      executeVersion.value = meta?.version
-      executeMigration()
-      return
-    }
-    
-    if (isFloatingApplication.value) executeType.value = EXECUTE_TYPE.FLOATING_EXECUTE
-    else if (isPermitApplication.value) {
-      const bt = application.value?.businessType
-      if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_FIRST_ISSUE) executeType.value = EXECUTE_TYPE.PERMIT_ISSUE
-      else if (bt === BUSINESS_TYPE.RESIDENCE_PERMIT_ENDORSEMENT) executeType.value = EXECUTE_TYPE.PERMIT_ENDORSE
-      else executeType.value = EXECUTE_TYPE.PERMIT_CANCEL
-    }
-    executeVersion.value = meta?.version
-    executeVisible.value = true
+  } finally {
+    actionLoading.value = false
   }
 }
 
-async function executeMigration() {
-  await ElMessageBox.confirm('执行会由后端变更当前户籍并生成归档，确认继续吗？', '执行迁移', { type: 'warning' })
+function openExecuteDialog() {
+  const meta = executionMeta.value
+  if (!meta || !handler.value) return
+
+  if (meta.mode === 'direct-confirm') {
+    executeDirectConfirm(meta)
+    return
+  }
+
+  // dialog 模式：沿用现有 FloatingResidenceExecuteDialog
+  executeDialogType.value = meta.dialogType || 'FLOATING_EXECUTE'
+  executeVersion.value = meta.version
+  executeVisible.value = true
+}
+
+async function executeDirectConfirm(meta) {
+  await ElMessageBox.confirm(
+    meta.message || '确认执行该业务吗？',
+    meta.title || '执行业务',
+    { type: 'warning' }
+  )
   executing.value = true
   try {
-    const bt = application.value?.businessType
-    await handler.value.execute({ businessType: bt, applicationId: applicationId.value, detail: getProfessionalDetail() })
+    await handler.value.execute({
+      businessType: application.value.businessType,
+      applicationId: applicationId.value,
+      detail: professionalDetail.value
+    })
     const refreshed = await load()
-    const completed = refreshed && handler.value.isCompleted({ application: application.value, detail: getProfessionalDetail() })
+    const completed = refreshed && handler.value.isCompleted({
+      application: application.value,
+      detail: professionalDetail.value
+    })
     if (completed) ElMessage.success('业务执行完成')
     else ElMessage.warning('执行请求已受理，但未确认业务办结，请刷新查看。')
   } catch (error) {
     if (isApiConflict(error)) await load()
     ElMessage.error(getApiErrorMessage(error, '业务执行失败'))
-  } finally { executing.value = false }
+  } finally {
+    executing.value = false
+  }
 }
 
 async function handleExecute(payload) {
   executing.value = true
   try {
-    const bt = application.value?.businessType
-    await handler.value.execute({ businessType: bt, applicationId: applicationId.value, detail: getProfessionalDetail(), payload })
-    
+    await handler.value.execute({
+      businessType: application.value.businessType,
+      applicationId: applicationId.value,
+      detail: professionalDetail.value,
+      payload
+    })
+
     const refreshed = await load()
     const appCompleted = refreshed && application.value?.status === 'COMPLETED'
-    const proCompleted = handler.value.isCompleted({ application: application.value, detail: getProfessionalDetail() })
-    
+    const proCompleted = handler.value.isCompleted({
+      application: application.value,
+      detail: professionalDetail.value
+    })
+
     if (appCompleted && proCompleted) {
       ElMessage.success('业务执行完成')
     } else if (appCompleted) {
@@ -316,12 +459,20 @@ async function handleExecute(payload) {
   } catch (error) {
     if (isApiConflict(error)) await load()
     ElMessage.error(getApiErrorMessage(error, '业务执行失败'))
-  } finally { executing.value = false }
+  } finally {
+    executing.value = false
+  }
 }
 
 onMounted(load)
 </script>
 
 <style scoped>
-.page-container{display:flex;flex-direction:column;gap:16px}.page-header{display:flex;justify-content:space-between;align-items:end}.page-header h1{margin:0 0 8px}.subtitle{margin:0;color:var(--el-text-color-secondary)}.card-header,.execute-bar{display:flex;align-items:center;justify-content:space-between;gap:12px}.execute-bar{justify-content:flex-start}.execute-bar span{font-size:13px;color:var(--el-text-color-secondary)}
+.page-container { display: flex; flex-direction: column; gap: 16px; }
+.page-header { display: flex; justify-content: space-between; align-items: end; }
+.page-header h1 { margin: 0 0 8px; }
+.subtitle { margin: 0; color: var(--el-text-color-secondary); }
+.card-header, .execute-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.execute-bar { justify-content: flex-start; }
+.execute-bar span { font-size: 13px; color: var(--el-text-color-secondary); }
 </style>

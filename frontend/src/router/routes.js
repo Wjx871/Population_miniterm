@@ -39,6 +39,46 @@ export const routes = [
         component: () => import('../views/dashboard/DataDashboard.vue'),
         meta: { title: '数据大屏', minLevel: 1, permission: PERMISSIONS.STATISTICS_VIEW, menu: true, group: '查询统计', order: 36, icon: 'DataAnalysis' }
       },
+      {
+        path: 'exports',
+        name: 'ExportRecords',
+        component: () => import('../views/exports/ExportRecordList.vue'),
+        meta: {
+          title: '导出记录',
+          minLevel: 1,
+          permission: PERMISSIONS.DATA_EXPORT_LOG_VIEW,
+          menu: true,
+          group: '查询统计',
+          order: 37,
+          icon: 'Download'
+        }
+      },
+      {
+        path: 'exports/normal',
+        name: 'NormalExportCreate',
+        component: () => import('../views/exports/NormalExportCreate.vue'),
+        meta: {
+          title: '普通导出',
+          minLevel: 1,
+          permission: PERMISSIONS.DATA_EXPORT_NORMAL,
+          menu: false,
+          activeMenu: '/exports',
+          group: '查询统计'
+        }
+      },
+      {
+        path: 'exports/sensitive',
+        name: 'SensitiveExportCreate',
+        component: () => import('../views/exports/SensitiveExportCreate.vue'),
+        meta: {
+          title: '敏感导出申请',
+          minLevel: 1,
+          permission: PERMISSIONS.DATA_EXPORT_SENSITIVE_APPLY,
+          menu: false,
+          activeMenu: '/exports',
+          group: '查询统计'
+        }
+      },
       { 
         path: 'persons', 
         name: 'Persons', 
@@ -144,6 +184,47 @@ export const routes = [
         name: 'ApprovalDetail',
         component: () => import('../views/approvals/ApprovalDetail.vue'),
         meta: { title: '审批详情', minLevel: 1, permission: 'approval:view', menu: false, activeMenu: '/approvals', group: '业务办理' }
+      },
+      {
+        path: 'cancellations',
+        name: 'Cancellations',
+        component: () => import('../views/cancellations/CancellationList.vue'),
+        meta: {
+          title: '注销管理',
+          minLevel: 1,
+          permission: PERMISSIONS.CANCELLATION_VIEW,
+          menu: true,
+          group: '业务办理',
+          order: 24,
+          icon: 'CircleClose'
+        }
+      },
+      {
+        path: 'cancellations/apply',
+        name: 'CancellationApply',
+        component: () => import('../views/cancellations/CancellationApplicationCreate.vue'),
+        meta: {
+          title: '注销申请',
+          minLevel: 1,
+          // 页面内按 person/household 创建权限细判；路由入口用 view 避免误拦
+          permission: PERMISSIONS.CANCELLATION_VIEW,
+          menu: false,
+          activeMenu: '/cancellations',
+          group: '业务办理'
+        }
+      },
+      {
+        path: 'household-archives',
+        name: 'HouseholdArchiveList',
+        component: () => import('../views/cancellations/HouseholdArchiveList.vue'),
+        meta: {
+          title: '家庭户归档',
+          minLevel: 1,
+          permission: PERMISSIONS.CANCELLATION_ARCHIVE_VIEW,
+          menu: false,
+          activeMenu: '/cancellations',
+          group: '业务办理'
+        }
       },
       {
         path: 'residence-archives',
@@ -270,19 +351,71 @@ export const routes = [
           group: '扩展业务'
         } 
       },
-      { 
-        path: 'key-population', 
-        name: 'KeyPopulation', 
-        component: { template: '<div>重点人口管理正在建设中...</div>' }, 
-        meta: { 
+      {
+        path: 'key-population',
+        name: 'KeyPopulation',
+        component: () => import('../views/key-population/KeyPopulationList.vue'),
+        meta: {
           title: '重点人口管理',
-          minLevel: 2,
-          permission: 'key:view',
-          menu: false,
+          minLevel: 1,
+          permission: PERMISSIONS.KEY_POPULATION_VIEW,
+          menu: true,
           group: '扩展业务',
           order: 31,
           icon: 'StarFilled'
-        } 
+        }
+      },
+      {
+        path: 'key-population/register',
+        name: 'KeyPopulationRegister',
+        component: () => import('../views/key-population/KeyPopulationRegisterCreate.vue'),
+        meta: {
+          title: '重点人口建档',
+          minLevel: 1,
+          permission: PERMISSIONS.KEY_POPULATION_APPLY,
+          menu: false,
+          activeMenu: '/key-population',
+          group: '扩展业务'
+        }
+      },
+      {
+        path: 'key-population/:recordId/history',
+        name: 'KeyPopulationHistory',
+        component: () => import('../views/key-population/KeyPopulationHistory.vue'),
+        meta: {
+          title: '重点人口历史',
+          minLevel: 1,
+          permission: PERMISSIONS.KEY_POPULATION_VIEW,
+          menu: false,
+          activeMenu: '/key-population',
+          group: '扩展业务'
+        }
+      },
+      {
+        path: 'key-population/:recordId/release',
+        name: 'KeyPopulationRelease',
+        component: () => import('../views/key-population/KeyPopulationReleaseCreate.vue'),
+        meta: {
+          title: '重点人口解除',
+          minLevel: 1,
+          permission: PERMISSIONS.KEY_POPULATION_APPLY,
+          menu: false,
+          activeMenu: '/key-population',
+          group: '扩展业务'
+        }
+      },
+      {
+        path: 'key-population/:recordId',
+        name: 'KeyPopulationDetail',
+        component: () => import('../views/key-population/KeyPopulationDetail.vue'),
+        meta: {
+          title: '重点人口详情',
+          minLevel: 1,
+          permission: PERMISSIONS.KEY_POPULATION_VIEW,
+          menu: false,
+          activeMenu: '/key-population',
+          group: '扩展业务'
+        }
       },
       { 
         path: 'certificates', 
@@ -338,6 +471,47 @@ export const routes = [
           group: '系统管理',
           order: 42,
           icon: 'Location'
+        }
+      },
+      {
+        path: 'logs/operations',
+        name: 'OperationLogs',
+        component: () => import('../views/logs/OperationLogList.vue'),
+        meta: {
+          title: '操作日志',
+          minLevel: 1,
+          permission: PERMISSIONS.LOG_VIEW,
+          menu: true,
+          group: '系统管理',
+          order: 43,
+          icon: 'Document'
+        }
+      },
+      {
+        path: 'logs/operations/:id',
+        name: 'OperationLogDetail',
+        component: () => import('../views/logs/OperationLogDetail.vue'),
+        meta: {
+          title: '操作日志详情',
+          minLevel: 1,
+          permission: PERMISSIONS.LOG_VIEW,
+          menu: false,
+          activeMenu: '/logs/operations',
+          group: '系统管理'
+        }
+      },
+      {
+        path: 'logs/logins',
+        name: 'LoginLogs',
+        component: () => import('../views/logs/LoginLogList.vue'),
+        meta: {
+          title: '登录日志',
+          minLevel: 1,
+          permission: PERMISSIONS.LOG_VIEW,
+          menu: true,
+          group: '系统管理',
+          order: 44,
+          icon: 'User'
         }
       },
       {

@@ -21,6 +21,13 @@ export function createResidencePermitHandler(services) {
       return await services.getPermitApplicationDetail(applicationId)
     },
 
+    normalizeDetail(raw) {
+      if (services.normalizePermitProfessional) {
+        return services.normalizePermitProfessional(raw)
+      }
+      return raw || null
+    },
+
     getDisplayDetail(detail) {
       return detail?.professional || null
     },
@@ -29,9 +36,13 @@ export function createResidencePermitHandler(services) {
       return detail?.subject || null
     },
 
+    getDetailFields() {
+      return []
+    },
+
     buildEditRoute({ applicationId, detail }) {
       const businessType = detail?.application?.businessType
-      
+
       if (businessType === 'RESIDENCE_PERMIT_FIRST_ISSUE') {
         return {
           path: '/residence-permits/first-issue',
@@ -46,7 +57,7 @@ export function createResidencePermitHandler(services) {
           query: { applicationId, permitId, applyType: 'ENDORSEMENT' }
         }
       }
-      
+
       if (businessType === 'RESIDENCE_PERMIT_CANCELLATION') {
         return {
           path: `/residence-permits/${permitId}/cancellation/apply`,
@@ -56,8 +67,12 @@ export function createResidencePermitHandler(services) {
       return null
     },
 
-    getEditPermission(businessType) {
+    getEditPermission() {
       return 'residence-permit:apply'
+    },
+
+    getSubmitPermissions() {
+      return ['application:submit']
     },
 
     getMaterialOptions({ businessType, detail }) {
@@ -81,37 +96,50 @@ export function createResidencePermitHandler(services) {
     getExecutionMeta({ businessType, detail }) {
       let permission = ''
       let typeName = ''
-      
+      let title = ''
+      let dialogType = ''
+
       if (businessType === 'RESIDENCE_PERMIT_FIRST_ISSUE') {
         permission = 'residence-permit:issue'
         typeName = '首次签发'
+        title = '签发居住证'
+        dialogType = 'PERMIT_ISSUE'
       } else if (businessType === 'RESIDENCE_PERMIT_ENDORSEMENT') {
         permission = 'residence-permit:endorse'
         typeName = '签注'
+        title = '执行签注'
+        dialogType = 'PERMIT_ENDORSE'
       } else if (businessType === 'RESIDENCE_PERMIT_CANCELLATION') {
         permission = 'residence-permit:cancel'
         typeName = '注销'
+        title = '执行注销'
+        dialogType = 'PERMIT_CANCEL'
       }
 
       return {
         mode: 'dialog',
         permission,
         type: typeName,
+        title,
+        message: '执行后将生成/变更正式居住证状态。',
+        dialogType,
         version: detail?.professional?.version
       }
     },
 
     async execute({ businessType, applicationId, detail, payload }) {
       const version = payload?.version ?? detail?.professional?.version
-      
+
       if (businessType === 'RESIDENCE_PERMIT_FIRST_ISSUE') {
         return await services.issueResidencePermit(applicationId, {
           issuingAuthority: payload?.issuingAuthority,
           version
         })
-      } else if (businessType === 'RESIDENCE_PERMIT_ENDORSEMENT') {
+      }
+      if (businessType === 'RESIDENCE_PERMIT_ENDORSEMENT') {
         return await services.endorseResidencePermit(applicationId, version)
-      } else if (businessType === 'RESIDENCE_PERMIT_CANCELLATION') {
+      }
+      if (businessType === 'RESIDENCE_PERMIT_CANCELLATION') {
         return await services.cancelResidencePermitApplication(applicationId, version)
       }
       return null

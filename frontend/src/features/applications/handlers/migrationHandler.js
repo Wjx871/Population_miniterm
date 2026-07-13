@@ -17,12 +17,20 @@ export function createMigrationHandler(services) {
       return await services.getMigrationApplicationDetail(applicationId)
     },
 
+    normalizeDetail(raw) {
+      return raw || null
+    },
+
     getDisplayDetail(detail) {
       return getRecord(detail)
     },
 
     getSubject(detail) {
       return detail?.subject || null
+    },
+
+    getDetailFields() {
+      return []
     },
 
     buildEditRoute({ applicationId, detail }) {
@@ -37,6 +45,10 @@ export function createMigrationHandler(services) {
       if (businessType === 'MIGRATION_IN') return 'migration:in:create'
       if (businessType === 'MIGRATION_OUT') return 'migration:out:create'
       return null
+    },
+
+    getSubmitPermissions() {
+      return ['application:submit']
     },
 
     getMaterialOptions({ businessType, detail }) {
@@ -61,19 +73,23 @@ export function createMigrationHandler(services) {
     },
 
     getExecutionMeta({ businessType, detail }) {
+      const isIn = businessType === 'MIGRATION_IN'
       return {
         mode: 'direct-confirm',
         permission: 'migration:execute',
-        type: '迁移执行',
+        type: isIn ? '迁入' : '迁出',
+        title: isIn ? '执行迁入' : '执行迁出',
+        message: '执行会由后端变更当前户籍并生成归档，确认继续吗？',
         version: getRecord(detail)?.version
       }
     },
 
-    async execute({ businessType, applicationId, detail, payload }) {
+    async execute({ businessType, applicationId, detail }) {
       const version = getRecord(detail)?.version
       if (businessType === 'MIGRATION_IN') {
         return await services.executeMigrationIn(applicationId, version)
-      } else if (businessType === 'MIGRATION_OUT') {
+      }
+      if (businessType === 'MIGRATION_OUT') {
         return await services.executeMigrationOut(applicationId, version)
       }
       return null

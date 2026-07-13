@@ -1,7 +1,7 @@
 import request from './request.js'
 
-export function getRegionTree() {
-  return request({ url: '/admin-regions/tree', method: 'get' })
+export function getRegionTree(config = {}) {
+  return request({ url: '/admin-regions/tree', method: 'get', ...config })
 }
 
 export function searchRegions(params) {

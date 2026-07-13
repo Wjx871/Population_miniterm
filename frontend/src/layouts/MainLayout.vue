@@ -30,27 +30,27 @@
           <template v-for="group in menuGroups" :key="group.name">
             <!-- 单个菜单项（无分组名或独立项，例如工作台） -->
             <template v-if="!group.name || group.name === '工作台'">
-              <el-menu-item 
-                v-for="item in group.children" 
-                :key="item.path" 
+              <el-menu-item
+                v-for="item in group.children"
+                :key="item.path"
                 :index="item.path"
               >
-                <el-icon><component :is="item.meta.icon" /></el-icon>
+                <el-icon><component :is="item.menuIcon" /></el-icon>
                 <span>{{ item.meta.title }}</span>
               </el-menu-item>
             </template>
             <!-- 分组子菜单 -->
             <el-sub-menu v-else :index="group.name">
               <template #title>
-                <el-icon><component :is="group.icon || 'Menu'" /></el-icon>
+                <el-icon><component :is="group.icon" /></el-icon>
                 <span>{{ group.name }}</span>
               </template>
-              <el-menu-item 
-                v-for="item in group.children" 
-                :key="item.path" 
+              <el-menu-item
+                v-for="item in group.children"
+                :key="item.path"
                 :index="item.path"
               >
-                <el-icon><component :is="item.meta.icon" /></el-icon>
+                <el-icon><component :is="item.menuIcon" /></el-icon>
                 <span>{{ item.meta.title }}</span>
               </el-menu-item>
             </el-sub-menu>
@@ -80,9 +80,27 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { 
-  Platform, User, HomeFilled, Switch, Postcard, Setting, SwitchButton, StarFilled, UserFilled, Menu, Document, Finished, Collection, Search, DataAnalysis, TrendCharts
+import { computed, markRaw } from 'vue';
+import {
+  Platform,
+  User,
+  HomeFilled,
+  Switch,
+  Postcard,
+  Setting,
+  SwitchButton,
+  StarFilled,
+  UserFilled,
+  Menu,
+  Document,
+  Finished,
+  Collection,
+  Search,
+  DataAnalysis,
+  TrendCharts,
+  Download,
+  CircleClose,
+  Location
 } from '@element-plus/icons-vue';
 import { useUserStore } from '../stores/user';
 import { ROLE_BADGE_TYPE } from '../constants/roles';
@@ -93,6 +111,33 @@ const userStore = useUserStore();
 const router = useRouter();
 const route = useRoute();
 
+/** 菜单图标映射：路由 meta.icon 为字符串名，这里转为真实组件 */
+const MENU_ICON_MAP = Object.freeze({
+  Platform: markRaw(Platform),
+  User: markRaw(User),
+  HomeFilled: markRaw(HomeFilled),
+  Switch: markRaw(Switch),
+  Postcard: markRaw(Postcard),
+  Setting: markRaw(Setting),
+  SwitchButton: markRaw(SwitchButton),
+  StarFilled: markRaw(StarFilled),
+  UserFilled: markRaw(UserFilled),
+  Menu: markRaw(Menu),
+  Document: markRaw(Document),
+  Finished: markRaw(Finished),
+  Collection: markRaw(Collection),
+  Search: markRaw(Search),
+  DataAnalysis: markRaw(DataAnalysis),
+  TrendCharts: markRaw(TrendCharts),
+  Download: markRaw(Download),
+  CircleClose: markRaw(CircleClose),
+  Location: markRaw(Location)
+});
+
+function resolveMenuIcon(name) {
+  return MENU_ICON_MAP[name] || MENU_ICON_MAP.Menu;
+}
+
 const roleBadgeType = computed(() => ROLE_BADGE_TYPE[userStore.roleCode] || 'info');
 
 const activeMenu = computed(() => {
@@ -101,11 +146,11 @@ const activeMenu = computed(() => {
 
 const menuGroups = computed(() => {
   const routes = router.getRoutes();
-  
+
   // 过滤出需要显示在菜单中并且当前角色有权限访问的路由
-  const visibleRoutes = routes.filter(r => 
-    r.meta && 
-    r.meta.menu === true && 
+  const visibleRoutes = routes.filter(r =>
+    r.meta &&
+    r.meta.menu === true &&
     userStore.canAccess(r.meta)
   );
 
@@ -119,18 +164,18 @@ const menuGroups = computed(() => {
     if (!groups[groupName]) {
       groups[groupName] = {
         name: groupName,
-        icon: getGroupIcon(groupName) || r.meta.icon, // 如果没有指定组图标，借用第一个子项图标
+        icon: resolveMenuIcon(getGroupIcon(groupName) || r.meta.icon),
         children: []
       };
     }
-    groups[groupName].children.push(r);
+    groups[groupName].children.push({
+      ...r,
+      menuIcon: resolveMenuIcon(r.meta.icon)
+    });
   });
 
-  // 如果某个组名为“工作台”，通常我们希望它没有父级折叠，这里保留原有平铺设计
-  // 为了确保顺序，可以将对象转换为数组，通常工作台在前
   const result = Object.values(groups);
-  
-  // 将没有分组名或为工作台的分组排到最前面
+
   result.sort((a, b) => {
     if (a.name === '工作台' || a.name === '') return -1;
     if (b.name === '工作台' || b.name === '') return 1;
