@@ -25,9 +25,9 @@ start.bat
 | 脚本 | 作用 |
 |------|------|
 | `start.bat` | 一键启动前后端（推荐） |
-| `scripts/windows/start_all.bat` | 等待后端就绪后启动前端 |
+| `scripts/windows/start_all.bat` | 验证 `/api/health` 的数据库状态后启动前端 |
 | `scripts/windows/start_backend.bat` | 仅启动后端 |
-| `scripts/windows/start_frontend.bat` | 仅启动前端（会探测后端是否在线） |
+| `scripts/windows/start_frontend.bat` | 仅启动前端（健康检查失败时需明确确认才继续） |
 
 首次使用前，在项目根目录复制配置并填写数据库密码：
 
@@ -60,9 +60,11 @@ npm run build
 
 ## 前后端联调
 
-- 前端请求基地址由 `VITE_API_BASE_URL` 配置，默认值为 `/api`；可参考 `.env.example`。
+- 前端请求基地址由 `VITE_API_BASE_URL` 配置，默认值为 `/api`；可参考 `.env.example`。启动脚本会显示该值，非 `/api` 会明确提示其绕过 Vite 代理的风险，但不会覆盖用户本地配置。
 - 开发环境会将 `/api` 代理到后端地址（默认 `http://127.0.0.1:8080`），代理目标由 `scripts/windows/start_frontend.bat` 通过 `VITE_BACKEND_TARGET` 环境变量传入，也可在 `start.local.env` 中通过 `SERVER_PORT` 控制。
 - 前端分页状态使用 `current`（从 1 开始），请求层会转换为 Spring `Pageable` 的 `page`（从 0 开始）和 `size`。
+
+`npm run dev` 和根目录 `start.bat` 使用 Vite `/api` 代理；`npm run preview` 和直接部署 `dist/` 不提供开发代理。部署时应通过 Nginx 或网关配置同源 `/api` 反向代理，参考 `config/nginx.population.conf.example`。
 
 ## 开发约定
 

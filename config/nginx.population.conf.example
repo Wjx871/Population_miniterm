@@ -1,0 +1,18 @@
+# 生产或演示环境应由同源反向代理提供 /api；Vite 的开发代理不会存在于 npm run preview 或静态 dist 部署中。
+server {
+    listen 80;
+    server_name _;
+    root /path/to/frontend/dist;
+    index index.html;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

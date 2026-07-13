@@ -8,7 +8,7 @@
 
 ## Database
 
-For a new database, execute `doc/database/population_miniterm.sql`. For an upgrade, back up first and execute V4_001 through V4_006 in filename order. Use `scripts/verify-mysql.ps1` against one of the three explicitly allowed disposable test database names before production deployment. `doc/database/demo_data.sql` is optional and is only for course demonstrations.
+For a new disposable verification database, run `scripts/windows/init_database.ps1 -Mode Fresh`; it defaults to `population_miniterm_integration_verify`, rejects every non-empty database, and rejects the course database unless explicitly confirmed twice. For an upgrade, back up first and execute V4_001 through V4_010 in filename order; Fresh is never an upgrade tool. Run `scripts/windows/init_database.ps1 -Mode Verify` before deployment. `doc/database/demo_data.sql` is optional and only for course demonstrations.
 
 ## Environment variables
 
@@ -26,7 +26,7 @@ $env:EXPORT_DIR='D:\population-data\exports'
 .\mvnw.cmd spring-boot:run
 ```
 
-Build and start the frontend with `npm ci`, `npm run build`, or `npm run dev` under `frontend`. Set `VITE_API_BASE_URL` when the API is not served through `/api` on the same origin.
+Build and start the frontend with `npm ci`, `npm run build`, or `npm run dev` under `frontend`. Prefer `VITE_API_BASE_URL=/api` on the same origin. `npm run dev` provides the Vite proxy; preview and static `dist` deployments must configure an equivalent reverse proxy (see `config/nginx.population.conf.example`).
 
 Upload and export directories must be writable by the application account, outside the web root, excluded from Git, and included in retention/backup policy. Back up MySQL before every migration and regularly test restore procedures. Default course accounts use `123456` only in local demo data and must be disabled or changed in any deployed environment.
 
