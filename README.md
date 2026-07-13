@@ -32,6 +32,10 @@
 
 第九阶段完成行政区划树和受控维护、数据字典查询与维护、通用证件查询/创建/修改/软注销，并统一权限、人员数据范围、敏感字段脱敏和写审计。居住证继续由专业 `residence_permit` 模块管理。升级脚本为 `V4_008_reference_data_certificate.sql`，真实 MySQL 8.4.10 验收见 `doc/testing/phase-09-reference-certificate-test-report.md`。
 
+第十阶段完成重点人口建档申请、通用材料与审批、审批后显式建档、解除申请与显式解除、当前记录和追加式历史。数据范围、脱敏、审计和幂等约束完整，审批不会自动修改重点人口业务表。升级脚本为 `V4_009_key_population.sql`。
+
+第十阶段最终门禁已在 H2 和 MySQL Community Server 8.4.10 上验证 viewer 只读权限、建档/解除双线程并发 execute、历史唯一性和中途异常完整回滚；真实 MySQL 并发结果为一个成功、一个 409。详细证据见 `doc/testing/phase-10-key-population-test-report.md`。
+
 ## 数据库
 
 新环境在 MySQL 8 中执行：
@@ -40,7 +44,7 @@
 mysql -u root -p < doc/database/population_miniterm.sql
 ```
 
-已有数据库在备份后按文件名顺序执行 V4_001 至 V4_008。也可以先在明确命名的测试库中运行：
+已有数据库在备份后按文件名顺序执行 V4_001 至 V4_009。也可以先在明确命名的测试库中运行：
 
 ```powershell
 $env:DB_URL='jdbc:mysql://127.0.0.1:3306/population_miniterm_upgrade'
