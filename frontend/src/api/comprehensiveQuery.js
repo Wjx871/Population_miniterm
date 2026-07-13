@@ -9,17 +9,20 @@ function trimToUndefined(value) {
 
 export function getComprehensivePersonPage(params = {}) {
   const normalized = {
-    keyword: trimToUndefined(params.keyword),
-    personStatus: trimToUndefined(params.personStatus),
+    name: trimToUndefined(params.name),
+    identityNo: trimToUndefined(params.identityNo),
+    gender: trimToUndefined(params.gender),
+    currentStatus: trimToUndefined(params.currentStatus),
     regionCode: trimToUndefined(params.regionCode),
     residenceStatus: trimToUndefined(params.residenceStatus),
     floatingStatus: trimToUndefined(params.floatingStatus),
-    permitStatus: trimToUndefined(params.permitStatus),
+    certificateType: trimToUndefined(params.certificateType),
+    keyPopulationType: trimToUndefined(params.keyPopulationType),
     sort: 'personId,DESC',
     current: params.current,
     size: params.size,
   }
-  return request({ url: '/queries/persons', method: 'get', params: toSpringPageParams(normalized) })
+  return request({ url: '/query/persons', method: 'get', params: toSpringPageParams(normalized) })
 }
 
 export function getComprehensivePersonProfile(personId) {

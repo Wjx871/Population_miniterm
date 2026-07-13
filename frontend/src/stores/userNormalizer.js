@@ -1,48 +1,47 @@
 import { ROLE_CODE, resolvePermissionLevel } from '../constants/roles.js'
 import { normalizeRoleCode, resolvePermissions } from '../utils/permission.js'
 
-export function normalizeStoredUser(parsed) {
-  if (!parsed || typeof parsed !== 'object') return {}
-  const roleCode = normalizeRoleCode(parsed.roleCode, parsed.roleName)
-  
+export function normalizeStoredSession(value) {
+  if (!value || typeof value !== 'object') return {}
   return {
-    accessToken: parsed.accessToken || '',
-    tokenType: parsed.tokenType || 'Bearer',
-    userId: parsed.userId || null,
-    username: parsed.username || '',
-    realName: parsed.realName || '',
-    roleName: parsed.roleName || '',
-    roleCode,
-    roleLevel: parsed.roleLevel || '',
-    permissionLevel: resolvePermissionLevel(parsed.roleLevel || '', roleCode),
-    permissions: resolvePermissions(roleCode, parsed.permissions),
-    dataScope: parsed.dataScope || null,
-    departmentId: parsed.departmentId || null,
-    departmentName: parsed.departmentName || '',
-    regionCode: parsed.regionCode || '',
+    accessToken: typeof value.accessToken === 'string' ? value.accessToken : '',
+    tokenType: typeof value.tokenType === 'string' && value.tokenType ? value.tokenType : 'Bearer',
   }
 }
 
-export function normalizeLoginUser(loginVO) {
-  const user = loginVO.user || loginVO
-  const rawRoleLevel = user.roleLevel || ''
-  const roleCode = normalizeRoleCode(user.roleCode, user.roleName)
-  const hasApiPermissions = Array.isArray(user.permissions)
-  
+export function normalizeStoredUser(value) {
+  if (!value || typeof value !== 'object') return {}
+  const roleCode = normalizeRoleCode(value.roleCode, value.roleName)
   return {
-    accessToken: loginVO.token || loginVO.accessToken || '',
-    tokenType: loginVO.tokenType || 'Bearer',
-    userId: user.userId || null,
+    ...normalizeStoredSession(value),
+    ...normalizeUserInfo({ ...value, roleCode, permissions: resolvePermissions(roleCode, value.permissions) }),
+  }
+}
+
+export function normalizeUserInfo(user = {}) {
+  const roleCode = normalizeRoleCode(user.roleCode, user.roleName)
+  return {
+    userId: user.userId ?? null,
     username: user.username || '',
     realName: user.realName || '',
     roleName: user.roleName || '',
-    roleCode,
-    roleLevel: rawRoleLevel,
-    permissionLevel: resolvePermissionLevel(rawRoleLevel, roleCode),
-    permissions: hasApiPermissions ? [...user.permissions] : [],
+    roleCode: roleCode || ROLE_CODE.QUERY_VIEWER,
+    roleLevel: user.roleLevel || '',
+    permissionLevel: resolvePermissionLevel(user.roleLevel || '', roleCode),
+    permissions: Array.isArray(user.permissions) ? [...user.permissions] : [],
     dataScope: user.dataScope || null,
-    departmentId: user.departmentId || null,
+    departmentId: user.departmentId ?? null,
     departmentName: user.departmentName || '',
     regionCode: user.regionCode || '',
   }
 }
+
+export function normalizeLoginInfo(loginVO = {}) {
+  return {
+    accessToken: loginVO.token || loginVO.accessToken || '',
+    tokenType: loginVO.tokenType || 'Bearer',
+    ...normalizeUserInfo(loginVO.user || loginVO),
+  }
+}
+
+export const normalizeLoginUser = normalizeLoginInfo

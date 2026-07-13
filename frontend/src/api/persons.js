@@ -38,14 +38,3 @@ export function updatePerson(id, data) {
     data,
   })
 }
-
-/**
- * 软删除人口（后端将状态置为「已注销」）。
- * M2 页面禁止调用；保留导出供后续审计或审批流程使用。
- */
-export function deletePerson(id) {
-  return request({
-    url: `/persons/${id}`,
-    method: 'delete',
-  })
-}

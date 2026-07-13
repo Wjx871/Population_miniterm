@@ -34,6 +34,24 @@ export const routes = [
         meta: { title: '人口综合查询', minLevel: 1, permission: PERMISSIONS.POPULATION_VIEW, menu: true, group: '查询统计', order: 35, icon: 'Search' }
       },
       {
+        path: 'queries/households',
+        name: 'HouseholdQuery',
+        component: () => import('../views/query/HouseholdQuery.vue'),
+        meta: { title: '家庭户综合查询', minLevel: 1, permission: PERMISSIONS.HOUSEHOLD_VIEW, menu: true, group: '查询统计', order: 35.1, icon: 'Search' }
+      },
+      {
+        path: 'queries/migration-history',
+        name: 'MigrationHistoryQuery',
+        component: () => import('../views/query/MigrationHistoryQuery.vue'),
+        meta: { title: '迁移历史查询', minLevel: 1, permission: PERMISSIONS.MIGRATION_VIEW, menu: true, group: '查询统计', order: 35.2, icon: 'Search' }
+      },
+      {
+        path: 'logs',
+        name: 'LogQuery',
+        component: () => import('../views/logs/LogQuery.vue'),
+        meta: { title: '系统日志', minLevel: 1, permission: PERMISSIONS.LOG_VIEW, menu: true, group: '查询统计', order: 37, icon: 'Document' }
+      },
+      {
         path: 'statistics/dashboard',
         name: 'DataDashboard',
         component: () => import('../views/dashboard/DataDashboard.vue'),
@@ -172,6 +190,12 @@ export const routes = [
         name: 'MigrationOutApply',
         component: () => import('../views/migrations/MigrationApply.vue'),
         meta: { title: '迁出申请', type: 'out', minLevel: 1, permission: 'migration:out:create', menu: false, activeMenu: '/migrations/out', group: '业务办理' }
+      },
+      {
+        path: 'cancellations',
+        name: 'CancellationManagement',
+        component: () => import('../views/cancellations/CancellationManagement.vue'),
+        meta: { title: '注销业务管理', minLevel: 1, permission: PERMISSIONS.CANCELLATION_VIEW, menu: true, group: '业务办理', order: 22.5, icon: 'Document' }
       },
       {
         path: 'approvals',
@@ -429,20 +453,6 @@ export const routes = [
           group: '扩展业务',
           order: 32,
           icon: 'Postcard'
-        } 
-      },
-      { 
-        path: 'users', 
-        name: 'Users', 
-        component: () => import('../views/users/UserList.vue'), 
-        meta: { 
-          title: '用户管理',
-          minLevel: 3,
-          permission: 'system:user:view',
-          menu: false,
-          group: '系统管理',
-          order: 40,
-          icon: 'User'
         } 
       },
       { 
