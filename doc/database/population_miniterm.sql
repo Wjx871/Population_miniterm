@@ -669,6 +669,35 @@ CREATE TABLE IF NOT EXISTS key_population_application(detail_id BIGINT NOT NULL 
 CREATE TABLE IF NOT EXISTS key_population_history(history_id BIGINT NOT NULL AUTO_INCREMENT,record_id BIGINT NOT NULL,person_id BIGINT NOT NULL,event_type VARCHAR(30) NOT NULL,previous_status VARCHAR(20) NULL,new_status VARCHAR(20) NOT NULL,reason VARCHAR(500) NULL,source_application_id BIGINT NOT NULL,operator_id BIGINT NOT NULL,occurred_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,snapshot_json JSON NOT NULL,PRIMARY KEY(history_id),UNIQUE KEY uk_key_history_application_event(source_application_id,event_type),KEY idx_key_history_record_time(record_id,occurred_at),CONSTRAINT fk_key_history_record FOREIGN KEY(record_id) REFERENCES key_population(key_id),CONSTRAINT fk_key_history_person FOREIGN KEY(person_id) REFERENCES person(person_id),CONSTRAINT fk_key_history_application FOREIGN KEY(source_application_id) REFERENCES business_application(application_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 INSERT INTO sys_permission(permission_code,permission_name,module_name,permission_type,status) VALUES('key-population:view','查看重点人口','KEY_POPULATION','API','ENABLED'),('key-population:apply','申请重点人口业务','KEY_POPULATION','API','ENABLED'),('key-population:execute','执行重点人口业务','KEY_POPULATION','API','ENABLED') ON DUPLICATE KEY UPDATE permission_name=VALUES(permission_name),status='ENABLED';
 INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE p.permission_code='key-population:view' OR (r.role_code='POPULATION_MANAGER' AND p.permission_code IN('key-population:apply','key-population:execute')) OR r.role_code='SYSTEM_ADMIN';
+
+-- Backend V1 final query and upgrade-path structure parity.
+DROP PROCEDURE IF EXISTS backend_v1_add_index;
+DELIMITER $$
+CREATE PROCEDURE backend_v1_add_index(IN p_table VARCHAR(64),IN p_index VARCHAR(64),IN p_ddl TEXT)
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name=p_table AND index_name=p_index) THEN
+  SET @backend_v1_ddl=p_ddl;PREPARE backend_v1_stmt FROM @backend_v1_ddl;EXECUTE backend_v1_stmt;DEALLOCATE PREPARE backend_v1_stmt;
+ END IF;
+END$$
+DELIMITER ;
+CALL backend_v1_add_index('cancellation_record','idx_cancellation_region_created','CREATE INDEX idx_cancellation_region_created ON cancellation_record(region_code_snapshot,created_at)');
+CALL backend_v1_add_index('household_archive','idx_household_archive_no','CREATE INDEX idx_household_archive_no ON household_archive(household_no_snapshot)');
+CALL backend_v1_add_index('person','idx_person_query','CREATE INDEX idx_person_query ON person(current_status_code,gender,birth_date)');
+CALL backend_v1_add_index('operation_log','idx_operation_log_query','CREATE INDEX idx_operation_log_query ON operation_log(operation_time,operation_type,module_name,operation_result,user_id)');
+CALL backend_v1_add_index('migration_in','idx_migration_in_query','CREATE INDEX idx_migration_in_query ON migration_in(in_date,business_status,migration_type,person_id)');
+CALL backend_v1_add_index('migration_out','idx_migration_out_query','CREATE INDEX idx_migration_out_query ON migration_out(out_date,business_status,migration_type,person_id)');
+DROP PROCEDURE IF EXISTS backend_v1_add_index;
+DROP PROCEDURE IF EXISTS backend_v1_add_fk;
+DELIMITER $$
+CREATE PROCEDURE backend_v1_add_fk()
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM information_schema.referential_constraints WHERE constraint_schema=DATABASE() AND table_name='household_archive' AND constraint_name='fk_household_archive_original') THEN
+  ALTER TABLE household_archive ADD CONSTRAINT fk_household_archive_original FOREIGN KEY(original_household_id) REFERENCES household(household_id);
+ END IF;
+END$$
+DELIMITER ;
+CALL backend_v1_add_fk();
+DROP PROCEDURE IF EXISTS backend_v1_add_fk;
 DELIMITER $$
 CREATE PROCEDURE phase08_add_index(IN p_table VARCHAR(64), IN p_index VARCHAR(64), IN p_ddl TEXT)
 BEGIN
