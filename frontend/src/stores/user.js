@@ -1,22 +1,17 @@
 import { defineStore } from 'pinia'
-import { login as loginApi } from '../api/auth.js'
-import { ROLE_CODE, ROLE_LABEL, parseRoleLevel, resolvePermissionLevel } from '../constants/roles.js'
-import { normalizeRoleCode, resolvePermissions, checkPermission, checkAnyPermission } from '../utils/permission.js'
+import { getCurrentUser, login as loginApi, logout as logoutApi } from '../api/auth.js'
+import { ROLE_CODE, ROLE_LABEL } from '../constants/roles.js'
+import { checkPermission, checkAnyPermission } from '../utils/permission.js'
+import { normalizeLoginInfo, normalizeStoredSession, normalizeUserInfo } from './userNormalizer.js'
 
 const STORAGE_KEY = 'population_user_v2'
+let restorePromise = null
 
 function loadStorageUser() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return {}
-    const parsed = JSON.parse(raw)
-    // On load, always re-normalize to ensure integrity
-    const roleCode = normalizeRoleCode(parsed.roleCode, parsed.roleName)
-    
-    parsed.roleCode = roleCode
-    parsed.permissions = resolvePermissions(roleCode, parsed.permissions)
-    parsed.permissionLevel = resolvePermissionLevel(parsed.roleLevel, roleCode)
-    return parsed
+    return normalizeStoredSession(JSON.parse(raw))
   } catch {
     return {}
   }
@@ -32,15 +27,20 @@ export const useUserStore = defineStore('user', {
       username: saved.username || '',
       realName: saved.realName || '',
       roleName: saved.roleName || '',
-      roleCode: saved.roleCode || ROLE_CODE.QUERY_VIEWER,
-      roleLevel: saved.roleLevel || 'L1',
-      permissionLevel: saved.permissionLevel || 1,
-      permissions: saved.permissions || [],
+      roleCode: ROLE_CODE.QUERY_VIEWER,
+      roleLevel: '',
+      permissionLevel: 1,
+      permissions: [],
+      dataScope: null,
+      departmentId: null,
+      departmentName: '',
+      regionCode: '',
+      sessionChecked: !saved.accessToken,
     }
   },
 
   getters: {
-    isLoggedIn: (state) => Boolean(state.accessToken),
+    isLoggedIn: (state) => Boolean(state.accessToken && state.sessionChecked),
     displayName: (state) => state.realName || state.username || '用户',
     roleLabel: (state) => ROLE_LABEL[state.roleCode] || state.roleName || '查询统计人员',
     isSuperAdmin: (state) => state.roleCode === ROLE_CODE.SYSTEM_ADMIN,
@@ -48,23 +48,35 @@ export const useUserStore = defineStore('user', {
 
   actions: {
     setLoginInfo(loginVO) {
-      const user = loginVO.user || loginVO
-      this.accessToken = loginVO.token || loginVO.accessToken || ''
-      this.tokenType = loginVO.tokenType || 'Bearer'
-      this.userId = user.userId
-      this.username = user.username
-      this.realName = user.realName
-      this.roleName = user.roleName
-      this.roleLevel = user.roleLevel || 'L1'
+      Object.assign(this, normalizeLoginInfo(loginVO), { sessionChecked: true })
+      this.persistSession()
+    },
 
-      // 角色归一化与权限计算
-      this.roleCode = normalizeRoleCode(user.roleCode, user.roleName)
-      
-      this.permissionLevel = resolvePermissionLevel(this.roleLevel, this.roleCode)
-      
-      const hasApiPermissions = Array.isArray(user.permissions)
-      this.permissions = hasApiPermissions ? [...user.permissions] : []
+    async login(form) {
+      const loginVO = await loginApi(form)
+      this.setLoginInfo(loginVO)
+      return loginVO
+    },
 
+    async restoreSession() {
+      if (this.sessionChecked) return this.isLoggedIn
+      if (!this.accessToken) {
+        this.sessionChecked = true
+        return false
+      }
+      if (!restorePromise) {
+        restorePromise = getCurrentUser()
+          .then((user) => {
+            Object.assign(this, normalizeUserInfo(user), { sessionChecked: true })
+            this.persistSession()
+            return true
+          })
+          .finally(() => { restorePromise = null })
+      }
+      return restorePromise
+    },
+
+    persistSession() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         accessToken: this.accessToken,
         tokenType: this.tokenType,
@@ -74,18 +86,15 @@ export const useUserStore = defineStore('user', {
         roleName: this.roleName,
         roleCode: this.roleCode,
         roleLevel: this.roleLevel,
-        permissionLevel: this.permissionLevel,
-        permissions: this.permissions
+        permissions: this.permissions,
+        dataScope: this.dataScope,
+        departmentId: this.departmentId,
+        departmentName: this.departmentName,
+        regionCode: this.regionCode,
       }))
     },
 
-    async login(form) {
-      const loginVO = await loginApi(form)
-      this.setLoginInfo(loginVO)
-      return loginVO
-    },
-
-    logout() {
+    clearSession() {
       this.accessToken = ''
       this.tokenType = 'Bearer'
       this.userId = null
@@ -93,12 +102,31 @@ export const useUserStore = defineStore('user', {
       this.realName = ''
       this.roleName = ''
       this.roleCode = ROLE_CODE.QUERY_VIEWER
-      this.roleLevel = 'L1'
+      this.roleLevel = ''
       this.permissionLevel = 1
       this.permissions = []
+      this.dataScope = null
+      this.departmentId = null
+      this.departmentName = ''
+      this.regionCode = ''
+      this.sessionChecked = true
       localStorage.removeItem(STORAGE_KEY)
-      // Clean up legacy v1 storage if it exists
       localStorage.removeItem('population_user')
+      Object.keys(localStorage)
+        .filter((key) => key.startsWith('population_reference_') || key.startsWith('population_cache_'))
+        .forEach((key) => localStorage.removeItem(key))
+    },
+
+    async logout() {
+      if (!this.accessToken) {
+        this.clearSession()
+        return
+      }
+      try {
+        await logoutApi()
+      } finally {
+        this.clearSession()
+      }
     },
 
     hasLevel(minLevel) {

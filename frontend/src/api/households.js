@@ -37,17 +37,6 @@ export function updateHousehold(id, data) {
   })
 }
 
-/**
- * 撤销/删除家庭户。
- * M2 页面禁止调用；销户等重大业务走后续审批流程。
- */
-export function deleteHousehold(id) {
-  return request({
-    url: `/households/${id}`,
-    method: 'delete',
-  })
-}
-
 export function getHouseholdMembers(id) {
   return request({
     url: `/households/${id}/members`,
@@ -63,9 +52,10 @@ export function addHouseholdMember(id, data) {
   })
 }
 
-export function removeHouseholdMember(householdId, memberId) {
+export function leaveHouseholdMember(householdId, memberId, data) {
   return request({
-    url: `/households/${householdId}/members/${memberId}`,
-    method: 'delete',
+    url: `/households/${householdId}/members/${memberId}/leave`,
+    method: 'post',
+    data,
   })
 }

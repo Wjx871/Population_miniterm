@@ -1,7 +1,24 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
-import router from '../router'
 import { useUserStore } from '../stores/user'
+
+let handlingUnauthorized = false
+
+async function handleUnauthorized(message) {
+  const userStore = useUserStore()
+  userStore.clearSession()
+  if (handlingUnauthorized) return
+  handlingUnauthorized = true
+  try {
+    ElMessage.error(message || '登录状态已失效，请重新登录')
+    const { default: router } = await import('../router/index.js')
+    if (router.currentRoute.value.path !== '/login') {
+      await router.replace({ path: '/login', query: { redirect: router.currentRoute.value.fullPath } })
+    }
+  } finally {
+    handlingUnauthorized = false
+  }
+}
 
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
@@ -41,18 +58,15 @@ request.interceptors.response.use(
     }
 
     if (result.code === 401) {
-      const userStore = useUserStore()
-      userStore.logout()
-      ElMessage.error('登录状态已失效，请重新登录')
-      router.replace('/login')
+      void handleUnauthorized(result.message)
       return Promise.reject(new Error(result.message || '未授权'))
     }
 
     if (result.code === 403) {
       ElMessage.error(result.message || '无权执行该操作')
-      if (router.currentRoute.value.path !== '/403') {
-        router.replace({ path: '/403', query: { from: router.currentRoute.value.fullPath } })
-      }
+      import('../router/index.js').then(({ default: router }) => {
+        if (router.currentRoute.value.path !== '/403') router.replace({ path: '/403', query: { from: router.currentRoute.value.fullPath } })
+      })
       return Promise.reject(new Error(result.message || '无权执行该操作'))
     }
 
@@ -65,15 +79,12 @@ request.interceptors.response.use(
       return Promise.reject(error)
     }
     if (error.response?.status === 401) {
-      const userStore = useUserStore()
-      userStore.logout()
-      ElMessage.error('登录状态已失效，请重新登录')
-      router.replace('/login')
+      void handleUnauthorized(error.response?.data?.message)
     } else if (error.response?.status === 403) {
-      ElMessage.error('无权执行该操作 (403)')
-      if (router.currentRoute.value.path !== '/403') {
-        router.replace({ path: '/403', query: { from: router.currentRoute.value.fullPath } })
-      }
+      ElMessage.error(error.response?.data?.message || '无权执行该操作 (403)')
+      import('../router/index.js').then(({ default: router }) => {
+        if (router.currentRoute.value.path !== '/403') router.replace({ path: '/403', query: { from: router.currentRoute.value.fullPath } })
+      })
     } else if (error.response?.status === 404) {
       ElMessage.error(`请求的接口不存在 (404): ${error.config?.url}`)
     } else {

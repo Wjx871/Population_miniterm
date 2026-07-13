@@ -302,20 +302,6 @@ const routes = [
         } 
       },
       { 
-        path: 'users', 
-        name: 'Users', 
-        component: () => import('../views/users/UserList.vue'), 
-        meta: { 
-          title: '用户管理',
-          minLevel: 3,
-          permission: 'system:user:view',
-          menu: false,
-          group: '系统管理',
-          order: 40,
-          icon: 'User'
-        } 
-      },
-      { 
         path: 'dictionary', 
         name: 'Dictionary', 
         component: { template: '<div>数据字典正在建设中...</div>' }, 
@@ -366,13 +352,21 @@ function resolveAuthedLanding(userStore) {
 }
 
 // 全局前置守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   // 1. 设置页面标题
   const baseTitle = '人口数据库管理系统';
   document.title = to.meta.title ? `${to.meta.title} - ${baseTitle}` : baseTitle;
 
   const userStore = useUserStore();
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+
+  if (requiresAuth && userStore.accessToken && !userStore.sessionChecked) {
+    try {
+      await userStore.restoreSession();
+    } catch {
+      return next({ path: '/login', query: { redirect: to.fullPath } });
+    }
+  }
 
   // 2. 判断是否需要登录
   if (requiresAuth && !userStore.isLoggedIn) {

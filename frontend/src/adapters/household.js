@@ -74,6 +74,7 @@ export function normalizeHouseholdMember(raw, headPersonId = null) {
       phone: '',
       relationship: '',
       joinDate: null,
+      version: null,
       isHead: false,
       status: '',
     }
@@ -97,6 +98,7 @@ export function normalizeHouseholdMember(raw, headPersonId = null) {
     phone: trimOrEmpty(raw.phone || raw.person?.phone),
     relationship: trimOrEmpty(raw.relationship),
     joinDate: raw.joinDate ?? null,
+    version: raw.version ?? null,
     isHead,
     status: trimOrEmpty(raw.status),
   }

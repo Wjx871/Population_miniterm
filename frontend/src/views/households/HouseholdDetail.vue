@@ -127,12 +127,10 @@
         </el-form-item>
         <el-form-item label="与户主关系" prop="relationship">
           <el-select v-model="form.relationship" style="width: 100%">
-            <el-option label="配偶" value="配偶" />
-            <el-option label="子" value="子" />
-            <el-option label="女" value="女" />
-            <el-option label="父母" value="父母" />
-            <el-option label="其他亲属" value="其他亲属" />
-            <el-option label="非亲属" value="非亲属" />
+            <el-option label="配偶" value="SPOUSE" />
+            <el-option label="子女" value="CHILD" />
+            <el-option label="父母" value="PARENT" />
+            <el-option label="其他" value="OTHER" />
           </el-select>
         </el-form-item>
         <el-form-item label="加入日期" prop="joinDate">
@@ -164,7 +162,7 @@ import {
   getHouseholdById,
   getHouseholdMembers,
   addHouseholdMember,
-  removeHouseholdMember,
+  leaveHouseholdMember,
 } from '../../api/households'
 import {
   normalizeHousehold,
@@ -306,7 +304,10 @@ const handleRemove = (row) => {
     }
   ).then(async () => {
     try {
-      await removeHouseholdMember(householdId, memberId)
+      await leaveHouseholdMember(householdId, memberId, {
+        leaveDate: dayjs().format('YYYY-MM-DD'),
+        version: row.version,
+      })
       ElMessage.success('移出成功')
       await fetchMembers()
       fetchHouseholdInfo()

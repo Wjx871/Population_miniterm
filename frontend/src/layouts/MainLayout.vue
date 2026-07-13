@@ -157,10 +157,15 @@ const handleLogout = () => {
     cancelButtonText: '取消',
     type: 'warning',
   })
-    .then(() => {
-      userStore.logout();
-      router.push('/login');
-      ElMessage.success('已安全退出系统');
+    .then(async () => {
+      let completed = false
+      try {
+        await userStore.logout()
+        completed = true
+      } finally {
+        await router.replace('/login')
+      }
+      if (completed) ElMessage.success('已安全退出系统')
     })
     .catch(() => {});
 };
