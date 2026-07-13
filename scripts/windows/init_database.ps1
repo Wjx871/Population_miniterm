@@ -41,25 +41,33 @@ function Read-LocalEnv {
 
 $localEnv = Read-LocalEnv $localEnvPath
 $providedParameters = $PSBoundParameters
-function Resolve-Setting {
-    param([string]$Name, [string]$ExplicitValue, [string]$DefaultValue)
-    if ($providedParameters.ContainsKey($Name) -and -not [string]::IsNullOrWhiteSpace($ExplicitValue)) { return $ExplicitValue }
+function Get-ConfiguredValue {
+    param([string]$Name)
     $fromProcess = [Environment]::GetEnvironmentVariable($Name)
     if (-not [string]::IsNullOrWhiteSpace($fromProcess)) { return $fromProcess }
     if ($localEnv.ContainsKey($Name) -and -not [string]::IsNullOrWhiteSpace($localEnv[$Name])) { return $localEnv[$Name] }
-    return $DefaultValue
+    return $null
 }
 
-$HostName = Resolve-Setting -Name 'HostName' -ExplicitValue $HostName -DefaultValue '127.0.0.1'
-$portText = Resolve-Setting -Name 'Port' -ExplicitValue ([string]$Port) -DefaultValue '3306'
-$Port = [int]$portText
-$Username = Resolve-Setting -Name 'Username' -ExplicitValue $Username -DefaultValue 'root'
-$Database = Resolve-Setting -Name 'Database' -ExplicitValue $Database -DefaultValue $defaultDatabase
-$Password = Resolve-Setting -Name 'Password' -ExplicitValue $Password -DefaultValue ''
-if ([string]::IsNullOrEmpty($Password)) {
-    $processPassword = [Environment]::GetEnvironmentVariable('DB_PASSWORD')
-    $Password = if (-not [string]::IsNullOrWhiteSpace($processPassword)) { $processPassword } elseif ($localEnv.ContainsKey('DB_PASSWORD')) { $localEnv['DB_PASSWORD'] } else { '' }
+function Parse-JdbcMySqlUrl {
+    param([string]$Url)
+    if ([string]::IsNullOrWhiteSpace($Url)) { return $null }
+    $match = [regex]::Match($Url, '^jdbc:mysql://(?<host>[^/:?]+)(:(?<port>\d+))?/(?<database>[A-Za-z0-9_]+)(\?.*)?$', [Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    if (-not $match.Success) { throw 'DB_URL 必须是 jdbc:mysql://host:port/database?... 格式。' }
+    return [pscustomobject]@{
+        HostName = $match.Groups['host'].Value
+        Port = if ($match.Groups['port'].Success) { [int]$match.Groups['port'].Value } else { 3306 }
+        Database = $match.Groups['database'].Value
+    }
 }
+
+$jdbc = Parse-JdbcMySqlUrl (Get-ConfiguredValue 'DB_URL')
+$HostName = if ($providedParameters.ContainsKey('HostName')) { $HostName } elseif ($jdbc) { $jdbc.HostName } else { '127.0.0.1' }
+$Port = if ($providedParameters.ContainsKey('Port')) { $Port } elseif ($jdbc) { $jdbc.Port } else { 3306 }
+$Username = if ($providedParameters.ContainsKey('Username')) { $Username } else { $configuredUsername = Get-ConfiguredValue 'DB_USERNAME'; if ($configuredUsername) { $configuredUsername } else { 'root' } }
+# Fresh 默认总是使用隔离验证库；Verify 则继承 DB_URL 的实际数据库，除非显式指定 -Database。
+$Database = if ($providedParameters.ContainsKey('Database')) { $Database } elseif ($Mode -eq 'Verify' -and $jdbc) { $jdbc.Database } else { $defaultDatabase }
+$Password = if ($providedParameters.ContainsKey('Password')) { $Password } else { $configuredPassword = Get-ConfiguredValue 'DB_PASSWORD'; if ($configuredPassword) { $configuredPassword } else { '' } }
 
 if ($Database -notmatch '^[A-Za-z0-9_]+$') { throw '目标数据库名只能包含字母、数字和下划线。' }
 if (-not (Test-Path -LiteralPath $sourceSql) -or -not (Test-Path -LiteralPath $checkSql)) { throw '未找到数据库初始化或校验 SQL。' }
@@ -93,6 +101,30 @@ function Invoke-MySqlFile {
     } finally {
         [Environment]::SetEnvironmentVariable('MYSQL_PWD', $previousPassword, 'Process')
     }
+}
+
+function Write-Utf8NoBom {
+    param([string]$Path, [string]$Content)
+    # Windows PowerShell 5.1 不支持 Set-Content -Encoding utf8NoBOM。
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
+}
+
+function New-RewrittenSqlCopy {
+    param([string]$SourcePath, [string]$DestinationName, [switch]$RewriteDatabaseHeader)
+    $source = Get-Content -LiteralPath $SourcePath -Raw
+    if ($RewriteDatabaseHeader) {
+        $pattern = '(?ms)\ACREATE DATABASE IF NOT EXISTS population_miniterm\s+DEFAULT CHARACTER SET utf8mb4\s+DEFAULT COLLATE utf8mb4_unicode_ci;\s+USE population_miniterm;'
+        $replacement = "CREATE DATABASE IF NOT EXISTS $Database`r`n    DEFAULT CHARACTER SET utf8mb4`r`n    DEFAULT COLLATE utf8mb4_unicode_ci;`r`n`r`nUSE $Database;"
+    } else {
+        $pattern = '(?im)^\s*USE\s+population_miniterm\s*;'
+        $replacement = "USE $Database;"
+    }
+    if ([regex]::Matches($source, $pattern).Count -ne 1) { throw "无法安全重写 $([IO.Path]::GetFileName($SourcePath)) 的数据库目标。" }
+    $generated = [regex]::Replace($source, $pattern, $replacement, 1)
+    $temporaryPath = Join-Path $temporaryDirectory $DestinationName
+    Write-Utf8NoBom -Path $temporaryPath -Content $generated
+    return $temporaryPath
 }
 
 function Test-DatabaseExists {
@@ -156,19 +188,15 @@ if ($databaseExists) {
 }
 
 $temporaryDirectory = Join-Path ([IO.Path]::GetTempPath()) ("population-init-" + [guid]::NewGuid().ToString('N'))
-$temporarySql = Join-Path $temporaryDirectory 'population_miniterm.generated.sql'
 try {
     New-Item -ItemType Directory -Path $temporaryDirectory -Force | Out-Null
-    $source = Get-Content -LiteralPath $sourceSql -Raw
-    $replacement = "CREATE DATABASE IF NOT EXISTS $Database`r`n    DEFAULT CHARACTER SET utf8mb4`r`n    DEFAULT COLLATE utf8mb4_unicode_ci;`r`n`r`nUSE $Database;"
-    $generated = [regex]::Replace($source, '(?ms)\ACREATE DATABASE IF NOT EXISTS population_miniterm\s+DEFAULT CHARACTER SET utf8mb4\s+DEFAULT COLLATE utf8mb4_unicode_ci;\s+USE population_miniterm;', $replacement, 1)
-    if ($generated -eq $source -or $generated -notmatch "USE $Database;") { throw '无法安全重写源 SQL 的数据库头部，已停止。' }
-    Set-Content -LiteralPath $temporarySql -Value $generated -Encoding utf8NoBOM
+    $temporarySql = New-RewrittenSqlCopy -SourcePath $sourceSql -DestinationName 'population_miniterm.generated.sql' -RewriteDatabaseHeader
     Invoke-MySqlFile -Path $temporarySql
     if ($DemoData) {
         foreach ($demoSql in $demoSqlFiles) {
             if (-not (Test-Path -LiteralPath $demoSql)) { throw "缺少演示数据脚本：$demoSql" }
-            Invoke-MySqlFile -Path $demoSql -TargetDatabase $Database
+            $temporaryDemoSql = New-RewrittenSqlCopy -SourcePath $demoSql -DestinationName ("demo_" + [IO.Path]::GetFileName($demoSql))
+            Invoke-MySqlFile -Path $temporaryDemoSql -TargetDatabase $Database
         }
     }
     Invoke-Verify

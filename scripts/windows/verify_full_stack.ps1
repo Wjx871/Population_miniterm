@@ -35,16 +35,28 @@ function Assert-ApiSuccess {
     Write-Host "[PASS] $Step"
 }
 
+function Assert-HttpSuccess {
+    param($Response, [string]$Step, [string]$Url)
+    if ($Response.Status -lt 200 -or $Response.Status -ge 300) {
+        throw "$Step 失败：$Url；HTTP=$($Response.Status)"
+    }
+    Write-Host "[PASS] $Step"
+}
+
 if ([string]::IsNullOrEmpty($TestPassword)) { $TestPassword = [Environment]::GetEnvironmentVariable('TEST_ACCOUNT_PASSWORD') }
 if ([string]::IsNullOrEmpty($TestPassword)) { throw '请通过 -TestPassword 或 TEST_ACCOUNT_PASSWORD 提供课程测试账号密码。' }
 
 $frontend = $FrontendBaseUrl.TrimEnd('/')
 $backend = $BackendBaseUrl.TrimEnd('/')
-Assert-ApiSuccess (Invoke-Http -Method Get -Url "$backend/api/health") 'Backend health and database' "$backend/api/health"
-Assert-ApiSuccess (Invoke-Http -Method Get -Url "$frontend/") 'Frontend static entry' "$frontend/"
+$healthUrl = "$backend/api/health"
+$health = Invoke-Http -Method Get -Url $healthUrl
+Assert-ApiSuccess $health 'Backend health response' $healthUrl
+if ([string]$health.Json.data.database -ne 'UP') { throw "Backend database 未就绪：database=$($health.Json.data.database)" }
+Write-Host '[PASS] Backend health and database'
+Assert-HttpSuccess (Invoke-Http -Method Get -Url "$frontend/") 'Frontend static entry' "$frontend/"
 
 $safeReadCandidates = @(
-    @{ Permission = 'person:view'; Path = '/api/persons?page=0&size=1' },
+    @{ Permission = 'population:view'; Path = '/api/persons?page=0&size=1' },
     @{ Permission = 'household:view'; Path = '/api/households?page=0&size=1' },
     @{ Permission = 'region:view'; Path = '/api/admin-regions' },
     @{ Permission = 'dictionary:view'; Path = '/api/dictionaries?page=0&size=1' },
@@ -69,15 +81,19 @@ foreach ($username in $accounts) {
     $permissions = @($me.Json.data.permissions)
     if ($permissions.Count -eq 0) { throw "账号 $username 的 permissions 为空。" }
 
+    if ($me.Json.data.roleCode -eq 'SYSTEM_ADMIN') {
+        foreach ($candidate in $safeReadCandidates) {
+            if ($permissions -notcontains $candidate.Permission) { throw "SYSTEM_ADMIN 缺少核心只读权限：$($candidate.Permission)" }
+            $candidateUrl = "$frontend$($candidate.Path)"
+            Assert-ApiSuccess (Invoke-Http -Method Get -Url $candidateUrl -Headers $headers) "Allowed GET (admin, $($candidate.Permission))" $candidateUrl
+        }
+        Write-Host '[SKIP] SYSTEM_ADMIN 不执行拒绝边界测试。'
+        continue
+    }
     $allowed = $safeReadCandidates | Where-Object { $permissions -contains $_.Permission } | Select-Object -First 1
     if (-not $allowed) { throw "账号 $username 没有可安全验证的允许 GET 权限。" }
     $allowedUrl = "$frontend$($allowed.Path)"
     Assert-ApiSuccess (Invoke-Http -Method Get -Url $allowedUrl -Headers $headers) "Allowed GET ($username, $($allowed.Permission))" $allowedUrl
-
-    if ($me.Json.data.roleCode -eq 'SYSTEM_ADMIN') {
-        Write-Host '[SKIP] SYSTEM_ADMIN 不执行拒绝边界测试。'
-        continue
-    }
     $forbidden = $safeReadCandidates | Where-Object { $permissions -notcontains $_.Permission } | Select-Object -First 1
     if (-not $forbidden) {
         Write-Host "[SKIP] $username 未找到可安全验证的拒绝 GET。"

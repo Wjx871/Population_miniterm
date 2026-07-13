@@ -10,21 +10,36 @@ $healthUrl = "$($BackendBaseUrl.TrimEnd('/'))/api/health"
 
 try {
     $response = Invoke-WebRequest -Uri $healthUrl -Method Get -TimeoutSec $TimeoutSeconds -UseBasicParsing -ErrorAction Stop
-    $payload = $response.Content | ConvertFrom-Json -ErrorAction Stop
-    $database = [string]$payload.data.database
-
-    if ($response.StatusCode -ne 200 -or $payload.code -ne 200 -or $database -ne 'UP') {
-        throw "健康契约不满足（HTTP=$($response.StatusCode), code=$($payload.code), database=$database）"
-    }
-
-    if (-not $Quiet) {
-        Write-Host "[PASS] 后端健康检查：database=UP；redisStatus=$($payload.data.redisStatus)"
-    }
-    exit 0
 } catch {
-    # 不回显完整响应，避免意外输出连接串、密钥或其它敏感诊断信息。
-    if (-not $Quiet) {
-        Write-Error "[FAIL] 后端健康检查失败：$healthUrl；$($_.Exception.Message)"
+    if ($_.Exception.Response) {
+        if (-not $Quiet) { Write-Error "[FAIL] 健康接口 HTTP 异常：$healthUrl" }
+        exit 3
     }
-    exit 1
+    if (-not $Quiet) { Write-Error "[FAIL] 无法连接健康接口：$healthUrl" }
+    exit 2
 }
+
+try {
+    $payload = $response.Content | ConvertFrom-Json -ErrorAction Stop
+} catch {
+    if (-not $Quiet) { Write-Error "[FAIL] 健康接口响应不是有效 JSON：$healthUrl" }
+    exit 3
+}
+
+if ($response.StatusCode -ne 200 -or $payload.code -ne 200) {
+    if (-not $Quiet) { Write-Error "[FAIL] 健康接口契约异常：HTTP=$($response.StatusCode)，code=$($payload.code)" }
+    exit 3
+}
+if ($null -eq $payload.data -or [string]::IsNullOrWhiteSpace([string]$payload.data.database)) {
+    if (-not $Quiet) { Write-Error '[FAIL] 健康接口缺少 data.database。' }
+    exit 4
+}
+if ([string]$payload.data.database -ne 'UP') {
+    if (-not $Quiet) { Write-Error "[FAIL] 数据库未就绪：database=$($payload.data.database)" }
+    exit 5
+}
+
+if (-not $Quiet) {
+    Write-Host "[PASS] 后端健康检查：database=UP；redisStatus=$($payload.data.redisStatus)"
+}
+exit 0
