@@ -9,7 +9,7 @@
         <el-button
           type="primary"
           :icon="Plus"
-          v-permission="'household:create'"
+          v-permission="'household:edit'"
           @click="openCreateDialog"
         >
           开户立户
@@ -68,7 +68,7 @@
               size="small"
               type="primary"
               link
-              v-permission="'household:update'"
+              v-permission="'household:edit'"
               @click="openEditDialog(row)"
             >
               编辑
@@ -153,6 +153,7 @@ const editMeta = reactive({
   headPersonName: '',
   headPersonId: null,
   status: '',
+  version: 0,
 })
 
 const fetchList = async () => {
@@ -199,11 +200,17 @@ const openCreateDialog = () => {
     headPersonName: '',
     headPersonId: null,
     status: '',
+    version: 0,
   })
   formModel.value = {
+    householdNo: '',
     headPersonId: null,
+    householdType: 'FAMILY',
+    regionCode: '',
     address: '',
     establishDate: '',
+    status: 'ACTIVE',
+    version: 0,
   }
   dialogVisible.value = true
   householdFormRef.value?.clearValidate()
@@ -233,10 +240,17 @@ const openEditDialog = async (row) => {
       headPersonName: detail.headPersonName,
       headPersonId: detail.headPersonId,
       status: detail.status,
+      version: detail.version,
     })
     formModel.value = {
+      householdNo: detail.householdNo,
+      headPersonId: detail.headPersonId,
+      householdType: detail.householdType || 'FAMILY',
+      regionCode: detail.regionCode || '',
       address: detail.address,
       establishDate: formatDate(detail.establishDate),
+      status: detail.status || 'ACTIVE',
+      version: detail.version ?? 0,
     }
     householdFormRef.value?.clearValidate()
   } catch (error) {

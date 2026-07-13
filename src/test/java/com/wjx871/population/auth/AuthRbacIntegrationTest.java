@@ -159,6 +159,19 @@ class AuthRbacIntegrationTest {
     }
 
     @Test
+    void systemAdminReceivesAllEnabledPermissions() throws Exception {
+        mockMvc.perform(get("/api/auth/me").header("Authorization", bearer(tokenFor("admin"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.roleCode").value("SYSTEM_ADMIN"))
+                .andExpect(jsonPath("$.data.dataScope").value("ALL"))
+                .andExpect(jsonPath("$.data.permissions", org.hamcrest.Matchers.hasItems(
+                        "population:view", "population:edit", "household:view", "household:edit",
+                        "approval:handle", "migration:execute", "cancellation:execute",
+                        "region:manage", "dictionary:manage", "key-population:execute",
+                        "sensitive-data:view-full", "system:user:manage", "log:view")));
+    }
+
+    @Test
     void loginUpdatesLastLoginAndWritesSuccessAndFailureLogs() throws Exception {
         mockMvc.perform(login("admin", "123456")).andExpect(status().isOk());
         mockMvc.perform(login("admin", "wrong")).andExpect(status().isUnauthorized());

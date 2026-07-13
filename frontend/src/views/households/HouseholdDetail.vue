@@ -15,7 +15,7 @@
         <el-button
           type="primary"
           :icon="Plus"
-          v-permission="'household:member:manage'"
+          v-permission="'household:edit'"
           @click="openAddDialog"
         >
           添加成员
@@ -96,7 +96,7 @@
               type="danger"
               link
               :disabled="row.isHead"
-              v-permission="'household:member:manage'"
+              v-permission="'household:edit'"
               @click="handleRemove(row)"
             >
               移出

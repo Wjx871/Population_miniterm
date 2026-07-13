@@ -11,10 +11,12 @@ export const PERMISSIONS = Object.freeze({
   STATISTICS_VIEW: 'statistics:view',
   
   HOUSEHOLD_VIEW: 'household:view',
-  HOUSEHOLD_CREATE: 'household:create',
-  HOUSEHOLD_UPDATE: 'household:update',
-  HOUSEHOLD_MEMBER_MANAGE: 'household:member:manage',
-  HOUSEHOLD_DELETE: 'household:delete',
+  // 后端户籍写操作统一使用 household:edit
+  HOUSEHOLD_EDIT: 'household:edit',
+  HOUSEHOLD_CREATE: 'household:edit',
+  HOUSEHOLD_UPDATE: 'household:edit',
+  HOUSEHOLD_MEMBER_MANAGE: 'household:edit',
+  HOUSEHOLD_DELETE: 'household:edit',
   
   MIGRATION_VIEW: 'migration:view',
   MIGRATION_IN_CREATE: 'migration:in:create',

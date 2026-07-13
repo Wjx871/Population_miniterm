@@ -1,4 +1,4 @@
-import { toDatePayload } from '../utils/date'
+import { toDatePayload } from '../utils/date.js'
 
 function pickFirst(...values) {
   for (const value of values) {
@@ -32,9 +32,11 @@ export function normalizeHousehold(raw) {
       headPersonName: '',
       address: '',
       householdType: null,
+      regionCode: '',
       status: '',
       establishDate: null,
       memberCount: 0,
+      version: 0,
       regionName: null,
       departmentName: null,
     }
@@ -47,9 +49,11 @@ export function normalizeHousehold(raw) {
     headPersonName: trimOrEmpty(raw.headPersonName || raw.headName),
     address: trimOrEmpty(raw.address),
     householdType: raw.householdType ?? null,
+    regionCode: trimOrEmpty(raw.regionCode),
     status: trimOrEmpty(raw.status),
     establishDate: raw.establishDate ?? null,
-    memberCount: toNumberOrZero(raw.memberCount),
+    memberCount: toNumberOrZero(pickFirst(raw.activeMemberCount, raw.memberCount)),
+    version: toNumberOrZero(raw.version),
     regionName: raw.regionName ?? null,
     departmentName: raw.departmentName ?? null,
   }
@@ -108,19 +112,30 @@ export function normalizeHouseholdMembers(records, headPersonId = null) {
 }
 
 export function toCreateHouseholdPayload(form = {}) {
+  const headPersonId = form.headPersonId == null || form.headPersonId === ''
+    ? null
+    : Number(form.headPersonId)
+
   return {
-    headPersonId: form.headPersonId ?? null,
+    householdNo: trimOrEmpty(form.householdNo),
+    headPersonId: Number.isFinite(headPersonId) ? headPersonId : null,
+    householdType: trimOrEmpty(form.householdType) || 'FAMILY',
+    regionCode: trimOrEmpty(form.regionCode),
     address: trimOrEmpty(form.address),
     establishDate: toDatePayload(form.establishDate),
   }
 }
 
 /**
- * 基础信息编辑：不含户主、状态、成员列表。
+ * 基础信息编辑：不含户主与成员列表；status/version 用于后端乐观锁与状态校验。
  */
 export function toUpdateHouseholdPayload(form = {}) {
   return {
+    householdType: trimOrEmpty(form.householdType) || 'FAMILY',
+    regionCode: trimOrEmpty(form.regionCode),
     address: trimOrEmpty(form.address),
     establishDate: toDatePayload(form.establishDate),
+    status: trimOrEmpty(form.status) || 'ACTIVE',
+    version: toNumberOrZero(form.version),
   }
 }
