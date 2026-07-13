@@ -114,11 +114,9 @@ async function createDraft() {
   try {
     const result = await createReleaseApplication(recordId.value, toCreateReleasePayload(form))
     applicationId.value = result?.application?.applicationId || result?.applicationId || result
-    ElMessage.success('解除草稿已创建')
-    await router.replace({
-      path: route.path,
-      query: { applicationId: applicationId.value }
-    })
+    ElMessage.success('解除草稿已创建，正在进入申请详情')
+    // 创建成功立即进入统一申请详情，避免刷新创建页重复建草稿
+    await router.replace(`/applications/${applicationId.value}`)
   } catch (error) {
     ElMessage.error(getApiErrorMessage(error, '创建解除申请失败'))
   } finally {

@@ -16,6 +16,14 @@ import {
 } from '../src/constants/export.js'
 import { createExportHandler } from '../src/features/applications/handlers/exportHandler.js'
 
+test('导出 Handler 提交权限默认仅 application:submit', () => {
+  const handler = createExportHandler({})
+  assert.equal(typeof handler.getSubmitPermissions, 'function')
+  assert.deepEqual(handler.getSubmitPermissions(), ['application:submit'])
+  assert.equal(handler.buildEditRoute(), null)
+})
+
+
 test('普通导出 payload 仅含 module/filters/fields', () => {
   const payload = toNormalExportPayload({
     module: 'PERSON',

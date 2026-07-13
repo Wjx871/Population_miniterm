@@ -76,6 +76,11 @@ export function createKeyPopulationHandler(services) {
       return 'key-population:apply'
     },
 
+    /** 后端专业 submit 同时要求 application:submit + key-population:apply */
+    getSubmitPermissions() {
+      return ['application:submit', 'key-population:apply']
+    },
+
     getMaterialOptions() {
       if (services.getKeyPopulationMaterialOptions) {
         return services.getKeyPopulationMaterialOptions()

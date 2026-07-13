@@ -111,8 +111,9 @@ async function createDraft() {
   try {
     const result = await createRegisterApplication(toCreateRegisterPayload(form))
     applicationId.value = result?.application?.applicationId || result?.applicationId || result
-    ElMessage.success('建档草稿已创建')
-    await router.replace({ query: { applicationId: applicationId.value } })
+    ElMessage.success('建档草稿已创建，正在进入申请详情')
+    // 创建成功立即进入统一申请详情，避免刷新创建页重复建草稿
+    await router.replace(`/applications/${applicationId.value}`)
   } catch (error) {
     ElMessage.error(getApiErrorMessage(error, '创建建档申请失败'))
   } finally {

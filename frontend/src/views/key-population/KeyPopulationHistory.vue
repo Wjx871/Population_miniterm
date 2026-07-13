@@ -10,14 +10,24 @@
 
     <el-card shadow="never">
       <el-table :data="records" border stripe>
-        <el-table-column prop="eventType" label="事件" width="120">
+        <el-table-column prop="eventType" label="事件类型" width="120">
           <template #default="{ row }">{{ KEY_HISTORY_EVENT[row.eventType] || row.eventType || '-' }}</template>
         </el-table-column>
-        <el-table-column prop="eventDate" label="事件日期" width="140" />
-        <el-table-column prop="reason" label="原因" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="operatorId" label="操作人" width="100" />
-        <el-table-column prop="createdAt" label="记录时间" min-width="170">
-          <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+        <el-table-column label="原状态" width="110">
+          <template #default="{ row }">{{ row.previousStatus || '-' }}</template>
+        </el-table-column>
+        <el-table-column label="新状态" width="110">
+          <template #default="{ row }">{{ row.newStatus || '-' }}</template>
+        </el-table-column>
+        <el-table-column prop="reason" label="原因" min-width="160" show-overflow-tooltip />
+        <el-table-column label="来源申请" width="110">
+          <template #default="{ row }">{{ row.sourceApplicationId ?? '-' }}</template>
+        </el-table-column>
+        <el-table-column prop="operatorId" label="操作人" width="100">
+          <template #default="{ row }">{{ row.operatorId ?? '-' }}</template>
+        </el-table-column>
+        <el-table-column label="发生时间" min-width="170">
+          <template #default="{ row }">{{ formatDateTime(row.occurredAt) || '-' }}</template>
         </el-table-column>
       </el-table>
       <el-empty v-if="!loading && !records.length" description="暂无历史事件" />

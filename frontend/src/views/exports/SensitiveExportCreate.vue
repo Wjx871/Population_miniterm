@@ -3,7 +3,7 @@
     <div class="page-header">
       <div>
         <h1>敏感导出申请</h1>
-        <p class="subtitle">创建草稿后上传材料并提交审批；审批通过后由授权经办人显式执行生成文件。</p>
+        <p class="subtitle">创建草稿后可按需上传补充材料，再提交审批；审批通过后由授权经办人显式执行生成文件。</p>
       </div>
       <el-button @click="router.push('/exports')">返回记录</el-button>
     </div>
@@ -35,7 +35,8 @@
           </el-checkbox-group>
         </el-form-item>
         <el-form-item label="预计上限" prop="expectedRowLimit">
-          <el-input-number v-model="form.expectedRowLimit" :min="1" :max="100000" :disabled="Boolean(applicationId)" />
+          <el-input-number v-model="form.expectedRowLimit" :min="1" :disabled="Boolean(applicationId)" />
+          <div class="form-tip">最终额度由后端策略校验，前端不预设业务上限。</div>
         </el-form-item>
         <el-form-item label="导出理由" prop="reason">
           <el-input v-model.trim="form.reason" type="textarea" :rows="3" :disabled="Boolean(applicationId)" />
@@ -111,8 +112,9 @@ async function createDraft() {
   try {
     const id = await createSensitiveExportApplication(toSensitiveExportPayload(form))
     applicationId.value = id?.applicationId || id
-    ElMessage.success('敏感导出草稿已创建')
-    await router.replace({ query: { applicationId: applicationId.value } })
+    ElMessage.success('敏感导出草稿已创建，正在进入申请详情')
+    // 创建成功立即进入统一申请详情，避免刷新创建页重复建草稿
+    await router.replace(`/applications/${applicationId.value}`)
   } catch (error) {
     ElMessage.error(getApiErrorMessage(error, '创建敏感导出申请失败'))
   } finally {
@@ -131,4 +133,5 @@ function goApplication() {
 .page-header h1 { margin: 0 0 8px; }
 .subtitle { margin: 0; color: var(--el-text-color-secondary); }
 .form-card { max-width: 900px; }
+.form-tip { color: var(--el-text-color-secondary); font-size: 12px; margin-top: 4px; }
 </style>

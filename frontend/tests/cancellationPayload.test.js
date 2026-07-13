@@ -20,6 +20,36 @@ import {
   CANCEL_OBJECT_TYPE
 } from '../src/constants/cancellation.js'
 import { createCancellationHandler } from '../src/features/applications/handlers/cancellationHandler.js'
+import { PERMISSIONS } from '../src/constants/permissions.js'
+
+/**
+ * 注销保存按钮权限语义（与 CancellationApplicationCreate 一致）：
+ * - 新建 PERSON 需 cancellation:person:create
+ * - 新建 HOUSEHOLD 需 cancellation:household:create
+ * - 更新草稿额外需 application:edit
+ */
+function canSaveCancellation({ objectType, isUpdate, permissions }) {
+  const hasCreate =
+    objectType === 'PERSON'
+      ? permissions.includes(PERMISSIONS.CANCELLATION_PERSON_CREATE)
+      : permissions.includes(PERMISSIONS.CANCELLATION_HOUSEHOLD_CREATE)
+  if (!hasCreate) return false
+  if (isUpdate) return permissions.includes(PERMISSIONS.APPLICATION_EDIT)
+  return true
+}
+
+/**
+ * 初始化对象类型：按 query 与权限收敛，禁止无写权限落到 PERSON
+ */
+function resolveInitialObjectType({ requested, permissions }) {
+  const canPerson = permissions.includes(PERMISSIONS.CANCELLATION_PERSON_CREATE)
+  const canHousehold = permissions.includes(PERMISSIONS.CANCELLATION_HOUSEHOLD_CREATE)
+  if (requested === 'HOUSEHOLD' && canHousehold) return 'HOUSEHOLD'
+  if (requested === 'PERSON' && canPerson) return 'PERSON'
+  if (canPerson) return 'PERSON'
+  if (canHousehold) return 'HOUSEHOLD'
+  return null
+}
 
 test('人员注销创建 payload 不含 version 与数据库列名', () => {
   const payload = toCreatePersonCancellationPayload({
@@ -231,4 +261,109 @@ test('Handler execute 仅提交 version，无 DELETE', async () => {
   assert.equal(meta.permission, 'cancellation:execute')
   assert.ok(meta.title)
   assert.ok(meta.message)
+  assert.deepEqual(handler.getSubmitPermissions(), ['application:submit'])
+})
+
+test('注销 PERSON 保存要求 cancellation:person:create', () => {
+  assert.equal(
+    canSaveCancellation({
+      objectType: 'PERSON',
+      isUpdate: false,
+      permissions: [PERMISSIONS.CANCELLATION_PERSON_CREATE]
+    }),
+    true
+  )
+  assert.equal(
+    canSaveCancellation({
+      objectType: 'PERSON',
+      isUpdate: false,
+      permissions: [PERMISSIONS.CANCELLATION_HOUSEHOLD_CREATE]
+    }),
+    false
+  )
+  assert.equal(
+    canSaveCancellation({
+      objectType: 'PERSON',
+      isUpdate: false,
+      permissions: [PERMISSIONS.CANCELLATION_VIEW]
+    }),
+    false
+  )
+})
+
+test('注销 HOUSEHOLD 保存要求 cancellation:household:create', () => {
+  assert.equal(
+    canSaveCancellation({
+      objectType: 'HOUSEHOLD',
+      isUpdate: false,
+      permissions: [PERMISSIONS.CANCELLATION_HOUSEHOLD_CREATE]
+    }),
+    true
+  )
+  assert.equal(
+    canSaveCancellation({
+      objectType: 'HOUSEHOLD',
+      isUpdate: false,
+      permissions: [PERMISSIONS.CANCELLATION_PERSON_CREATE]
+    }),
+    false
+  )
+})
+
+test('更新注销草稿还需 application:edit；无任一创建权限不能保存', () => {
+  assert.equal(
+    canSaveCancellation({
+      objectType: 'PERSON',
+      isUpdate: true,
+      permissions: [PERMISSIONS.CANCELLATION_PERSON_CREATE]
+    }),
+    false
+  )
+  assert.equal(
+    canSaveCancellation({
+      objectType: 'PERSON',
+      isUpdate: true,
+      permissions: [PERMISSIONS.CANCELLATION_PERSON_CREATE, PERMISSIONS.APPLICATION_EDIT]
+    }),
+    true
+  )
+  assert.equal(
+    canSaveCancellation({
+      objectType: 'PERSON',
+      isUpdate: false,
+      permissions: []
+    }),
+    false
+  )
+})
+
+test('初始化对象类型：仅家庭户权限默认 HOUSEHOLD，无权限返回 null', () => {
+  assert.equal(
+    resolveInitialObjectType({
+      requested: 'PERSON',
+      permissions: [PERMISSIONS.CANCELLATION_HOUSEHOLD_CREATE]
+    }),
+    'HOUSEHOLD'
+  )
+  assert.equal(
+    resolveInitialObjectType({
+      requested: 'HOUSEHOLD',
+      permissions: [PERMISSIONS.CANCELLATION_PERSON_CREATE]
+    }),
+    'PERSON'
+  )
+  assert.equal(
+    resolveInitialObjectType({
+      requested: 'PERSON',
+      permissions: [PERMISSIONS.CANCELLATION_PERSON_CREATE]
+    }),
+    'PERSON'
+  )
+  assert.equal(
+    resolveInitialObjectType({
+      requested: undefined,
+      permissions: [PERMISSIONS.CANCELLATION_VIEW]
+    }),
+    null
+  )
 })

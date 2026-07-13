@@ -5,7 +5,8 @@ import {
   toCreateRegisterPayload,
   toCreateReleasePayload,
   toKeyPopulationQueryParams,
-  normalizeKeyPopulationApplication
+  normalizeKeyPopulationApplication,
+  normalizeHistoryList
 } from '../src/adapters/keyPopulation.js'
 import { hasVerifiedKeyPopulationMaterials } from '../src/constants/keyPopulation.js'
 import { createKeyPopulationHandler } from '../src/features/applications/handlers/keyPopulationHandler.js'
@@ -141,4 +142,91 @@ test('Handler 使用专业 submit，无编辑路由，execute 仅 version', asyn
   })
   assert.equal(meta.permission, 'key-population:execute')
   assert.ok(meta.title)
+})
+
+/**
+ * 与 ApplicationDetail.canSubmitSpecialized 一致：
+ * 仅有 application:submit、缺少 key-population:apply 时不可提交。
+ */
+function canSubmitWithPermissions(handler, ownedPermissions, businessType) {
+  const required =
+    (typeof handler?.getSubmitPermissions === 'function'
+      ? handler.getSubmitPermissions(businessType)
+      : null) || ['application:submit']
+  return required.every((p) => ownedPermissions.includes(p))
+}
+
+test('无 key-population:apply 时重点人口提交按钮不可见/不可用', () => {
+  const handler = createKeyPopulationHandler({})
+  assert.equal(
+    canSubmitWithPermissions(handler, ['application:submit'], 'KEY_POPULATION_REGISTER'),
+    false
+  )
+  assert.equal(
+    canSubmitWithPermissions(
+      handler,
+      ['application:submit', 'key-population:apply'],
+      'KEY_POPULATION_REGISTER'
+    ),
+    true
+  )
+  assert.equal(
+    canSubmitWithPermissions(handler, ['key-population:apply'], 'KEY_POPULATION_RELEASE'),
+    false
+  )
+})
+
+test('重点人口提交权限必须同时要求 application:submit + key-population:apply', () => {
+  const handler = createKeyPopulationHandler({})
+  assert.equal(typeof handler.getSubmitPermissions, 'function')
+  const permissions = handler.getSubmitPermissions()
+  assert.ok(permissions.includes('application:submit'))
+  assert.ok(permissions.includes('key-population:apply'))
+  assert.equal(permissions.length, 2)
+})
+
+test('历史 Adapter 读取后端真实字段 previousStatus/newStatus/occurredAt/snapshotJson', () => {
+  const list = normalizeHistoryList([
+    {
+      historyId: 1,
+      recordId: 9,
+      personId: 3,
+      eventType: 'RELEASED',
+      previousStatus: 'ACTIVE',
+      newStatus: 'RELEASED',
+      reason: '解除关注',
+      sourceApplicationId: 88,
+      operatorId: 7,
+      occurredAt: '2026-07-13T16:00:00',
+      snapshotJson: '{"populationType":"OTHER","attentionLevel":"LOW"}'
+    }
+  ])
+  assert.equal(list.length, 1)
+  const item = list[0]
+  assert.equal(item.eventType, 'RELEASED')
+  assert.equal(item.previousStatus, 'ACTIVE')
+  assert.equal(item.newStatus, 'RELEASED')
+  assert.equal(item.occurredAt, '2026-07-13T16:00:00')
+  assert.equal(item.sourceApplicationId, 88)
+  assert.equal(item.operatorId, 7)
+  assert.deepEqual(item.snapshot, { populationType: 'OTHER', attentionLevel: 'LOW' })
+  // 不得把旧的 eventDate/createdAt 当成真实字段回填
+  assert.equal('eventDate' in item, false)
+  assert.equal('createdAt' in item, false)
+})
+
+test('snapshotJson 非法时安全降级为 null，不补造敏感字段', () => {
+  const list = normalizeHistoryList([
+    {
+      historyId: 2,
+      eventType: 'REGISTERED',
+      previousStatus: '',
+      newStatus: 'ACTIVE',
+      occurredAt: '2026-07-01T10:00:00',
+      snapshotJson: '{broken'
+    }
+  ])
+  assert.equal(list[0].snapshot, null)
+  assert.equal(list[0].previousStatus, '')
+  assert.equal(list[0].newStatus, 'ACTIVE')
 })

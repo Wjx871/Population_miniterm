@@ -69,6 +69,10 @@ export function createCancellationHandler(services) {
       return 'cancellation:person:create'
     },
 
+    getSubmitPermissions() {
+      return ['application:submit']
+    },
+
     getMaterialOptions({ businessType, detail }) {
       const objectType = businessType === 'HOUSEHOLD_CANCELLATION'
         ? CANCEL_OBJECT_TYPE.HOUSEHOLD

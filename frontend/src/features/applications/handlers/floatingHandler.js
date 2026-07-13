@@ -41,6 +41,10 @@ export function createFloatingHandler(services) {
       return 'floating:edit'
     },
 
+    getSubmitPermissions() {
+      return ['application:submit']
+    },
+
     getMaterialOptions({ detail }) {
       if (!services.getFloatingMaterialOptions) return []
       return services.getFloatingMaterialOptions(detail?.professional?.residenceReasonCode)

@@ -71,6 +71,10 @@ export function createResidencePermitHandler(services) {
       return 'residence-permit:apply'
     },
 
+    getSubmitPermissions() {
+      return ['application:submit']
+    },
+
     getMaterialOptions({ businessType, detail }) {
       if (!services.getPermitMaterialOptions) return []
       const applyType = APPLY_TYPE_MAP[businessType]

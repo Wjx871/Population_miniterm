@@ -58,6 +58,10 @@ export function createExportHandler(services) {
       return 'data:export:sensitive:apply'
     },
 
+    getSubmitPermissions() {
+      return ['application:submit']
+    },
+
     getMaterialOptions() {
       if (services.getSensitiveExportMaterialOptions) {
         return services.getSensitiveExportMaterialOptions()

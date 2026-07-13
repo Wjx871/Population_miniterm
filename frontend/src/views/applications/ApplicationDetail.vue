@@ -82,6 +82,7 @@
     <ApplicationActionBar
       :application="application"
       :loading="actionLoading"
+      :can-submit="canSubmitSpecialized"
       :specialized-edit-route="specializedEditRoute"
       :can-continue-specialized="canContinueSpecialized"
       @continue-specialized="continueSpecialized"
@@ -215,6 +216,15 @@ const canContinueSpecialized = computed(() => {
   return false
 })
 
+/** 提交按钮：必须满足 Handler 声明的全部权限（如重点人口 application:submit + key-population:apply） */
+const canSubmitSpecialized = computed(() => {
+  const permissions =
+    (typeof handler.value?.getSubmitPermissions === 'function'
+      ? handler.value.getSubmitPermissions(application.value?.businessType)
+      : null) || [PERMISSIONS.APPLICATION_SUBMIT]
+  return permissions.every((permission) => userStore.hasPermission(permission))
+})
+
 const isExecutableByBackend = computed(() => {
   if (!professionalDetail.value) return false
   // 后端统一返回 executable；缺省时旧数据兼容为 true（仅当已有 version）
@@ -321,6 +331,10 @@ function continueSpecialized() {
 }
 
 async function submit() {
+  if (!canSubmitSpecialized.value) {
+    ElMessage.error('无权提交该申请')
+    return
+  }
   await ElMessageBox.confirm('提交后不能继续编辑草稿，确认提交吗？', '提交申请', { type: 'warning' })
   actionLoading.value = true
   try {

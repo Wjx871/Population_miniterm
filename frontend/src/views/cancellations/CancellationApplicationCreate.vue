@@ -19,13 +19,13 @@
         <el-form-item label="对象类型" prop="objectType">
           <el-radio-group v-model="form.objectType" :disabled="isReadonly || Boolean(applicationId)">
             <el-radio-button
-              v-if="canCreatePerson || form.objectType === 'PERSON'"
+              v-if="canCreatePerson || (Boolean(applicationId) && form.objectType === 'PERSON')"
               label="PERSON"
             >
               人员注销
             </el-radio-button>
             <el-radio-button
-              v-if="canCreateHousehold || form.objectType === 'HOUSEHOLD'"
+              v-if="canCreateHousehold || (Boolean(applicationId) && form.objectType === 'HOUSEHOLD')"
               label="HOUSEHOLD"
             >
               家庭户销户
@@ -106,7 +106,12 @@
         />
 
         <el-form-item>
-          <el-button v-if="!isReadonly" type="primary" :loading="saving" @click="saveDraft">
+          <el-button
+            v-if="!isReadonly && canSaveCurrentObject"
+            type="primary"
+            :loading="saving"
+            @click="saveDraft"
+          >
             保存草稿
           </el-button>
           <el-button @click="router.push('/cancellations')">返回列表</el-button>
@@ -133,6 +138,7 @@
       <ApplicationActionBar
         :application="detail?.application"
         :loading="submitting"
+        :can-submit="canSubmitCancellation"
         @submit="submit"
         @withdraw="withdraw"
         @cancel="cancelDraft"
@@ -186,12 +192,26 @@ const saving = ref(false)
 const submitting = ref(false)
 const executionRestriction = ref('')
 
-const initialObjectType = route.query.objectType === 'HOUSEHOLD'
-  ? CANCEL_OBJECT_TYPE.HOUSEHOLD
-  : CANCEL_OBJECT_TYPE.PERSON
+const canCreatePerson = computed(() => userStore.hasPermission(PERMISSIONS.CANCELLATION_PERSON_CREATE))
+const canCreateHousehold = computed(() => userStore.hasPermission(PERMISSIONS.CANCELLATION_HOUSEHOLD_CREATE))
+const canEditApplication = computed(() => userStore.hasPermission(PERMISSIONS.APPLICATION_EDIT))
+
+/** 按权限与 query 确定默认对象类型，禁止无写权限时落到 PERSON */
+function resolveInitialObjectType() {
+  const requested = route.query.objectType
+  if (requested === 'HOUSEHOLD' && canCreateHousehold.value) {
+    return CANCEL_OBJECT_TYPE.HOUSEHOLD
+  }
+  if (requested === 'PERSON' && canCreatePerson.value) {
+    return CANCEL_OBJECT_TYPE.PERSON
+  }
+  if (canCreatePerson.value) return CANCEL_OBJECT_TYPE.PERSON
+  if (canCreateHousehold.value) return CANCEL_OBJECT_TYPE.HOUSEHOLD
+  return CANCEL_OBJECT_TYPE.PERSON
+}
 
 const form = reactive({
-  objectType: initialObjectType,
+  objectType: resolveInitialObjectType(),
   personId: null,
   householdId: null,
   cancelReasonCode: '',
@@ -213,8 +233,16 @@ const materialOptions = computed(() => getCancellationMaterialOptions(form.objec
 const materialRuleText = computed(() => getCancellationMaterialRuleText(form.objectType, form.cancelReasonCode))
 const canUpload = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_UPLOAD))
 const canDelete = computed(() => userStore.hasPermission(PERMISSIONS.MATERIAL_DELETE))
-const canCreatePerson = computed(() => userStore.hasPermission(PERMISSIONS.CANCELLATION_PERSON_CREATE))
-const canCreateHousehold = computed(() => userStore.hasPermission(PERMISSIONS.CANCELLATION_HOUSEHOLD_CREATE))
+
+/** 当前对象类型是否可保存：创建需专业 create 权；更新草稿还需 application:edit */
+const canSaveCurrentObject = computed(() => {
+  const hasCreate = isPerson.value ? canCreatePerson.value : canCreateHousehold.value
+  if (!hasCreate) return false
+  if (applicationId.value) return canEditApplication.value
+  return true
+})
+
+const canSubmitCancellation = computed(() => userStore.hasPermission(PERMISSIONS.APPLICATION_SUBMIT))
 
 const rules = computed(() => ({
   objectType: [{ required: true, message: '请选择对象类型', trigger: 'change' }],
@@ -265,6 +293,10 @@ async function refreshDetail() {
 }
 
 async function saveDraft() {
+  if (!canSaveCurrentObject.value) {
+    ElMessage.error(isPerson.value ? '无权创建人员注销申请' : '无权创建家庭户销户申请')
+    return
+  }
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
   saving.value = true
@@ -341,7 +373,23 @@ async function cancelDraft() {
   }
 }
 
-onMounted(refreshDetail)
+onMounted(async () => {
+  // 新建且无任何创建权限：直接回列表，避免 viewer 误操作
+  if (!applicationId.value && !canCreatePerson.value && !canCreateHousehold.value) {
+    ElMessage.error('无权创建注销申请')
+    await router.replace('/cancellations')
+    return
+  }
+  // 若默认类型与权限不一致（仅家庭户权却落到 PERSON），纠正
+  if (!applicationId.value) {
+    if (form.objectType === CANCEL_OBJECT_TYPE.PERSON && !canCreatePerson.value && canCreateHousehold.value) {
+      form.objectType = CANCEL_OBJECT_TYPE.HOUSEHOLD
+    } else if (form.objectType === CANCEL_OBJECT_TYPE.HOUSEHOLD && !canCreateHousehold.value && canCreatePerson.value) {
+      form.objectType = CANCEL_OBJECT_TYPE.PERSON
+    }
+  }
+  await refreshDetail()
+})
 </script>
 
 <style scoped>

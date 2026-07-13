@@ -146,17 +146,35 @@ export function formatKeyStatus(status) {
   return KEY_POPULATION_STATUS[status] || status || '-'
 }
 
+function parseSnapshotJson(snapshotJson) {
+  if (snapshotJson == null || snapshotJson === '') return null
+  if (typeof snapshotJson === 'object') return snapshotJson
+  if (typeof snapshotJson !== 'string') return null
+  try {
+    return JSON.parse(snapshotJson)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 后端 KeyPopulationHistory 字段：
+ * previousStatus / newStatus / occurredAt / snapshotJson / sourceApplicationId
+ */
 export function normalizeHistoryList(records) {
   if (!Array.isArray(records)) return []
   return records.map((raw) => ({
     historyId: pickFirst(raw.historyId, raw.id),
     recordId: raw.recordId,
-    eventType: raw.eventType || raw.historyEvent || '',
-    eventDate: raw.eventDate || '',
-    reason: raw.reason || raw.eventReason || '',
+    personId: raw.personId,
+    eventType: raw.eventType || '',
+    previousStatus: raw.previousStatus || '',
+    newStatus: raw.newStatus || '',
+    reason: raw.reason || '',
+    sourceApplicationId: raw.sourceApplicationId,
     operatorId: raw.operatorId,
-    createdAt: raw.createdAt || '',
-    // 快照字段按后端返回原样展示，不猜测敏感字段
-    snapshot: raw.snapshot || raw
+    occurredAt: raw.occurredAt || '',
+    // 仅安全解析后端返回的 snapshotJson，不补造敏感字段
+    snapshot: parseSnapshotJson(raw.snapshotJson)
   }))
 }

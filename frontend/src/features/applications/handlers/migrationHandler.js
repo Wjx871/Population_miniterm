@@ -47,6 +47,10 @@ export function createMigrationHandler(services) {
       return null
     },
 
+    getSubmitPermissions() {
+      return ['application:submit']
+    },
+
     getMaterialOptions({ businessType, detail }) {
       if (!services.getMigrationMaterialOptions) return []
       const record = getRecord(detail)

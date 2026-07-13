@@ -210,3 +210,33 @@ test('可选 submit 分发：有 submit 用专业接口，无则回退通用', a
   assert.equal(result, 'special')
   assert.equal(genericCalled, false)
 })
+
+test('旧三类 Handler 提供 getSubmitPermissions 且默认仅 application:submit', () => {
+  for (const handler of legacyHandlers) {
+    assert.equal(typeof handler.getSubmitPermissions, 'function', `${handler.family} 必须实现 getSubmitPermissions`)
+    assert.deepEqual(handler.getSubmitPermissions(), ['application:submit'])
+  }
+})
+
+/**
+ * 页面层提交权限校验语义：Handler 声明的全部权限均需满足
+ */
+function canSubmitWithPermissions(handler, ownedPermissions, businessType) {
+  const required =
+    (typeof handler?.getSubmitPermissions === 'function'
+      ? handler.getSubmitPermissions(businessType)
+      : null) || ['application:submit']
+  return required.every((p) => ownedPermissions.includes(p))
+}
+
+test('提交按钮权限：仅有 application:submit 时旧业务可提交', () => {
+  const migration = createMigrationHandler({})
+  assert.equal(
+    canSubmitWithPermissions(migration, ['application:submit'], 'MIGRATION_IN'),
+    true
+  )
+  assert.equal(
+    canSubmitWithPermissions(migration, [], 'MIGRATION_IN'),
+    false
+  )
+})
