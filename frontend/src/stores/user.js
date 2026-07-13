@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { login as loginApi } from '../api/auth.js'
-import { ROLE_CODE, ROLE_LABEL, parseRoleLevel } from '../constants/roles.js'
+import { ROLE_CODE, ROLE_LABEL, parseRoleLevel, resolvePermissionLevel } from '../constants/roles.js'
 import { normalizeRoleCode, resolvePermissions, checkPermission, checkAnyPermission } from '../utils/permission.js'
 
 const STORAGE_KEY = 'population_user_v2'
@@ -15,6 +15,7 @@ function loadStorageUser() {
     
     parsed.roleCode = roleCode
     parsed.permissions = resolvePermissions(roleCode, parsed.permissions)
+    parsed.permissionLevel = resolvePermissionLevel(parsed.roleLevel, roleCode)
     return parsed
   } catch {
     return {}
@@ -59,8 +60,7 @@ export const useUserStore = defineStore('user', {
       // 角色归一化与权限计算
       this.roleCode = normalizeRoleCode(user.roleCode, user.roleName)
       
-      const parsedLevel = parseRoleLevel(this.roleLevel)
-      this.permissionLevel = parsedLevel !== null ? parsedLevel : 1
+      this.permissionLevel = resolvePermissionLevel(this.roleLevel, this.roleCode)
       
       const hasApiPermissions = Array.isArray(user.permissions)
       this.permissions = hasApiPermissions ? [...user.permissions] : []
