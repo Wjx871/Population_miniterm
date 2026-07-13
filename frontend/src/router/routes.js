@@ -192,12 +192,6 @@ export const routes = [
         meta: { title: '迁出申请', type: 'out', minLevel: 1, permission: 'migration:out:create', menu: false, activeMenu: '/migrations/out', group: '业务办理' }
       },
       {
-        path: 'cancellations',
-        name: 'CancellationManagement',
-        component: () => import('../views/cancellations/CancellationManagement.vue'),
-        meta: { title: '注销业务管理', minLevel: 1, permission: PERMISSIONS.CANCELLATION_VIEW, menu: true, group: '业务办理', order: 22.5, icon: 'Document' }
-      },
-      {
         path: 'approvals',
         name: 'ApprovalList',
         component: () => import('../views/approvals/ApprovalList.vue'),

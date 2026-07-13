@@ -58,3 +58,11 @@
 - BLOCKED：0
 
 矩阵中的 PASS 已通过自动化契约测试、真实 MySQL API 验证或两者共同验证。浏览器交互式点击回归受本地浏览器控制运行时故障影响，单独记录在问题清单，不改变已验证的接口契约状态。
+
+## 第三阶段最终语义汇合
+
+- 基线：`origin/develop@da68098` 与已验证联调分支 `integration/frontend-backend-v1@9aa540d`。
+- 冲突：认证、请求拦截器、注销/导出/日志 API、业务类型、权限、Handler 注册表、路由、公共数据缓存、申请详情和综合查询共 12 个文件。
+- 最终语义：保留最新前端完整页面、拆分路由、专用 Handler、blob 下载、启动与数据库验收能力；同时保留 `/auth/me`、服务端 logout、401 去重、403 不退出、统一解包、正式权限码、分页/错误态及显式 execute 契约。
+- 重复实现：合并后移除未被最终注册表和路由使用的 `directBusinessHandler`、并行 API 与并行管理页面，复杂业务统一由专用 Handler 注册表分发。
+- 状态矩阵仍为 PASS 27、OUT_OF_SCOPE 2；没有新增 CONTRACT_MISMATCH 或 NOT_IMPLEMENTED。

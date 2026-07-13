@@ -21,8 +21,6 @@ export function getCancellationApplicationDetail(applicationId) {
   return request({ url: `/cancellations/applications/${applicationId}`, method: 'get' })
 }
 
-export const getCancellationApplication = getCancellationApplicationDetail
-
 export function executePersonCancellation(applicationId, version) {
   return request({url:`/cancellations/person/applications/${applicationId}/execute`,method:'post',data:{version}})
 }
