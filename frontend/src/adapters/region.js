@@ -69,3 +69,22 @@ export function toRegionUpdatePayload(form) {
     version: form.version
   }
 }
+
+/**
+ * 后端行政区划层级约束为 1～5，五级节点不能再新增下级
+ * @param {{ level?: number | string } | null | undefined} node
+ * @returns {boolean}
+ */
+export function canCreateRegionChild(node) {
+  return Number(node?.level) >= 1 && Number(node?.level) < 5
+}
+
+/**
+ * 校验区划层级是否在后端允许范围内
+ * @param {number | string | null | undefined} level
+ * @returns {boolean}
+ */
+export function isValidRegionLevel(level) {
+  const n = Number(level)
+  return Number.isInteger(n) && n >= 1 && n <= 5
+}

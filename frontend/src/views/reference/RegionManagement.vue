@@ -66,7 +66,7 @@
           />
         </el-form-item>
         <el-form-item label="区划层级" prop="regionLevel">
-          <el-input-number v-model="form.regionLevel" :min="1" :max="10" />
+          <el-input-number v-model="form.regionLevel" :min="1" :max="5" disabled />
         </el-form-item>
         <el-form-item label="完整名称" prop="fullName">
           <el-input v-model="form.fullName" placeholder="如：北京市海淀区" />
@@ -87,7 +87,7 @@ import FormDialog from '../../components/common/FormDialog.vue';
 import StatusTag from '../../components/common/StatusTag.vue';
 import RegionCascader from '../../components/business/RegionCascader.vue';
 import { getRegionTree, getRegionDetail, createRegion, updateRegion, enableRegion, disableRegion } from '../../api/regions';
-import { normalizeRegionTree, findRegionPath, toRegionCreatePayload, toRegionUpdatePayload } from '../../adapters/region';
+import { normalizeRegionTree, findRegionPath, toRegionCreatePayload, toRegionUpdatePayload, canCreateRegionChild } from '../../adapters/region';
 import { getCachedRegionTree, clearAllReferenceCache } from '../../services/referenceDataCache';
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError';
 import { PERMISSIONS } from '../../constants/permissions';
@@ -145,21 +145,40 @@ const rules = {
   ]
 };
 
-const handleParentChange = async (val) => {
-  if (!val) {
+const handleParentChange = async (value) => {
+  if (!value) {
     form.regionLevel = 1;
     return;
   }
+
   try {
     const tree = await getCachedRegionTree(true);
-    const path = findRegionPath(tree, val);
-    form.regionLevel = path.length + 1;
+    const path = findRegionPath(tree, value);
+
+    if (!path) {
+      ElMessage.error('未找到上级行政区划');
+      form.parentCode = '';
+      form.regionLevel = 1;
+      return;
+    }
+
+    const parent = path.at(-1);
+
+    if (!canCreateRegionChild(parent)) {
+      ElMessage.warning('五级行政区划不能新增下级');
+      form.parentCode = '';
+      form.regionLevel = 1;
+      return;
+    }
+
+    // 层级依据节点真实 level 字段，不依赖路径长度
+    form.regionLevel = Number(parent.level) + 1;
+
     if (!form.fullName) {
-      const parentName = path.map(p => p.label).join('');
-      form.fullName = parentName + form.regionName;
+      form.fullName = `${path.map((item) => item.label).join('')}${form.regionName}`;
     }
   } catch (error) {
-    console.error('Failed to resolve parent path', error);
+    ElMessage.error('读取上级行政区划失败');
   }
 };
 

@@ -1,6 +1,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { normalizeRegionTree, findRegionPath, toRegionCreatePayload, toRegionUpdatePayload } from '../src/adapters/region.js'
+import {
+  normalizeRegionTree,
+  findRegionPath,
+  toRegionCreatePayload,
+  toRegionUpdatePayload,
+  canCreateRegionChild,
+  isValidRegionLevel,
+} from '../src/adapters/region.js'
 
 test('regionAdapter: normalizes tree and drops inactive when includeInactive is false', () => {
   const input = [
@@ -86,4 +93,54 @@ test('regionAdapter: toRegionUpdatePayload formats properly', () => {
   })
   
   assert.equal(payload.regionCode, undefined)
+})
+
+test('regionAdapter: create payload does not include version', () => {
+  const payload = toRegionCreatePayload({
+    regionCode: '110101',
+    regionName: '东城区',
+    parentCode: '110100',
+    regionLevel: 3,
+    fullName: '北京市市辖区东城区',
+    sortNo: 1,
+    version: 9,
+  })
+
+  assert.equal(Object.hasOwn(payload, 'version'), false)
+})
+
+test('regionAdapter: update payload does not include regionCode', () => {
+  const payload = toRegionUpdatePayload({
+    regionCode: '110101',
+    regionName: '东城区',
+    parentCode: '110100',
+    regionLevel: 3,
+    fullName: '北京市市辖区东城区',
+    sortNo: 1,
+    version: 2,
+  })
+
+  assert.equal(Object.hasOwn(payload, 'regionCode'), false)
+  assert.equal(payload.version, 2)
+})
+
+test('regionAdapter: regionLevel must be between 1 and 5', () => {
+  assert.equal(isValidRegionLevel(1), true)
+  assert.equal(isValidRegionLevel(5), true)
+  assert.equal(isValidRegionLevel(0), false)
+  assert.equal(isValidRegionLevel(6), false)
+  assert.equal(isValidRegionLevel(10), false)
+  assert.equal(isValidRegionLevel('3'), true)
+})
+
+test('五级行政区划不能继续创建下级', () => {
+  const parent = { level: 5 }
+  assert.equal(canCreateRegionChild(parent), false)
+})
+
+test('regionAdapter: levels 1-4 can create children', () => {
+  assert.equal(canCreateRegionChild({ level: 1 }), true)
+  assert.equal(canCreateRegionChild({ level: 4 }), true)
+  assert.equal(canCreateRegionChild({ level: 0 }), false)
+  assert.equal(canCreateRegionChild(null), false)
 })
