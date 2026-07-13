@@ -37,9 +37,14 @@ Population_System/
 │   └── test_*.sql                       # 业务自检 / 事务边界测试
 └── src/main/java/com/example/population/
     ├── PopulationApplication.java       # 启动类
-    ├── config/                          # 配置类（MyBatis-Plus 分页、Web 配置等）
+    ├── config/                          # 配置类（MyBatis-Plus 分页、Web 配置、Jackson、CORS 等）
+    │   └── JacksonConfig                # Sprint 4 P0：注册 @Masked 序列化器
     ├── controller/                      # 控制器层（26 个 Controller）
-    ├── dto/                             # 数据传输对象（39 个：基础 16 + P0 白名单 23）
+    ├── aspect/                          # Spring AOP 切面
+    │   └── DataScopeAspect              # Sprint 4 P0：数据范围切面（审计/调用跟踪）
+    ├── annotation/                      # 自定义注解
+    │   ├── DataScope                    # Sprint 4 P0：方法级标记，触发 @DataScopeAspect 审计
+    ├── dto/                             # 数据传输对象（基础 + P0 白名单 + Sprint 4 P0 新增）
     │   ├── 通用：PageDTO / PageVO / Result / LoginDTO / RegisterDTO
     │   └── 业务：PersonCreateDTO（必带 applicationId）/ PersonUpdateDTO / PersonQueryDTO /
     │          HouseholdCreateDTO（必带 applicationId）/ HouseholdMemberDTO / HouseholdMemberTransferDTO /
@@ -49,6 +54,10 @@ Population_System/
     │           HouseholdMember / ResidenceRegistration / BusinessApplication /
     │           ApplicationMaterial / Certificate / KeyPopulation / FloatingPopulation /
     │           ResidencePermit / DataDictionary）
+    │   └── Sprint 4 P0：
+    │          PersonVO（脱敏响应 VO，@Masked 标注）
+    │          DataScopeQuery（数据范围过滤上下文）
+    │          DataExportRequestDTO（高敏导出入参，含 expectedRows / sensitivity hints）
     ├── entity/                          # 数据库实体（25 个，与表一一对应）
     ├── exception/                       # 全局异常处理
     │   ├── GlobalExceptionHandler.java  # @RestControllerAdvice 统一处理
@@ -64,6 +73,9 @@ Population_System/
         ├── JwtUtil / PasswordEncoder / PageUtil          # 通用
         └── IdCardValidator / PhoneValidator / IdentityMasker /
             SnapshotCopier                   # 业务
+        # === Sprint 4 P0 新增 ===
+        ├── DataScopeContext / DataScopeHelper            # 数据范围 ThreadLocal + Wrapper 应用
+        ├── Masked / MaskedRule / MaskedSerializer        # 敏感字段脱敏（Jackson 注解 + 序列化器）
 ├── src/main/resources/
 │   ├── application.yml                  # 主配置（数据源 / Redis / JWT / MyBatis-Plus / Knife4j）
 │   └── mapper/                          # 自定义 XML 映射（如有）
@@ -192,12 +204,15 @@ http://localhost:8080/doc.html
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/persons` | 分页查询（多条件） |
-| GET | `/api/persons/{id}` | 根据 ID 查询 |
+| GET | `/api/persons` | 分页查询（多条件）；敏感字段（姓名/身份证号/手机号/联系地址）默认脱敏返回 |
+| GET | `/api/persons?unmask=true` | 仅 L3 用户可开启原文输出；非 L3 仍按脱敏处理 |
+| GET | `/api/persons/{id}` | 单条查询，敏感字段同上 |
 | GET | `/api/persons/identity?type=&no=` | 按证件类型+号码查询 |
-| POST | `/api/persons` | 新增人口 |
+| POST | `/api/persons` | 新增人口（L3 直通，L1/L2 走审批） |
 | PUT | `/api/persons/{id}` | 更新人口 |
-| DELETE | `/api/persons/{id}` | 删除人口 |
+| DELETE | `/api/persons/{id}` | 删除人口（软删） |
+
+> 敏感字段脱敏规则：身份证号 → `前6 **** 末4`；手机号 → `138****8000`；中文姓名 → `张*`；联系地址 → `北京市朝阳区****123号`。L3 管理员可通过 `?unmask=true` 临时查看原文，但仅在 `SecurityContext.permissionLevel >= 3` 且线程 ThreadLocal 标记 `MaskedSerializer.UNMASK=true` 时才生效。
 
 ### 户籍管理 `/api/households`、`/api/household-members`
 
@@ -283,6 +298,18 @@ http://localhost:8080/doc.html
 | * | `/api/sys-approval-logs` | 审批日志 |
 | * | `/api/cancellation-records` | 注销记录 |
 
+#### 申请人 ≠ 审批人（Sprint 4 P0 / D-05）
+
+`ApprovalGateServiceImpl#approve` 与 `reject` 入口先做 `applicant-approver` 分离校验：
+
+```
+if (business_application.submit_user_id == currentUserId) {
+    throw new ForbiddenException("申请人不能审批自己的申请");
+}
+```
+
+杜绝 L2 经办自审、自驳带来的越权风险。校验命中的同时会在 WARN 级别记录审计日志（`applicantUserId` / `approverUserId` / `approvalId`），便于事后追溯。
+
 ### 系统管理（RBAC + 组织架构）
 
 | 方法 | 路径 | 说明 |
@@ -300,7 +327,32 @@ http://localhost:8080/doc.html
 |------|------|------|
 | * | `/api/operation-logs` | 操作日志 |
 | * | `/api/data-dictionaries` | 数据字典 |
-| * | `/api/data-export-logs` | 数据导出日志 |
+| * | `/api/data-export-logs` | 数据导出日志（分页查询） |
+| POST | `/api/data-export-logs/submit` | **Sprint 4 P0**：高敏导出三级审批入口。系统按 `SensitivityEvaluator` 自动判定导出请求的敏感级别（L1/L2/L3），L1 直写 data_export_log；L2/L3 走 `ApprovalGateService.submit`，businessType=`SENSITIVE_EXPORT_L2` 或 `SENSITIVE_EXPORT_L3`，审批通过后由 `SensitiveExportService.landApprovedExport` 回写 exportId + `resultCode=APPROVED` |
+
+#### 敏感度评估规则（Sprint 4 P0）
+
+| 触发条件 | 最低级别 |
+|----------|----------|
+| `exportTypeCode ∈ {KEY_POPULATION, RAW_IDENTITY, RAW_CERT, OPERATION_LOG_FULL, EXPORT_HISTORY}` | **L3** |
+| `containsSensitiveFields=true` 且 `exportTypeCode ∈ {PERSON, FLOATING, HOUSEHOLD, RESIDENCE_ARCHIVE, MIGRATION, CANCELLATION, PERMIT}` | **L3** |
+| `expectedRows > 10000` | **L3** |
+| `expectedRows > 1000` 或命中 L2 类型 | **L2** |
+| 其它 | **L1**（直接落日志，无需审批） |
+
+L2/L3 提交时 `exportReason` 必填，且 L2 → `requiredLevel=2`、L3 → `requiredLevel=3`（必须 L3 审批）。
+
+#### 数据范围过滤（Sprint 4 P0）
+
+`DataScopeAspect` + `@DataScope` 注解统一控制查询的数据范围（ALL / DEPARTMENT / REGION / SELF，对应 `sys_role.data_scope_code`）：
+
+| Service 方法 | 实体类型 | 注入逻辑 |
+|--------------|----------|----------|
+| `PersonServiceImpl.queryPage / listByIdsWithScope` | PERSON | EXISTS 子查询关联 `residence_registration + household` 过滤部门/区划 |
+| `HouseholdServiceImpl.page` | HOUSEHOLD | 直接按 `department_id` / `region_code` 过滤 |
+| `FloatingPopulationServiceImpl.page` | MIGRATION | 按 `handling_department_id` / `current_region_code` 过滤 |
+
+脱敏场景：`JWT claims` 中新增 `deptId`，由 `JwtAuthInterceptor` 写入 ThreadLocal `DataScopeContext`，Service 通过 `DataScopeQuery.fromCurrentContext()` 拿。**禁止前端传入任意 `departmentId` 或 `regionCode` 绕过权限**。
 
 > 以上 `*` 表示各 Controller 提供完整的 `GET`（分页/详情）、`POST`、`PUT`、`DELETE` 能力，详细字段请查阅 Knife4j 文档。
 
@@ -384,6 +436,10 @@ mvn -q -DskipTests test-compile
 | `HouseholdServiceTest` | `establishHousehold`：户号冲突、户主自动建关系、户主不存在、闸门 |
 | `SimpleCrudServiceTest` | `ResidencePermit.cancel` / `KeyPopulation.release` / `BusinessApplication.submit+getDetail` / `ApplicationMaterial.verify` |
 | `PermissionSmokeTest` | JWT 签发+解析全字段、`PermissionCache` 读写（依赖 Redis，缺失时跳过） |
+| `DataScopeContextTest` | Sprint 4 P0：`ThreadLocal → DataScopeQuery` 转换（ALL / DEPARTMENT / REGION / SELF / 无上下文 5 用例） |
+| `MaskedSerializerTest` | Sprint 4 P0：`@Masked` 序列化 + `UNMASK` ThreadLocal + 原文返回（3 用例） |
+| `SensitivityEvaluatorTest` | Sprint 4 P0：L1/L2/L3 边界（按类型/行数/containsSensitiveFields，6 用例） |
+| `ApprovalGateServiceApproveTest` | Sprint 4 P0 新增 2 用例：`approve` / `reject` 的申请人=审批人自审阻断 |
 
 ## 辅助脚本
 
@@ -407,6 +463,69 @@ powershell -ExecutionPolicy Bypass -File scripts/count-lines.ps1
 - `测试用例_事务边界.md` —— 迁入 / 迁出 / 注销等事务边界用例
 
 ## 更新日志
+
+### 2026-07-13 — Sprint 4：横向 P0 安全加固
+
+基于深度代码评审落地，聚焦 **数据范围 / 敏感字段 / 越权阻断 / 高敏导出**。完整提交：`942f181 feat(security): implement P0 hardening - data scope, masking, self-review block, sensitive export approval`；30 文件 +1559/-29。**修复编号 = 《数据库设计 v4.0》§6 矩阵条目**。
+
+#### 1. 数据范围过滤（D-04）
+
+| 项 | 改动 |
+|---|---|
+| `DataScopeContext`（新增）| ThreadLocal holder，封装 `dataScopeCode / userId / departmentId / departmentRegionCode / visibleRegionCodes`；`JwtAuthInterceptor` 写入、`afterCompletion` 清理，杜绝线程复用串号 |
+| `JwtUtil` | access token claims 追加 `deptId`（sys_user.department_id），拒绝每次请求再查 DB |
+| `JwtAuthInterceptor` | 从 token 读 `deptId` → 注入 SecurityContext + DataScopeContext；通过 SysDepartmentMapper 反查 region_code；REGION 范围递归拉取 `AdminRegion.listChildren` 构造可见区划集合 |
+| `DataScopeAspect`（新增）| `@Around("@annotation(@DataScope)")`，仅审计（uid / scope / method） |
+| `DataScopeQuery`（新增）| 静态工厂 `fromCurrentContext()`，按 ALL/DEPARTMENT/REGION/SELF 映射字段 |
+| `DataScopeHelper`（新增）| 按实体类型应用过滤：Person 用 `EXISTS` 子查询关联 residence_registration + household；Household 直接 `department_id` / `region_code` 等值 |
+| `PersonServiceImpl.queryPage / listByIdsWithScope` / `HouseholdServiceImpl.page` / `FloatingPopulationServiceImpl.page` | 方法级 `@DataScope` + 显式 `applyPersonScope / applyHouseholdScope / applyBusinessScope` |
+
+**关键安全语义**：禁止前端在 DTO 里直接传 `departmentId` / `regionCode` 绕过权限；Service 内部从 ThreadLocal 拿强制范围与前端查询做 AND 合并。
+
+#### 2. 敏感字段统一脱敏（D-04 续）
+
+| 项 | 改动 |
+|---|---|
+| `@Masked` 注解 + `MaskedRule` 枚举（新增）| 标注规则：`ID_CARD` / `PHONE` / `NAME` / `ADDRESS` / `FULL` |
+| `MaskedSerializer`（新增）| `StdScalarSerializer<Object>` + `ContextualSerializer`；线程 ThreadLocal `UNMASK` 标志位可临时跳过脱敏 |
+| `JacksonConfig`（新增）| `BeanSerializerModifier.changeProperties` 替换带 `@Masked` 字段的 `BeanPropertyWriter`，子类化后强制注入脱敏 serializer 到 `_serializer` |
+| `PersonVO`（新增）| 响应 VO，`identityNo / phone / name / contactAddress` 全部 @Masked |
+| `PersonController.page / get` | 改用 `PersonVO.from(entity)`；支持 `?unmask=true` 但 **仅 L3 (permissionLevel ≥ 3)** 才生效，非 L3 仍按脱敏处理 |
+
+#### 3. 申请人 ≠ 审批人 自审阻断（D-05）
+
+| 项 | 改动 |
+|---|---|
+| `ApprovalGateServiceImpl.approve` | 入口加 1 行：`business_application.submit_user_id == currentUserId` → `ForbiddenException("申请人不能审批自己的申请")`；命中同时 WARN 级别审计 |
+| `ApprovalGateServiceImpl.reject` | 同上，Apply/Approve 共用同一规则 |
+
+#### 4. 高敏导出三级审批链路（D-07）
+
+| 项 | 改动 |
+|---|---|
+| `SensitivityEvaluator`（新增接口）| `evaluate(req) → 1/2/3`；提供 `requiresApproval / requiresL3` 默认方法 |
+| `DefaultSensitivityEvaluator`（新增）| L3 触发：KEY_POPULATION / RAW_IDENTITY / RAW_CERT / OPERATION_LOG_FULL / EXPORT_HISTORY；L2 触发：PERSON/FLOATING/HOUSEHOLD/RESIDENCE_ARCHIVE 等中敏表；行数 `>10000` → L3，`>1000` → L2；中敏表含 `containsSensitiveFields=true` → 直接升 L3 |
+| `DataExportRequestDTO`（新增）| 入参含 `exportTypeCode / expectedRows / containsSensitiveFields / exportReason` 等 |
+| `DataExportLogController.submit`（改造）| L1 直写日志；L2/L3 走 `ApprovalGateService.submit(businessType=SENSITIVE_EXPORT_L2/L3)`，L2 requiredLevel=2、L3 requiredLevel=3，强制 `exportReason` 非空 |
+| `SensitiveExportService` + 实现（新增）| `executeDirect`（L1）/ `landApprovedExport`（L2/L3 审批通过后回调落 data_export_log + resultCode=APPROVED） |
+| `ApprovalGateServiceImpl.dispatchLanding` | 新增 `SENSITIVE_EXPORT_L2 / SENSITIVE_EXPORT_L3` switch 分支，调用 `SensitiveExportService.landApprovedExport` 落地 exportId |
+
+#### 测试
+
+`mvn test`：**263 个测试，0 失败，0 错误**（Sprint 3 的 247 个 + Sprint 4 新增 16 个）。新增单测：
+
+- `DataScopeContextTest` —— ThreadLocal → DataScopeQuery 转换：ALL/DEPARTMENT/REGION/SELF/无上下文 5 用例
+- `MaskedSerializerTest` —— `@Masked` 默认脱敏 + `UNMASK` ThreadLocal + L3 行为验证 3 用例
+- `SensitivityEvaluatorTest` —— L1/L2/L3 边界：类型/行数/containsSensitiveFields 6 用例
+- `ApprovalGateServiceApproveTest` —— 追加 2 用例（`approve_selfReviewForbidden` / `reject_selfReviewForbidden`）
+
+#### 部署注意事项
+
+- 无 DB schema 变更，纯代码层改动
+- 旧 token 因为没有 `deptId` claim 仍可继续使用（Sprint 4 在 interceptor 兼容 `deptId = null`，DataScopeContext 退化为 deptId 默认值）
+- 旧 `RedisPermissionCache` 持有的权限缓存仍可继续读；但建议下一次重启后强刷一次，让所有用户重新登录以应用 `data_scope_code` 变更
+- 如要完全禁止 L1 角色不带 `deptId` 也能走 REGION 范围查询，可在 `JwtAuthInterceptor` 加上 "token 缺 deptId 即视为旧 token 强制重登" 策略
+- 旧的 `/api/data-export-logs` POST 接口仍然可用（仅写日志），但**新流程必须走 `/api/data-export-logs/submit`**
 
 ### 2026-07-12 — Sprint 3：P0 安全修复（第二批）
 
