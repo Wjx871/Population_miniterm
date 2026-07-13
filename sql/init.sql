@@ -102,7 +102,9 @@ ON DUPLICATE KEY UPDATE dict_label = VALUES(dict_label);
 -- =====================================================
 INSERT INTO data_dictionary (dict_type, dict_code, dict_label, sort_no, status, remark) VALUES
 ('PERSON_RECORD_STATUS', 'ACTIVE', '有效', 1, 'ENABLED', NULL),
-('PERSON_RECORD_STATUS', 'CANCELLED', '已注销', 2, 'ENABLED', NULL)
+('PERSON_RECORD_STATUS', 'FLOATING', '流动', 2, 'ENABLED', '流动人口登记后的档案状态'),
+('PERSON_RECORD_STATUS', 'MIGRATED_OUT', '已迁出', 3, 'ENABLED', '迁出后档案状态；不冗余动态迁入迁出'),
+('PERSON_RECORD_STATUS', 'CANCELLED', '已注销', 4, 'ENABLED', NULL)
 ON DUPLICATE KEY UPDATE dict_label = VALUES(dict_label);
 
 -- =====================================================
