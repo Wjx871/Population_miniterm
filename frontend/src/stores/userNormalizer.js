@@ -1,11 +1,20 @@
 import { ROLE_CODE, resolvePermissionLevel } from '../constants/roles.js'
-import { normalizeRoleCode } from '../utils/permission.js'
+import { normalizeRoleCode, resolvePermissions } from '../utils/permission.js'
 
 export function normalizeStoredSession(value) {
   if (!value || typeof value !== 'object') return {}
   return {
     accessToken: typeof value.accessToken === 'string' ? value.accessToken : '',
     tokenType: typeof value.tokenType === 'string' && value.tokenType ? value.tokenType : 'Bearer',
+  }
+}
+
+export function normalizeStoredUser(value) {
+  if (!value || typeof value !== 'object') return {}
+  const roleCode = normalizeRoleCode(value.roleCode, value.roleName)
+  return {
+    ...normalizeStoredSession(value),
+    ...normalizeUserInfo({ ...value, roleCode, permissions: resolvePermissions(roleCode, value.permissions) }),
   }
 }
 
@@ -34,3 +43,5 @@ export function normalizeLoginInfo(loginVO = {}) {
     ...normalizeUserInfo(loginVO.user || loginVO),
   }
 }
+
+export const normalizeLoginUser = normalizeLoginInfo

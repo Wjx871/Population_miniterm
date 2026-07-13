@@ -17,7 +17,7 @@
           <el-input v-model="query.personStatus" clearable placeholder="如 REGISTERED"/>
         </el-form-item>
         <el-form-item label="行政区划">
-          <el-input v-model="query.regionCode" clearable placeholder="区划编码"/>
+          <RegionCascader v-model="query.regionCode" placeholder="选择区划" style="width: 160px" />
         </el-form-item>
         <el-form-item label="户籍状态">
           <el-select v-model="query.residenceStatus" clearable placeholder="全部当前记录" style="width: 160px">
@@ -51,6 +51,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import SearchPanel from '../../components/common/SearchPanel.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
+import RegionCascader from '../../components/business/RegionCascader.vue'
 import ComprehensiveResultTable from './components/ComprehensiveResultTable.vue'
 import ComprehensiveProfileDrawer from './components/ComprehensiveProfileDrawer.vue'
 import { getComprehensivePersonPage, getComprehensivePersonProfile } from '../../api/comprehensiveQuery'

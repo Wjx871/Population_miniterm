@@ -48,7 +48,7 @@
         <template v-if="applyType !== 'CANCELLATION'">
           <el-form-item label="居住依据" prop="residenceBasisCode">
             <el-select v-model="form.residenceBasisCode" placeholder="请选择" style="width:100%">
-              <el-option v-for="(label, code) in RESIDENCE_BASIS" :key="code" :label="label" :value="code" />
+              <el-option v-for="(label, value) in RESIDENCE_BASIS" :key="value" :label="label" :value="value" />
             </el-select>
           </el-form-item>
           <el-form-item label="申请开始日期">
@@ -93,6 +93,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import FloatingSelect from '../../components/business/FloatingSelect.vue'
+import DictionarySelect from '../../components/business/DictionarySelect.vue'
 import MaterialUploader from '../../components/business/MaterialUploader.vue'
 import MaterialList from '../../components/business/MaterialList.vue'
 import SensitiveText from '../../components/common/SensitiveText.vue'
@@ -105,9 +106,10 @@ import { getMaterials } from '../../api/materials'
 import { normalizePermitProfessional } from '../../adapters/residencePermit'
 import { normalizeFloatingPopulation } from '../../adapters/floating'
 import { normalizeResidencePermit } from '../../adapters/residencePermit'
-import { RESIDENCE_BASIS, PERMIT_APPLY_TYPE, getPermitMaterialOptions, getPermitMaterialRuleText, hasUploadedPermitMaterials } from '../../constants/floatingResidence'
+import { PERMIT_APPLY_TYPE, getPermitMaterialOptions, getPermitMaterialRuleText, hasUploadedPermitMaterials } from '../../constants/floatingResidence'
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
+import { RESIDENCE_BASIS } from '../../constants/floatingResidence'
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
 import { useProfessionalDraftState } from '../../composables/useProfessionalDraftState'
 

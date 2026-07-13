@@ -9,7 +9,7 @@
     <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
       <el-form-item label="关闭原因" prop="reasonCode">
         <el-select v-model="form.reasonCode" placeholder="请选择关闭原因" style="width: 100%">
-          <el-option v-for="(label, code) in CLOSE_REASON" :key="code" :label="label" :value="code" />
+          <el-option v-for="(label, value) in CLOSE_REASON" :key="value" :label="label" :value="value" />
         </el-select>
       </el-form-item>
       <el-form-item label="关闭说明" prop="comment">
