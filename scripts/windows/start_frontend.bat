@@ -102,22 +102,18 @@ set "FRONTEND_URL=http://localhost:!FRONTEND_PORT!"
 set "VITE_DEV_PORT=!FRONTEND_PORT!"
 set "VITE_BACKEND_TARGET=http://127.0.0.1:!SERVER_PORT!"
 
-REM ---------- 5. 准备 .env ----------
+REM ---------- 5. 检查本地 API 配置（不创建或覆盖 .env） ----------
 cd /d "%FRONTEND_DIR%"
-if not exist ".env" (
-    if exist ".env.example" (
-        echo [信息] 未找到 .env，正在从 .env.example 复制...
-        copy /Y ".env.example" ".env" >nul
-        if errorlevel 1 (
-            echo [错误] 复制 .env.example 失败。
-            goto :fail
-        )
-        echo [信息] 已生成 frontend\.env  ^(VITE_API_BASE_URL=/api^)
-    ) else (
-        echo [警告] 未找到 .env / .env.example，将使用代码默认 /api 代理。
+if exist ".env" (
+    for /f "usebackq tokens=1,* delims== eol=#" %%a in (".env") do (
+        if /I "%%a"=="VITE_API_BASE_URL" if not defined VITE_API_BASE_URL set "VITE_API_BASE_URL=%%b"
     )
-) else (
-    echo [信息] 已存在 frontend\.env
+)
+if not defined VITE_API_BASE_URL set "VITE_API_BASE_URL=/api"
+echo [信息] API 基址   : !VITE_API_BASE_URL!
+echo [信息] 代理目标   : !VITE_BACKEND_TARGET!
+if not "!VITE_API_BASE_URL!"=="/api" (
+    echo [警告] 当前前端将绕过 Vite /api 代理，请确认这是有意配置。
 )
 
 REM ---------- 6. 安装依赖 ----------
@@ -149,8 +145,7 @@ echo.
 echo [信息] 正在探测后端 !BACKEND_URL! ...
 set "BACKEND_OK=0"
 
-powershell -NoProfile -Command ^
-  "try { $r = Invoke-WebRequest -Uri '!BACKEND_URL!/api/auth/login' -Method POST -ContentType 'application/json' -Body '{}' -TimeoutSec 3 -UseBasicParsing; exit 0 } catch { if ($_.Exception.Response) { exit 0 } else { exit 1 } }" >nul 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%check_backend_health.ps1" -BackendBaseUrl "!BACKEND_URL!" -TimeoutSeconds 3 -Quiet >nul 2>&1
 if not errorlevel 1 set "BACKEND_OK=1"
 
 if "!BACKEND_OK!"=="1" (

@@ -6,7 +6,7 @@
 
 ## 数据库与构建
 
-全新安装按顺序执行 `doc/database/population_miniterm.sql`、`demo_data.sql`、`demo_data_household_migration.sql`。历史环境按 `backend-v1-database-guide.md` 依次执行 V4_001—V4_010。构建：
+全新安装使用显式工具 `scripts/windows/init_database.ps1 -Mode Fresh`；默认只允许新建隔离验证库，拒绝非空库和课程库。课程演示数据仅在 `-DemoData` 时导入。历史环境按 `backend-v1-database-guide.md` 依次执行 V4_001—V4_010，绝不使用 Fresh 进行升级。构建：
 
 ```powershell
 .\mvnw.cmd clean package
@@ -27,4 +27,4 @@ $env:LOG_DIR='.\logs'
 java -jar target\population-miniterm-1.0.0.jar
 ```
 
-访问 `GET /api/health`，确认 database=UP；启用 Redis 时还应为 redisStatus=UP。应用会在首次文件操作时使用配置的上传/导出目录；运行账户必须拥有创建和读写权限。生产环境不得使用演示账号密码。
+访问 `GET /api/health`，确认 HTTP 200、响应 `code=200` 且 `data.database=UP`。`redisStatus=DISABLED` 是允许的降级状态，不阻断启动。应用会在首次文件操作时使用配置的上传/导出目录；运行账户必须拥有创建和读写权限。生产环境不得使用演示账号密码。

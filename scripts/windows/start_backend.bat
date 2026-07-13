@@ -77,7 +77,7 @@ if exist "%ROOT_DIR%\start.local.env" (
 REM ---------- 4. 默认环境变量（仅设置未定义的变量） ----------
 if not defined DB_USERNAME set "DB_USERNAME=root"
 if not defined DB_PASSWORD set "DB_PASSWORD="
-if not defined DB_URL set "DB_URL=jdbc:mysql://localhost:3306/population_miniterm?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true"
+if not defined DB_URL set "DB_URL=jdbc:mysql://localhost:3306/population_miniterm?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai"
 if not defined SERVER_PORT set "SERVER_PORT=8080"
 if not defined JWT_SECRET set "JWT_SECRET=local-development-jwt-secret-change-before-production-2026"
 if not defined JWT_EXPIRE_MINUTES set "JWT_EXPIRE_MINUTES=120"
