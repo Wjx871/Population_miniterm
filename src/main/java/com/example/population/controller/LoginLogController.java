@@ -7,6 +7,7 @@ import com.example.population.dto.PageVO;
 import com.example.population.dto.Result;
 import com.example.population.entity.LoginLog;
 import com.example.population.service.LoginLogService;
+import com.example.population.util.DateRangeValidator;
 import com.example.population.util.PageUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,6 +37,7 @@ public class LoginLogController {
                                          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
                                          @RequestParam(required = false)
                                          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
+        DateRangeValidator.assertStartBeforeEnd(startTime, endTime);
         Page<LoginLog> p = (Page<LoginLog>) loginLogService.page(current, size, userId, username,
                 loginStatus, startTime, endTime);
         return Result.success(PageUtil.toPageVO(p, p.getRecords()));
