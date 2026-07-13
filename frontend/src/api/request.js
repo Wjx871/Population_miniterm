@@ -24,6 +24,31 @@ request.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
+/**
+ * 401：清理登录态并跳转登录。
+ * 403：默认只提示，不强制跳转整页 403。
+ *     页面路由权限由路由守卫负责；接口级 403 由业务页自行展示。
+ *     仅当请求显式设置 config.redirectOn403 = true 时才跳转 /403。
+ */
+function handleUnauthorized() {
+  const userStore = useUserStore()
+  userStore.logout()
+  ElMessage.error('登录状态已失效，请重新登录')
+  import('../router/index.js').then((m) => m.default.replace('/login'))
+}
+
+function handleForbidden(message, config) {
+  ElMessage.error(message || '无权执行该操作')
+  if (config?.redirectOn403) {
+    import('../router/index.js').then((m) => {
+      const router = m.default
+      if (router.currentRoute.value.path !== '/403') {
+        router.replace({ path: '/403', query: { from: router.currentRoute.value.fullPath } })
+      }
+    })
+  }
+}
+
 request.interceptors.response.use(
   (response) => {
     if (response.config.rawResponse) {
@@ -40,25 +65,15 @@ request.interceptors.response.use(
     }
 
     if (result.code === 401) {
-      const userStore = useUserStore()
-      userStore.logout()
-      ElMessage.error('登录状态已失效，请重新登录')
-      import('../router/index.js').then(m => m.default.replace('/login'))
+      handleUnauthorized()
       return Promise.reject(new Error(result.message || '未授权'))
     }
 
     if (result.code === 403) {
-      ElMessage.error(result.message || '无权执行该操作')
-      import('../router/index.js').then(m => {
-        const router = m.default
-        if (router.currentRoute.value.path !== '/403') {
-          router.replace({ path: '/403', query: { from: router.currentRoute.value.fullPath } })
-        }
-      })
+      handleForbidden(result.message, response.config)
       return Promise.reject(new Error(result.message || '无权执行该操作'))
     }
 
-    // 其他业务错误
     ElMessage.error(result.message || '操作失败')
     return Promise.reject(result)
   },
@@ -67,22 +82,17 @@ request.interceptors.response.use(
       return Promise.reject(error)
     }
     if (error.response?.status === 401) {
-      const userStore = useUserStore()
-      userStore.logout()
-      ElMessage.error('登录状态已失效，请重新登录')
-      import('../router/index.js').then(m => m.default.replace('/login'))
+      handleUnauthorized()
     } else if (error.response?.status === 403) {
-      ElMessage.error('无权执行该操作 (403)')
-      import('../router/index.js').then(m => {
-        const router = m.default
-        if (router.currentRoute.value.path !== '/403') {
-          router.replace({ path: '/403', query: { from: router.currentRoute.value.fullPath } })
-        }
-      })
+      handleForbidden(error.response?.data?.message || '无权执行该操作 (403)', error.config)
+    } else if (error.response?.status === 410) {
+      // 410 由业务层（如下载）解释，不在此统一跳转
     } else if (error.response?.status === 404) {
       ElMessage.error(`请求的接口不存在 (404): ${error.config?.url}`)
+    } else if (error.response) {
+      ElMessage.error(error.response?.data?.message || '请求失败')
     } else {
-      ElMessage.error(error.response?.data?.message || '网络异常，请检查后端服务是否启动')
+      ElMessage.error('网络异常，请检查后端服务是否启动')
     }
     return Promise.reject(error)
   }

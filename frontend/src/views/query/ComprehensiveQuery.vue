@@ -81,6 +81,7 @@ async function fetchPage() {
     records.value = page.records
     total.value = page.total
   } catch {
+    // 接口 403/网络错误时停留在本页展示空表，不再被全局拦截器强制跳转 /403
     records.value = []
     total.value = 0
   } finally {
