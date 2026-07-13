@@ -31,9 +31,9 @@ INSERT INTO floating_population(floating_id,registration_no,person_id,source_reg
 ON DUPLICATE KEY UPDATE current_address=VALUES(current_address),eligible_from_date=VALUES(eligible_from_date),status=VALUES(status);
 
 INSERT INTO business_application(application_id,application_no,business_type,title,applicant_user_id,applicant_department_id,applicant_region_code,target_person_id,status,reason,remark) VALUES
- (700001,'DEMO-PERMIT-001','RESIDENCE_PERMIT_APPLICATION','演示居住证签发记录',(SELECT user_id FROM sys_user WHERE username='population'),(SELECT department_id FROM sys_department WHERE department_code='POPULATION'),'110105',700004,'COMPLETED','课程演示初始化','仅用于建立即将到期居住证')
-ON DUPLICATE KEY UPDATE title=VALUES(title),remark=VALUES(remark);
+ (700001,'DEMO-PERMIT-001','RESIDENCE_PERMIT_FIRST_ISSUE','演示居住证签发记录',(SELECT user_id FROM sys_user WHERE username='population'),(SELECT department_id FROM sys_department WHERE department_code='POPULATION'),'110105',700004,'COMPLETED','课程演示初始化','仅用于建立即将到期居住证')
+ON DUPLICATE KEY UPDATE business_type=VALUES(business_type),title=VALUES(title),remark=VALUES(remark);
 
 INSERT INTO residence_permit(permit_id,permit_no,person_id,floating_id,source_application_id,issue_region_code,issuing_department_id,issuing_authority,issue_date,valid_from,valid_until,status,current_flag) VALUES
- (700001,'DEMO-PERMIT-001',700004,700001,700001,'110105',(SELECT department_id FROM sys_department WHERE department_code='POPULATION'),'北京市演示签发机关',CURRENT_DATE - INTERVAL 350 DAY,CURRENT_DATE - INTERVAL 350 DAY,CURRENT_DATE + INTERVAL 15 DAY,'VALID',1)
+ (700001,'DEMO-PERMIT-001',700004,700001,700001,'110105',(SELECT department_id FROM sys_department WHERE department_code='POPULATION'),'北京市演示签发机关',CURRENT_DATE - INTERVAL 350 DAY,CURRENT_DATE - INTERVAL 350 DAY,CURRENT_DATE + INTERVAL 15 DAY,'ACTIVE',1)
 ON DUPLICATE KEY UPDATE valid_until=VALUES(valid_until),status=VALUES(status),current_flag=VALUES(current_flag);
