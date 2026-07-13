@@ -41,7 +41,12 @@
           </template>
         </el-table-column>
       </el-table>
-      <AppPagination v-model:current="pager.current" v-model:size="pager.size" :total="pager.total" />
+      <AppPagination
+        v-model:current="pager.current"
+        v-model:size="pager.size"
+        :total="pager.total"
+        @change="handlePaginationChange"
+      />
     </el-card>
 
     <CloseFloatingDialog v-model="closeVisible" :version="closeVersion" :loading="closeLoading" @confirm="handleClose" />
@@ -49,7 +54,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import SearchPanel from '../../components/common/SearchPanel.vue'
@@ -76,6 +81,10 @@ const closeVisible = ref(false)
 const closeLoading = ref(false)
 const closeVersion = ref(0)
 let closeTargetId = null
+let latestRequestId = 0
+let lastPaginationRequestKey = ''
+let lastRequestedPageSize = pager.size
+let isUnmounted = false
 
 const canCreate = computed(() => userStore.hasPermission(PERMISSIONS.FLOATING_CREATE))
 const canApplyPermit = computed(() => userStore.hasPermission(PERMISSIONS.RESIDENCE_PERMIT_APPLY))
@@ -87,17 +96,33 @@ function truncateAddress(addr) {
 }
 
 async function load() {
+  const requestId = ++latestRequestId
+  const requestKey = getPaginationRequestKey()
+  lastPaginationRequestKey = requestKey
+  lastRequestedPageSize = pager.size
   loading.value = true
   try {
     const res = await getFloatingPopulationPage({ ...query, current: pager.current, size: pager.size })
     const page = normalizePageResult(res)
+    if (isUnmounted || requestId !== latestRequestId) return
     records.value = normalizeFloatingList(page.records)
     pager.total = page.total
-    pager.current = page.current
-    pager.size = page.size
   } catch (error) {
+    if (isUnmounted || requestId !== latestRequestId) return
     ElMessage.error(getApiErrorMessage(error, '查询流动人口失败'))
-  } finally { loading.value = false }
+  } finally {
+    if (!isUnmounted && requestId === latestRequestId) loading.value = false
+  }
+}
+
+function getPaginationRequestKey() {
+  return `${pager.current}:${pager.size}`
+}
+
+function handlePaginationChange() {
+  if (pager.size !== lastRequestedPageSize) pager.current = 1
+  if (getPaginationRequestKey() === lastPaginationRequestKey) return
+  load()
 }
 
 function handleSearch() { pager.current = 1; load() }
@@ -132,11 +157,10 @@ async function handleClose(payload) {
 }
 
 onMounted(load)
-
-// 监听分页变化
-const { watch } = await import('vue')
-watch(() => pager.current, () => load())
-watch(() => pager.size, () => { pager.current = 1; load() })
+onUnmounted(() => {
+  isUnmounted = true
+  latestRequestId += 1
+})
 </script>
 
 <style scoped>
