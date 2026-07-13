@@ -38,7 +38,7 @@ const props = defineProps({
   },
   permission: {
     type: String,
-    default: PERMISSIONS.PERSON_SENSITIVE_VIEW,
+    default: PERMISSIONS.SENSITIVE_DATA_VIEW_FULL,
   },
   copyable: {
     type: Boolean,
