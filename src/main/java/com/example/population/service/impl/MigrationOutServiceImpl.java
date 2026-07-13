@@ -125,9 +125,29 @@ public class MigrationOutServiceImpl extends ServiceImpl<MigrationOutMapper, Mig
         if (person == null) {
             throw new NotFoundException("人口[" + personId + "]不存在");
         }
+        // 状态前置校验：已注销或已迁出不能再办迁出
+        if (!"ACTIVE".equalsIgnoreCase(person.getRecordStatusCode())) {
+            throw new BizException(409,
+                    "人口[" + personId + "]档案状态为 " + person.getRecordStatusCode()
+                            + "，不可重复办理迁出");
+        }
         ResidenceRegistration oldReg = registrationMapper.findByPersonForUpdate(personId);
 
-        // 3. 若有当前登记 → 落快照
+        // 3. 户主迁出前置校验（C-14：户主迁出前必须先完成户主变更或同步销户）
+        if (fromHouseholdId != null) {
+            Household household = householdMapper.selectByIdForUpdate(fromHouseholdId);
+            if (household != null
+                    && "ACTIVE".equalsIgnoreCase(household.getStatus())
+                    && personId.equals(household.getHeadPersonId())) {
+                // 户主迁出前置：必须先 changeHead 或同步销户
+                throw new BizException(409,
+                        "人口[" + personId + "]是家庭户[" + fromHouseholdId
+                                + "]的当前户主，请先调用 PUT /api/households/"
+                                + fromHouseholdId + "/head 变更户主，或办同步销户");
+            }
+        }
+
+        // 4. 若有当前登记 → 落快照
         if (oldReg != null) {
             Household fromHousehold = householdMapper.selectById(fromHouseholdId);
 
@@ -146,16 +166,20 @@ public class MigrationOutServiceImpl extends ServiceImpl<MigrationOutMapper, Mig
             archiveMapper.insert(snapshot);
             out.setArchiveId(snapshot.getArchiveId());
 
-            // 4. 删除当前登记
+            // 5. 删除当前登记
             registrationMapper.deleteByPersonAndId(personId, oldReg.getRegistrationId());
 
-            // 5. 同步家庭成员状态 LEFT
+            // 6. 同步家庭成员状态 LEFT
             householdMemberMapper.updatePersonStatusLeft(personId, outDate);
         } else {
             log.warn("人口[{}]无当前登记可归档，仅更新迁出记录", personId);
         }
 
-        // 6. 回写迁出记录
+        // 7. 状态联动：人口档案状态 → MIGRATED_OUT（§2.2.4 状态联动）
+        person.setRecordStatusCode("MIGRATED_OUT");
+        personMapper.updateById(person);
+
+        // 8. 回写迁出记录
         out.setOperatorId(operatorId);
         out.setCompletedAt(LocalDateTime.now());
         return updateById(out);

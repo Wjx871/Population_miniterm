@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.population.mapper.FloatingPopulationMapper">
+
+    <!-- 锁住某人员的所有流动记录（含历史 LEFT/EXPIRED），用于"最后一条离开后回滚人口状态"判定 -->
+    <select id="listByPersonForUpdate" resultType="com.example.population.entity.FloatingPopulation">
+        SELECT * FROM floating_population
+         WHERE person_id = #{personId}
+         ORDER BY register_date DESC, floating_id DESC
+         FOR UPDATE
+    </select>
+
+    <!-- 到期扫描：预计离开日期早于 today 且仍为 ACTIVE 的记录置 EXPIRED -->
+    <update id="markExpiringAsExpired">
+        UPDATE floating_population
+           SET status = 'EXPIRED',
+               updated_at = NOW()
+         WHERE status = 'ACTIVE'
+           AND planned_leave_date IS NOT NULL
+           AND planned_leave_date &lt; #{today}
+    </update>
+
+</mapper>

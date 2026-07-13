@@ -126,6 +126,19 @@ public class PersonServiceImpl extends ServiceImpl<PersonMapper, Person> impleme
     }
 
     @Override
+    public java.util.List<Person> findByName(String name) {
+        String safe = com.example.population.util.SafeLike.escape(name);
+        if (safe == null || safe.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return this.list(new LambdaQueryWrapper<Person>()
+                .like(Person::getName, safe)
+                .eq(Person::getIsDeleted, 0)
+                .orderByDesc(Person::getUpdatedAt)
+                .last("LIMIT 50"));
+    }
+
+    @Override
     @DataScope(DataScope.Type.PERSON)
     public java.util.List<Person> listByIdsWithScope(java.util.List<Long> personIds) {
         if (personIds == null || personIds.isEmpty()) {

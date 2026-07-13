@@ -58,6 +58,37 @@ public class PersonController {
     }
 
     @RequiresPermission("person:query")
+    @Operation(summary = "按姓名/身份证号精确查询（敏感字段自动脱敏），用于重点人口登记/其它业务查人")
+    @GetMapping("/search")
+    public Result<List<PersonVO>> search(@RequestParam(required = false) String name,
+                                         @RequestParam(required = false) String identityNo,
+                                         @RequestParam(required = false) String identityType,
+                                         @RequestParam(value = "unmask", required = false) Boolean unmask) {
+        applyUnmask(Boolean.TRUE.equals(unmask));
+        try {
+            java.util.List<Person> rows;
+            if (identityNo != null && !identityNo.isBlank()) {
+                String type = (identityType == null || identityType.isBlank())
+                        ? "ID_CARD" : identityType;
+                Person p = personService.getByIdentity(type, identityNo);
+                rows = p == null ? java.util.Collections.emptyList()
+                        : java.util.Collections.singletonList(p);
+            } else if (name != null && !name.isBlank()) {
+                rows = personService.findByName(name);
+            } else {
+                rows = java.util.Collections.emptyList();
+            }
+            List<PersonVO> out = new ArrayList<>(rows.size());
+            for (Person p : rows) {
+                out.add(PersonVO.from(p));
+            }
+            return Result.success(out);
+        } finally {
+            MaskedSerializer.UNMASK.remove();
+        }
+    }
+
+    @RequiresPermission("person:query")
     @Operation(summary = "查询单个（敏感字段自动脱敏；unmask=true 且为 L3 时输出原文）")
     @GetMapping("/{id}")
     public Result<PersonVO> get(@PathVariable Long id,

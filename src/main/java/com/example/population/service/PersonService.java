@@ -27,4 +27,10 @@ public interface PersonService extends IService<Person> {
      * 按 ID 列表查询，应用数据范围过滤（设计文档 §6：人员列表须按部门/区划过滤）。
      */
     java.util.List<Person> listByIdsWithScope(java.util.List<Long> personIds);
+
+    /**
+     * 按姓名模糊查询（用于重点人口/迁入/迁出等业务的"查人"助手）。
+     * <p>不应用数据范围过滤；调用方按业务规则再过滤；最大返回条数受 SafeLike 限制。</p>
+     */
+    java.util.List<Person> findByName(String name);
 }

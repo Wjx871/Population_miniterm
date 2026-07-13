@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.population.mapper.CertificateMapper">
+
+    <!-- 同类同号唯一校验（事务内 FOR UPDATE）。 -->
+    <select id="findByTypeAndNoForUpdate" resultType="com.example.population.entity.Certificate">
+        SELECT * FROM certificate
+         WHERE certificate_type_code = #{type}
+           AND certificate_no = #{no}
+         LIMIT 1
+         FOR UPDATE
+    </select>
+
+    <!-- 把已过期且非 CANCELLED 的证件标记为 EXPIRED。返回受影响行。 -->
+    <update id="markExpiredAsOf">
+        UPDATE certificate
+           SET certificate_status = 'EXPIRED'
+         WHERE valid_until IS NOT NULL
+           AND valid_until &lt; #{today}
+           AND certificate_status &lt;&gt; 'CANCELLED'
+    </update>
+
+    <!-- 即将到期 / 已过期证件清单（warnDays 内）。由 Controller 用于提醒列表。 -->
+    <select id="listExpiringCertificates" resultType="com.example.population.entity.Certificate">
+        SELECT * FROM certificate
+         WHERE valid_until IS NOT NULL
+           AND certificate_status &lt;&gt; 'CANCELLED'
+           AND valid_until &lt; DATE_ADD(CURDATE(), INTERVAL #{warnDays} DAY)
+         ORDER BY valid_until ASC
+         LIMIT 200
+    </select>
+
+</mapper>

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.population.mapper.StatsMapper">
+
+    <!-- 人口档案状态分组 -->
+    <select id="countByPersonRecordStatus" resultType="java.util.LinkedHashMap">
+        SELECT record_status_code AS code,
+               COUNT(*) AS count
+          FROM person
+         WHERE is_deleted = 0
+           <if test="startDate != null">AND created_at >= #{startDate}</if>
+           <if test="endDate != null">AND created_at &lt; #{endDate}</if>
+         GROUP BY record_status_code
+         ORDER BY count DESC
+    </select>
+
+    <!-- 人口性别分组 -->
+    <select id="countByPersonGender" resultType="java.util.LinkedHashMap">
+        SELECT gender_code AS code,
+               COUNT(*) AS count
+          FROM person
+         WHERE is_deleted = 0
+         GROUP BY gender_code
+         ORDER BY count DESC
+    </select>
+
+    <!-- 民族 Top N -->
+    <select id="countByPersonEthnicity" resultType="java.util.LinkedHashMap">
+        SELECT ethnicity_code AS code,
+               COUNT(*) AS count
+          FROM person
+         WHERE is_deleted = 0
+         GROUP BY ethnicity_code
+         ORDER BY count DESC
+         <if test="topN != null and topN > 0">LIMIT #{topN}</if>
+    </select>
+
+    <!-- 户口类型分组 -->
+    <select id="countByHouseholdType" resultType="java.util.LinkedHashMap">
+        SELECT household_type_code AS code,
+               COUNT(*) AS count
+          FROM household
+         WHERE is_deleted = 0
+         GROUP BY household_type_code
+         ORDER BY count DESC
+    </select>
+
+    <!-- 户口状态分组 -->
+    <select id="countByHouseholdStatus" resultType="java.util.LinkedHashMap">
+        SELECT status AS code,
+               COUNT(*) AS count
+          FROM household
+         WHERE is_deleted = 0
+         GROUP BY status
+         ORDER BY count DESC
+    </select>
+
+    <!-- 区划当前户籍人口数：通过 residence_registration 关联 household.region_code -->
+    <select id="sumCurrentPopulationByRegion" resultType="java.util.LinkedHashMap">
+        SELECT h.region_code AS regionCode,
+               r.region_name AS regionName,
+               COUNT(r.person_id) AS currentPopulation
+          FROM residence_registration rr
+          JOIN household h ON h.household_id = rr.household_id
+          JOIN admin_region r ON r.region_code = h.region_code
+         GROUP BY h.region_code, r.region_name
+         ORDER BY currentPopulation DESC
+    </select>
+
+    <!-- 流动人口按区划统计 -->
+    <select id="sumFloatingByRegion" resultType="java.util.LinkedHashMap">
+        SELECT current_region_code AS regionCode,
+               COUNT(*) AS count
+          FROM floating_population
+         WHERE 1=1
+           <if test="status != null and status != ''">AND status = #{status}</if>
+         GROUP BY current_region_code
+         ORDER BY count DESC
+    </select>
+
+    <!-- 证件状态分组 -->
+    <select id="countByCertificateStatus" resultType="java.util.LinkedHashMap">
+        SELECT certificate_status AS code,
+               COUNT(*) AS count
+          FROM certificate
+         GROUP BY certificate_status
+         ORDER BY count DESC
+    </select>
+
+    <!-- 证件到期/过期统计（动态计算：valid_until 与 CURRENT_DATE 比较） -->
+    <select id="countExpiringCertificates" resultType="java.util.LinkedHashMap">
+        SELECT
+            CASE
+                WHEN valid_until IS NULL THEN 'NO_EXPIRY'
+                WHEN valid_until &lt; CURDATE() THEN 'EXPIRED'
+                WHEN valid_until &lt; DATE_ADD(CURDATE(), INTERVAL #{warnDays} DAY) THEN 'EXPIRING'
+                ELSE 'VALID'
+            END AS code,
+            COUNT(*) AS count
+          FROM certificate
+         GROUP BY code
+         ORDER BY count DESC
+    </select>
+
+    <!-- 迁入按月份统计（最近 N 个月） -->
+    <select id="countMigrationInByMonth" resultType="java.util.LinkedHashMap">
+        SELECT DATE_FORMAT(in_date, '%Y-%m') AS month,
+               COUNT(*) AS count
+          FROM migration_in
+         WHERE in_date IS NOT NULL
+           <if test="sinceMonth != null and sinceMonth != ''">AND DATE_FORMAT(in_date, '%Y-%m') >= #{sinceMonth}</if>
+         GROUP BY month
+         ORDER BY month ASC
+    </select>
+
+    <!-- 迁出按月份统计 -->
+    <select id="countMigrationOutByMonth" resultType="java.util.LinkedHashMap">
+        SELECT DATE_FORMAT(out_date, '%Y-%m') AS month,
+               COUNT(*) AS count
+          FROM migration_out
+         WHERE out_date IS NOT NULL
+           <if test="sinceMonth != null and sinceMonth != ''">AND DATE_FORMAT(out_date, '%Y-%m') >= #{sinceMonth}</if>
+         GROUP BY month
+         ORDER BY month ASC
+    </select>
+
+    <!-- 重点人口按类型 -->
+    <select id="countByKeyPopulationType" resultType="java.util.LinkedHashMap">
+        SELECT key_type_code AS code,
+               COUNT(*) AS count
+          FROM key_population
+         WHERE status = 'ACTIVE'
+         GROUP BY key_type_code
+         ORDER BY count DESC
+    </select>
+
+    <!-- 综合数字：单条 UNION ALL -->
+    <select id="summaryCounters" resultType="java.util.LinkedHashMap">
+        SELECT 'PERSON_TOTAL' AS code,
+               (SELECT COUNT(*) FROM person WHERE is_deleted = 0) AS value
+        UNION ALL
+        SELECT 'HOUSEHOLD_TOTAL' AS code,
+               (SELECT COUNT(*) FROM household WHERE is_deleted = 0) AS value
+        UNION ALL
+        SELECT 'REGISTRATION_TOTAL' AS code,
+               (SELECT COUNT(*) FROM residence_registration) AS value
+        UNION ALL
+        SELECT 'FLOATING_TOTAL' AS code,
+               (SELECT COUNT(*) FROM floating_population WHERE status = 'ACTIVE') AS value
+        UNION ALL
+        SELECT 'KEY_POPULATION_TOTAL' AS code,
+               (SELECT COUNT(*) FROM key_population WHERE status = 'ACTIVE') AS value
+        UNION ALL
+        SELECT 'CERTIFICATE_TOTAL' AS code,
+               (SELECT COUNT(*) FROM certificate) AS value
+        UNION ALL
+        SELECT 'PENDING_APPROVAL_TOTAL' AS code,
+               (SELECT COUNT(*) FROM sys_approval_request WHERE status = 'PENDING') AS value
+        UNION ALL
+        SELECT 'PENDING_APPLICATION_TOTAL' AS code,
+               (SELECT COUNT(*) FROM business_application
+                 WHERE status IN ('SUBMITTED','UNDER_REVIEW')) AS value
+    </select>
+
+    <!-- 待审批业务申请按类型 -->
+    <select id="countPendingApprovalsByType" resultType="java.util.LinkedHashMap">
+        SELECT business_type_code AS code,
+               COUNT(*) AS count
+          FROM business_application
+         WHERE status IN ('SUBMITTED','UNDER_REVIEW')
+         GROUP BY business_type_code
+         ORDER BY count DESC
+    </select>
+
+</mapper>
