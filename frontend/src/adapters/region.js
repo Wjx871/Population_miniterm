@@ -1,7 +1,11 @@
+export function isEnabledStatus(status) {
+  return status === 'ENABLED' || status === 'ACTIVE' || status === '正常' || status === '启用'
+}
+
 export function normalizeRegionNode(node, includeInactive = false) {
   if (!node) return null
   const status = node.status || 'DISABLED'
-  const isActive = status === 'ACTIVE' || status === '正常' || status === '启用'
+  const isActive = isEnabledStatus(status)
   
   if (!includeInactive && !isActive) return null
 

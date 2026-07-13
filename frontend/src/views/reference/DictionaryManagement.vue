@@ -17,7 +17,7 @@
         </el-form-item>
         <el-form-item label="字典状态">
           <el-select v-model="query.status" placeholder="全部" clearable style="width: 120px;">
-            <el-option label="有效" value="ACTIVE" />
+            <el-option label="有效" value="ENABLED" />
             <el-option label="禁用" value="DISABLED" />
           </el-select>
         </el-form-item>
@@ -28,23 +28,24 @@
       <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
         <el-table-column prop="dictType" label="字典类型" width="180" align="center" fixed />
         <el-table-column prop="dictCode" label="字典编码" width="180" align="center" />
-        <el-table-column prop="dictLabel" label="显示标签" min-width="150" align="center" />
-        <el-table-column prop="sortOrder" label="排序权重" width="100" align="center" />
-        <el-table-column prop="businessStatus" label="状态" width="100" align="center">
+        <el-table-column prop="dictName" label="显示标签" min-width="150" align="center" />
+        <el-table-column prop="sortNo" label="排序权重" width="100" align="center" />
+        <el-table-column prop="status" label="状态" width="100" align="center">
           <template #default="{ row }">
-            <StatusTag :value="row.businessStatus" />
+            <StatusTag :value="row.status" />
           </template>
         </el-table-column>
         <el-table-column label="操作" width="180" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
+            <el-button v-permission="PERMISSIONS.DICTIONARY_MANAGE" size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
             <el-button 
+              v-permission="PERMISSIONS.DICTIONARY_MANAGE"
               size="small" 
-              :type="row.businessStatus === 'ACTIVE' ? 'danger' : 'success'" 
+              :type="row.status === 'ENABLED' ? 'danger' : 'success'"
               link 
               @click="toggleStatus(row)"
             >
-              {{ row.businessStatus === 'ACTIVE' ? '禁用' : '启用' }}
+              {{ row.status === 'ENABLED' ? '禁用' : '启用' }}
             </el-button>
           </template>
         </el-table-column>
@@ -71,11 +72,11 @@
         <el-form-item label="字典编码" prop="dictCode">
           <el-input v-model="form.dictCode" :disabled="isEdit" placeholder="唯一编码" />
         </el-form-item>
-        <el-form-item label="显示标签" prop="dictLabel">
-          <el-input v-model="form.dictLabel" placeholder="UI显示名称" />
+        <el-form-item label="显示标签" prop="dictName">
+          <el-input v-model="form.dictName" placeholder="UI显示名称" />
         </el-form-item>
-        <el-form-item label="排序权重" prop="sortOrder">
-          <el-input-number v-model="form.sortOrder" :min="0" :max="999" />
+        <el-form-item label="排序权重" prop="sortNo">
+          <el-input-number v-model="form.sortNo" :min="0" :max="999" />
         </el-form-item>
       </el-form>
     </FormDialog>
@@ -94,6 +95,7 @@ import { getDictionaryPage, getDictionaryDetail, createDictionaryItem, updateDic
 import { clearAllReferenceCache } from '../../services/referenceDataCache';
 import { normalizePageResult } from '../../utils/page';
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError';
+import { PERMISSIONS } from '../../constants/permissions';
 
 const loading = ref(false);
 const tableData = ref([]);
@@ -141,15 +143,15 @@ const form = reactive({
   id: null,
   dictType: '',
   dictCode: '',
-  dictLabel: '',
-  sortOrder: 0,
+  dictName: '',
+  sortNo: 0,
   version: 0
 });
 
 const rules = {
   dictType: [{ required: true, message: '请输入字典类型', trigger: 'blur' }],
   dictCode: [{ required: true, message: '请输入字典编码', trigger: 'blur' }],
-  dictLabel: [{ required: true, message: '请输入显示标签', trigger: 'blur' }]
+  dictName: [{ required: true, message: '请输入显示标签', trigger: 'blur' }]
 };
 
 const openCreateDialog = () => {
@@ -158,8 +160,8 @@ const openCreateDialog = () => {
     id: null,
     dictType: '',
     dictCode: '',
-    dictLabel: '',
-    sortOrder: 0,
+    dictName: '',
+    sortNo: 0,
     version: 0
   });
   dialogVisible.value = true;
@@ -173,11 +175,11 @@ const openEditDialog = async (row) => {
 
     isEdit.value = true;
     Object.assign(form, {
-      id: detail.id,
+      id: detail.dictId || detail.id,
       dictType: detail.dictType,
       dictCode: detail.dictCode,
-      dictLabel: detail.dictLabel,
-      sortOrder: detail.sortOrder || 0,
+      dictName: detail.dictName,
+      sortNo: detail.sortNo || 0,
       version: detail.version
     });
     dialogVisible.value = true;
@@ -197,8 +199,8 @@ const submitForm = () => {
       const payload = {
         dictType: form.dictType,
         dictCode: form.dictCode,
-        dictLabel: form.dictLabel,
-        sortOrder: form.sortOrder,
+        dictName: form.dictName,
+        sortNo: form.sortNo,
         version: form.version
       };
 
@@ -226,18 +228,19 @@ const submitForm = () => {
 };
 
 const toggleStatus = async (row) => {
-  const action = row.businessStatus === 'ACTIVE' ? '禁用' : '启用';
+  const action = row.status === 'ENABLED' ? '禁用' : '启用';
   try {
     await ElMessageBox.confirm(`确定要${action}该字典项吗？`, '提示', { type: 'warning' });
     
     // Refresh detail to get latest version
     const detailRes = await getDictionaryDetail(row.dictType, row.dictCode);
     const detail = detailRes?.data || detailRes || {};
+    const id = detail.dictId || detail.id;
     
-    if (row.businessStatus === 'ACTIVE') {
-      await disableDictionaryItem(detail.id, detail.version);
+    if (row.status === 'ENABLED') {
+      await disableDictionaryItem(id, detail.version);
     } else {
-      await enableDictionaryItem(detail.id, detail.version);
+      await enableDictionaryItem(id, detail.version);
     }
     
     ElMessage.success(`${action}成功`);

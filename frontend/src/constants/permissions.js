@@ -62,7 +62,10 @@ export const PERMISSIONS = Object.freeze({
   SYSTEM_USER_MANAGE: 'system:user:manage',
   
   DICTIONARY_VIEW: 'dictionary:view',
-  DICTIONARY_MANAGE: 'dictionary:manage'
+  DICTIONARY_MANAGE: 'dictionary:manage',
+
+  REGION_VIEW: 'region:view',
+  REGION_MANAGE: 'region:manage'
 })
 
 export const ROLE_DEFAULT_PERMISSIONS = Object.freeze({

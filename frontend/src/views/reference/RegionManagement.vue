@@ -14,29 +14,30 @@
       <el-table 
         :data="tableData" 
         v-loading="loading" 
-        row-key="regionCode"
+        row-key="value"
         :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
         border 
         style="width: 100%"
       >
-        <el-table-column prop="regionName" label="区划名称" min-width="200" />
-        <el-table-column prop="regionCode" label="区划代码" width="180" />
+        <el-table-column prop="label" label="区划名称" min-width="200" />
+        <el-table-column prop="value" label="区划代码" width="180" />
         <el-table-column prop="parentCode" label="上级代码" width="180" />
-        <el-table-column prop="businessStatus" label="状态" width="100" align="center">
+        <el-table-column prop="status" label="状态" width="100" align="center">
           <template #default="{ row }">
-            <StatusTag :value="row.businessStatus" />
+            <StatusTag :value="row.status" />
           </template>
         </el-table-column>
         <el-table-column label="操作" width="180" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
+            <el-button v-permission="PERMISSIONS.REGION_MANAGE" size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
             <el-button 
+              v-permission="PERMISSIONS.REGION_MANAGE"
               size="small" 
-              :type="row.businessStatus === 'ACTIVE' ? 'danger' : 'success'" 
+              :type="row.status === 'ENABLED' ? 'danger' : 'success'"
               link 
               @click="toggleStatus(row)"
             >
-              {{ row.businessStatus === 'ACTIVE' ? '禁用' : '启用' }}
+              {{ row.status === 'ENABLED' ? '禁用' : '启用' }}
             </el-button>
           </template>
         </el-table-column>
@@ -74,6 +75,7 @@ import { getRegionTree, getRegionDetail, createRegion, updateRegion, enableRegio
 import { normalizeRegionTree } from '../../adapters/region';
 import { clearAllReferenceCache } from '../../services/referenceDataCache';
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError';
+import { PERMISSIONS } from '../../constants/permissions';
 
 const loading = ref(false);
 const tableData = ref([]);
@@ -127,7 +129,7 @@ const openCreateDialog = () => {
 
 const openEditDialog = async (row) => {
   try {
-    const res = await getRegionDetail(row.regionCode);
+    const res = await getRegionDetail(row.value);
     const detail = res?.data || res || {};
 
     isEdit.value = true;
@@ -182,15 +184,15 @@ const submitForm = () => {
 };
 
 const toggleStatus = async (row) => {
-  const action = row.businessStatus === 'ACTIVE' ? '禁用' : '启用';
+  const action = row.status === 'ENABLED' ? '禁用' : '启用';
   try {
     await ElMessageBox.confirm(`确定要${action}该区划吗？`, '提示', { type: 'warning' });
     
     // Refresh detail to get latest version
-    const detailRes = await getRegionDetail(row.regionCode);
+    const detailRes = await getRegionDetail(row.value);
     const detail = detailRes?.data || detailRes || {};
     
-    if (row.businessStatus === 'ACTIVE') {
+    if (row.status === 'ENABLED') {
       await disableRegion(detail.regionCode, detail.version);
     } else {
       await enableRegion(detail.regionCode, detail.version);

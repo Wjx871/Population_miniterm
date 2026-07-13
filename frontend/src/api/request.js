@@ -69,7 +69,6 @@ request.interceptors.response.use(
     if (error.response?.status === 401) {
       const userStore = useUserStore()
       userStore.logout()
-      clearAllReferenceCache()
       ElMessage.error('登录状态已失效，请重新登录')
       import('../router/index.js').then(m => m.default.replace('/login'))
     } else if (error.response?.status === 403) {

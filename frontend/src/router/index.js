@@ -321,7 +321,7 @@ const routes = [
         component: () => import('../views/reference/DictionaryManagement.vue'), 
         meta: { 
           title: '数据字典',
-          minLevel: 3,
+          minLevel: 1,
           permission: 'dictionary:view',
           menu: false,
           group: '系统管理',
@@ -335,8 +335,8 @@ const routes = [
         component: () => import('../views/reference/RegionManagement.vue'),
         meta: {
           title: '行政区划',
-          minLevel: 3,
-          permission: 'dictionary:view',
+          minLevel: 1,
+          permission: 'region:view',
           menu: false,
           group: '系统管理',
           order: 42,

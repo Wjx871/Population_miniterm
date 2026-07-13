@@ -5,10 +5,10 @@ import { normalizeRegionTree, findRegionPath } from '../src/adapters/region.js'
 test('regionAdapter: normalizes tree and drops inactive when includeInactive is false', () => {
   const input = [
     {
-      regionId: 1, regionCode: '100', regionName: 'A', status: 'ACTIVE',
+      regionId: 1, regionCode: '100', regionName: 'A', status: 'ENABLED',
       children: [
         { regionId: 2, regionCode: '101', regionName: 'A1', status: 'DISABLED' },
-        { regionId: 3, regionCode: '102', regionName: 'A2', status: 'ACTIVE' }
+        { regionId: 3, regionCode: '102', regionName: 'A2', status: 'ENABLED' }
       ]
     }
   ]
@@ -27,9 +27,9 @@ test('regionAdapter: includeInactive keeps all', () => {
 
 test('regionAdapter: findRegionPath returns array of nodes', () => {
   const tree = normalizeRegionTree([{
-    regionId: 1, regionCode: '100', regionName: 'A', status: 'ACTIVE',
+    regionId: 1, regionCode: '100', regionName: 'A', status: 'ENABLED',
     children: [
-      { regionId: 3, regionCode: '102', regionName: 'A2', status: 'ACTIVE' }
+      { regionId: 3, regionCode: '102', regionName: 'A2', status: 'ENABLED' }
     ]
   }])
   const path = findRegionPath(tree, '102')

@@ -1,7 +1,11 @@
+export function isEnabledStatus(status) {
+  return status === 'ENABLED' || status === 'ACTIVE' || status === '正常' || status === '启用'
+}
+
 export function normalizeDictionaryItem(item) {
   if (!item) return null
   const status = item.status || 'DISABLED'
-  const isActive = status === 'ACTIVE' || status === '正常' || status === '启用'
+  const isActive = isEnabledStatus(status)
   return {
     id: item.dictId,
     type: item.dictType,

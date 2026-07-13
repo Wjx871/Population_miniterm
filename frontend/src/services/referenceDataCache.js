@@ -5,6 +5,14 @@ import { normalizeRegionTree } from '../adapters/region.js'
 
 let cache = new Map()
 
+let getDictionaryItemsFn = getDictionaryItems
+let getRegionTreeFn = getRegionTree
+
+export function _setApiForTesting(dictMock, regionMock) {
+  if (dictMock !== undefined) getDictionaryItemsFn = dictMock
+  if (regionMock !== undefined) getRegionTreeFn = regionMock
+}
+
 function getCacheKey(domain, type, scope) {
   return `${domain}:${type}:${scope}`
 }
@@ -17,11 +25,16 @@ export async function getCachedDictionary(type, includeInactive = false) {
     return cache.get(key)
   }
 
-  const res = await getDictionaryItems(type)
-  const data = res.data || res
-  const list = normalizeDictionaryList(data, includeInactive)
-  cache.set(key, list)
-  return list
+  const promise = getDictionaryItemsFn(type).then(res => {
+    const data = res.data || res
+    return normalizeDictionaryList(data, includeInactive)
+  }).catch(err => {
+    cache.delete(key) // 失败不污染缓存
+    throw err
+  })
+
+  cache.set(key, promise)
+  return promise
 }
 
 export function invalidateDictionaryCache(type) {
@@ -38,11 +51,16 @@ export async function getCachedRegionTree(includeInactive = false) {
     return cache.get(key)
   }
 
-  const res = await getRegionTree()
-  const data = res.data || res
-  const tree = normalizeRegionTree(data, includeInactive)
-  cache.set(key, tree)
-  return tree
+  const promise = getRegionTreeFn().then(res => {
+    const data = res.data || res
+    return normalizeRegionTree(data, includeInactive)
+  }).catch(err => {
+    cache.delete(key) // 失败不污染缓存
+    throw err
+  })
+
+  cache.set(key, promise)
+  return promise
 }
 
 export function invalidateRegionCache() {
