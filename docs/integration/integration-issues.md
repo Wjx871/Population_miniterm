@@ -1,115 +1,139 @@
 # 前后端联调问题清单
 
+历史问题保持可追溯；PASS 表示已修复并有回归证据。
+
 ## INT-001 通用申请列表返回 500
 
-- 问题编号：INT-001
-- 模块：通用申请 / 工作台
-- 页面：Dashboard、ApplicationList、MigrationList
-- 账号：population
-- 请求：`/api/applications?page=0&size=5`
-- 方法：GET
+- 模块/页面：通用申请；Dashboard、ApplicationList、MigrationList
+- 角色与请求：population；`GET /api/applications?page=0&size=5`
 - 请求参数：`page=0,size=5`
-- 响应状态：500
-- 响应内容：`{"code":500,"message":"服务器处理请求失败"...}`
-- 后端异常：`No enum constant ... BusinessType.RESIDENCE_PERMIT_APPLICATION`
-- 根因：`doc/database/demo_data.sql` 写入了冻结枚举不存在的旧业务类型；MyBatis 映射 `business_type` 时失败。`page=0` 本身符合 Spring 零基分页契约。
-- 归属：数据库演示数据
-- 修复方案：演示数据改为 `RESIDENCE_PERMIT_FIRST_ISSUE`，幂等更新同时修复 `business_type`；增加静态回归测试。已安装演示库需在受控验证中重放修正后的演示脚本。
-- 修改文件：`doc/database/demo_data.sql`、`BackendV1ReleaseAuditTest.java`
-- 验证结果：修正脚本已在真实 MySQL 幂等重放；相同请求返回 200、1 条记录。另新增全局分页参数校验，负 page、零 size 和非整数值返回 400。
+- 原响应：500，MyBatis 无法映射旧 `BusinessType.RESIDENCE_PERMIT_APPLICATION`
+- 根因：演示数据写入冻结枚举不存在的业务类型，分页参数本身合法。
+- 修改：`doc/database/demo_data.sql`、`BackendV1ReleaseAuditTest` 及分页异常处理。
+- 测试：真实 MySQL 幂等重放后返回 200；负 page、零 size、非整数 page 返回 ApiResponse 400。
 - 状态：PASS
 
-## INT-002 工作台动态标题渲染原始插值
+## INT-002 工作台显示原始 Vue 插值
 
-- 问题编号：INT-002
-- 模块：首页
-- 页面：Dashboard
-- 账号：任意具有 `statistics:view` 的账号
-- 请求：无
-- 方法：前端渲染
-- 请求参数：无
-- 响应状态：不适用
-- 响应内容：页面显示 `近{{ overview.periodDays || 30 }}日迁入/迁出`
-- 后端异常：无
-- 根因：Vue 插值表达式放在普通属性字符串中，不会被再次解析。
-- 归属：前端
-- 修复方案：使用 computed 生成标题并通过 `:label` 绑定；增加源码级回归测试。
-- 修改文件：`Dashboard.vue`、`dashboardRendering.test.js`
-- 验证结果：前端单元测试和 Vite 构建通过，页面源码不再包含错误属性插值。
+- 模块/页面：首页；Dashboard
+- 角色与请求：任意 `statistics:view`；前端渲染，无 HTTP 请求
+- 请求参数/原响应：不适用；页面显示 `近{{ overview.periodDays || 30 }}日迁入/迁出`
+- 根因：插值表达式放在普通属性字符串中。
+- 修改：`Dashboard.vue` 使用 computed 和动态属性绑定。
+- 测试：`dashboardRendering.test.js` 与 Vite build 通过。
 - 状态：PASS
 
-## INT-003 首页统计出现误导性 0
+## INT-003 首页统计以虚假 0 覆盖错误
 
-- 问题编号：INT-003
-- 模块：首页统计
-- 页面：Dashboard / DataDashboard
-- 账号：population
-- 请求：`/api/dashboard/overview`、`/api/dashboard/charts?days=30&regionLimit=8`
-- 方法：GET
-- 请求参数：默认 period/expiry；`days=30,regionLimit=8`
-- 响应状态：200
-- 响应内容：概览 `activeResidencePermits=0`，状态分布同时返回 `VALID=1`
-- 后端异常：无
-- 根因：演示脚本将居住证状态写为旧值 `VALID`，冻结业务代码只认 `ACTIVE`；另工作台对统计失败没有显式错误区。
-- 归属：数据库 / 前端
-- 修复方案：演示状态改为 `ACTIVE` 并允许幂等重放；工作台用 null 占位和明确错误/重试，不以 0 覆盖失败。
-- 修改文件：`demo_data.sql`、`Dashboard.vue`
-- 验证结果：真实 MySQL 重放后概览 `activeResidencePermits=1`、`expiringResidencePermits=1`，图表为 `ACTIVE=1`；前端针对性测试通过。
+- 模块/页面：首页统计；Dashboard、DataDashboard
+- 角色与请求：population；`GET /api/dashboard/overview`、`GET /api/dashboard/charts?days=30&regionLimit=8`
+- 请求参数：默认 period/expiry，`days=30,regionLimit=8`
+- 原响应：接口数据受旧 `VALID` 状态影响；前端失败时显示 0。
+- 根因：演示状态不符合冻结枚举，页面未区分 null/error/真实 0。
+- 修改：`demo_data.sql`、Dashboard 相关 adapter/view。
+- 测试：真实 MySQL 为 `ACTIVE=1`；错误态显示 message/retry，前端测试通过。
 - 状态：PASS
 
-## INT-004 待办加载失败仅显示通用重试
+## INT-004 待办失败丢失服务端错误
 
-- 问题编号：INT-004
-- 模块：首页待办
-- 页面：Dashboard
-- 账号：按权限触发
-- 请求：pending applications / my applications / expiring permits
-- 方法：GET
+- 模块/页面：首页待办；Dashboard
+- 角色与请求：按权限；pending/my applications/expiring permits
 - 请求参数：各模块默认筛选
-- 响应状态：401/403/500 等
-- 响应内容：原页面只显示布尔错误和“加载失败，可重试”
-- 后端异常：按具体请求
-- 根因：`WorkItemList` 的 error 属性只有 Boolean，页面丢弃服务端 message。
-- 归属：前端
-- 修复方案：error 支持字符串，调用方使用统一 `getApiErrorMessage`，保留重试。
-- 修改文件：`WorkItemList.vue`、`Dashboard.vue`
-- 验证结果：前端单元测试和 Vite 构建通过，工作台显示服务端 message 并保留重试。
+- 原响应：401/403/500 被压成 Boolean，仅显示通用“加载失败”。
+- 根因：`WorkItemList` error 属性不保留 message。
+- 修改：`WorkItemList.vue`、`Dashboard.vue`、统一 `getApiErrorMessage`。
+- 测试：服务端 message 与重试入口均有源码回归。
 - 状态：PASS
 
 ## INT-005 认证保持与服务端退出未接入
 
-- 问题编号：INT-005
-- 模块：认证
-- 页面：全局 store / MainLayout
-- 账号：全部
-- 请求：缺少 `/api/auth/me` 与 `/api/auth/logout`
-- 方法：GET / POST
+- 模块/页面：认证；全局 store、router、MainLayout
+- 角色与请求：五角色；原先缺少 `GET /api/auth/me`、`POST /api/auth/logout`
 - 请求参数：Bearer token
-- 响应状态：尚未调用
-- 响应内容：尚未调用
-- 后端异常：无
-- 根因：前端仅持久化登录响应和本地清除 token，刷新时不向后端校验，退出时不进入 JWT 撤销链。
-- 归属：前端
-- 修复方案：阶段 A 接入 me/logout，并测试刷新保持与旧 token 401。
-- 修改文件：待阶段 A
-- 验证结果：未验证
-- 状态：FRONTEND_FIX
+- 原响应：刷新依赖 localStorage 旧权限快照，退出仅本地清 token。
+- 根因：前端未接入 Backend V1 完整认证生命周期。
+- 修改：`auth.js`、`request.js`、`user.js`、`userNormalizer.js`、router、MainLayout。
+- 测试：五角色 login/me/logout 200；旧 token 401；重复 logout 不产生 500；后端定向 21 项通过。
+- 状态：PASS
 
-## INT-006 前端残留 Backend V1 不支持的调用
+## INT-006 前端残留 Backend V1 不支持的旧接口
 
-- 问题编号：INT-006
-- 模块：人口、家庭户、用户、认证
-- 页面：API 层及隐藏 UserList
-- 账号：不适用
-- 请求：`DELETE /persons/{id}`、`DELETE /households/{id}`、`GET /users`、`POST /auth/register`
-- 方法：GET/POST/DELETE
-- 请求参数：不适用
-- 响应状态：404/405 或未触发
-- 响应内容：Backend V1 无对应正式接口
-- 后端异常：无
-- 根因：前端阶段版本保留旧接口导出和注释。
-- 归属：前端
-- 修复方案：后续模块阶段删除旧导出/路由，离户改用专用 POST；用户在线 CRUD 标记 OUT_OF_SCOPE。
-- 修改文件：待后续阶段
-- 验证结果：静态审计已定位；未发现 `/api/residents` 调用。
-- 状态：CONTRACT_MISMATCH
+- 模块/页面：认证、人口、家庭户、隐藏用户管理
+- 角色与请求：不适用；`POST /auth/register`、`GET /users`、人口/户籍 DELETE、`/api/residents`
+- 请求参数/原响应：Backend V1 无正式契约，可能 404/405。
+- 根因：前端阶段版本残留 API 导出、页面和注释。
+- 修改：删除 register/users API 与路由页面；删除人口/家庭户物理删除；成员离户改正式 POST。
+- 测试：`obsoleteContracts.test.js` 静态扫描；最终前端 105 项通过。
+- 状态：PASS
+
+## INT-007 行政区划与字典未完整适配
+
+- 模块/页面：公共基础数据；RegionManagement、DictionaryManagement、公共选择器
+- 角色与请求：五角色查询；viewer 构造有效写请求
+- 请求参数：区划树、字典 type/code、合法 Region DTO
+- 原响应：页面/缓存对 Axios 原始响应和业务 data 的解包规则不统一。
+- 根因：公共组件、adapter 和缓存来自不同开发批次。
+- 修改：合入 `origin/develop@4334e20` 稳定参考数据，冲突中保留完整认证生命周期；修正 `referenceDataCache`。
+- 测试：前端 96+ 项；真实查询 200，viewer 有效写 403；Redis 关闭回源 MySQL。
+- 状态：PASS
+
+## INT-008 家庭户 DTO、权限和正式操作不一致
+
+- 模块/页面：家庭户；HouseholdList、HouseholdDetail、HouseholdForm
+- 角色与请求：五角色读；viewer 写；`POST /members/{id}/leave`、`POST /change-head`
+- 请求参数：户号、区划、户类型、日期、status、version；离户日期/version；新户主/reason/version
+- 原响应：前端缺失 DTO 字段，使用旧权限码，户主变更入口缺失。
+- 根因：前端早期契约落后于 Phase 08 正式 Controller。
+- 修改：household API/adapter/form/list/detail 与 `household:edit` 权限。
+- 测试：人口/户籍/证件后端 40 项；真实五角色读 200、viewer 人口写 403；前端契约测试通过。
+- 状态：PASS
+
+## INT-009 Phase 11 查询和日志入口缺失
+
+- 模块/页面：综合查询、统计、日志；ComprehensiveQuery、HouseholdQuery、MigrationHistoryQuery、LogQuery
+- 角色与请求：五角色；`/api/query/persons`、`/households`、`/migration-history`、`/statistics/overview`、`/logs/**`
+- 请求参数：Spring page、筛选、日期区间、日志类型/结果/IP
+- 原响应：家庭户/迁移/日志无页面；人口查询失败被空数组和 0 覆盖。
+- 根因：前端仅有旧聚合人口查询和统计大屏。
+- 修改：新增 query/log API、adapter、页面和权限路由；人口列表切 Phase 11 正式入口并保留聚合档案详情。
+- 测试：后端定向 22 项；三类查询和统计五角色 200；日志 viewer/admin 200，其余 403；前端失败/空结果回归。
+- 状态：PASS
+
+## INT-010 注销、重点人口与导出没有前端闭环
+
+- 模块/页面：复杂业务；CancellationManagement、KeyPopulationManagement、ExportManagement、ApplicationDetail
+- 角色与请求：viewer/approver 越权；专业 create/detail/execute/download
+- 请求参数：专业 DTO、材料类型、applicationId、最新 version
+- 原响应：无专业创建页；重点人口使用旧 `key:*`；申请详情无法加载专业记录或 execute。
+- 根因：前端复杂业务范围尚未补齐。
+- 修改：新增三类 API/页面、正式权限码、动态材料规则、`directBusinessHandler` 和专业详情面板。
+- 测试：Phase 03/04/05/06/10 共 159 项；五角色列表 200；viewer 注销创建 403；approver 创建/普通导出及三类 execute 均 403；前端 handler 契约通过。
+- 状态：PASS
+
+## INT-011 401 重复提示与 403 会话边界
+
+- 模块/页面：全局 Axios；所有受保护页面
+- 角色与请求：任意；并发 401、合法登录后的 403
+- 请求参数：失效 token 或权限不足请求
+- 原响应：可能重复提示；403 处理与认证失效职责混杂。
+- 根因：缺少全局 401 去重与明确的 401/403分支。
+- 修改：`request.js`、user store；401 清会话并去重，403 保持登录态并跳转 403。
+- 测试：`authLifecycle.test.js`、真实旧 token 401、viewer/approver 403。
+- 状态：PASS
+
+## INT-012 浏览器交互式五角色回归无法运行
+
+- 模块/页面：全前端；菜单、路由、按钮、刷新与交互点击
+- 角色与请求：viewer、population、household、approver、admin；浏览器控制运行时初始化
+- 请求参数：本地浏览器会话
+- 原响应：`failed to write kernel assets: path not found`
+- 根因：Codex 内置浏览器控制运行时的本地环境故障，不是项目代码异常。
+- 修改：未修改系统环境；改用真实 MySQL API、store/router 权限测试、源码契约测试和 production build 提供替代证据。
+- 测试：后端 323 项、前端 105 项、五角色真实 API 与构建均通过；缺少本轮浏览器点击/录像证据。
+- 状态：BLOCKED（外部工具证据缺口）
+
+## 范围结论
+
+- 用户、角色、部门在线 CRUD 与公开注册未纳入 Backend V1：OUT_OF_SCOPE，前端无菜单、路由或 API。
+- 未修改数据库结构、未删除合法数据、未放宽权限。
+- `backup/` 原有未跟踪数据库备份保持原样且未提交。

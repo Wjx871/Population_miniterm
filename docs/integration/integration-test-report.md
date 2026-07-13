@@ -1,48 +1,60 @@
 # 前后端联调测试报告
 
-## 第一阶段：静态审计与问题复现
+## 第二阶段：全量功能适配与系统联调
 
 - 日期：2026-07-13
 - 分支：`integration/frontend-backend-v1`
-- 基线 HEAD：`6936fbc878a3588f6d8d32216e692efb7e7e1deb`
-- 后端：本地 8080，真实 MySQL `population_miniterm`，Redis 为可选能力
-- 前端：本地 Vite 5180
-- 数据库结构：`information_schema` 实测 33 张表
+- 后端环境：Java 17 / Spring Boot 3.5.3 / MySQL 8.4.10；真实库 `population_miniterm`
+- 前端环境：Vue 3 / Vite 8 / Element Plus / Pinia / Axios
+- 数据库：33 张表，V4_001 至 V4_010；未清库、未改表、未提交备份
+- Redis：`REDIS_ENABLED=false`，健康检查为 `MYSQL_FALLBACK`
 
-### 已执行验证
+## 完成范围
 
-| 验证项 | 结果 | 证据摘要 |
-|---|---|---|
-| Git 基线 | PASS | HEAD、develop、origin/develop、远端联调分支均为 `6936fbc` |
-| 工作区安全 | PASS（有保留项） | 用户已有未跟踪 `backup/population_miniterm_before_integration_20260713_150903.sql`，本轮保留且不提交 |
-| 登录 | PASS | population/123456 返回 200 和标准 LoginResponse |
-| 当前用户 | PASS | `/api/auth/me` 携带 Bearer 返回 200 |
-| 通用申请 page=0 | PASS | 修正演示数据并受控重放后返回 200、1 条记录 |
-| 非法分页 | PASS | 重启后真实验证：负 page、零 size、非整数 page 均返回 ApiResponse 400 |
-| Dashboard overview | PASS | 修正后 200；户籍 2、流动 1、有效/即将到期居住证均为 1 |
-| Dashboard charts | PASS | 修正后 200；业务规模有效证件 1、状态分布 `ACTIVE=1` |
-| `/api/residents` 静态扫描 | PASS | 生产和前端正式调用均未发现 |
-| Axios 解包 | PASS | JSON 成功响应统一返回 `ApiResponse.data`；blob 明确 raw response |
-| 分页适配 | PASS | UI 一基 current 转 Spring 零基 page，响应统一适配 Page 字段 |
+- 认证：login、`/auth/me` 刷新恢复、服务端 logout、JWT 撤销、401 去重、403 保持会话。
+- 旧契约：删除 register、users CRUD、人口/家庭户物理删除和 `/api/residents` 可执行引用。
+- 公共数据：行政区划、数据字典、公共选择器与失败不污染缓存。
+- 核心业务：人口、家庭户、成员离户、户主变更、通用证件。
+- 查询统计日志：人口、家庭户、迁移历史、Dashboard、操作日志、登录日志。
+- 复杂业务：迁入、迁出、人员/家庭户注销、流动人口、居住证、重点人口建档/解除、普通/敏感导出。
+- 审批执行：审批通过不自动落地；专业权限显式 execute；完成后重新读取通用与专业状态；重复 execute 为 409。
 
-### 第一阶段修改
+## 五角色真实 MySQL 验证
 
-- 修正演示数据中的居住证业务类型和状态，使其符合 Backend V1 冻结枚举。
-- 修正工作台动态标题，不再渲染原始 `{{ }}`。
-- 工作台统计和待办失败时显示服务端错误并保留重试，缺失值维持 `—`，不伪造 0。
-- 新增前端渲染回归测试和后端演示数据契约测试。
-- 建立契约矩阵和可追溯问题清单。
+| 角色 | `/auth/me` | 数据范围 | 查询 | 写/执行边界 |
+|---|---:|---|---|---|
+| viewer | 200 | DEPARTMENT | 人口、家庭户、证件、三类综合查询、统计、日志、注销、重点人口、导出列表均按权限返回 | 人口写、注销创建均 403 |
+| population | 200 | REGION | 核心与复杂业务查询 200 | 具备人口/重点人口/敏感导出申请的后端正式权限；无户籍专属越权 |
+| household | 200 | REGION | 核心与复杂业务查询 200 | 具备户籍、迁移、注销和敏感导出执行的正式权限 |
+| approver | 200 | REGION | 待审批及业务查询 200；日志 403 | 注销、重点人口、敏感导出 execute 均 403；普通导出和重点人口创建 403 |
+| admin | 200 | ALL | 全量查询 200 | 专业权限以后端 `/auth/me` 返回为准 |
 
-### 自动化门禁结果
+日志权限真实结果：viewer/admin 200，population/household/approver 403，完全按后端 `log:view` 矩阵；前端不自行推测。
+
+## 分组回归
+
+| 分组 | 结果 |
+|---|---|
+| AuthRbac + token revocation | 21 tests，0/0/0 |
+| 人口 + 家庭户 + 通用证件 | 40 tests，0/0/0 |
+| Phase 11 查询/统计/权限 | 22 tests，0/0/0 |
+| 迁移 + 注销 + 流动/居住证 + 导出 + 重点人口 | 159 tests，0/0/0 |
+| 前端最终单元/契约 | 105 tests，全部通过 |
+
+## 最终门禁
 
 | 命令 | 结果 |
 |---|---|
-| `./mvnw.cmd clean test` | PASS：323 tests，Failures 0，Errors 0，Skipped 0 |
-| `./mvnw.cmd clean package` | PASS：323 tests，生成 `population-miniterm-1.0.0.jar` |
-| `npm install` | PASS：依赖已是最新，0 vulnerabilities |
-| `npm run check` | PASS：前端 66 tests 全通过，Vite build 成功 |
-| `npm run test` | 不存在；项目实际脚本为 `test:unit`，已由 `check` 执行 |
+| `.\mvnw.cmd clean test` | PASS：323 tests；Failures 0；Errors 0；Skipped 0；BUILD SUCCESS |
+| `.\mvnw.cmd clean package` | PASS：323 tests；JAR `target/population-miniterm-1.0.0.jar` |
+| `npm install` | PASS：up to date；0 vulnerabilities |
+| `npm run check` | PASS：105 tests；Vite production build 成功 |
+| `npm run test` | 脚本不存在；实际 `test:unit` 已由 `check` 执行 |
+| `npm run build` | 已由 `check` 执行并 PASS |
+| `git diff --check` | PASS（文档提交前后均要求无输出） |
 
-### 尚未执行/后续门禁
+Vite 仅报告第三方 pure annotation、动态 import 与大 chunk 警告，不影响构建成功；未生成可提交的 `dist/`、`node_modules/` 或 `target/` 产物。
 
-第一阶段门禁已完成。五角色权限、复杂写业务、Redis 降级及完整 A-E 联调不在第一阶段复现范围内，将按契约矩阵和问题清单继续推进。
+## 工具限制与结论
+
+Codex 内置浏览器控制运行时初始化失败，无法完成本轮五角色浏览器点击录像；已用真实 MySQL API、router/store 权限回归、源码契约测试和 production build 覆盖。除这项外部工具限制外，第二阶段代码、接口、权限、测试和构建门禁均达到验收标准，可进入第三阶段总回归。当前阶段不 push。
