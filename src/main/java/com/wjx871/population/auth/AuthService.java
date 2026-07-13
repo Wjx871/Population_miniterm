@@ -4,6 +4,8 @@ import com.wjx871.population.audit.OperationLogService;
 import com.wjx871.population.common.BusinessException;
 import com.wjx871.population.security.AuthenticatedUser;
 import com.wjx871.population.security.JwtService;
+import com.wjx871.population.security.TokenRevocationService;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ public class AuthService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final OperationLogService operationLogService;
+    private final TokenRevocationService revocations;
 
     public LoginVO login(LoginDTO request, HttpServletRequest httpRequest) {
         SystemUser systemUser = authMapper.selectByUsername(request.getUsername().trim()).orElse(null);
@@ -62,6 +65,11 @@ public class AuthService implements UserDetailsService {
     }
 
     public void logout(AuthenticatedUser user, HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            Claims claims = jwtService.parseClaims(authorization.substring(7));
+            revocations.revoke(claims.getId(), claims.getExpiration().toInstant());
+        }
         operationLogService.record(user.userId(), "LOGOUT", "SUCCESS", null, request);
     }
 

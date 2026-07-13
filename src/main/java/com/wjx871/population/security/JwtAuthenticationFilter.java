@@ -4,6 +4,7 @@ import com.wjx871.population.auth.AuthService;
 import com.wjx871.population.common.BusinessException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final AuthService authService;
     private final SecurityResponseWriter responseWriter;
+    private final TokenRevocationService revocations;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -33,7 +35,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         try {
-            String username = jwtService.parseUsername(authorization.substring(7));
+            Claims claims = jwtService.parseClaims(authorization.substring(7));
+            if (revocations.isRevoked(claims.getId())) {
+                responseWriter.write(response, HttpServletResponse.SC_UNAUTHORIZED, "身份令牌已撤销");
+                return;
+            }
+            String username = claims.getSubject();
             AuthenticatedUser user = authService.loadUser(username);
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
