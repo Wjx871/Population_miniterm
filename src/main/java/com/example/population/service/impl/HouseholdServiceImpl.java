@@ -21,6 +21,7 @@ import com.example.population.mapper.PersonMapper;
 import com.example.population.service.ApplicationMaterialService;
 import com.example.population.service.HouseholdService;
 import com.example.population.util.DataScopeHelper;
+import com.example.population.util.DictionaryValidator;
 import com.example.population.util.PageUtil;
 import com.example.population.util.SafeLike;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class HouseholdServiceImpl extends ServiceImpl<HouseholdMapper, Household
     private final HouseholdMemberMapper householdMemberMapper;
     private final PersonMapper personMapper;
     private final ApplicationMaterialService applicationMaterialService;
+    private final DictionaryValidator dictionaryValidator;
 
     @Override
     @DataScope(DataScope.Type.HOUSEHOLD)
@@ -81,6 +83,11 @@ public class HouseholdServiceImpl extends ServiceImpl<HouseholdMapper, Household
     public Household establishHousehold(HouseholdCreateDTO dto) {
         // 最低必交材料闸门：身份证明 + 户口簿/住所证明（二选一）必须齐备且已核验
         applicationMaterialService.assertRequiredVerified(dto.getApplicationId(), "HOUSEHOLD_ESTABLISH");
+        // 字典合法性（户类型 + 状态）
+        dictionaryValidator.assertDictEnabled("HOUSEHOLD_TYPE", dto.getHouseholdTypeCode(), "户类型");
+        if (dto.getStatus() != null && !dto.getStatus().isBlank()) {
+            dictionaryValidator.assertDictEnabled("HOUSEHOLD_STATUS", dto.getStatus(), "户状态");
+        }
         Household existing = baseMapper.findByHouseholdNoForUpdate(dto.getHouseholdNo());
         if (existing != null) {
             throw new DuplicateException("户号[" + dto.getHouseholdNo() + "]已被占用");
@@ -101,6 +108,11 @@ public class HouseholdServiceImpl extends ServiceImpl<HouseholdMapper, Household
             Person p = personMapper.selectById(h.getHeadPersonId());
             if (p == null) {
                 throw new NotFoundException("户主人口[" + h.getHeadPersonId() + "]不存在");
+            }
+            // P1-3：户主身份证号校验。若户主的身份类型为 ID_CARD，校验其合法性；
+            // 任意 VALIDATION 失败直接 fail-fast 在立户流程里，避免脏数据进入家户成员。
+            if ("ID_CARD".equalsIgnoreCase(p.getIdentityTypeCode())) {
+                com.example.population.util.IdCardValidator.assertValid(p.getIdentityNo());
             }
             HouseholdMember head = new HouseholdMember();
             head.setHouseholdId(h.getHouseholdId());

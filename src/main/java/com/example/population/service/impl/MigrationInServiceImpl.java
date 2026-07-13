@@ -18,6 +18,7 @@ import com.example.population.mapper.PersonMapper;
 import com.example.population.mapper.ResidenceArchiveMapper;
 import com.example.population.mapper.ResidenceRegistrationMapper;
 import com.example.population.service.MigrationInService;
+import com.example.population.util.DictionaryValidator;
 import com.example.population.util.PageUtil;
 import com.example.population.util.SafeLike;
 import com.example.population.util.SnapshotCopier;
@@ -42,6 +43,7 @@ public class MigrationInServiceImpl extends ServiceImpl<MigrationInMapper, Migra
     private final HouseholdMemberMapper householdMemberMapper;
     private final ResidenceRegistrationMapper registrationMapper;
     private final ResidenceArchiveMapper archiveMapper;
+    private final DictionaryValidator dictionaryValidator;
 
     @Override
     public IPage<MigrationIn> page(long current, long size, String keyword, String inTypeCode,
@@ -73,11 +75,49 @@ public class MigrationInServiceImpl extends ServiceImpl<MigrationInMapper, Migra
     @Override
     @Transactional(rollbackFor = Exception.class)
     public MigrationIn createMigrationIn(MigrationInDTO dto) {
-        // 校验：同市跨区必须有来源区划
+        // 1. 字典合法性
+        dictionaryValidator.assertDictEnabled("IN_TYPE", dto.getInTypeCode(), "迁入类型");
+        if (StringUtils.hasText(dto.getReasonCode())) {
+            dictionaryValidator.assertDictEnabled("MIGRATION_REASON", dto.getReasonCode(), "迁入原因");
+        }
+        // 2. 同市跨区必须有来源区划
         if ("CROSS_DISTRICT".equalsIgnoreCase(dto.getInTypeCode())
                 && !StringUtils.hasText(dto.getFromRegionCode())) {
             throw new BizException(400, "同市跨区迁入(from_region_code)必填");
         }
+        // 3. 人口存在
+        Person person = personMapper.selectById(dto.getPersonId());
+        if (person == null) {
+            throw new NotFoundException("人口[" + dto.getPersonId() + "]不存在");
+        }
+        // 4. 目标家庭户存在且未销户
+        Household target = householdMapper.selectById(dto.getToHouseholdId());
+        if (target == null) {
+            throw new NotFoundException("目标家庭户[" + dto.getToHouseholdId() + "]不存在");
+        }
+        if ("CANCELLED".equalsIgnoreCase(target.getStatus())) {
+            throw new BizException(409, "目标家庭户[" + dto.getToHouseholdId() + "]已销户，无法迁入");
+        }
+        // 5. 严格去重：同 personId + transferBatchNo + inTypeCode 已存在 → 409
+        if (StringUtils.hasText(dto.getTransferBatchNo())) {
+            MigrationIn dup = baseMapper.findDuplicateByBatch(
+                    dto.getPersonId(), dto.getTransferBatchNo(), dto.getInTypeCode());
+            if (dup != null) {
+                throw new BizException(409,
+                        "人口[" + dto.getPersonId() + "]已在批次[" + dto.getTransferBatchNo()
+                                + "]中存在相同类型[" + dto.getInTypeCode() + "]的迁入记录 ["
+                                + dup.getInId() + "]，请勿重复提交");
+            }
+        }
+        // 6. 阻断同人未办结迁入
+        java.util.List<MigrationIn> pending = baseMapper.listPendingByPerson(dto.getPersonId());
+        if (!pending.isEmpty()) {
+            MigrationIn first = pending.get(0);
+            throw new BizException(409,
+                    "人口[" + dto.getPersonId() + "]存在尚未办结的迁入记录 ["
+                            + first.getInId() + "]，请先办结或撤回后再发起新迁入");
+        }
+        // 7. 写入主表
         MigrationIn in = new MigrationIn();
         in.setApplicationId(dto.getApplicationId());
         in.setPersonId(dto.getPersonId());

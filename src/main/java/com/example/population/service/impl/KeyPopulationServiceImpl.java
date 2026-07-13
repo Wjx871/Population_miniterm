@@ -13,6 +13,7 @@ import com.example.population.mapper.BusinessApplicationMapper;
 import com.example.population.mapper.KeyPopulationMapper;
 import com.example.population.mapper.PersonMapper;
 import com.example.population.service.KeyPopulationService;
+import com.example.population.util.DictionaryValidator;
 import com.example.population.util.PageUtil;
 import com.example.population.util.SafeLike;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class KeyPopulationServiceImpl extends ServiceImpl<KeyPopulationMapper, K
 
     private final PersonMapper personMapper;
     private final BusinessApplicationMapper businessApplicationMapper;
+    private final DictionaryValidator dictionaryValidator;
 
     @Override
     public IPage<KeyPopulation> page(long current, long size, String keyword, String keyTypeCode,
@@ -67,10 +69,28 @@ public class KeyPopulationServiceImpl extends ServiceImpl<KeyPopulationMapper, K
         if (!StringUtils.hasText(dto.getKeyTypeCode())) {
             throw new BizException(400, "重点类型（keyTypeCode）不能为空");
         }
+        // 字典合法性
+        dictionaryValidator.assertDictEnabled("KEY_TYPE", dto.getKeyTypeCode(), "重点类型");
+        if (StringUtils.hasText(dto.getManagementLevelCode())
+                && !"NORMAL".equalsIgnoreCase(dto.getManagementLevelCode())) {
+            // 设计文档未配置 KEY_MANAGEMENT_LEVEL 字典（仅约定 NORMAL 作为默认值），
+            // 非 NORMAL 取值不再做字典强校验；待业务侧补充字典后打开。
+        }
+        if (StringUtils.hasText(dto.getStatus())) {
+            dictionaryValidator.assertDictEnabled("KEY_STATUS", dto.getStatus(), "重点人口状态");
+        }
         // 2. 人员存在
         Person person = personMapper.selectById(dto.getPersonId());
         if (person == null) {
             throw new NotFoundException("人口[" + dto.getPersonId() + "]不存在，请先维护人口基础信息");
+        }
+        // P1-3：重点登记时联动校验身份证号格式。若身份证号格式有问题，阻断登记。
+        if ("ID_CARD".equalsIgnoreCase(person.getIdentityTypeCode())) {
+            com.example.population.util.IdCardValidator.assertValid(person.getIdentityNo());
+        }
+        // 同步校验人口手机号（不为空时）
+        if (StringUtils.hasText(person.getPhone())) {
+            com.example.population.util.PhoneValidator.assertValid(person.getPhone());
         }
         // 3. 登记申请单存在（重大业务）
         if (dto.getRegisterApplicationId() != null

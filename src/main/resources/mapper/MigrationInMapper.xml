@@ -8,4 +8,21 @@
         ORDER BY in_date, in_id
     </select>
 
+    <!-- 同 personId + transferBatchNo + inTypeCode 严格去重（创建前调用） -->
+    <select id="findDuplicateByBatch" resultType="com.example.population.entity.MigrationIn">
+        SELECT * FROM migration_in
+        WHERE person_id = #{personId}
+          AND transfer_batch_no = #{transferBatchNo}
+          AND in_type_code = #{inTypeCode}
+        LIMIT 1
+    </select>
+
+    <!-- 查找 personId 尚未办结的迁入记录（用于创建前阻断） -->
+    <select id="listPendingByPerson" resultType="com.example.population.entity.MigrationIn">
+        SELECT * FROM migration_in
+        WHERE person_id = #{personId}
+          AND completed_at IS NULL
+        ORDER BY in_date DESC, in_id DESC
+    </select>
+
 </mapper>

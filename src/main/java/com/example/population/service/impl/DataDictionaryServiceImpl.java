@@ -40,4 +40,16 @@ public class DataDictionaryServiceImpl extends ServiceImpl<DataDictionaryMapper,
                 .last("LIMIT 1"));
         return d == null ? null : d.getDictLabel();
     }
+
+    @Override
+    public boolean existsEnabled(String dictType, String dictCode) {
+        if (!StringUtils.hasText(dictType) || !StringUtils.hasText(dictCode)) {
+            return false;
+        }
+        Long count = baseMapper.selectCount(new LambdaQueryWrapper<DataDictionary>()
+                .eq(DataDictionary::getDictType, dictType)
+                .eq(DataDictionary::getDictCode, dictCode)
+                .eq(DataDictionary::getStatus, "ENABLED"));
+        return count != null && count > 0;
+    }
 }

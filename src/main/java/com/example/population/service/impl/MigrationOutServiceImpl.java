@@ -18,6 +18,7 @@ import com.example.population.mapper.PersonMapper;
 import com.example.population.mapper.ResidenceArchiveMapper;
 import com.example.population.mapper.ResidenceRegistrationMapper;
 import com.example.population.service.MigrationOutService;
+import com.example.population.util.DictionaryValidator;
 import com.example.population.util.PageUtil;
 import com.example.population.util.SafeLike;
 import com.example.population.util.SnapshotCopier;
@@ -56,6 +57,7 @@ public class MigrationOutServiceImpl extends ServiceImpl<MigrationOutMapper, Mig
     private final HouseholdMemberMapper householdMemberMapper;
     private final ResidenceRegistrationMapper registrationMapper;
     private final ResidenceArchiveMapper archiveMapper;
+    private final DictionaryValidator dictionaryValidator;
 
     @Override
     public IPage<MigrationOut> page(long current, long size, String keyword, String outTypeCode,
@@ -87,6 +89,21 @@ public class MigrationOutServiceImpl extends ServiceImpl<MigrationOutMapper, Mig
     @Override
     @Transactional(rollbackFor = Exception.class)
     public MigrationOut createMigrationOut(MigrationOutDTO dto) {
+        // 字典合法性
+        dictionaryValidator.assertDictEnabled("OUT_TYPE", dto.getOutTypeCode(), "迁出类型");
+        if (StringUtils.hasText(dto.getReasonCode())) {
+            dictionaryValidator.assertDictEnabled("MIGRATION_REASON", dto.getReasonCode(), "迁出原因");
+        }
+        // 业务前置：人口档案状态必须 ACTIVE（MIGRATED_OUT/CANCELLED/FLOATING 不可再迁出，避免重复）
+        Person person = personMapper.selectById(dto.getPersonId());
+        if (person == null) {
+            throw new NotFoundException("人口[" + dto.getPersonId() + "]不存在");
+        }
+        if (!"ACTIVE".equalsIgnoreCase(person.getRecordStatusCode())) {
+            throw new BizException(409,
+                    "人口[" + dto.getPersonId() + "]档案状态为 " + person.getRecordStatusCode()
+                            + "，不可重复办理迁出");
+        }
         MigrationOut out = new MigrationOut();
         out.setApplicationId(dto.getApplicationId());
         out.setPersonId(dto.getPersonId());
