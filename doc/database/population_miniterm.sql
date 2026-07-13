@@ -258,13 +258,23 @@ CREATE TABLE IF NOT EXISTS key_population (
     person_id BIGINT NOT NULL,
     key_type VARCHAR(50) NOT NULL,
     management_level VARCHAR(20) NULL,
+    register_reason VARCHAR(500) NULL,
     register_date DATE NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT '有效',
+    responsible_department_id BIGINT NULL,
+    responsible_user_id BIGINT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    release_reason VARCHAR(500) NULL,
+    release_date DATE NULL,
+    source_application_id BIGINT NULL,
+    version INT NOT NULL DEFAULT 0,
+    active_flag TINYINT GENERATED ALWAYS AS (CASE WHEN status='ACTIVE' THEN 1 ELSE NULL END) STORED,
     remark VARCHAR(255) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (key_id),
     KEY idx_key_population_person_id (person_id),
+    UNIQUE KEY uk_key_population_active(person_id,key_type,active_flag),
+    KEY idx_key_population_query(key_type,status,management_level,register_date),
     CONSTRAINT fk_key_population_person FOREIGN KEY (person_id) REFERENCES person (person_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -275,12 +285,16 @@ CREATE TABLE IF NOT EXISTS certificate (
     certificate_no VARCHAR(50) NOT NULL,
     issue_date DATE NULL,
     expire_date DATE NULL,
-    status VARCHAR(20) NOT NULL DEFAULT '有效',
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    cancel_reason VARCHAR(500) NULL,
+    cancelled_at DATETIME NULL,
+    version INT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (certificate_id),
     UNIQUE KEY uk_certificate_no (certificate_no),
     KEY idx_certificate_person_id (person_id),
+    KEY idx_certificate_type_status_expire (certificate_type,status,expire_date),
     CONSTRAINT fk_certificate_person FOREIGN KEY (person_id) REFERENCES person (person_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -441,7 +455,8 @@ CREATE TABLE IF NOT EXISTS data_dictionary (
     dict_code VARCHAR(50) NOT NULL,
     dict_name VARCHAR(100) NOT NULL,
     sort_no INT NULL DEFAULT 0,
-    status VARCHAR(20) NOT NULL DEFAULT '启用',
+    status VARCHAR(20) NOT NULL DEFAULT 'ENABLED',
+    version INT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (dict_id),
@@ -481,7 +496,7 @@ INSERT INTO residents (
     '张三',
     'MALE',
     '1999-01-01',
-    '110101199901010011',
+    '110101199901010010',
     '13800138000',
     '北京市',
     '北京市',
@@ -628,3 +643,41 @@ INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p
  (r.role_code='POPULATION_MANAGER' AND p.permission_code IN('data:export:normal','data:export:sensitive:apply','data:export:log:view','certificate:view')) OR
  (r.role_code='HOUSEHOLD_MANAGER' AND p.permission_code IN('sensitive-data:view-full','data:export:normal','data:export:sensitive:apply','data:export:sensitive:execute','data:export:sensitive:download','data:export:log:view','certificate:view')) OR
  (r.role_code='APPROVER' AND p.permission_code IN('data:export:log:view','data:export:sensitive:download','certificate:view')) OR r.role_code='SYSTEM_ADMIN';
+
+-- Phase 08: canonical person model and household master-data access paths.
+-- The legacy residents table is retained for upgraded databases, but production Java no longer reads or writes it.
+DROP PROCEDURE IF EXISTS phase08_add_index;
+
+-- Phase 09-A: administrative region reference data.
+CREATE TABLE IF NOT EXISTS admin_region(region_id BIGINT NOT NULL AUTO_INCREMENT,region_code VARCHAR(20) NOT NULL,region_name VARCHAR(100) NOT NULL,parent_id BIGINT NULL,region_level INT NOT NULL,full_name VARCHAR(255) NOT NULL,sort_no INT NOT NULL DEFAULT 0,status VARCHAR(20) NOT NULL DEFAULT 'ENABLED',version INT NOT NULL DEFAULT 0,created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY(region_id),UNIQUE KEY uk_admin_region_code(region_code),KEY idx_admin_region_parent_status(parent_id,status,sort_no),KEY idx_admin_region_level_status(region_level,status,sort_no),CONSTRAINT fk_admin_region_parent FOREIGN KEY(parent_id) REFERENCES admin_region(region_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO admin_region(region_code,region_name,parent_id,region_level,full_name,sort_no,status) VALUES('110000','示例省',NULL,1,'示例省',10,'ENABLED'),('120000','外区示例省',NULL,1,'外区示例省',20,'ENABLED') ON DUPLICATE KEY UPDATE region_name=VALUES(region_name),full_name=VALUES(full_name);
+INSERT INTO admin_region(region_code,region_name,parent_id,region_level,full_name,sort_no,status) SELECT '110100','示例市',region_id,2,'示例省示例市',10,'ENABLED' FROM admin_region WHERE region_code='110000' ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id);
+INSERT INTO admin_region(region_code,region_name,parent_id,region_level,full_name,sort_no,status) SELECT '110101','示例东区',region_id,3,'示例省示例市示例东区',10,'ENABLED' FROM admin_region WHERE region_code='110100' ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id);
+INSERT INTO admin_region(region_code,region_name,parent_id,region_level,full_name,sort_no,status) SELECT '110105','示例西区',region_id,3,'示例省示例市示例西区',20,'ENABLED' FROM admin_region WHERE region_code='110100' ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id);
+INSERT INTO admin_region(region_code,region_name,parent_id,region_level,full_name,sort_no,status) SELECT '110105001','示例街道',region_id,4,'示例省示例市示例西区示例街道',10,'ENABLED' FROM admin_region WHERE region_code='110105' ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id);
+INSERT INTO admin_region(region_code,region_name,parent_id,region_level,full_name,sort_no,status) SELECT '110105001001','示例社区',region_id,5,'示例省示例市示例西区示例街道示例社区',10,'ENABLED' FROM admin_region WHERE region_code='110105001' ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id);
+INSERT INTO sys_permission(permission_code,permission_name,module_name,permission_type,status) VALUES('region:view','查看行政区划','REGION','API','ENABLED'),('region:manage','维护行政区划','REGION','API','ENABLED') ON DUPLICATE KEY UPDATE permission_name=VALUES(permission_name),status='ENABLED';
+INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE p.permission_code='region:view' OR (r.role_code='SYSTEM_ADMIN' AND p.permission_code='region:manage');
+INSERT INTO data_dictionary(dict_type,dict_code,dict_name,sort_no,status) VALUES('CERTIFICATE_TYPE','PASSPORT','护照',10,'ENABLED'),('CERTIFICATE_TYPE','DRIVER_LICENSE','机动车驾驶证',20,'ENABLED'),('CERTIFICATE_TYPE','OTHER','其他证件',99,'ENABLED'),('ETHNICITY','HAN','汉族',10,'ENABLED'),('HOUSEHOLD_RELATIONSHIP','HEAD','户主',10,'ENABLED'),('HOUSEHOLD_RELATIONSHIP','SPOUSE','配偶',20,'ENABLED'),('HOUSEHOLD_TYPE','FAMILY','家庭户',10,'ENABLED'),('MIGRATION_REASON','WORK','工作迁移',10,'ENABLED'),('CANCELLATION_REASON','DEATH','死亡',10,'ENABLED'),('FLOATING_RESIDENCE_REASON','WORK','务工',10,'ENABLED'),('KEY_POPULATION_TYPE','OTHER','其他',99,'ENABLED') ON DUPLICATE KEY UPDATE dict_name=VALUES(dict_name),sort_no=VALUES(sort_no);
+INSERT INTO sys_permission(permission_code,permission_name,module_name,permission_type,status) VALUES('dictionary:view','查看数据字典','DICTIONARY','API','ENABLED'),('dictionary:manage','维护数据字典','DICTIONARY','API','ENABLED') ON DUPLICATE KEY UPDATE permission_name=VALUES(permission_name),status='ENABLED';
+INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE p.permission_code='dictionary:view' OR (r.role_code='SYSTEM_ADMIN' AND p.permission_code='dictionary:manage');
+INSERT INTO sys_permission(permission_code,permission_name,module_name,permission_type,status) VALUES('certificate:edit','维护通用证件','CERTIFICATE','API','ENABLED') ON DUPLICATE KEY UPDATE permission_name=VALUES(permission_name),status='ENABLED';
+INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE p.permission_code='certificate:edit' AND r.role_code IN('POPULATION_MANAGER','SYSTEM_ADMIN');
+
+-- Phase 10: key population professional application, current record and append-only history.
+CREATE TABLE IF NOT EXISTS key_population_application(detail_id BIGINT NOT NULL AUTO_INCREMENT,application_id BIGINT NOT NULL,operation_type VARCHAR(20) NOT NULL,record_id BIGINT NULL,person_id BIGINT NOT NULL,population_type VARCHAR(50) NOT NULL,attention_level VARCHAR(20) NOT NULL,reason VARCHAR(500) NOT NULL,event_date DATE NOT NULL,responsible_department_id BIGINT NULL,responsible_user_id BIGINT NULL,business_status VARCHAR(30) NOT NULL DEFAULT 'DRAFT',version INT NOT NULL DEFAULT 0,created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY(detail_id),UNIQUE KEY uk_key_population_application(application_id),KEY idx_key_app_person_type_status(person_id,population_type,operation_type,business_status),KEY idx_key_app_record_status(record_id,operation_type,business_status),CONSTRAINT fk_key_app_application FOREIGN KEY(application_id) REFERENCES business_application(application_id),CONSTRAINT fk_key_app_record FOREIGN KEY(record_id) REFERENCES key_population(key_id),CONSTRAINT fk_key_app_person FOREIGN KEY(person_id) REFERENCES person(person_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS key_population_history(history_id BIGINT NOT NULL AUTO_INCREMENT,record_id BIGINT NOT NULL,person_id BIGINT NOT NULL,event_type VARCHAR(30) NOT NULL,previous_status VARCHAR(20) NULL,new_status VARCHAR(20) NOT NULL,reason VARCHAR(500) NULL,source_application_id BIGINT NOT NULL,operator_id BIGINT NOT NULL,occurred_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,snapshot_json JSON NOT NULL,PRIMARY KEY(history_id),UNIQUE KEY uk_key_history_application_event(source_application_id,event_type),KEY idx_key_history_record_time(record_id,occurred_at),CONSTRAINT fk_key_history_record FOREIGN KEY(record_id) REFERENCES key_population(key_id),CONSTRAINT fk_key_history_person FOREIGN KEY(person_id) REFERENCES person(person_id),CONSTRAINT fk_key_history_application FOREIGN KEY(source_application_id) REFERENCES business_application(application_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO sys_permission(permission_code,permission_name,module_name,permission_type,status) VALUES('key-population:view','查看重点人口','KEY_POPULATION','API','ENABLED'),('key-population:apply','申请重点人口业务','KEY_POPULATION','API','ENABLED'),('key-population:execute','执行重点人口业务','KEY_POPULATION','API','ENABLED') ON DUPLICATE KEY UPDATE permission_name=VALUES(permission_name),status='ENABLED';
+INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE p.permission_code='key-population:view' OR (r.role_code='POPULATION_MANAGER' AND p.permission_code IN('key-population:apply','key-population:execute')) OR r.role_code='SYSTEM_ADMIN';
+DELIMITER $$
+CREATE PROCEDURE phase08_add_index(IN p_table VARCHAR(64), IN p_index VARCHAR(64), IN p_ddl TEXT)
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name=p_table AND index_name=p_index) THEN
+    SET @phase08_ddl=p_ddl; PREPARE phase08_stmt FROM @phase08_ddl; EXECUTE phase08_stmt; DEALLOCATE PREPARE phase08_stmt;
+  END IF;
+END$$
+DELIMITER ;
+CALL phase08_add_index('household','idx_household_region_status','CREATE INDEX idx_household_region_status ON household(region_code,status)');
+CALL phase08_add_index('household_member','idx_household_member_household_status','CREATE INDEX idx_household_member_household_status ON household_member(household_id,status)');
+CALL phase08_add_index('household_member','idx_household_member_person_status','CREATE INDEX idx_household_member_person_status ON household_member(person_id,status)');
+DROP PROCEDURE IF EXISTS phase08_add_index;

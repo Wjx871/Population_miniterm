@@ -1,0 +1,3 @@
+package com.wjx871.population.reference;
+import java.util.*;import org.apache.ibatis.annotations.*;
+@Mapper public interface AdminRegionMapper {Optional<AdminRegion> findByCode(String code);List<AdminRegion> search(@Param("parentCode")String parentCode,@Param("level")Integer level,@Param("status")String status,@Param("keyword")String keyword);void insert(AdminRegion value);int update(@Param("value")AdminRegion value,@Param("version")Integer version);int updateStatus(@Param("code")String code,@Param("from")String from,@Param("to")String to,@Param("version")Integer version);int countEnabledChildren(Long parentId);}

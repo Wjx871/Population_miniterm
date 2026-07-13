@@ -27,6 +27,7 @@ public class PersonService {
 
     private final PersonMapper personMapper;
     private final SensitiveDataMaskingService masking;
+    private final IdCardValidator idCards;
 
     @Transactional(readOnly = true)
     public Page<Person> search(String name, String idCard, String status, Pageable pageable) {
@@ -65,14 +66,15 @@ public class PersonService {
 
     @Transactional
     public Person create(PersonRequest request) {
-        String idCard = normalizeIdCard(request.idCard());
+        IdCardValidator.Identity identity = idCards.validate(request.idCard(), request.birthDate(), request.gender());
+        String idCard = identity.normalized();
         if (personMapper.countByIdCard(idCard) > 0) {
             throw new DuplicateKeyException("ID card already exists");
         }
 
         LocalDateTime now = LocalDateTime.now();
         Person person = new Person();
-        apply(request, person);
+        apply(request, person, identity);
         person.setIdCard(idCard);
         person.setCreatedAt(now);
         person.setUpdatedAt(now);
@@ -82,30 +84,26 @@ public class PersonService {
 
     @Transactional
     public Person update(Long personId, PersonRequest request) {
-        Person person = get(personId);
-        String idCard = normalizeIdCard(request.idCard());
+        Person person = personMapper.selectScopedById(personId,DataScopeCriteria.current())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "No data-scope access to person: " + personId));
+        IdCardValidator.Identity identity = idCards.validate(request.idCard(), request.birthDate(), request.gender());
+        String idCard = identity.normalized();
         Optional<Person> duplicated = personMapper.selectByIdCard(idCard);
         if (duplicated.isPresent() && !duplicated.get().getPersonId().equals(personId)) {
             throw new DuplicateKeyException("ID card already exists");
         }
 
-        apply(request, person);
+        apply(request, person, identity);
         person.setIdCard(idCard);
         person.setUpdatedAt(LocalDateTime.now());
         personMapper.updatePerson(person);
         return get(personId);
     }
 
-    @Transactional
-    public void delete(Long personId) {
-        get(personId);
-        personMapper.updateStatusToDeleted(personId, PersonStatus.DELETED);
-    }
-
-    private void apply(PersonRequest request, Person person) {
+    private void apply(PersonRequest request, Person person, IdCardValidator.Identity identity) {
         person.setName(request.name().trim());
-        person.setGender(request.gender().trim());
-        person.setBirthDate(request.birthDate());
+        person.setGender(identity.gender());
+        person.setBirthDate(request.birthDate() == null ? identity.birthDate() : request.birthDate());
         person.setEthnicity(trimToNull(request.ethnicity()));
         person.setPhone(trimToNull(request.phone()));
         person.setCurrentAddress(trimToNull(request.currentAddress()));

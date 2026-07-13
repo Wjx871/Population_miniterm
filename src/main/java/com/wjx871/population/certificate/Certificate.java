@@ -1,0 +1,2 @@
+package com.wjx871.population.certificate;import java.time.*;import lombok.Data;
+@Data public class Certificate {private Long certificateId;private Long personId;private String personName;private String personIdCard;private String personPhone;private String personAddress;private String certificateType;private String certificateNo;private LocalDate issueDate;private LocalDate expireDate;private String status;private String cancelReason;private LocalDateTime cancelledAt;private Integer version;private LocalDateTime createdAt;private LocalDateTime updatedAt;}

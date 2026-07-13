@@ -127,7 +127,7 @@ class AuthRbacIntegrationTest {
         mockMvc.perform(post("/api/persons")
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(personJson("110101199901019999")))
+                        .content(personJson("110101199901019998")))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(403));
         assertThat(jdbcTemplate.queryForObject(
@@ -141,7 +141,7 @@ class AuthRbacIntegrationTest {
         mockMvc.perform(post("/api/persons")
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(personJson("110101199901018888")))
+                        .content(personJson("110101199901018899")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value(201));
     }
