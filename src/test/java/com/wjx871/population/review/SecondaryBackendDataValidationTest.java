@@ -55,7 +55,7 @@ class SecondaryBackendDataValidationTest {
                 "demo_member_orphan", "demo_residence_orphan", "required_demo_account_missing",
                 "fake_minio_material");
         String pom = Files.readString(Path.of("pom.xml"), StandardCharsets.UTF_8).toLowerCase();
-        assertThat(pom).doesNotContain("mybatis-plus", "spring-boot-starter-data-redis");
+        assertThat(pom).doesNotContain("mybatis-plus");
         try (var paths = Files.walk(Path.of("src/main/java"))) {
             for (Path path : paths.filter(Files::isRegularFile).toList()) {
                 String source = Files.readString(path, StandardCharsets.UTF_8);

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wjx871.population.audit.LogQueryMapper">
+ <sql id="scope"><if test="scope.dataScope.name()!='ALL'"><choose><when test="scope.dataScope.name()=='SELF'">AND l.user_id=#{scope.userId}</when><when test="scope.dataScope.name()=='DEPARTMENT'">AND u.department_id=#{scope.departmentId}</when><otherwise>AND d.region_code=#{scope.regionCode}</otherwise></choose></if></sql>
+ <sql id="where"><where><if test="loginOnly">AND l.operation_type IN('LOGIN_SUCCESS','LOGIN_FAILED','LOGOUT')</if><if test="username!=null">AND u.username LIKE CONCAT('%',#{username},'%')</if><if test="operationType!=null">AND l.operation_type=#{operationType}</if><if test="module!=null">AND l.module_name=#{module}</if><if test="result!=null">AND l.operation_result=#{result}</if><if test="ip!=null">AND l.ip_address=#{ip}</if><if test="from!=null">AND l.operation_time&gt;=#{from}</if><if test="to!=null">AND l.operation_time&lt;=#{to}</if><include refid="scope"/></where></sql>
+ <sql id="from">FROM operation_log l LEFT JOIN sys_user u ON u.user_id=l.user_id LEFT JOIN sys_department d ON d.department_id=u.department_id</sql>
+ <select id="count" resultType="long">SELECT COUNT(*) <include refid="from"/> <include refid="where"/></select>
+ <select id="search" resultType="com.wjx871.population.audit.LogQueryView">SELECT l.log_id,l.user_id,u.username,l.operation_type,l.module_name,l.request_path,l.request_method,l.operation_time,l.ip_address,l.operation_result,l.error_message,l.detail <include refid="from"/> <include refid="where"/> ORDER BY l.operation_time DESC,l.log_id DESC LIMIT #{limit} OFFSET #{offset}</select>
+ <select id="find" resultType="com.wjx871.population.audit.LogQueryView">SELECT l.log_id,l.user_id,u.username,l.operation_type,l.module_name,l.request_path,l.request_method,l.operation_time,l.ip_address,l.operation_result,l.error_message,l.detail <include refid="from"/> WHERE l.log_id=#{id} <include refid="scope"/></select>
+</mapper>
