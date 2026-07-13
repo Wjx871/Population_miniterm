@@ -23,6 +23,7 @@ $env:JWT_SECRET='<32-byte-or-longer-random-secret>'
 $env:REDIS_ENABLED='false'
 $env:APP_UPLOAD_DIR='.\data\uploads'
 $env:EXPORT_DIR='.\data\exports'
+$env:LOG_DIR='.\logs'
 java -jar target\population-miniterm-0.0.1-SNAPSHOT.jar
 ```
 
