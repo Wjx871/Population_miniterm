@@ -688,6 +688,29 @@ CALL backend_v1_add_index('migration_in','idx_migration_in_query','CREATE INDEX 
 CALL backend_v1_add_index('migration_out','idx_migration_out_query','CREATE INDEX idx_migration_out_query ON migration_out(out_date,business_status,migration_type,person_id)');
 DROP PROCEDURE IF EXISTS backend_v1_add_index;
 DROP PROCEDURE IF EXISTS backend_v1_add_fk;
+
+-- Backend V1 canonical five-role seed. Kept at the end so older partially populated
+-- installations are repaired before release verification.
+INSERT INTO sys_role(role_code,role_name,role_level,data_scope,description,status) VALUES
+('QUERY_VIEWER','查询统计人员','L1','DEPARTMENT','只读查询与统计','ENABLED'),
+('POPULATION_MANAGER','人口信息管理人员','L2','REGION','人口信息经办','ENABLED'),
+('HOUSEHOLD_MANAGER','户籍管理人员','L2','REGION','户籍信息经办','ENABLED'),
+('APPROVER','审批人员','L3','REGION','业务审批但不自动获得执行权限','ENABLED'),
+('SYSTEM_ADMIN','系统管理员','L3','ALL','系统管理','ENABLED')
+ON DUPLICATE KEY UPDATE role_level=VALUES(role_level),data_scope=VALUES(data_scope),description=VALUES(description),status='ENABLED';
+INSERT INTO sys_user(username,password_hash,role_id,department_id,real_name,status)
+SELECT seed.username,'$2a$10$hqLjVyldvMDp7tlJcpkDZOaTT1dCAuSA5I7FgRfD/B7QXluT8ArB.',r.role_id,d.department_id,seed.real_name,'ENABLED'
+FROM (SELECT 'viewer' username,'QUERY_VIEWER' role_code,'QUERY' department_code,'查询统计人员' real_name
+ UNION ALL SELECT 'population','POPULATION_MANAGER','POPULATION','人口信息管理人员'
+ UNION ALL SELECT 'household','HOUSEHOLD_MANAGER','HOUSEHOLD','户籍管理人员'
+ UNION ALL SELECT 'approver','APPROVER','APPROVAL','审批人员'
+ UNION ALL SELECT 'admin','SYSTEM_ADMIN','SYSTEM','系统管理员') seed
+JOIN sys_role r ON r.role_code=seed.role_code JOIN sys_department d ON d.department_code=seed.department_code
+ON DUPLICATE KEY UPDATE role_id=VALUES(role_id),department_id=VALUES(department_id),real_name=VALUES(real_name),status='ENABLED';
+INSERT IGNORE INTO sys_role_permission(role_id,permission_id)
+SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE
+(r.role_code='QUERY_VIEWER' AND p.permission_code IN('population:view','household:view','migration:view','statistics:view','log:view','application:view','cancellation:view','cancellation:archive:view','region:view','dictionary:view','certificate:view','key-population:view'))
+OR r.role_code='SYSTEM_ADMIN';
 DELIMITER $$
 CREATE PROCEDURE backend_v1_add_fk()
 BEGIN
@@ -710,3 +733,15 @@ CALL phase08_add_index('household','idx_household_region_status','CREATE INDEX i
 CALL phase08_add_index('household_member','idx_household_member_household_status','CREATE INDEX idx_household_member_household_status ON household_member(household_id,status)');
 CALL phase08_add_index('household_member','idx_household_member_person_status','CREATE INDEX idx_household_member_person_status ON household_member(person_id,status)');
 DROP PROCEDURE IF EXISTS phase08_add_index;
+
+-- ASCII-only repair seed avoids dependence on client source-file encoding.
+INSERT INTO sys_role(role_code,role_name,role_level,data_scope,description,status) VALUES
+('QUERY_VIEWER','Query Viewer','L1','DEPARTMENT','Read-only queries and statistics','ENABLED')
+ON DUPLICATE KEY UPDATE role_level='L1',data_scope='DEPARTMENT',status='ENABLED';
+INSERT INTO sys_user(username,password_hash,role_id,department_id,real_name,status)
+SELECT 'viewer','$2a$10$hqLjVyldvMDp7tlJcpkDZOaTT1dCAuSA5I7FgRfD/B7QXluT8ArB.',r.role_id,d.department_id,'Query Viewer','ENABLED'
+FROM sys_role r JOIN sys_department d ON d.department_code='QUERY' WHERE r.role_code='QUERY_VIEWER'
+ON DUPLICATE KEY UPDATE role_id=VALUES(role_id),department_id=VALUES(department_id),real_name=VALUES(real_name),status='ENABLED';
+INSERT IGNORE INTO sys_role_permission(role_id,permission_id)
+SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p
+WHERE r.role_code='QUERY_VIEWER' AND p.permission_code IN('population:view','household:view','migration:view','statistics:view','log:view','application:view','cancellation:view','cancellation:archive:view','region:view','dictionary:view','certificate:view','key-population:view');
