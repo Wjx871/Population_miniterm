@@ -1,0 +1,11 @@
+-- Every result must be zero. Run after initialization or upgrade.
+SELECT 'orphan_residence_person' check_name,COUNT(*) abnormal_count FROM residence r LEFT JOIN person p ON p.person_id=r.person_id WHERE p.person_id IS NULL
+UNION ALL SELECT 'orphan_member_person',COUNT(*) FROM household_member m LEFT JOIN person p ON p.person_id=m.person_id WHERE p.person_id IS NULL
+UNION ALL SELECT 'orphan_member_household',COUNT(*) FROM household_member m LEFT JOIN household h ON h.household_id=m.household_id WHERE h.household_id IS NULL
+UNION ALL SELECT 'multiple_active_residence',COUNT(*) FROM (SELECT person_id FROM residence WHERE status='ACTIVE' GROUP BY person_id HAVING COUNT(*)>1) x
+UNION ALL SELECT 'multiple_active_membership',COUNT(*) FROM (SELECT person_id FROM household_member WHERE status='ACTIVE' GROUP BY person_id HAVING COUNT(*)>1) x
+UNION ALL SELECT 'invalid_household_head',COUNT(*) FROM household h LEFT JOIN household_member m ON m.household_id=h.household_id AND m.person_id=h.head_person_id AND m.status='ACTIVE' WHERE h.status='ACTIVE' AND (h.head_person_id IS NULL OR m.member_id IS NULL)
+UNION ALL SELECT 'completed_migration_without_application',COUNT(*) FROM migration_in x LEFT JOIN business_application a ON a.application_id=x.application_id WHERE x.business_status='COMPLETED' AND a.status<>'COMPLETED'
+UNION ALL SELECT 'completed_cancellation_without_application',COUNT(*) FROM cancellation_record x LEFT JOIN business_application a ON a.application_id=x.application_id WHERE x.business_status='COMPLETED' AND a.status<>'COMPLETED'
+UNION ALL SELECT 'duplicate_active_key_population',COUNT(*) FROM (SELECT person_id,key_type FROM key_population WHERE status='ACTIVE' GROUP BY person_id,key_type HAVING COUNT(*)>1) x
+UNION ALL SELECT 'approved_specialized_without_detail',COUNT(*) FROM business_application a WHERE a.status='APPROVED' AND ((a.business_type='MIGRATION_IN' AND NOT EXISTS(SELECT 1 FROM migration_in x WHERE x.application_id=a.application_id)) OR (a.business_type='MIGRATION_OUT' AND NOT EXISTS(SELECT 1 FROM migration_out x WHERE x.application_id=a.application_id)) OR (a.business_type IN('PERSON_CANCELLATION','HOUSEHOLD_CANCELLATION') AND NOT EXISTS(SELECT 1 FROM cancellation_record x WHERE x.application_id=a.application_id)));

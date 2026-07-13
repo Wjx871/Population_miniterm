@@ -669,6 +669,58 @@ CREATE TABLE IF NOT EXISTS key_population_application(detail_id BIGINT NOT NULL 
 CREATE TABLE IF NOT EXISTS key_population_history(history_id BIGINT NOT NULL AUTO_INCREMENT,record_id BIGINT NOT NULL,person_id BIGINT NOT NULL,event_type VARCHAR(30) NOT NULL,previous_status VARCHAR(20) NULL,new_status VARCHAR(20) NOT NULL,reason VARCHAR(500) NULL,source_application_id BIGINT NOT NULL,operator_id BIGINT NOT NULL,occurred_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,snapshot_json JSON NOT NULL,PRIMARY KEY(history_id),UNIQUE KEY uk_key_history_application_event(source_application_id,event_type),KEY idx_key_history_record_time(record_id,occurred_at),CONSTRAINT fk_key_history_record FOREIGN KEY(record_id) REFERENCES key_population(key_id),CONSTRAINT fk_key_history_person FOREIGN KEY(person_id) REFERENCES person(person_id),CONSTRAINT fk_key_history_application FOREIGN KEY(source_application_id) REFERENCES business_application(application_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 INSERT INTO sys_permission(permission_code,permission_name,module_name,permission_type,status) VALUES('key-population:view','查看重点人口','KEY_POPULATION','API','ENABLED'),('key-population:apply','申请重点人口业务','KEY_POPULATION','API','ENABLED'),('key-population:execute','执行重点人口业务','KEY_POPULATION','API','ENABLED') ON DUPLICATE KEY UPDATE permission_name=VALUES(permission_name),status='ENABLED';
 INSERT IGNORE INTO sys_role_permission(role_id,permission_id) SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE p.permission_code='key-population:view' OR (r.role_code='POPULATION_MANAGER' AND p.permission_code IN('key-population:apply','key-population:execute')) OR r.role_code='SYSTEM_ADMIN';
+
+-- Backend V1 final query and upgrade-path structure parity.
+DROP PROCEDURE IF EXISTS backend_v1_add_index;
+DELIMITER $$
+CREATE PROCEDURE backend_v1_add_index(IN p_table VARCHAR(64),IN p_index VARCHAR(64),IN p_ddl TEXT)
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name=p_table AND index_name=p_index) THEN
+  SET @backend_v1_ddl=p_ddl;PREPARE backend_v1_stmt FROM @backend_v1_ddl;EXECUTE backend_v1_stmt;DEALLOCATE PREPARE backend_v1_stmt;
+ END IF;
+END$$
+DELIMITER ;
+CALL backend_v1_add_index('cancellation_record','idx_cancellation_region_created','CREATE INDEX idx_cancellation_region_created ON cancellation_record(region_code_snapshot,created_at)');
+CALL backend_v1_add_index('household_archive','idx_household_archive_no','CREATE INDEX idx_household_archive_no ON household_archive(household_no_snapshot)');
+CALL backend_v1_add_index('person','idx_person_query','CREATE INDEX idx_person_query ON person(current_status_code,gender,birth_date)');
+CALL backend_v1_add_index('operation_log','idx_operation_log_query','CREATE INDEX idx_operation_log_query ON operation_log(operation_time,operation_type,module_name,operation_result,user_id)');
+CALL backend_v1_add_index('migration_in','idx_migration_in_query','CREATE INDEX idx_migration_in_query ON migration_in(in_date,business_status,migration_type,person_id)');
+CALL backend_v1_add_index('migration_out','idx_migration_out_query','CREATE INDEX idx_migration_out_query ON migration_out(out_date,business_status,migration_type,person_id)');
+DROP PROCEDURE IF EXISTS backend_v1_add_index;
+DROP PROCEDURE IF EXISTS backend_v1_add_fk;
+
+-- Backend V1 canonical five-role seed. Kept at the end so older partially populated
+-- installations are repaired before release verification.
+INSERT INTO sys_role(role_code,role_name,role_level,data_scope,description,status) VALUES
+('QUERY_VIEWER','查询统计人员','L1','DEPARTMENT','只读查询与统计','ENABLED'),
+('POPULATION_MANAGER','人口信息管理人员','L2','REGION','人口信息经办','ENABLED'),
+('HOUSEHOLD_MANAGER','户籍管理人员','L2','REGION','户籍信息经办','ENABLED'),
+('APPROVER','审批人员','L3','REGION','业务审批但不自动获得执行权限','ENABLED'),
+('SYSTEM_ADMIN','系统管理员','L3','ALL','系统管理','ENABLED')
+ON DUPLICATE KEY UPDATE role_level=VALUES(role_level),data_scope=VALUES(data_scope),description=VALUES(description),status='ENABLED';
+INSERT INTO sys_user(username,password_hash,role_id,department_id,real_name,status)
+SELECT seed.username,'$2a$10$hqLjVyldvMDp7tlJcpkDZOaTT1dCAuSA5I7FgRfD/B7QXluT8ArB.',r.role_id,d.department_id,seed.real_name,'ENABLED'
+FROM (SELECT 'viewer' username,'QUERY_VIEWER' role_code,'QUERY' department_code,'查询统计人员' real_name
+ UNION ALL SELECT 'population','POPULATION_MANAGER','POPULATION','人口信息管理人员'
+ UNION ALL SELECT 'household','HOUSEHOLD_MANAGER','HOUSEHOLD','户籍管理人员'
+ UNION ALL SELECT 'approver','APPROVER','APPROVAL','审批人员'
+ UNION ALL SELECT 'admin','SYSTEM_ADMIN','SYSTEM','系统管理员') seed
+JOIN sys_role r ON r.role_code=seed.role_code JOIN sys_department d ON d.department_code=seed.department_code
+ON DUPLICATE KEY UPDATE role_id=VALUES(role_id),department_id=VALUES(department_id),real_name=VALUES(real_name),status='ENABLED';
+INSERT IGNORE INTO sys_role_permission(role_id,permission_id)
+SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p WHERE
+(r.role_code='QUERY_VIEWER' AND p.permission_code IN('population:view','household:view','migration:view','statistics:view','log:view','application:view','cancellation:view','cancellation:archive:view','region:view','dictionary:view','certificate:view','key-population:view'))
+OR r.role_code='SYSTEM_ADMIN';
+DELIMITER $$
+CREATE PROCEDURE backend_v1_add_fk()
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM information_schema.referential_constraints WHERE constraint_schema=DATABASE() AND table_name='household_archive' AND constraint_name='fk_household_archive_original') THEN
+  ALTER TABLE household_archive ADD CONSTRAINT fk_household_archive_original FOREIGN KEY(original_household_id) REFERENCES household(household_id);
+ END IF;
+END$$
+DELIMITER ;
+CALL backend_v1_add_fk();
+DROP PROCEDURE IF EXISTS backend_v1_add_fk;
 DELIMITER $$
 CREATE PROCEDURE phase08_add_index(IN p_table VARCHAR(64), IN p_index VARCHAR(64), IN p_ddl TEXT)
 BEGIN
@@ -681,3 +733,15 @@ CALL phase08_add_index('household','idx_household_region_status','CREATE INDEX i
 CALL phase08_add_index('household_member','idx_household_member_household_status','CREATE INDEX idx_household_member_household_status ON household_member(household_id,status)');
 CALL phase08_add_index('household_member','idx_household_member_person_status','CREATE INDEX idx_household_member_person_status ON household_member(person_id,status)');
 DROP PROCEDURE IF EXISTS phase08_add_index;
+
+-- ASCII-only repair seed avoids dependence on client source-file encoding.
+INSERT INTO sys_role(role_code,role_name,role_level,data_scope,description,status) VALUES
+('QUERY_VIEWER','Query Viewer','L1','DEPARTMENT','Read-only queries and statistics','ENABLED')
+ON DUPLICATE KEY UPDATE role_level='L1',data_scope='DEPARTMENT',status='ENABLED';
+INSERT INTO sys_user(username,password_hash,role_id,department_id,real_name,status)
+SELECT 'viewer','$2a$10$hqLjVyldvMDp7tlJcpkDZOaTT1dCAuSA5I7FgRfD/B7QXluT8ArB.',r.role_id,d.department_id,'Query Viewer','ENABLED'
+FROM sys_role r JOIN sys_department d ON d.department_code='QUERY' WHERE r.role_code='QUERY_VIEWER'
+ON DUPLICATE KEY UPDATE role_id=VALUES(role_id),department_id=VALUES(department_id),real_name=VALUES(real_name),status='ENABLED';
+INSERT IGNORE INTO sys_role_permission(role_id,permission_id)
+SELECT r.role_id,p.permission_id FROM sys_role r CROSS JOIN sys_permission p
+WHERE r.role_code='QUERY_VIEWER' AND p.permission_code IN('population:view','household:view','migration:view','statistics:view','log:view','application:view','cancellation:view','cancellation:archive:view','region:view','dictionary:view','certificate:view','key-population:view');

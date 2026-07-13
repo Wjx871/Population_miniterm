@@ -44,3 +44,7 @@ frontend/.env
 项目记忆.md
 data/uploads/
 data/exports/
+.env
+.env.local
+tmp/
+cache/
