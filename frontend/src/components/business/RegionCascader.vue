@@ -3,8 +3,8 @@
     :model-value="modelValue"
     :options="options"
     :props="cascaderProps"
-    :disabled="disabled"
-    :placeholder="placeholder"
+    :disabled="effectiveDisabled"
+    :placeholder="loadFailed ? '加载失败' : placeholder"
     :clearable="clearable"
     filterable
     @update:model-value="handleChange"
@@ -12,7 +12,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { getCachedRegionTree } from '../../services/referenceDataCache.js'
 
 const props = defineProps({
@@ -50,8 +51,11 @@ const cascaderProps = ref({
 })
 
 const loading = ref(false)
+const loadFailed = ref(false)
 const requestId = ref(0)
 let disposed = false
+
+const effectiveDisabled = computed(() => props.disabled || loading.value || loadFailed.value)
 
 onUnmounted(() => {
   disposed = true
@@ -60,6 +64,7 @@ onUnmounted(() => {
 async function loadOptions() {
   const currentRequest = ++requestId.value
   loading.value = true
+  loadFailed.value = false
 
   try {
     const result = await getCachedRegionTree(false)
@@ -70,6 +75,8 @@ async function loadOptions() {
   } catch (error) {
     if (!disposed && currentRequest === requestId.value) {
       options.value = []
+      loadFailed.value = true
+      ElMessage.error('加载行政区划失败')
       emit('load-error', error)
     }
   } finally {

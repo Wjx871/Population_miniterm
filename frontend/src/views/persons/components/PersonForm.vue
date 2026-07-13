@@ -33,7 +33,7 @@
       />
     </el-form-item>
     <el-form-item label="民族" prop="ethnicity">
-      <el-input v-model="form.ethnicity" placeholder="如：汉族" maxlength="30" />
+      <DictionarySelect v-model="form.ethnicity" type="ETHNICITY" placeholder="请选择" style="width: 100%;" />
     </el-form-item>
     <el-form-item label="联系电话" prop="phone">
       <el-input v-model="form.phone" placeholder="手机号（选填）" maxlength="20" />
@@ -56,6 +56,7 @@
 import { reactive, ref, watch } from 'vue'
 import { formatDate } from '../../../utils/date'
 import { validateIdCard, validatePhone, validateBirthDate } from '../../../utils/validators'
+import DictionarySelect from '../../../components/business/DictionarySelect.vue'
 
 const props = defineProps({
   modelValue: {

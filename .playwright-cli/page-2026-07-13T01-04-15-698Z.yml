@@ -1,0 +1,43 @@
+- generic [ref=f2e3]:
+  - generic [ref=f2e7]:
+    - generic [ref=f2e9]:
+      - generic [ref=f2e10]:
+        - heading "人口数据库管理系统" [level=1] [ref=f2e11]
+        - paragraph [ref=f2e12]: Population Database Management System
+      - heading "基层人口信息统一管理与分析平台" [level=2] [ref=f2e15]
+      - generic [ref=f2e16]:
+        - generic [ref=f2e17]:
+          - generic [ref=f2e21]: 人口信息管理
+          - generic [ref=f2e22]: 统一管理人口基础信息
+        - generic [ref=f2e23]:
+          - generic [ref=f2e27]: 户口管理
+          - generic [ref=f2e28]: 户籍信息全流程管理
+        - generic [ref=f2e29]:
+          - generic [ref=f2e33]: 迁入迁出管理
+          - generic [ref=f2e34]: 人口流动动态管理
+        - generic [ref=f2e35]:
+          - generic [ref=f2e40]: 证件管理
+          - generic [ref=f2e41]: 证件信息集中管理
+        - generic [ref=f2e42]:
+          - generic [ref=f2e46]: 数据统计分析
+          - generic [ref=f2e47]: 多维数据分析与可视化
+        - generic [ref=f2e48]:
+          - generic [ref=f2e52]: 系统管理
+          - generic [ref=f2e53]: 系统设置与权限分配
+    - generic [ref=f2e55]:
+      - img "徽章" [ref=f2e57]
+      - generic [ref=f2e58]:
+        - heading "欢迎登录" [level=2] [ref=f2e59]
+        - paragraph [ref=f2e60]: 请使用账号密码登录系统
+      - generic [ref=f2e61]:
+        - textbox "系统管理员账号" [ref=f2e70]
+        - textbox "登录密码" [ref=f2e81]
+        - generic [ref=f2e83] [cursor=pointer]:
+          - generic [ref=f2e84]:
+            - checkbox "记住账号"
+          - generic [ref=f2e86]: 记住账号
+        - button "登 录" [ref=f2e89] [cursor=pointer]
+      - generic [ref=f2e91]: "测试账号: admin / 123456"
+  - contentinfo [ref=f2e97]:
+    - generic [ref=f2e98]: 依法管理人口信息 服务社会治理现代化
+    - generic [ref=f2e103]: © 2026 Population Database Management System 版权所有

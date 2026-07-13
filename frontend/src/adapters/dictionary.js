@@ -47,7 +47,8 @@ export function toDictionaryCreatePayload(form) {
 
 export function toDictionaryUpdatePayload(form) {
   return {
-    ...toDictionaryCreatePayload(form),
+    displayName: form.dictName,
+    sortNo: form.sortNo,
     version: form.version
   }
 }

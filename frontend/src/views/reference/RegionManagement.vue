@@ -87,7 +87,7 @@ import FormDialog from '../../components/common/FormDialog.vue';
 import StatusTag from '../../components/common/StatusTag.vue';
 import RegionCascader from '../../components/business/RegionCascader.vue';
 import { getRegionTree, getRegionDetail, createRegion, updateRegion, enableRegion, disableRegion } from '../../api/regions';
-import { normalizeRegionTree, findRegionPath } from '../../adapters/region';
+import { normalizeRegionTree, findRegionPath, toRegionCreatePayload, toRegionUpdatePayload } from '../../adapters/region';
 import { getCachedRegionTree, clearAllReferenceCache } from '../../services/referenceDataCache';
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError';
 import { PERMISSIONS } from '../../constants/permissions';
@@ -130,7 +130,19 @@ const form = reactive({
 
 const rules = {
   regionCode: [{ required: true, message: '请输入区划代码', trigger: 'blur' }],
-  regionName: [{ required: true, message: '请输入区划名称', trigger: 'blur' }]
+  regionName: [{ required: true, message: '请输入区划名称', trigger: 'blur' }],
+  fullName: [
+    { required: true, message: '请输入完整名称', trigger: 'blur' },
+    { max: 255, message: '完整名称最长255个字符', trigger: 'blur' }
+  ],
+  regionLevel: [
+    { required: true, message: '区划层级不能为空', trigger: 'change' },
+    { type: 'number', min: 1, max: 5, message: '区划层级只能是1~5，五级区划不能新增下级', trigger: 'change' }
+  ],
+  sortNo: [
+    { required: true, message: '排序号不能为空', trigger: 'change' },
+    { type: 'number', min: 0, message: '排序号不能为负数', trigger: 'change' }
+  ]
 };
 
 const handleParentChange = async (val) => {
@@ -195,20 +207,12 @@ const submitForm = () => {
     
     submitting.value = true;
     try {
-      const payload = {
-        regionCode: form.regionCode,
-        regionName: form.regionName,
-        parentCode: form.parentCode || null,
-        regionLevel: form.regionLevel,
-        fullName: form.fullName,
-        sortNo: form.sortNo
-      };
-
       if (isEdit.value) {
-        payload.version = form.version;
+        const payload = toRegionUpdatePayload(form);
         await updateRegion(form.regionCode, payload);
         ElMessage.success('修改成功');
       } else {
+        const payload = toRegionCreatePayload(form);
         await createRegion(payload);
         ElMessage.success('新增成功');
       }

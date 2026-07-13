@@ -47,3 +47,25 @@ export function findRegionPath(tree, value) {
   }
   return null
 }
+
+export function toRegionCreatePayload(form) {
+  return {
+    regionCode: form.regionCode,
+    regionName: form.regionName,
+    parentCode: form.parentCode || null,
+    regionLevel: form.regionLevel,
+    fullName: form.fullName,
+    sortNo: form.sortNo
+  }
+}
+
+export function toRegionUpdatePayload(form) {
+  return {
+    regionName: form.regionName,
+    parentCode: form.parentCode || null,
+    regionLevel: form.regionLevel,
+    fullName: form.fullName,
+    sortNo: form.sortNo,
+    version: form.version
+  }
+}

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { normalizeDictionaryList } from '../src/adapters/dictionary.js'
+import { normalizeDictionaryList, toDictionaryUpdatePayload } from '../src/adapters/dictionary.js'
 
 test('dictionaryAdapter: maps exact fields and filters status when includeInactive is false', () => {
   const items = [
@@ -27,4 +27,27 @@ test('dictionaryAdapter: keeps all items when includeInactive is true', () => {
   
   assert.equal(normalized.length, 2)
   assert.equal(normalized[1].disabled, true)
+})
+
+test('dictionaryAdapter: toDictionaryUpdatePayload only returns expected fields', () => {
+  const form = {
+    dictType: 'CERTIFICATE_TYPE',
+    dictCode: 'PASSPORT',
+    dictName: '护照',
+    sortNo: 10,
+    status: 'ENABLED',
+    version: 2
+  }
+
+  const payload = toDictionaryUpdatePayload(form)
+
+  assert.deepEqual(payload, {
+    displayName: '护照',
+    sortNo: 10,
+    version: 2
+  })
+
+  assert.equal(payload.dictionaryType, undefined)
+  assert.equal(payload.dictionaryCode, undefined)
+  assert.equal(payload.status, undefined)
 })

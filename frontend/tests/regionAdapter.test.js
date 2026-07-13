@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { normalizeRegionTree, findRegionPath } from '../src/adapters/region.js'
+import { normalizeRegionTree, findRegionPath, toRegionCreatePayload, toRegionUpdatePayload } from '../src/adapters/region.js'
 
 test('regionAdapter: normalizes tree and drops inactive when includeInactive is false', () => {
   const input = [
@@ -36,4 +36,54 @@ test('regionAdapter: findRegionPath returns array of nodes', () => {
   assert.equal(path.length, 2)
   assert.equal(path[0].value, '100')
   assert.equal(path[1].value, '102')
+})
+
+test('regionAdapter: toRegionCreatePayload formats properly', () => {
+  const form = {
+    regionCode: '110000',
+    regionName: '北京市',
+    parentCode: '',
+    regionLevel: 1,
+    fullName: '北京市',
+    sortNo: 1,
+    version: 0
+  }
+
+  const payload = toRegionCreatePayload(form)
+
+  assert.deepEqual(payload, {
+    regionCode: '110000',
+    regionName: '北京市',
+    parentCode: null,
+    regionLevel: 1,
+    fullName: '北京市',
+    sortNo: 1
+  })
+  
+  assert.equal(payload.version, undefined)
+})
+
+test('regionAdapter: toRegionUpdatePayload formats properly', () => {
+  const form = {
+    regionCode: '110000',
+    regionName: '北京市',
+    parentCode: '',
+    regionLevel: 1,
+    fullName: '北京市',
+    sortNo: 1,
+    version: 3
+  }
+
+  const payload = toRegionUpdatePayload(form)
+
+  assert.deepEqual(payload, {
+    regionName: '北京市',
+    parentCode: null,
+    regionLevel: 1,
+    fullName: '北京市',
+    sortNo: 1,
+    version: 3
+  })
+  
+  assert.equal(payload.regionCode, undefined)
 })

@@ -47,7 +47,9 @@
       <el-form ref="formRef" :model="form" :rules="formRules" :disabled="isFormReadOnly" label-width="120px">
         <template v-if="applyType !== 'CANCELLATION'">
           <el-form-item label="居住依据" prop="residenceBasisCode">
-            <DictionarySelect v-model="form.residenceBasisCode" type="RESIDENCE_BASIS" placeholder="请选择" style="width:100%" />
+            <el-select v-model="form.residenceBasisCode" placeholder="请选择" style="width:100%">
+              <el-option v-for="(label, value) in RESIDENCE_BASIS" :key="value" :label="label" :value="value" />
+            </el-select>
           </el-form-item>
           <el-form-item label="申请开始日期">
             <el-date-picker v-model="form.requestedValidFrom" type="date" placeholder="选填" value-format="YYYY-MM-DD" style="width:100%" />
@@ -107,6 +109,7 @@ import { normalizeResidencePermit } from '../../adapters/residencePermit'
 import { PERMIT_APPLY_TYPE, getPermitMaterialOptions, getPermitMaterialRuleText, hasUploadedPermitMaterials } from '../../constants/floatingResidence'
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
+import { RESIDENCE_BASIS } from '../../constants/floatingResidence'
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
 import { useProfessionalDraftState } from '../../composables/useProfessionalDraftState'
 

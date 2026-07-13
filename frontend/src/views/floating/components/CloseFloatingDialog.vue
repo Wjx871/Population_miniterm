@@ -8,7 +8,9 @@
   >
     <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
       <el-form-item label="关闭原因" prop="reasonCode">
-        <DictionarySelect v-model="form.reasonCode" type="FLOATING_CLOSE_REASON" placeholder="请选择关闭原因" style="width: 100%" />
+        <el-select v-model="form.reasonCode" placeholder="请选择关闭原因" style="width: 100%">
+          <el-option v-for="(label, value) in CLOSE_REASON" :key="value" :label="label" :value="value" />
+        </el-select>
       </el-form-item>
       <el-form-item label="关闭说明" prop="comment">
         <el-input v-model="form.comment" type="textarea" :rows="3" maxlength="500" show-word-limit placeholder="说明关闭原因和相关信息" />
@@ -28,7 +30,7 @@
 
 <script setup>
 import { reactive, ref, watch } from 'vue'
-import DictionarySelect from '../../../components/business/DictionarySelect.vue'
+import { CLOSE_REASON } from '../../../constants/floatingResidence'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
