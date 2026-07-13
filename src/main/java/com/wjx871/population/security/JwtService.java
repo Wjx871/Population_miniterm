@@ -7,6 +7,7 @@ import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class JwtService {
     public String createToken(AuthenticatedUser user) {
         Instant now = Instant.now();
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(user.username())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(expireSeconds)))
@@ -41,9 +43,11 @@ public class JwtService {
     }
 
     public String parseUsername(String token) throws ExpiredJwtException {
-        Claims claims = Jwts.parser().verifyWith(signingKey).build()
-                .parseSignedClaims(token).getPayload();
-        return claims.getSubject();
+        return parseClaims(token).getSubject();
+    }
+
+    public Claims parseClaims(String token) throws ExpiredJwtException {
+        return Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token).getPayload();
     }
 
     public long getExpireSeconds() {
