@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/health")
@@ -19,6 +20,7 @@ public class HealthController {
     private final OptionalRedisService redis;
 
     @GetMapping
+    @PreAuthorize("permitAll()")
     public ApiResponse<Map<String, Object>> health() {
         Map<String, Object> result = new LinkedHashMap<>();
         boolean database;
