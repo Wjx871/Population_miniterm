@@ -1,8 +1,8 @@
-import { ROLE_CODE, ROLE_LEVEL } from '../constants/roles'
-import { ROLE_DEFAULT_PERMISSIONS } from '../constants/permissions'
+import { ROLE_CODE } from '../constants/roles.js'
+import { ROLE_DEFAULT_PERMISSIONS } from '../constants/permissions.js'
 
 /**
- * 归一化角色代码，处理后端别名
+ * 归一化角色代码
  */
 export function normalizeRoleCode(roleCode, roleName) {
   if (roleCode && ROLE_CODE[roleCode]) {
@@ -11,40 +11,38 @@ export function normalizeRoleCode(roleCode, roleName) {
 
   const name = String(roleName || roleCode || '').toUpperCase()
 
-  // 超级管理员别名
-  if (['SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMIN', '系统管理员', '超级管理员'].includes(name)) {
-    return ROLE_CODE.SUPER_ADMIN
+  if (['SYSTEM_ADMIN', '超级管理员', '系统管理员', 'ADMIN'].includes(name)) {
+    return ROLE_CODE.SYSTEM_ADMIN
   }
-  // 户口管理员别名（后端人口管理员和户籍管理员均映射为户口管理员）
-  if (['HOUSEHOLD_ADMIN', 'ROLE_HOUSEHOLD_ADMIN', 'POPULATION_MANAGER', 'HOUSEHOLD_MANAGER', '户口管理员', '户籍管理员', '人口管理员'].includes(name)) {
-    return ROLE_CODE.HOUSEHOLD_ADMIN
+  if (['APPROVER', '审批人员', '审批员'].includes(name)) {
+    return ROLE_CODE.APPROVER
   }
-  // APPROVER 不映射为超级管理员，仅依赖后端显式审批权限
-  if (['QUERY_VIEWER', 'APPROVER', '普通用户', '查询用户', '审批员'].includes(name)) {
-    return ROLE_CODE.NORMAL_USER
+  if (['HOUSEHOLD_MANAGER', '户籍管理人员', '户籍管理员', '户口管理员'].includes(name)) {
+    return ROLE_CODE.HOUSEHOLD_MANAGER
   }
-
-  return ROLE_CODE.NORMAL_USER
+  if (['POPULATION_MANAGER', '人口信息管理人员', '人口管理员'].includes(name)) {
+    return ROLE_CODE.POPULATION_MANAGER
+  }
+  
+  return ROLE_CODE.QUERY_VIEWER
 }
 
 /**
- * 解析用户权限列表
+ * 解析用户权限列表，遵循硬约束
  */
 export function resolvePermissions(normalizedRoleCode, apiPermissions) {
+  // 如果明确返回了 permissions 数组，这就是权威依据，哪怕是空数组
   if (Array.isArray(apiPermissions)) {
     return [...apiPermissions]
   }
+  
+  // 没有返回 permissions 的情况（仅考虑兼容极其老的本地缓存）
+  // 为了安全，不再基于 roleCode 去自动展开权限，避免无权限账户扩大权限
+  // 若确实需要兜底，可返回空数组或极少权限。
   return ROLE_DEFAULT_PERMISSIONS[normalizedRoleCode] || []
 }
 
-/**
- * 获取角色等级
- */
-export function getRoleLevel(normalizedRoleCode) {
-  return ROLE_LEVEL[normalizedRoleCode] || 1
-}
-
-export { checkPermission, canAccessRouteMeta, resolveLandingPath } from './routeAccess'
+export { checkPermission, canAccessRouteMeta, resolveLandingPath } from './routeAccess.js'
 
 /**
  * 检查是否拥有任意一个权限

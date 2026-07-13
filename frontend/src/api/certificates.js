@@ -9,6 +9,21 @@ export function getCertificatePage(params) {
   })
 }
 
+export function getCertificateById(id) {
+  return request({
+    url: `/certificates/${id}`,
+    method: 'get',
+  })
+}
+
+export function getPersonCertificates(personId, params) {
+  return request({
+    url: `/persons/${personId}/certificates`,
+    method: 'get',
+    params: toSpringPageParams(params),
+  })
+}
+
 export function createCertificate(data) {
   return request({
     url: '/certificates',
@@ -25,9 +40,10 @@ export function updateCertificate(id, data) {
   })
 }
 
-export function deleteCertificate(id) {
+export function cancelCertificate(id, data) {
   return request({
-    url: `/certificates/${id}`,
-    method: 'delete',
+    url: `/certificates/${id}/cancel`,
+    method: 'post',
+    data,
   })
 }

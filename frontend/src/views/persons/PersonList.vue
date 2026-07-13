@@ -9,7 +9,7 @@
         <el-button
           type="primary"
           :icon="Plus"
-          v-permission="'person:create'"
+          v-permission="'population:edit'"
           @click="openCreateDialog"
         >
           新增人员
@@ -79,7 +79,7 @@
               size="small"
               type="primary"
               link
-              v-permission="'person:update'"
+              v-permission="'population:edit'"
               @click="openEditDialog(row)"
             >
               编辑
