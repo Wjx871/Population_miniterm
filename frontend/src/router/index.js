@@ -49,7 +49,7 @@ const routes = [
         meta: { 
           title: '人口信息管理',
           minLevel: 1,
-          permission: 'person:view',
+          permission: 'population:view',
           menu: true,
           group: '人口户籍',
           order: 10,
@@ -308,8 +308,8 @@ const routes = [
         meta: { 
           title: '用户管理',
           minLevel: 3,
-          permission: 'user:view',
-          menu: true,
+          permission: 'system:user:view',
+          menu: false,
           group: '系统管理',
           order: 40,
           icon: 'User'

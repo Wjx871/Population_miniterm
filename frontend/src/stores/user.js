@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
-import { login as loginApi } from '../api/auth'
-import { ROLE_CODE, ROLE_LABEL } from '../constants/roles'
-import { normalizeRoleCode, resolvePermissions, getRoleLevel, checkPermission, checkAnyPermission } from '../utils/permission'
+import { login as loginApi } from '../api/auth.js'
+import { ROLE_CODE, ROLE_LABEL, parseRoleLevel } from '../constants/roles.js'
+import { normalizeRoleCode, resolvePermissions, checkPermission, checkAnyPermission } from '../utils/permission.js'
 
-const STORAGE_KEY = 'population_user'
+const STORAGE_KEY = 'population_user_v2'
 
 function loadStorageUser() {
   try {
@@ -13,13 +13,7 @@ function loadStorageUser() {
     // On load, always re-normalize to ensure integrity
     const roleCode = normalizeRoleCode(parsed.roleCode, parsed.roleName)
     
-    // 角色无法识别时，强制使用 NORMAL_USER 并忽略缓存的 permissions
-    if (roleCode === ROLE_CODE.NORMAL_USER && parsed.roleCode !== ROLE_CODE.NORMAL_USER) {
-      parsed.permissions = undefined
-    }
-    
     parsed.roleCode = roleCode
-    parsed.permissionLevel = getRoleLevel(roleCode)
     parsed.permissions = resolvePermissions(roleCode, parsed.permissions)
     return parsed
   } catch {
@@ -37,7 +31,8 @@ export const useUserStore = defineStore('user', {
       username: saved.username || '',
       realName: saved.realName || '',
       roleName: saved.roleName || '',
-      roleCode: saved.roleCode || ROLE_CODE.NORMAL_USER,
+      roleCode: saved.roleCode || ROLE_CODE.QUERY_VIEWER,
+      roleLevel: saved.roleLevel || 'L1',
       permissionLevel: saved.permissionLevel || 1,
       permissions: saved.permissions || [],
     }
@@ -46,13 +41,12 @@ export const useUserStore = defineStore('user', {
   getters: {
     isLoggedIn: (state) => Boolean(state.accessToken),
     displayName: (state) => state.realName || state.username || '用户',
-    roleLabel: (state) => ROLE_LABEL[state.roleCode] || state.roleName || '普通用户',
-    isSuperAdmin: (state) => state.roleCode === ROLE_CODE.SUPER_ADMIN,
+    roleLabel: (state) => ROLE_LABEL[state.roleCode] || state.roleName || '查询统计人员',
+    isSuperAdmin: (state) => state.roleCode === ROLE_CODE.SYSTEM_ADMIN,
   },
 
   actions: {
     setLoginInfo(loginVO) {
-      // 新版后端返回 { token, tokenType, user }；保留旧字段兼容，避免破坏 M1/M2 本地联调。
       const user = loginVO.user || loginVO
       this.accessToken = loginVO.token || loginVO.accessToken || ''
       this.tokenType = loginVO.tokenType || 'Bearer'
@@ -60,11 +54,16 @@ export const useUserStore = defineStore('user', {
       this.username = user.username
       this.realName = user.realName
       this.roleName = user.roleName
+      this.roleLevel = user.roleLevel || 'L1'
 
       // 角色归一化与权限计算
       this.roleCode = normalizeRoleCode(user.roleCode, user.roleName)
-      this.permissionLevel = getRoleLevel(this.roleCode)
-      this.permissions = resolvePermissions(this.roleCode, user.permissions)
+      
+      const parsedLevel = parseRoleLevel(this.roleLevel)
+      this.permissionLevel = parsedLevel !== null ? parsedLevel : 1
+      
+      const hasApiPermissions = Array.isArray(user.permissions)
+      this.permissions = hasApiPermissions ? [...user.permissions] : []
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         accessToken: this.accessToken,
@@ -74,7 +73,9 @@ export const useUserStore = defineStore('user', {
         realName: this.realName,
         roleName: this.roleName,
         roleCode: this.roleCode,
-        permissions: this.permissions // Cache permissions array, but we re-resolve on load just in case
+        roleLevel: this.roleLevel,
+        permissionLevel: this.permissionLevel,
+        permissions: this.permissions
       }))
     },
 
@@ -91,10 +92,13 @@ export const useUserStore = defineStore('user', {
       this.username = ''
       this.realName = ''
       this.roleName = ''
-      this.roleCode = ROLE_CODE.NORMAL_USER
+      this.roleCode = ROLE_CODE.QUERY_VIEWER
+      this.roleLevel = 'L1'
       this.permissionLevel = 1
       this.permissions = []
       localStorage.removeItem(STORAGE_KEY)
+      // Clean up legacy v1 storage if it exists
+      localStorage.removeItem('population_user')
     },
 
     hasLevel(minLevel) {

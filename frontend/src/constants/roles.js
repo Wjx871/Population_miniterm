@@ -1,23 +1,28 @@
 export const ROLE_CODE = Object.freeze({
-  NORMAL_USER: 'NORMAL_USER',
-  HOUSEHOLD_ADMIN: 'HOUSEHOLD_ADMIN',
-  SUPER_ADMIN: 'SUPER_ADMIN',
-})
-
-export const ROLE_LEVEL = Object.freeze({
-  [ROLE_CODE.NORMAL_USER]: 1,
-  [ROLE_CODE.HOUSEHOLD_ADMIN]: 2,
-  [ROLE_CODE.SUPER_ADMIN]: 3,
+  QUERY_VIEWER: 'QUERY_VIEWER',
+  POPULATION_MANAGER: 'POPULATION_MANAGER',
+  HOUSEHOLD_MANAGER: 'HOUSEHOLD_MANAGER',
+  APPROVER: 'APPROVER',
+  SYSTEM_ADMIN: 'SYSTEM_ADMIN',
 })
 
 export const ROLE_LABEL = Object.freeze({
-  [ROLE_CODE.NORMAL_USER]: '普通用户',
-  [ROLE_CODE.HOUSEHOLD_ADMIN]: '户口管理员',
-  [ROLE_CODE.SUPER_ADMIN]: '超级管理员',
+  [ROLE_CODE.QUERY_VIEWER]: '查询统计人员',
+  [ROLE_CODE.POPULATION_MANAGER]: '人口信息管理人员',
+  [ROLE_CODE.HOUSEHOLD_MANAGER]: '户籍管理人员',
+  [ROLE_CODE.APPROVER]: '审批人员',
+  [ROLE_CODE.SYSTEM_ADMIN]: '系统管理员',
 })
 
 export const ROLE_BADGE_TYPE = Object.freeze({
-  [ROLE_CODE.NORMAL_USER]: 'info',
-  [ROLE_CODE.HOUSEHOLD_ADMIN]: 'primary',
-  [ROLE_CODE.SUPER_ADMIN]: 'danger',
+  [ROLE_CODE.QUERY_VIEWER]: 'info',
+  [ROLE_CODE.POPULATION_MANAGER]: 'primary',
+  [ROLE_CODE.HOUSEHOLD_MANAGER]: 'success',
+  [ROLE_CODE.APPROVER]: 'warning',
+  [ROLE_CODE.SYSTEM_ADMIN]: 'danger',
 })
+
+export function parseRoleLevel(value) {
+  const match = /^L([1-3])$/.exec(String(value || '').toUpperCase())
+  return match ? Number(match[1]) : 999
+}
