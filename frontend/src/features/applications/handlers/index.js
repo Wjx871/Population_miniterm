@@ -2,6 +2,7 @@ import { createMigrationHandler } from './migrationHandler'
 import { createFloatingHandler } from './floatingHandler'
 import { createResidencePermitHandler } from './residencePermitHandler'
 import { createCancellationHandler } from './cancellationHandler'
+import { createExportHandler } from './exportHandler'
 
 import { getMigrationApplicationDetail, executeMigrationIn, executeMigrationOut } from '../../../api/migrations'
 import {
@@ -17,6 +18,10 @@ import {
   executePersonCancellation,
   executeHouseholdCancellation
 } from '../../../api/cancellations'
+import {
+  getExportApplicationDetail,
+  executeSensitiveExport
+} from '../../../api/exports'
 import {
   getMigrationMaterialOptions,
   getMigrationMaterialRuleText,
@@ -38,6 +43,12 @@ import {
 import { normalizeFloatingProfessional } from '../../../adapters/floating'
 import { normalizePermitProfessional } from '../../../adapters/residencePermit'
 import { normalizeCancellationProfessional } from '../../../adapters/cancellation'
+import { normalizeExportApplication } from '../../../adapters/export'
+import {
+  getSensitiveExportMaterialOptions,
+  getSensitiveExportMaterialRuleText,
+  hasVerifiedSensitiveExportMaterials
+} from '../../../constants/export'
 
 const migrationHandler = createMigrationHandler({
   getMigrationApplicationDetail,
@@ -78,11 +89,21 @@ const cancellationHandler = createCancellationHandler({
   normalizeCancellationProfessional
 })
 
+const exportHandler = createExportHandler({
+  getExportApplicationDetail,
+  executeSensitiveExport,
+  normalizeExportApplication,
+  getSensitiveExportMaterialOptions,
+  getSensitiveExportMaterialRuleText,
+  hasVerifiedSensitiveExportMaterials
+})
+
 const handlers = [
   migrationHandler,
   floatingHandler,
   residencePermitHandler,
-  cancellationHandler
+  cancellationHandler,
+  exportHandler
 ]
 
 export function getApplicationBusinessHandler(businessType) {

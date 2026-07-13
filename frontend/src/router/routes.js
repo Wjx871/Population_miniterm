@@ -39,6 +39,46 @@ export const routes = [
         component: () => import('../views/dashboard/DataDashboard.vue'),
         meta: { title: '数据大屏', minLevel: 1, permission: PERMISSIONS.STATISTICS_VIEW, menu: true, group: '查询统计', order: 36, icon: 'DataAnalysis' }
       },
+      {
+        path: 'exports',
+        name: 'ExportRecords',
+        component: () => import('../views/exports/ExportRecordList.vue'),
+        meta: {
+          title: '导出记录',
+          minLevel: 1,
+          permission: PERMISSIONS.DATA_EXPORT_LOG_VIEW,
+          menu: true,
+          group: '查询统计',
+          order: 37,
+          icon: 'Download'
+        }
+      },
+      {
+        path: 'exports/normal',
+        name: 'NormalExportCreate',
+        component: () => import('../views/exports/NormalExportCreate.vue'),
+        meta: {
+          title: '普通导出',
+          minLevel: 1,
+          permission: PERMISSIONS.DATA_EXPORT_NORMAL,
+          menu: false,
+          activeMenu: '/exports',
+          group: '查询统计'
+        }
+      },
+      {
+        path: 'exports/sensitive',
+        name: 'SensitiveExportCreate',
+        component: () => import('../views/exports/SensitiveExportCreate.vue'),
+        meta: {
+          title: '敏感导出申请',
+          minLevel: 1,
+          permission: PERMISSIONS.DATA_EXPORT_SENSITIVE_APPLY,
+          menu: false,
+          activeMenu: '/exports',
+          group: '查询统计'
+        }
+      },
       { 
         path: 'persons', 
         name: 'Persons', 
