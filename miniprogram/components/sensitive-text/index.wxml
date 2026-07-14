@@ -1,1 +1,9 @@
-<view class="sensitive {{expanded?'expanded':''}}" bindtap="toggle"><text>{{value || '—'}}</text><text wx:if="{{expandable}}" class="more">{{expanded?'收起':'展开'}}</text></view>
+<view class="sensitive-text {{expandable ? 'sensitive-text--collapsible' : 'sensitive-text--plain'}} {{expanded ? 'sensitive-text--expanded' : ''}}">
+  <text class="sensitive-value">{{value || '—'}}</text>
+  <button
+    wx:if="{{expandable}}"
+    class="expand-button"
+    size="mini"
+    bindtap="toggle"
+  >{{expanded ? '收起' : '展开'}}</button>
+</view>
