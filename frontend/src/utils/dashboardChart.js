@@ -104,58 +104,21 @@ export function approvalStatusOption(rows = []) {
 
   return {
     color: theme.dashboardChartColors,
+    // 默认不内置图例：由 ApprovalStatusPanel 用 DOM 分栏渲染，避免与环图重叠
+    legend: { show: false },
     tooltip: {
       ...theme.darkTooltip,
       trigger: 'item',
+      confine: true,
       formatter: (p) => {
         const percent = total > 0 ? ((p.value / total) * 100).toFixed(1) : '0.0'
         return `${p.marker}${p.name}<br/>数量：${formatNum(p.value)}<br/>占比：${percent}%`
       }
     },
-    legend: {
-      ...theme.darkLegend,
-      orient: 'vertical',
-      right: 8,
-      top: 'center',
-      itemGap: 14,
-      itemWidth: 10,
-      itemHeight: 10,
-      formatter: (name) => {
-        const target = chartData.find((d) => d.name === name)
-        const val = target ? target.value : 0
-        const percent = total > 0 ? Math.round((val / total) * 100) : 0
-        return `{name|${name}}{value|${formatNum(val)}}{percent|${percent}%}`
-      },
-      textStyle: {
-        rich: {
-          name: {
-            color: '#e8f6ff',
-            fontSize: 13,
-            width: 52,
-            padding: [0, 8, 0, 0]
-          },
-          value: {
-            color: '#ffffff',
-            fontSize: 13,
-            fontWeight: 'bold',
-            fontFamily: 'Courier New',
-            width: 72,
-            align: 'right',
-            padding: [0, 8, 0, 0]
-          },
-          percent: {
-            color: '#9ad8ff',
-            fontSize: 12,
-            width: 40,
-            align: 'right'
-          }
-        }
-      }
-    },
-    // 中心文案与 pie.center 对齐，避免偏移发虚
+    // 中心文案与 pie.center 对齐
     title: {
       text: `{total|${formatNum(total)}}\n{label|总计}`,
-      left: '35%',
+      left: '50%',
       top: '50%',
       textAlign: 'center',
       textVerticalAlign: 'middle',
@@ -182,8 +145,8 @@ export function approvalStatusOption(rows = []) {
     series: [
       {
         type: 'pie',
-        radius: ['50%', '70%'],
-        center: ['35%', '50%'],
+        radius: ['54%', '74%'],
+        center: ['50%', '50%'],
         avoidLabelOverlap: true,
         label: { show: false },
         labelLine: { show: false },
