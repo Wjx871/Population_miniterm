@@ -1,0 +1,5 @@
+const service = require('../../../services/approval')
+const adapter = require('../../../adapters/application')
+const { guard } = require('../../../utils/permission')
+const { messageOf } = require('../../../utils/error')
+Page({ data: { tab: 'pending', records: [], loading: true, error: '' }, onLoad() { if (guard('approval:view')) this.load() }, onShow() { if (this.data.records.length) this.load() }, switchTab(e) { this.setData({ tab: e.currentTarget.dataset.tab }); this.load() }, async load() { this.setData({ loading: true, error: '' }); try { const records = this.data.tab === 'pending' ? await service.pending() : await service.processed(); this.setData({ records: (records || []).map(adapter.approval) }) } catch (error) { this.setData({ records: [], error: messageOf(error) }) } finally { this.setData({ loading: false }); wx.stopPullDownRefresh() } }, onPullDownRefresh() { this.load() }, open(e) { wx.navigateTo({ url: `/pages/approvals/detail/index?id=${e.currentTarget.dataset.id}` }) } })

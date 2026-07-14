@@ -1,0 +1,36 @@
+<view class="page">
+  <loading-state wx:if="{{loading}}"/>
+  <error-state wx:elif="{{error}}" message="{{error}}" bindretry="load"/>
+  <view wx:else>
+    <view class="card">
+      <view class="row-between"><view class="approval-no">{{detail.approvalNo}}</view><status-tag text="{{application.statusDisplay}}"/></view>
+      <view class="title app-title">{{application.title}}</view>
+      <view class="field"><text class="label">业务类型</text><text class="value">{{application.businessTypeDisplay}}</text></view>
+      <view class="field"><text class="label">申请编号</text><text class="value">{{application.applicationNo}}</text></view>
+      <view class="field"><text class="label">申请人</text><text class="value">{{application.applicantName || '—'}}</text></view>
+      <view class="field"><text class="label">申请原因</text><text class="value">{{application.reason || '—'}}</text></view>
+      <view class="notice">审批通过只完成审批，不会自动执行迁移、注销、重点人口等专业业务。</view>
+    </view>
+    <view class="card">
+      <view class="section-title">专业业务摘要</view>
+      <view wx:if="{{professionalMessage}}" class="notice">{{professionalMessage}}</view>
+      <view wx:for="{{professionalFields}}" wx:key="key" class="field"><text class="label">{{item.label}}</text><text class="value">{{item.value}}</text></view>
+      <view wx:if="{{!professionalFields.length && !professionalMessage}}" class="muted">该业务没有额外的移动端摘要。</view>
+    </view>
+    <view class="card">
+      <view class="section-title">材料列表</view>
+      <empty-state wx:if="{{!materials.length}}" text="暂无材料"/>
+      <view class="material" wx:for="{{materials}}" wx:key="materialId"><view class="row-between"><view>{{item.materialName}}</view><status-tag text="{{item.verifyStatusDisplay}}"/></view><view class="muted meta">{{item.materialTypeDisplay}} · {{item.requiredDisplay}}</view><button wx:if="{{item.viewable}}" size="mini" class="ghost preview" data-id="{{item.materialId}}" data-type="{{item.contentType}}" bindtap="openMaterial">查看文件</button></view>
+    </view>
+    <view class="card">
+      <view class="section-title">审批轨迹</view>
+      <empty-state wx:if="{{!logs.length}}" text="暂无审批轨迹"/>
+      <view class="log" wx:for="{{logs}}" wx:key="logId"><view>{{item.actionDisplay}}</view><view class="muted">{{item.timeDisplay}}</view><view>{{item.commentDisplay}}</view></view>
+    </view>
+    <view wx:if="{{canHandle && detail.status==='PENDING'}}" class="decision card">
+      <view class="section-title">审批意见</view>
+      <textarea class="textarea" maxlength="500" placeholder="通过意见可选；驳回原因必填" value="{{comment}}" bindinput="inputComment"/>
+      <view class="safe-actions"><button class="danger" data-action="reject" disabled="{{submitting}}" bindtap="decide">驳回</button><button class="primary" data-action="approve" loading="{{submitting}}" disabled="{{submitting}}" bindtap="decide">通过</button></view>
+    </view>
+  </view>
+</view>
