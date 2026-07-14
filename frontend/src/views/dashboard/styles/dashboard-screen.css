@@ -1,0 +1,33 @@
+/* 大屏深色变量体系 */
+:root {
+  --cyber-bg-color: #020f28;
+  --cyber-panel-bg: rgba(10, 30, 70, 0.45);
+  --cyber-border-color: rgba(41, 215, 255, 0.25);
+  --cyber-text-primary: #edf8ff;
+  --cyber-text-secondary: #8fb5d4;
+  --cyber-text-muted: #537ca2;
+  --cyber-accent: #29d7ff;
+  --cyber-accent-glow: rgba(41, 215, 255, 0.5);
+  --cyber-green: #00ffaa;
+  --cyber-yellow: #fcd34d;
+  --cyber-red: #f87171;
+  --cyber-blue: #3b82f6;
+  
+  --radius-large: 12px;
+}
+
+/* 全局滚动条美化（仅在大屏生效的区域） */
+.dashboard-wrapper ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.dashboard-wrapper ::-webkit-scrollbar-track {
+  background: rgba(2, 15, 40, 0.5);
+}
+.dashboard-wrapper ::-webkit-scrollbar-thumb {
+  background: var(--cyber-border-color);
+  border-radius: 3px;
+}
+.dashboard-wrapper ::-webkit-scrollbar-thumb:hover {
+  background: var(--cyber-accent);
+}

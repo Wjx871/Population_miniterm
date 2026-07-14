@@ -1,13 +1,13 @@
 <template>
   <div ref="wrapperRef" class="dashboard-wrapper">
     <div ref="canvasRef" class="dashboard-canvas">
-      <!-- 顶部 Header 骨架 -->
-      <header class="dashboard-header-skeleton">
-        <h2>数据大屏 - 沉浸式布局占位</h2>
-        <el-button type="primary" @click="toggleFullscreen">
-          {{ isFullscreen ? '退出全屏' : '全屏' }}
-        </el-button>
-      </header>
+      <!-- 顶部 Header -->
+      <DashboardScreenHeader 
+        :is-fullscreen="isFullscreen" 
+        :is-demo="false"
+        :loading="false"
+        @toggle-fullscreen="toggleFullscreen"
+      />
 
       <!-- 主要内容区骨架 -->
       <main class="dashboard-content-skeleton">
@@ -23,6 +23,9 @@
           <div class="panel">面板 4</div>
         </div>
       </main>
+
+      <!-- 底部 Footer -->
+      <DashboardFooter />
     </div>
   </div>
 </template>
@@ -31,6 +34,8 @@
 import { ref } from 'vue';
 import { useDashboardScale } from './composables/useDashboardScale';
 import { useDashboardFullscreen } from './composables/useDashboardFullscreen';
+import DashboardScreenHeader from './components/DashboardScreenHeader.vue';
+import DashboardFooter from './components/DashboardFooter.vue';
 
 const wrapperRef = ref(null);
 const canvasRef = ref(null);
@@ -43,6 +48,8 @@ const { isFullscreen, toggleFullscreen } = useDashboardFullscreen();
 </script>
 
 <style scoped>
+@import './styles/dashboard-screen.css';
+
 .dashboard-wrapper {
   position: absolute;
   top: 0;
@@ -65,15 +72,6 @@ const { isFullscreen, toggleFullscreen } = useDashboardFullscreen();
   flex-direction: column;
   color: white;
   background-image: radial-gradient(circle at center, #05193c 0%, #020f28 100%);
-}
-
-.dashboard-header-skeleton {
-  height: 80px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 40px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .dashboard-content-skeleton {
