@@ -6,7 +6,13 @@
 </template>
 
 <script setup>
-// 使用静态图片代替 ECharts 渲染，保留周围的光环动效
+// 声明 props 以防止 Vue 把数组当做普通 HTML 属性渲染到 DOM 上
+defineProps({
+  data: {
+    type: Array,
+    default: () => []
+  }
+})
 </script>
 
 <style scoped>
