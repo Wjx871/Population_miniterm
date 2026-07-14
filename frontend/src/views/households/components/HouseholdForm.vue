@@ -55,6 +55,14 @@
       />
     </el-form-item>
 
+    <el-form-item label="所属区划" prop="regionCode">
+      <RegionCascader v-model="form.regionCode" />
+    </el-form-item>
+
+    <el-form-item label="家庭户类型" prop="householdType">
+      <DictionarySelect v-model="form.householdType" type="HOUSEHOLD_TYPE" />
+    </el-form-item>
+
     <el-form-item label="立户日期" prop="establishDate">
       <el-date-picker
         v-model="form.establishDate"
@@ -75,9 +83,9 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import PersonSelect from '../../../components/business/PersonSelect.vue'
+import StatusTag from '../../../components/common/StatusTag.vue'
 import DictionarySelect from '../../../components/business/DictionarySelect.vue'
 import RegionCascader from '../../../components/business/RegionCascader.vue'
-import StatusTag from '../../../components/common/StatusTag.vue'
 import { formatDate } from '../../../utils/date'
 
 const props = defineProps({
@@ -123,9 +131,9 @@ const form = reactive({
 
 const rules = computed(() => {
   const base = {
-    householdType: [{ required: true, message: '请选择户籍类型', trigger: 'change' }],
-    regionCode: [{ required: true, message: '请选择所属区划', trigger: 'change' }],
     address: [{ required: true, message: '请输入户籍地址', trigger: 'blur' }],
+    regionCode: [{ required: true, message: '请选择所属区划', trigger: 'change' }],
+    householdType: [{ required: true, message: '请选择户籍类型', trigger: 'change' }],
     establishDate: [{ required: true, message: '请选择立户日期', trigger: 'change' }],
   }
   if (!props.isEdit) {

@@ -1,5 +1,5 @@
-import request from './request'
-import { toSpringPageParams } from '../utils/page'
+import request from './request.js'
+import { toSpringPageParams } from '../utils/page.js'
 
 export function createPersonCancellation(payload) {
   return request({ url: '/cancellations/person/applications', method: 'post', data: payload })
@@ -22,19 +22,11 @@ export function getCancellationApplicationDetail(applicationId) {
 }
 
 export function executePersonCancellation(applicationId, version) {
-  return request({
-    url: `/cancellations/person/applications/${applicationId}/execute`,
-    method: 'post',
-    data: { version }
-  })
+  return request({url:`/cancellations/person/applications/${applicationId}/execute`,method:'post',data:{version}})
 }
 
 export function executeHouseholdCancellation(applicationId, version) {
-  return request({
-    url: `/cancellations/household/applications/${applicationId}/execute`,
-    method: 'post',
-    data: { version }
-  })
+  return request({url:`/cancellations/household/applications/${applicationId}/execute`,method:'post',data:{version}})
 }
 
 export function getCancellationPage(params) {

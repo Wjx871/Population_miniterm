@@ -9,6 +9,7 @@ export const PERMISSIONS = Object.freeze({
   
   /** 工作台与数据统计大屏 */
   STATISTICS_VIEW: 'statistics:view',
+  LOG_VIEW: 'log:view',
   
   HOUSEHOLD_VIEW: 'household:view',
   // 后端户籍写操作统一使用 household:edit

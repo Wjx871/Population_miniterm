@@ -1,0 +1,41 @@
+import { test as base, expect } from '@playwright/test'
+
+const APPROVAL_RUNTIME_WARNING = 'Component provided template option but runtime compilation is not supported'
+
+export const test = base.extend({
+  page: async ({ page }, use, testInfo) => {
+    const serverErrors = []
+    const consoleErrors = []
+    const pageErrors = []
+    const knownWarnings = []
+
+    page.on('response', (response) => {
+      if (response.status() >= 500) {
+        serverErrors.push(`${response.status()} ${response.request().method()} ${response.url()} (page: ${page.url()})`)
+      }
+    })
+    page.on('console', (message) => {
+      const text = message.text()
+      const isExpectedHttpFailure = /status of (401|403|404|409)\b/.test(text)
+      if (message.type() === 'error' && !isExpectedHttpFailure) consoleErrors.push(text)
+      if (message.type() === 'warning' && text.includes(APPROVAL_RUNTIME_WARNING)) {
+        knownWarnings.push(text)
+      }
+    })
+    page.on('pageerror', (error) => pageErrors.push(error.stack || error.message))
+
+    await use(page)
+
+    if (knownWarnings.length > 0) {
+      await testInfo.attach('known-approval-runtime-warning', {
+        body: Buffer.from(knownWarnings.join('\n')),
+        contentType: 'text/plain',
+      })
+    }
+    expect(serverErrors, '页面请求不应出现 HTTP 500').toEqual([])
+    expect(consoleErrors, '浏览器控制台不应出现 error').toEqual([])
+    expect(pageErrors, '页面不应出现未捕获运行时异常').toEqual([])
+  },
+})
+
+export { expect }

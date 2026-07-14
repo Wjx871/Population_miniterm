@@ -31,12 +31,13 @@ export function normalizeHousehold(raw) {
       headPersonId: null,
       headPersonName: '',
       address: '',
-      householdType: null,
       regionCode: '',
+      regionCode: '',
+      householdType: null,
       status: '',
       establishDate: null,
       memberCount: 0,
-      version: 0,
+      version: null,
       regionName: null,
       departmentName: null,
     }
@@ -48,12 +49,13 @@ export function normalizeHousehold(raw) {
     headPersonId: pickFirst(raw.headPersonId, raw.headId),
     headPersonName: trimOrEmpty(raw.headPersonName || raw.headName),
     address: trimOrEmpty(raw.address),
-    householdType: raw.householdType ?? null,
     regionCode: trimOrEmpty(raw.regionCode),
+    regionCode: trimOrEmpty(raw.regionCode),
+    householdType: raw.householdType ?? null,
     status: trimOrEmpty(raw.status),
     establishDate: raw.establishDate ?? null,
-    memberCount: toNumberOrZero(pickFirst(raw.activeMemberCount, raw.memberCount)),
-    version: toNumberOrZero(raw.version),
+    memberCount: toNumberOrZero(raw.activeMemberCount ?? raw.memberCount),
+    version: raw.version ?? null,
     regionName: raw.regionName ?? null,
     departmentName: raw.departmentName ?? null,
   }
@@ -78,6 +80,7 @@ export function normalizeHouseholdMember(raw, headPersonId = null) {
       phone: '',
       relationship: '',
       joinDate: null,
+      version: null,
       isHead: false,
       status: '',
     }
@@ -101,6 +104,7 @@ export function normalizeHouseholdMember(raw, headPersonId = null) {
     phone: trimOrEmpty(raw.phone || raw.person?.phone),
     relationship: trimOrEmpty(raw.relationship),
     joinDate: raw.joinDate ?? null,
+    version: raw.version ?? null,
     isHead,
     status: trimOrEmpty(raw.status),
   }
@@ -119,23 +123,25 @@ export function toCreateHouseholdPayload(form = {}) {
   return {
     householdNo: trimOrEmpty(form.householdNo),
     headPersonId: Number.isFinite(headPersonId) ? headPersonId : null,
-    householdType: trimOrEmpty(form.householdType) || 'FAMILY',
-    regionCode: trimOrEmpty(form.regionCode),
     address: trimOrEmpty(form.address),
+    regionCode: trimOrEmpty(form.regionCode),
+    householdType: trimOrEmpty(form.householdType) || 'FAMILY',
     establishDate: toDatePayload(form.establishDate),
   }
 }
 
 /**
- * 基础信息编辑：不含户主与成员列表；status/version 用于后端乐观锁与状态校验。
+ * 基础信息编辑：不含户主、状态、成员列表。
  */
-export function toUpdateHouseholdPayload(form = {}) {
+export function toUpdateHouseholdPayload(form = {}, latestDetail = form) {
+  const detail = normalizeHousehold(latestDetail)
+  if (!detail.status || detail.version === null) throw new Error('最新家庭户详情缺少状态或版本，无法提交更新')
   return {
-    householdType: trimOrEmpty(form.householdType) || 'FAMILY',
-    regionCode: trimOrEmpty(form.regionCode),
     address: trimOrEmpty(form.address),
+    regionCode: trimOrEmpty(form.regionCode),
+    householdType: trimOrEmpty(form.householdType),
     establishDate: toDatePayload(form.establishDate),
-    status: trimOrEmpty(form.status) || 'ACTIVE',
-    version: toNumberOrZero(form.version),
+    status: detail.status,
+    version: detail.version,
   }
 }

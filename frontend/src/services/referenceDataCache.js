@@ -25,8 +25,7 @@ export async function getCachedDictionary(type, includeInactive = false) {
     return cache.get(key)
   }
 
-  const promise = getDictionaryItemsFn(type).then(res => {
-    const data = res.data || res
+  const promise = getDictionaryItemsFn(type).then(data => {
     return normalizeDictionaryList(data, includeInactive)
   }).catch(err => {
     cache.delete(key) // 失败不污染缓存

@@ -153,7 +153,7 @@ const editMeta = reactive({
   headPersonName: '',
   headPersonId: null,
   status: '',
-  version: 0,
+  version: null,
 })
 
 const fetchList = async () => {
@@ -200,7 +200,7 @@ const openCreateDialog = () => {
     headPersonName: '',
     headPersonId: null,
     status: '',
-    version: 0,
+    version: null,
   })
   formModel.value = {
     householdNo: '',
@@ -226,14 +226,8 @@ const openEditDialog = async (row) => {
   submitting.value = true
   dialogVisible.value = true
   try {
-    // 优先请求最新详情；接口不可用时回退列表行结构字段
-    let detail = normalizeHousehold(row)
-    try {
-      const res = await getHouseholdById(row.id)
-      detail = normalizeHousehold(res)
-    } catch (error) {
-      console.error('加载家庭户详情失败，使用列表行数据', error)
-    }
+    const res = await getHouseholdById(row.id)
+    const detail = normalizeHousehold(res)
 
     Object.assign(editMeta, {
       householdNo: detail.householdNo,
@@ -244,10 +238,9 @@ const openEditDialog = async (row) => {
     })
     formModel.value = {
       householdNo: detail.householdNo,
-      headPersonId: detail.headPersonId,
-      householdType: detail.householdType || 'FAMILY',
-      regionCode: detail.regionCode || '',
       address: detail.address,
+      regionCode: detail.regionCode || '',
+      householdType: detail.householdType || 'FAMILY',
       establishDate: formatDate(detail.establishDate),
       status: detail.status || 'ACTIVE',
       version: detail.version ?? 0,
@@ -271,7 +264,7 @@ const submitForm = async () => {
   try {
     if (isEdit.value) {
       // 基础编辑不含户主与状态
-      const payload = toUpdateHouseholdPayload(form)
+      const payload = toUpdateHouseholdPayload(form, editMeta)
       await updateHousehold(editingId.value, payload)
       ElMessage.success('修改成功')
     } else {
