@@ -87,36 +87,47 @@ export default {
 }
 
 .monitor-card {
-  background: rgba(12, 48, 96, 0.75);
-  border: 1px solid rgba(77, 240, 255, 0.28);
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(61, 240, 255, 0.12) 0%, transparent 45%),
+    rgba(12, 48, 96, 0.78);
+  border: 1px solid rgba(77, 240, 255, 0.32);
   border-radius: 4px;
   display: flex;
   align-items: center;
   padding: 12px;
   gap: 12px;
   transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
-  box-shadow: inset 0 0 12px rgba(61, 240, 255, 0.06);
+  box-shadow: inset 0 0 12px rgba(61, 240, 255, 0.08), 0 0 10px rgba(61, 240, 255, 0.08);
 }
 
+.monitor-card:nth-child(1) { --m-accent: #3df0ff; }
+.monitor-card:nth-child(2) { --m-accent: #ff7b7b; }
+.monitor-card:nth-child(3) { --m-accent: #ffe08a; }
+.monitor-card:nth-child(4) { --m-accent: #c08cff; }
+
 .monitor-card:hover {
-  background: rgba(20, 70, 130, 0.85);
-  border-color: rgba(77, 240, 255, 0.55);
-  box-shadow: inset 0 0 12px rgba(61, 240, 255, 0.14), 0 0 12px rgba(61, 240, 255, 0.12);
+  border-color: color-mix(in srgb, var(--m-accent, #3df0ff) 70%, white 10%);
+  box-shadow:
+    inset 0 0 14px color-mix(in srgb, var(--m-accent, #3df0ff) 22%, transparent),
+    0 0 16px color-mix(in srgb, var(--m-accent, #3df0ff) 28%, transparent);
 }
 
 .monitor-icon {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, rgba(31, 228, 255, 0.18) 0%, rgba(47, 123, 255, 0.1) 100%);
-  border: 1px solid rgba(31, 228, 255, 0.35);
+  background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--m-accent, #3df0ff) 35%, transparent), transparent 65%),
+    linear-gradient(135deg, color-mix(in srgb, var(--m-accent, #3df0ff) 22%, transparent), rgba(20, 60, 120, 0.3));
+  border: 1px solid color-mix(in srgb, var(--m-accent, #3df0ff) 55%, transparent);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  color: var(--cyber-accent);
-  box-shadow: 0 0 10px rgba(31, 228, 255, 0.15);
+  color: var(--m-accent, #3df0ff);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--m-accent, #3df0ff) 35%, transparent);
 }
 
 .monitor-info {

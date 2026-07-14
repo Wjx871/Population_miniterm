@@ -72,21 +72,13 @@ export function approvalStatusOption(rows = []) {
   const data = Array.isArray(rows) ? rows : []
   const total = data.reduce((sum, item) => sum + (item.count || item.value || 0), 0)
 
-  // 黄、绿、红、蓝
+  // 待审批黄 / 已通过绿 / 已驳回红 / 已办结蓝
   const colorMap = {
     PENDING: theme.dashboardChartColors[2],
     APPROVED: theme.dashboardChartColors[1],
     REJECTED: theme.dashboardChartColors[3],
     COMPLETED: theme.dashboardChartColors[4]
   }
-
-  const chartData = data.map((item) => {
-    return {
-      name: item.name || item.code || item.label || '未知',
-      value: item.count || item.value || 0,
-      itemStyle: { color: colorMap[item.name] || theme.dashboardChartColors[0] }
-    }
-  })
 
   const labelMap = {
     PENDING: '待审批',
@@ -95,47 +87,116 @@ export function approvalStatusOption(rows = []) {
     COMPLETED: '已办结'
   }
 
-  chartData.forEach((d) => {
-    if (labelMap[d.name]) d.name = labelMap[d.name]
+  const chartData = data.map((item) => {
+    const code = item.name || item.code || item.label || '未知'
+    return {
+      name: labelMap[code] || code,
+      value: item.count || item.value || 0,
+      itemStyle: {
+        color: colorMap[code] || theme.dashboardChartColors[0],
+        shadowBlur: 12,
+        shadowColor: colorMap[code] || theme.dashboardChartColors[0]
+      }
+    }
   })
 
+  const formatNum = (n) => Number(n || 0).toLocaleString()
+
   return {
-    tooltip: { ...theme.darkTooltip, trigger: 'item' },
+    color: theme.dashboardChartColors,
+    tooltip: {
+      ...theme.darkTooltip,
+      trigger: 'item',
+      formatter: (p) => {
+        const percent = total > 0 ? ((p.value / total) * 100).toFixed(1) : '0.0'
+        return `${p.marker}${p.name}<br/>数量：${formatNum(p.value)}<br/>占比：${percent}%`
+      }
+    },
     legend: {
       ...theme.darkLegend,
       orient: 'vertical',
-      right: '5%',
+      right: 8,
       top: 'center',
-      itemGap: 16,
+      itemGap: 14,
+      itemWidth: 10,
+      itemHeight: 10,
       formatter: (name) => {
         const target = chartData.find((d) => d.name === name)
         const val = target ? target.value : 0
         const percent = total > 0 ? Math.round((val / total) * 100) : 0
-        return `{name|${name}}  {value|${val}}  {percent|${percent}%}`
+        return `{name|${name}}{value|${formatNum(val)}}{percent|${percent}%}`
       },
       textStyle: {
         rich: {
-          name: { color: theme.dashboardChartColors[2], fontSize: 13, width: 50 },
-          value: { color: '#fff', fontSize: 14, fontWeight: 'bold', width: 40 },
-          percent: { color: theme.dashboardChartColors[5], fontSize: 13 }
+          name: {
+            color: '#e8f6ff',
+            fontSize: 13,
+            width: 52,
+            padding: [0, 8, 0, 0]
+          },
+          value: {
+            color: '#ffffff',
+            fontSize: 13,
+            fontWeight: 'bold',
+            fontFamily: 'Courier New',
+            width: 72,
+            align: 'right',
+            padding: [0, 8, 0, 0]
+          },
+          percent: {
+            color: '#9ad8ff',
+            fontSize: 12,
+            width: 40,
+            align: 'right'
+          }
+        }
+      }
+    },
+    title: {
+      text: `{total|${formatNum(total)}}\n{label|总计}`,
+      left: '34%',
+      top: '42%',
+      textAlign: 'center',
+      textStyle: {
+        rich: {
+          total: {
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: '#ffffff',
+            fontFamily: 'Courier New',
+            lineHeight: 24,
+            textShadowColor: 'rgba(61,240,255,0.55)',
+            textShadowBlur: 8
+          },
+          label: {
+            fontSize: 12,
+            color: '#a8c8e8',
+            lineHeight: 18
+          }
         }
       }
     },
     series: [
       {
         type: 'pie',
-        radius: ['55%', '75%'],
+        radius: ['52%', '72%'],
         center: ['35%', '50%'],
-        avoidLabelOverlap: false,
+        avoidLabelOverlap: true,
         label: { show: false },
         labelLine: { show: false },
         data: chartData,
         itemStyle: {
-          borderWidth: 4,
+          borderWidth: 3,
           borderColor: theme.chartBg,
-          borderRadius: 10,
-          shadowBlur: 10,
-          shadowColor: 'rgba(0, 0, 0, 0.5)'
+          borderRadius: 8
+        },
+        emphasis: {
+          scale: true,
+          scaleSize: 6,
+          itemStyle: {
+            shadowBlur: 20,
+            shadowColor: 'rgba(61, 240, 255, 0.55)'
+          }
         }
       }
     ]
@@ -161,16 +222,16 @@ export function businessTypeShareOption(rows = []) {
     FLOATING_POPULATION: '流动人口'
   }
 
-  const barColor = theme.dashboardChartColors[0]
+  const palette = theme.dashboardChartColors
 
   return {
-    color: [barColor],
+    color: palette,
     tooltip: {
       ...theme.darkTooltip,
       trigger: 'axis',
       axisPointer: { type: 'shadow' }
     },
-    grid: { ...theme.darkGrid, left: 10, top: 10, bottom: 0 },
+    grid: { ...theme.darkGrid, left: 10, top: 10, bottom: 0, right: 48 },
     xAxis: {
       type: 'value',
       show: false
@@ -180,33 +241,41 @@ export function businessTypeShareOption(rows = []) {
       inverse: false,
       axisLine: { show: false },
       axisTick: { show: false },
-      axisLabel: { color: theme.darkCategoryAxis.axisLabel.color, fontSize: 13 },
+      axisLabel: { color: '#e2f3ff', fontSize: 13 },
       data: sorted.map((item) => labelMap[item.name || item.code] || item.name || '')
     },
     series: [
       {
         type: 'bar',
-        barWidth: 12,
+        barWidth: 14,
         showBackground: true,
         backgroundStyle: {
-          color: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: [0, 6, 6, 0]
+          color: 'rgba(255, 255, 255, 0.06)',
+          borderRadius: [0, 8, 8, 0]
         },
         itemStyle: {
-          borderRadius: [0, 6, 6, 0],
-          color: theme.horizontalBarGradient(barColor, 0.1),
-          shadowBlur: 8,
-          shadowColor: 'rgba(31, 228, 255, 0.45)'
+          borderRadius: [0, 8, 8, 0]
         },
         label: {
           show: true,
           position: 'right',
-          color: barColor,
+          color: '#9ef7ff',
           fontFamily: 'Courier New',
           fontWeight: 'bold',
-          formatter: (params) => params.value
+          formatter: (params) => Number(params.value || 0).toLocaleString()
         },
-        data: sorted.map((item) => item.count || item.value || 0)
+        // 每条业务用不同霓虹色，增强科技感
+        data: sorted.map((item, index) => {
+          const color = palette[index % palette.length]
+          return {
+            value: item.count || item.value || 0,
+            itemStyle: {
+              color: theme.horizontalBarGradient(color, 0.12),
+              shadowBlur: 12,
+              shadowColor: color
+            }
+          }
+        })
       }
     ]
   }

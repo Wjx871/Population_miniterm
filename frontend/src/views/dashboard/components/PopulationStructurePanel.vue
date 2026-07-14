@@ -218,28 +218,20 @@ const ageGroups = computed(() => {
 
 .age-bar-wrapper {
   flex: 1;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
   overflow: hidden;
   position: relative;
-}
-
-/* 背景轨道光环 */
-.age-bar-wrapper::before {
-  content: '';
-  position: absolute;
-  top: 0; bottom: 0; left: 0; right: 0;
-  box-shadow: inset 0 0 4px rgba(31, 228, 255, 0.1);
-  border-radius: 4px;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.25);
 }
 
 .age-bar {
   height: 100%;
-  background: linear-gradient(90deg, rgba(31, 228, 255, 0.18) 0%, var(--cyber-accent) 100%);
-  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(90, 168, 255, 0.25) 0%, #3df0ff 55%, #9ef7ff 100%);
+  border-radius: 999px;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 10px var(--cyber-accent-glow);
+  box-shadow: 0 0 14px rgba(61, 240, 255, 0.55);
   position: relative;
 }
 
@@ -248,12 +240,12 @@ const ageGroups = computed(() => {
   content: '';
   position: absolute;
   right: 0;
-  top: 0;
-  height: 100%;
-  width: 4px;
+  top: -2px;
+  height: 16px;
+  width: 8px;
   background: #fff;
-  border-radius: 2px;
-  box-shadow: 0 0 8px #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #fff, 0 0 16px #3df0ff;
 }
 
 .age-value {

@@ -16,12 +16,12 @@
 
       <!-- 顶部 KPI 指标区 -->
       <section class="kpi-grid">
-        <DashboardKpiCard label="当前户籍人口" :value="overview.registeredPopulation" icon="UserFilled" />
-        <DashboardKpiCard label="在册流动人口" :value="overview.activeFloatingPopulation" icon="User" />
-        <DashboardKpiCard label="有效居住证" :value="overview.activeResidencePermits" icon="Postcard" unit="张" />
-        <DashboardKpiCard label="待审批业务" :value="overview.pendingApprovals" icon="Document" unit="件" />
-        <DashboardKpiCard label="证件即将到期" :value="overview.expiringResidencePermits" icon="Warning" unit="张" />
-        <DashboardKpiCard label="本期净流入" :value="(overview.migrationInPeriod || 0) - (overview.migrationOutPeriod || 0)" icon="TrendCharts" />
+        <DashboardKpiCard label="当前户籍人口" :value="overview.registeredPopulation" icon="UserFilled" tone="cyan" />
+        <DashboardKpiCard label="在册流动人口" :value="overview.activeFloatingPopulation" icon="User" tone="blue" />
+        <DashboardKpiCard label="有效居住证" :value="overview.activeResidencePermits" icon="Postcard" unit="张" tone="green" />
+        <DashboardKpiCard label="待审批业务" :value="overview.pendingApprovals" icon="Document" unit="件" tone="yellow" />
+        <DashboardKpiCard label="证件即将到期" :value="overview.expiringResidencePermits" icon="Warning" unit="张" tone="red" />
+        <DashboardKpiCard label="本期净流入" :value="(overview.migrationInPeriod || 0) - (overview.migrationOutPeriod || 0)" icon="TrendCharts" tone="purple" />
       </section>
 
       <!-- 主要内容区骨架 -->
@@ -126,12 +126,45 @@ const {
   flex-direction: column;
   color: var(--cyber-text-primary);
   background-color: var(--cyber-bg-color);
-  /* 中心略提亮，弱化网格，避免整屏发灰发暗 */
   background-image:
-    radial-gradient(ellipse at 50% 35%, rgba(18, 72, 140, 0.55) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 28%, rgba(28, 96, 180, 0.42) 0%, transparent 52%),
+    radial-gradient(ellipse at 15% 80%, rgba(120, 70, 220, 0.12) 0%, transparent 35%),
+    radial-gradient(ellipse at 85% 70%, rgba(40, 180, 160, 0.1) 0%, transparent 30%),
     radial-gradient(ellipse at center, var(--cyber-bg-mid) 0%, var(--cyber-bg-color) 78%);
-  background-size: 100% 100%, 100% 100%;
-  background-position: center, center;
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-position: center, center, center, center;
+  overflow: hidden;
+}
+
+/* 低频扫描光，增强大屏科技感 */
+.dashboard-canvas::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 18%;
+  top: -20%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(61, 240, 255, 0.035) 45%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+  animation: screen-scan 9s linear infinite;
+}
+
+@keyframes screen-scan {
+  0% { top: -20%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.dashboard-canvas > * {
+  position: relative;
+  z-index: 1;
 }
 
 .kpi-grid {

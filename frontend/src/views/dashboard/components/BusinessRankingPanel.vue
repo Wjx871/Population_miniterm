@@ -10,7 +10,11 @@
               <span class="rank-value">{{ item.value }}<span class="unit">件</span></span>
             </div>
             <div class="rank-bar-wrapper">
-              <div class="rank-bar" :style="{ width: item.percent + '%' }"></div>
+              <div
+                class="rank-bar"
+                :class="'bar-' + (index + 1)"
+                :style="{ width: item.percent + '%' }"
+              ></div>
             </div>
           </div>
         </div>
@@ -48,25 +52,28 @@ const hasData = computed(() => {
 
 const rankingList = computed(() => {
   if (!hasData.value) return []
-  
-  // 过滤出有值的数据，并排序，取前 5
-  const validData = props.data.filter(item => (item.value || item.count) !== null && (item.value || item.count) !== undefined)
-  const sorted = validData.sort((a, b) => (b.value || b.count || 0) - (a.value || a.count || 0)).slice(0, 5)
-  
+
+  const validData = props.data.filter(
+    (item) => (item.value || item.count) !== null && (item.value || item.count) !== undefined
+  )
+  const sorted = validData
+    .sort((a, b) => (b.value || b.count || 0) - (a.value || a.count || 0))
+    .slice(0, 5)
+
   if (sorted.length === 0) return []
-  
+
   const max = sorted[0].value || sorted[0].count || 0
-  
-  return sorted.map(item => {
+
+  return sorted.map((item) => {
     const rawValue = item.value || item.count || 0
     let percent = 0
     if (max > 0) {
-      percent = Math.round((rawValue / max) * 100)
+      percent = Math.max(6, Math.round((rawValue / max) * 100))
     }
-    
+
     return {
       label: BUSINESS_LABELS[item.name || item.code] || item.name || item.label,
-      value: rawValue,
+      value: Number(rawValue).toLocaleString(),
       percent
     }
   })
@@ -77,7 +84,7 @@ const rankingList = computed(() => {
 .ranking-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   height: 100%;
   justify-content: center;
 }
@@ -91,47 +98,47 @@ const rankingList = computed(() => {
 .rank-number {
   width: 28px;
   height: 28px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 900;
-  color: var(--cyber-accent);
-  background: rgba(0, 229, 255, 0.1);
-  /* 赛博切角六边形 */
+  color: #7cffff;
+  background: rgba(61, 240, 255, 0.12);
   clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
-  border: 1px solid rgba(0, 229, 255, 0.5);
-  box-shadow: inset 0 0 8px rgba(0, 229, 255, 0.4);
-  text-shadow: 0 0 5px var(--cyber-accent);
+  border: 1px solid rgba(61, 240, 255, 0.55);
+  box-shadow: inset 0 0 10px rgba(61, 240, 255, 0.35), 0 0 8px rgba(61, 240, 255, 0.2);
+  text-shadow: 0 0 6px rgba(61, 240, 255, 0.8);
 }
 
-/* 前三名特殊高亮着色 */
 .rank-1 {
-  background: rgba(255, 107, 107, 0.18);
-  color: var(--cyber-red);
-  text-shadow: 0 0 8px var(--cyber-red);
-  border-color: var(--cyber-red);
-  box-shadow: inset 0 0 10px rgba(255, 107, 107, 0.45);
+  background: rgba(255, 107, 107, 0.22);
+  color: #ff8f8f;
+  border-color: #ff7b7b;
+  box-shadow: inset 0 0 12px rgba(255, 107, 107, 0.5), 0 0 10px rgba(255, 107, 107, 0.25);
+  text-shadow: 0 0 8px #ff7b7b;
 }
 
 .rank-2 {
-  background: rgba(255, 209, 102, 0.16);
-  color: var(--cyber-yellow);
-  text-shadow: 0 0 8px var(--cyber-yellow);
-  border-color: var(--cyber-yellow);
-  box-shadow: inset 0 0 10px rgba(255, 209, 102, 0.4);
+  background: rgba(255, 224, 138, 0.2);
+  color: #ffe08a;
+  border-color: #ffe08a;
+  box-shadow: inset 0 0 12px rgba(255, 224, 138, 0.45), 0 0 10px rgba(255, 224, 138, 0.22);
+  text-shadow: 0 0 8px #ffe08a;
 }
 
 .rank-3 {
-  background: rgba(57, 229, 140, 0.14);
-  color: var(--cyber-green);
-  text-shadow: 0 0 8px var(--cyber-green);
-  border-color: var(--cyber-green);
-  box-shadow: inset 0 0 10px rgba(57, 229, 140, 0.35);
+  background: rgba(77, 255, 154, 0.18);
+  color: #4dff9a;
+  border-color: #4dff9a;
+  box-shadow: inset 0 0 12px rgba(77, 255, 154, 0.4), 0 0 10px rgba(77, 255, 154, 0.22);
+  text-shadow: 0 0 8px #4dff9a;
 }
 
 .rank-info {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -151,7 +158,7 @@ const rankingList = computed(() => {
 
 .rank-value {
   font-size: 14px;
-  color: #7cffff;
+  color: #9ef7ff;
   font-family: 'Courier New', Courier, monospace;
   font-weight: 700;
 }
@@ -163,50 +170,59 @@ const rankingList = computed(() => {
 }
 
 .rank-bar-wrapper {
-  height: 6px;
-  background: repeating-linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.02),
-    rgba(255, 255, 255, 0.02) 4px,
-    transparent 4px,
-    transparent 6px
-  );
-  border-radius: 0;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
   position: relative;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.25);
 }
 
 .rank-bar {
   height: 100%;
-  background: linear-gradient(90deg, rgba(31, 228, 255, 0.1) 0%, var(--cyber-accent) 100%);
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 10px var(--cyber-accent-glow);
+  border-radius: 999px;
   position: relative;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(90deg, rgba(61, 240, 255, 0.25) 0%, #3df0ff 100%);
+  box-shadow: 0 0 12px rgba(61, 240, 255, 0.55);
 }
 
-/* 分段式能量罩特效 (遮罩法) */
-.rank-bar::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent,
-    transparent 4px,
-    var(--cyber-panel-bg) 4px,
-    var(--cyber-panel-bg) 6px
-  );
-}
-
-/* 高亮头 */
 .rank-bar::after {
   content: '';
   position: absolute;
   right: 0;
   top: -2px;
-  height: 10px;
-  width: 2px;
+  width: 8px;
+  height: 14px;
+  border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 8px #fff, 0 0 15px var(--cyber-accent);
+  box-shadow: 0 0 10px #fff, 0 0 16px currentColor;
+}
+
+/* 前几名不同霓虹色 */
+.bar-1 {
+  background: linear-gradient(90deg, rgba(255, 107, 107, 0.25) 0%, #ff7b7b 100%);
+  box-shadow: 0 0 14px rgba(255, 107, 107, 0.55);
+  color: #ff7b7b;
+}
+.bar-2 {
+  background: linear-gradient(90deg, rgba(255, 224, 138, 0.25) 0%, #ffe08a 100%);
+  box-shadow: 0 0 14px rgba(255, 224, 138, 0.55);
+  color: #ffe08a;
+}
+.bar-3 {
+  background: linear-gradient(90deg, rgba(77, 255, 154, 0.25) 0%, #4dff9a 100%);
+  box-shadow: 0 0 14px rgba(77, 255, 154, 0.55);
+  color: #4dff9a;
+}
+.bar-4 {
+  background: linear-gradient(90deg, rgba(90, 168, 255, 0.25) 0%, #5aa8ff 100%);
+  box-shadow: 0 0 14px rgba(90, 168, 255, 0.55);
+  color: #5aa8ff;
+}
+.bar-5 {
+  background: linear-gradient(90deg, rgba(192, 140, 255, 0.25) 0%, #c08cff 100%);
+  box-shadow: 0 0 14px rgba(192, 140, 255, 0.55);
+  color: #c08cff;
 }
 </style>

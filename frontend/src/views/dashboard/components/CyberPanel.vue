@@ -55,13 +55,38 @@ defineProps({
   height: 100%;
   min-height: 0;
   padding: 1px;
-  background: linear-gradient(180deg, rgba(12, 48, 96, 0.95) 0%, rgba(6, 28, 62, 0.96) 100%);
-  border: 1px solid rgba(77, 240, 255, 0.22);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(61, 240, 255, 0.12) 0%, transparent 35%),
+    linear-gradient(180deg, rgba(12, 48, 96, 0.95) 0%, rgba(6, 28, 62, 0.96) 100%);
+  border: 1px solid rgba(77, 240, 255, 0.28);
   box-shadow:
-    inset 0 0 22px rgba(61, 240, 255, 0.06),
-    0 0 16px rgba(61, 240, 255, 0.08);
+    inset 0 0 22px rgba(61, 240, 255, 0.08),
+    0 0 18px rgba(61, 240, 255, 0.1);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+/* 顶部流光 */
+.cyber-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(61, 240, 255, 0.95), transparent);
+  box-shadow: 0 0 12px rgba(61, 240, 255, 0.8);
+  animation: panel-flow 5.5s linear infinite;
+  z-index: 4;
+  pointer-events: none;
+}
+
+@keyframes panel-flow {
+  0% { left: -40%; opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
 }
 
 /* 核心实线边框（由四个伪元素构成） */
@@ -94,12 +119,19 @@ defineProps({
   height: 16px;
   border: 2px solid var(--cyber-accent);
   z-index: 3;
+  box-shadow: 0 0 8px rgba(61, 240, 255, 0.45);
+  animation: corner-pulse 3.2s ease-in-out infinite;
+}
+
+@keyframes corner-pulse {
+  0%, 100% { opacity: 0.65; filter: brightness(1); }
+  50% { opacity: 1; filter: brightness(1.35); }
 }
 
 .top-left { top: -1px; left: -1px; border-right: none; border-bottom: none; }
-.top-right { top: -1px; right: -1px; border-left: none; border-bottom: none; }
-.bottom-left { bottom: -1px; left: -1px; border-right: none; border-top: none; }
-.bottom-right { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+.top-right { top: -1px; right: -1px; border-left: none; border-bottom: none; animation-delay: 0.4s; }
+.bottom-left { bottom: -1px; left: -1px; border-right: none; border-top: none; animation-delay: 0.8s; }
+.bottom-right { bottom: -1px; right: -1px; border-left: none; border-top: none; animation-delay: 1.2s; }
 
 .panel-inner {
   flex: 1;
