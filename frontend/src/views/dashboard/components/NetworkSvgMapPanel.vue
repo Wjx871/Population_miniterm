@@ -8,13 +8,14 @@
       <div class="scan-line" aria-hidden="true"></div>
       <div class="glow-ring" aria-hidden="true"></div>
 
-      <!-- 中央主视觉视频（用户后续可单独深度优化） -->
       <video
         src="/media/cyber-video-2.mp4"
         autoplay
         loop
         muted
         playsinline
+        disablePictureInPicture
+        controlslist="nodownload nofullscreen noremoteplayback"
         class="static-center-video"
         aria-label="中央态势分布图"
       ></video>
@@ -107,6 +108,7 @@ defineProps({
   height: 100%;
   object-fit: contain;
   z-index: 2;
+  pointer-events: none; /* 完全禁用鼠标交互，防止浏览器将其识别为可操作视频 */
   /* 去掉 screen 混合，避免整块发黑发虚 */
   filter: drop-shadow(0 0 20px rgba(61, 240, 255, 0.35)) brightness(1.08) contrast(1.05);
   mix-blend-mode: normal;

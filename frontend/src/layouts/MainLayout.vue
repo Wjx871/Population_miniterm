@@ -241,7 +241,8 @@ export default {
 
 .navbar {
   height: 60px;
-  background-color: var(--el-color-primary, #409eff);
+  /* 稳重的政务/企业级深蓝色渐变 */
+  background: linear-gradient(90deg, #0f2c59 0%, #174282 100%);
   color: white;
   display: flex;
   justify-content: space-between;
@@ -298,6 +299,7 @@ export default {
 }
 .logout-btn:hover {
   color: white;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .main-layout {
