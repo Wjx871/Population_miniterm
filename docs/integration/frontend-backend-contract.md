@@ -66,3 +66,11 @@
 - 最终语义：保留最新前端完整页面、拆分路由、专用 Handler、blob 下载、启动与数据库验收能力；同时保留 `/auth/me`、服务端 logout、401 去重、403 不退出、统一解包、正式权限码、分页/错误态及显式 execute 契约。
 - 重复实现：合并后移除未被最终注册表和路由使用的 `directBusinessHandler`、并行 API 与并行管理页面，复杂业务统一由专用 Handler 注册表分发。
 - 状态矩阵仍为 PASS 27、OUT_OF_SCOPE 2；没有新增 CONTRACT_MISMATCH 或 NOT_IMPLEMENTED。
+
+## 人工验收集中修复契约（2026-07-14）
+
+- 注销专业详情 `GET /api/cancellations/applications/{applicationId}` 使用非锁定户籍查询；只读事务不再执行 `FOR UPDATE`，缺少专业记录返回 404，业务冲突仍返回 409。
+- 居住证专业详情 `GET /api/residence-permits/applications/{applicationId}` 的路径参数统一为通用申请 ID；存在记录返回 200，缺少记录返回结构化 404。
+- 迁入家庭户搜索复用 `GET /api/households`，提交 `householdNo/headPersonName/regionCode/status=ACTIVE` 与 Spring 分页参数，不新增假选项。
+- 迁出与人口详情复用 `GET /api/queries/persons/{personId}`，返回受权限和数据范围保护的脱敏当前户籍、家庭户与关系信息；无有效户籍在前端提前阻止，后端 409 防线保持。
+- 家庭户正式状态统一为 `ACTIVE/PENDING_CANCELLATION/ARCHIVED/CANCELLED`，中文分别为“有效/待注销/已归档/已注销”。

@@ -27,8 +27,10 @@
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="query.status" placeholder="全部" clearable style="width: 120px;">
-            <el-option label="正常" value="正常" />
-            <el-option label="已撤销" value="已撤销" />
+            <el-option label="有效" value="ACTIVE" />
+            <el-option label="待注销" value="PENDING_CANCELLATION" />
+            <el-option label="已归档" value="ARCHIVED" />
+            <el-option label="已注销" value="CANCELLED" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -54,7 +56,7 @@
             <el-tag size="small" type="info">{{ row.memberCount || 0 }} 人</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100" align="center">
+        <el-table-column prop="status" label="状态" width="130" align="center" show-overflow-tooltip>
           <template #default="{ row }">
             <StatusTag :value="row.status" />
           </template>

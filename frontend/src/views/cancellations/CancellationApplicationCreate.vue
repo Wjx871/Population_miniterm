@@ -20,13 +20,13 @@
           <el-radio-group v-model="form.objectType" :disabled="isReadonly || Boolean(applicationId)">
             <el-radio-button
               v-if="canCreatePerson || (Boolean(applicationId) && form.objectType === 'PERSON')"
-              label="PERSON"
+              value="PERSON"
             >
               人员注销
             </el-radio-button>
             <el-radio-button
               v-if="canCreateHousehold || (Boolean(applicationId) && form.objectType === 'HOUSEHOLD')"
-              label="HOUSEHOLD"
+              value="HOUSEHOLD"
             >
               家庭户销户
             </el-radio-button>

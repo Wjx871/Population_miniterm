@@ -20,13 +20,15 @@
       :label="formatLabel(item)"
       :value="item.id"
     />
+    <template #empty>
+      <div class="select-empty">{{ errorMessage || emptyMessage }}</div>
+    </template>
   </el-select>
 </template>
 
 <script setup>
 /**
- * 家庭户远程选择器（结构完成）。
- * 接口契约待后端确认；当前无 HouseholdController 时搜索会失败并展示空列表，禁止 Mock。
+ * 家庭户远程选择器，使用正式家庭户分页接口与后端枚举。
  */
 import { ref, watch } from 'vue'
 import { getHouseholdPage, getHouseholdById } from '../../api/households'
@@ -48,7 +50,11 @@ const props = defineProps({
   },
   status: {
     type: String,
-    default: '正常',
+    default: 'ACTIVE',
+  },
+  regionCode: {
+    type: String,
+    default: '',
   },
   excludeIds: {
     type: Array,
@@ -67,12 +73,14 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'change', 'select'])
 
 const loading = ref(false)
+const errorMessage = ref('')
 const options = ref([])
 const selectedCache = ref(new Map())
 let debounceTimer = null
 let requestSeq = 0
 
 const maxSize = () => Math.min(20, Math.max(1, Number(props.size) || 20))
+const emptyMessage = '所选行政区划下暂无符合条件的有效家庭户'
 
 function formatLabel(item) {
   if (!item) return ''
@@ -116,10 +124,10 @@ async function fetchHouseholds(keyword = '') {
     if (props.status) {
       query.status = props.status
     }
+    if (props.regionCode) query.regionCode = props.regionCode
 
     const text = String(keyword || '').trim()
     if (text) {
-      // 接口契约待后端确认：常见筛选为户号或户主姓名
       if (/^\d+$/.test(text) || text.length >= 6) {
         query.householdNo = text
       } else {
@@ -132,10 +140,11 @@ async function fetchHouseholds(keyword = '') {
 
     const page = normalizePageResult(res)
     const list = normalizeHouseholdList(page.records)
+    errorMessage.value = ''
     mergeOptions(list)
   } catch (error) {
     if (seq !== requestSeq) return
-    console.error('家庭户远程搜索失败', error)
+    errorMessage.value = '家庭户加载失败，请稍后重试'
     mergeOptions([])
   } finally {
     if (seq === requestSeq) {
@@ -215,4 +224,14 @@ watch(
   },
   { deep: true }
 )
+
+watch(
+  () => props.regionCode,
+  () => {
+    options.value = []
+    if (props.modelValue != null) handleClear()
+  }
+)
 </script>
+
+<style scoped>.select-empty{padding:10px 16px;color:var(--el-text-color-secondary);text-align:center}</style>
