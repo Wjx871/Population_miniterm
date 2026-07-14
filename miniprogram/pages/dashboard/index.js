@@ -1,41 +1,82 @@
 const dashboard = require('../../services/dashboard')
-const approval = require('../../services/approval')
 const { can } = require('../../utils/permission')
 const { normalizeUser } = require('../../adapters/auth')
+const { normalizeMetrics, normalizeHealth, dashboardEntries } = require('../../adapters/dashboard')
+const { resolveErrorState } = require('../../utils/error-state')
 const { messageOf } = require('../../utils/error')
 
-function entries(user) {
-  return [
-    { title: '人口查询', desc: '查询人口基础档案', permission: 'population:view', url: '/pages/persons/list/index', icon: '人' },
-    { title: '家庭户查询', desc: '查询家庭户及成员', permission: 'household:view', url: '/pages/households/list/index', icon: '户' },
-    { title: '我的申请', desc: '申请状态和审批轨迹', permission: 'application:view', url: '/pages/applications/list/index', icon: '申' },
-    { title: '移动审批', desc: '待审批与已审批事项', permission: 'approval:view', url: '/pages/approvals/list/index', icon: '审' },
-    { title: '个人中心', desc: '账号、权限和服务状态', permission: null, url: '/pages/profile/index', icon: '我' }
-  ].filter((item) => !item.permission || can(user, item.permission))
-}
-
 Page({
-  data: { user: {}, entries: [], loading: true, error: '', stats: null },
+  data: {
+    user: {},
+    entries: [],
+    metrics: normalizeMetrics(null, null),
+    health: normalizeHealth(null),
+    loading: false,
+    metricsError: '',
+    metricsErrorType: 'unknown',
+    metricNotice: ''
+  },
+
   onShow() {
     const user = normalizeUser(getApp().globalData.user)
     if (!user.userId) return
-    this.setData({ user, entries: entries(user) })
-    this.load()
+    this.setData({ user, entries: dashboardEntries(user) })
+    return this.load()
   },
+
   async load() {
+    if (this.data.loading) return
     const user = this.data.user
-    this.setData({ loading: true, error: '' })
-    try {
-      const jobs = []
-      if (can(user, 'statistics:view')) jobs.push(dashboard.overview())
-      else jobs.push(Promise.resolve({ registeredPopulation: null, pendingApprovals: null }))
-      if (can(user, 'household:view')) jobs.push(dashboard.householdTotal())
-      else jobs.push(Promise.resolve(null))
-      const [overview, householdCount] = await Promise.all(jobs)
-      this.setData({ stats: { population: overview.registeredPopulation, households: householdCount, pending: overview.pendingApprovals } })
-    } catch (error) { this.setData({ error: messageOf(error), stats: null }) }
-    finally { this.setData({ loading: false }); wx.stopPullDownRefresh() }
+    const canViewStatistics = can(user, 'statistics:view')
+    const canViewHouseholds = can(user, 'household:view')
+    this.setData({ loading: true, metricsError: '', metricNotice: '' })
+
+    const overviewJob = canViewStatistics ? dashboard.overview() : Promise.resolve(null)
+    const householdJob = canViewHouseholds ? dashboard.householdTotal() : Promise.resolve(null)
+    const [overviewResult, householdResult, healthResult] = await Promise.allSettled([
+      overviewJob,
+      householdJob,
+      dashboard.health()
+    ])
+
+    const metricResults = [
+      canViewStatistics ? overviewResult : null,
+      canViewHouseholds ? householdResult : null
+    ].filter(Boolean)
+    const metricFailures = metricResults.filter((result) => result.status === 'rejected')
+    const allMetricsFailed = metricResults.length > 0 && metricFailures.length === metricResults.length
+    const firstMetricError = metricFailures[0] && metricFailures[0].reason
+    let metricNotice = ''
+    if (!metricResults.length) metricNotice = '当前账号暂无指标查看权限'
+    else if (metricFailures.length && !allMetricsFailed) metricNotice = '部分指标暂不可用，请稍后刷新'
+
+    this.setData({
+      metrics: normalizeMetrics(
+        overviewResult.status === 'fulfilled' ? overviewResult.value : null,
+        householdResult.status === 'fulfilled' ? householdResult.value : null
+      ),
+      health: normalizeHealth(healthResult.status === 'fulfilled' ? healthResult.value : null),
+      metricsError: allMetricsFailed ? '核心指标暂不可用，请稍后重试' : '',
+      metricsErrorType: allMetricsFailed ? resolveErrorState({
+        statusCode: firstMetricError && firstMetricError.statusCode,
+        message: messageOf(firstMetricError)
+      }).type : 'unknown',
+      metricNotice
+    })
+    this.setData({ loading: false })
+    wx.stopPullDownRefresh()
   },
-  onPullDownRefresh() { this.load() },
-  open(e) { wx.navigateTo({ url: e.currentTarget.dataset.url }) }
+
+  onPullDownRefresh() {
+    if (this.data.loading) {
+      wx.stopPullDownRefresh()
+      return
+    }
+    return this.load()
+  },
+
+  open(event) {
+    const url = event.currentTarget.dataset.url
+    if (url) wx.navigateTo({ url })
+  }
 })

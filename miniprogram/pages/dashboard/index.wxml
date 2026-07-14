@@ -1,13 +1,91 @@
-<view class="page">
-  <view class="hero card"><view><view class="welcome">您好，{{user.displayName}}</view><view class="muted">{{user.roleDisplay}} · {{user.dataScopeDisplay}}</view></view><view class="avatar">{{user.avatarText}}</view></view>
-  <view class="section-title">数据概览</view>
-  <loading-state wx:if="{{loading}}" />
-  <error-state wx:elif="{{error}}" message="{{error}}" bindretry="load" />
-  <view wx:else class="grid stats">
-    <view class="stat"><view class="muted">人口数量</view><view class="stat-number">{{stats.population === null ? '—' : stats.population}}</view></view>
-    <view class="stat"><view class="muted">家庭户数量</view><view class="stat-number">{{stats.households === null ? '—' : stats.households}}</view></view>
-    <view class="stat"><view class="muted">待审批数量</view><view class="stat-number">{{stats.pending === null ? '—' : stats.pending}}</view></view>
+<view class="page dashboard-page">
+  <view class="user-summary summary-card">
+    <view class="avatar">{{user.avatarText}}</view>
+    <view class="user-main">
+      <view class="welcome">您好，{{user.displayName}}</view>
+      <view class="user-meta">
+        <text class="role-chip">{{user.roleDisplay}}</text>
+        <text class="department ellipsis">{{user.departmentDisplay}}</text>
+      </view>
+      <view class="system-status">
+        <text class="status-dot {{health.type}}"></text>
+        <text>{{health.text}}</text>
+      </view>
+    </view>
   </view>
-  <view class="section-title functions">常用功能</view>
-  <view class="entry card" wx:for="{{entries}}" wx:key="title" data-url="{{item.url}}" bindtap="open"><view class="entry-icon">{{item.icon}}</view><view class="entry-main"><view>{{item.title}}</view><view class="muted entry-desc">{{item.desc}}</view></view><view class="arrow">›</view></view>
+
+  <view class="page-section">
+    <view class="section-header">
+      <view>
+        <view class="section-title">核心业务指标</view>
+        <view class="section-caption">数据按当前账号权限实时加载</view>
+      </view>
+      <text class="section-extra" bindtap="load">刷新</text>
+    </view>
+
+    <loading-state wx:if="{{loading}}" text="正在加载工作台数据…" />
+    <error-state
+      wx:elif="{{metricsError}}"
+      type="{{metricsErrorType}}"
+      message="{{metricsError}}"
+      bindretry="load"
+    />
+    <block wx:else>
+      <view wx:if="{{metricNotice}}" class="metric-notice notice-card">
+        {{metricNotice}}
+      </view>
+      <view class="metrics-grid">
+        <view
+          class="metric-card metric-card--{{item.tone}} {{item.available ? '' : 'metric-card--unavailable'}}"
+          wx:for="{{metrics}}"
+          wx:key="key"
+        >
+          <view class="metric-top">
+            <view class="metric-icon metric-icon--{{item.icon}}">
+              <view class="metric-icon__shape"></view>
+            </view>
+            <text wx:if="{{!item.available}}" class="unavailable-mark">未提供</text>
+          </view>
+          <view class="metric-value">{{item.valueText}}</view>
+          <view class="metric-label">{{item.label}}</view>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view class="page-section">
+    <view class="section-header">
+      <view>
+        <view class="section-title">快捷入口</view>
+        <view class="section-caption">按当前账号权限展示</view>
+      </view>
+    </view>
+    <empty-state
+      wx:if="{{!entries.length}}"
+      title="暂无可用功能"
+      description="请联系系统管理员配置账号权限"
+    />
+    <view wx:else class="entry-grid">
+      <view
+        class="entry-card"
+        wx:for="{{entries}}"
+        wx:key="key"
+        data-url="{{item.url}}"
+        bindtap="open"
+      >
+        <view class="entry-icon entry-icon--{{item.icon}}">
+          <view class="entry-icon__shape"></view>
+        </view>
+        <view class="entry-title">{{item.title}}</view>
+        <view class="entry-description">{{item.desc}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="dashboard-footer">
+    <text class="status-dot {{health.type}}"></text>
+    <text>{{health.text}}</text>
+    <text class="footer-divider">·</text>
+    <text>数据以系统实时查询结果为准</text>
+  </view>
 </view>
