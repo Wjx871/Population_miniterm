@@ -6,6 +6,26 @@ export const FLOATING_STATUS = Object.freeze({
   EXPIRED: '已到期'
 })
 
+// 与后端 FloatingResidenceService.closeFloating 中的 reasonCode 取值保持一致
+export const CLOSE_REASON_CODE = Object.freeze({
+  LEFT_REGION: 'LEFT_REGION',
+  REGISTERED_LOCAL_HOUSEHOLD: 'REGISTERED_LOCAL_HOUSEHOLD',
+  PERSON_CANCELLED: 'PERSON_CANCELLED',
+  DUPLICATE_RECORD: 'DUPLICATE_RECORD',
+  OTHER_APPROVED: 'OTHER_APPROVED'
+})
+
+/**
+ * 流动登记的"非当前"状态集合。
+ * - 列表默认只看当前在册；
+ * - 历史行（current_flag 为空）如果通过 includeHistory=true 返回，将按这里的状态给出友好标签。
+ */
+export const FLOATING_INACTIVE_STATUSES = Object.freeze(['LEFT', 'CANCELLED', 'EXPIRED'])
+
+export function isFloatingClosed(status) {
+  return FLOATING_INACTIVE_STATUSES.includes(status)
+}
+
 // ==================== 居住证正式证件状态 ====================
 export const RESIDENCE_PERMIT_STATUS = Object.freeze({
   ACTIVE: '有效',

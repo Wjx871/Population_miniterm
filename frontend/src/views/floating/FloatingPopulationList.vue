@@ -1,7 +1,10 @@
 <template>
   <div class="page-container" v-loading="loading">
     <div class="page-header">
-      <div><h1>流动人口管理</h1><p class="subtitle">流动登记不等于户籍迁入；审批通过不等于正式登记已生成。</p></div>
+      <div>
+        <h1>流动人口管理</h1>
+        <p class="subtitle">流动登记不等于户籍迁入；审批通过不等于正式登记已生成。</p>
+      </div>
       <el-button v-if="canCreate" type="primary" @click="router.push('/floating-population/apply')">申请流动登记</el-button>
     </div>
 
@@ -13,8 +16,11 @@
         <el-form-item label="当前区划"><el-input v-model="query.currentRegionCode" clearable placeholder="区划编码" /></el-form-item>
         <el-form-item label="状态">
           <el-select v-model="query.status" clearable placeholder="全部">
-            <el-option v-for="(label, code) in FLOATING_STATUS" :key="code" :label="label" :value="code" />
+            <el-option v-for="(label, code) in statusOptions" :key="code" :label="label" :value="code" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="历史">
+          <el-switch v-model="includeHistory" />
         </el-form-item>
       </el-form>
     </SearchPanel>
@@ -32,7 +38,12 @@
         <el-table-column prop="plannedLeaveDate" label="计划离开" min-width="110" />
         <el-table-column prop="registrationDate" label="登记日期" min-width="110" />
         <el-table-column prop="eligibleFromDate" label="资格日期" min-width="110" />
-        <el-table-column label="状态" min-width="90"><template #default="{row}"><StatusTag :value="row.status" kind="floating" /></template></el-table-column>
+        <el-table-column label="状态" min-width="100">
+          <template #default="{row}">
+            <StatusTag :value="row.status" kind="floating" />
+            <span v-if="row.currentFlag === null || row.currentFlag === 0" class="history-flag">历史</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" min-width="280" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="router.push(`/floating-population/${row.floatingId}`)">详情</el-button>
@@ -54,7 +65,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import SearchPanel from '../../components/common/SearchPanel.vue'
@@ -76,6 +87,7 @@ const loading = ref(false)
 const records = ref([])
 const pager = reactive({ current: 1, size: 20, total: 0 })
 const query = reactive({ registrationNo: '', personName: '', identityNo: '', currentRegionCode: '', status: '' })
+const includeHistory = ref(false)
 
 const closeVisible = ref(false)
 const closeLoading = ref(false)
@@ -90,6 +102,24 @@ const canCreate = computed(() => userStore.hasPermission(PERMISSIONS.FLOATING_CR
 const canApplyPermit = computed(() => userStore.hasPermission(PERMISSIONS.RESIDENCE_PERMIT_APPLY))
 const canClose = computed(() => userStore.hasPermission(PERMISSIONS.FLOATING_CLOSE))
 
+// 默认只显示当前在册的四种状态；开启历史后才允许查询 LEFT/EXPIRED 等。
+const statusOptions = computed(() => {
+  const base = { ...FLOATING_STATUS }
+  if (!includeHistory.value) {
+    delete base.LEFT
+    delete base.EXPIRED
+    delete base.CANCELLED
+  }
+  return base
+})
+
+watch(includeHistory, () => {
+  if (!includeHistory.value && query.status && query.status !== 'ACTIVE') {
+    query.status = ''
+  }
+  handleSearch()
+})
+
 function truncateAddress(addr) {
   if (!addr) return '-'
   return addr.length > 15 ? addr.slice(0, 15) + '…' : addr
@@ -102,7 +132,12 @@ async function load() {
   lastRequestedPageSize = pager.size
   loading.value = true
   try {
-    const res = await getFloatingPopulationPage({ ...query, current: pager.current, size: pager.size })
+    const res = await getFloatingPopulationPage({
+      ...query,
+      includeHistory: includeHistory.value,
+      current: pager.current,
+      size: pager.size
+    })
     const page = normalizePageResult(res)
     if (isUnmounted || requestId !== latestRequestId) return
     records.value = normalizeFloatingList(page.records)
@@ -126,13 +161,26 @@ function handlePaginationChange() {
 }
 
 function handleSearch() { pager.current = 1; load() }
-function handleReset() { query.registrationNo = ''; query.personName = ''; query.identityNo = ''; query.currentRegionCode = ''; query.status = ''; pager.current = 1; load() }
+function handleReset() {
+  query.registrationNo = ''
+  query.personName = ''
+  query.identityNo = ''
+  query.currentRegionCode = ''
+  query.status = ''
+  includeHistory.value = false
+  pager.current = 1
+  load()
+}
 
 function goFirstIssue(row) {
   router.push(`/residence-permits/first-issue?floatingId=${row.floatingId}`)
 }
 
 function openCloseDialog(row) {
+  if (row.status !== 'ACTIVE') {
+    ElMessage.warning('当前登记已不再处于有效状态，无法再次关闭')
+    return
+  }
   closeTargetId = row.floatingId
   closeVersion.value = row.version
   closeVisible.value = true
@@ -144,7 +192,7 @@ async function handleClose(payload) {
     await closeFloatingPopulation(closeTargetId, payload)
     const updated = normalizeFloatingPopulation(await getFloatingPopulationById(closeTargetId))
     if (updated?.status !== 'ACTIVE') {
-      ElMessage.success('登记已关闭。后端会同步注销关联的 ACTIVE 居住证。如需核验，请前往居住证列表确认。')
+      ElMessage.success('登记已关闭。后端会同步注销关联的 ACTIVE 居住证，并保留为历史记录，仅在"包含历史"开启时显示。')
     } else {
       ElMessage.warning('关闭请求已返回，但未确认登记状态变更，请刷新查看。')
     }
@@ -168,4 +216,5 @@ onUnmounted(() => {
 .page-header{display:flex;justify-content:space-between;align-items:end}
 .page-header h1{margin:0 0 8px}
 .subtitle{margin:0;color:var(--el-text-color-secondary)}
+.history-flag{margin-left:6px;font-size:12px;color:var(--el-color-info)}
 </style>

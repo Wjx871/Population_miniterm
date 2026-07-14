@@ -20,7 +20,10 @@ export function executeFloatingApplication(applicationId, version) {
 }
 
 export function getFloatingPopulationPage(params) {
-  return request({ url: '/floating-populations', method: 'get', params: toSpringPageParams(params) })
+  const includeHistory = params && params.includeHistory ? { includeHistory: true } : {}
+  const next = { ...params, ...includeHistory }
+  delete next.includeHistory
+  return request({ url: '/floating-populations', method: 'get', params: toSpringPageParams(next) })
 }
 
 export function getFloatingPopulationById(floatingId) {

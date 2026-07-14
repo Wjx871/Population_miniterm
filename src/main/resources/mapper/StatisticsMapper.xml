@@ -13,7 +13,7 @@
     <select id="countFloatingPopulation" resultType="long">
         SELECT COUNT(*)
         FROM floating_population
-        WHERE status = '有效'
+        WHERE current_flag = 1 AND status = 'ACTIVE'
     </select>
 
     <select id="countKeyPopulation" resultType="long">
