@@ -173,24 +173,24 @@ onUnmounted(() => {
 .header-time {
   font-family: 'Courier New', Courier, monospace;
   font-size: 16px;
-  color: var(--cyber-text-secondary);
+  color: #e6f6ff;
   display: flex;
   align-items: center;
   gap: 8px;
   letter-spacing: 1px;
+  text-shadow: 0 0 8px rgba(61, 240, 255, 0.35);
 }
 
 .header-title {
   font-size: 32px;
   font-weight: 800;
-  color: #fff;
+  color: #ffffff;
   margin: 0;
   letter-spacing: 6px;
-  text-shadow: 0 2px 12px rgba(31, 228, 255, 0.75), 0 0 22px rgba(31, 228, 255, 0.35);
-  background: linear-gradient(to bottom, #ffffff 0%, #b8ecff 55%, #7dd8ff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  /* 不用 transparent fill，避免某些环境下标题发虚/看不见 */
+  text-shadow:
+    0 0 12px rgba(61, 240, 255, 0.85),
+    0 2px 10px rgba(0, 0, 0, 0.45);
 }
 
 .header-subtitle {
@@ -203,7 +203,7 @@ onUnmounted(() => {
 
 .eyebrow {
   font-size: 13px;
-  color: var(--cyber-text-muted);
+  color: #c5e4ff;
   letter-spacing: 2px;
   text-transform: uppercase;
 }
@@ -219,21 +219,21 @@ onUnmounted(() => {
 }
 
 .cyber-btn {
-  color: var(--cyber-text-primary) !important;
+  color: #f2fbff !important;
   font-size: 14px;
   min-height: 32px;
   padding: 4px 10px !important;
-  border: 1px solid transparent !important;
+  border: 1px solid rgba(77, 240, 255, 0.35) !important;
   border-radius: 2px;
   transition: color 0.25s, border-color 0.25s, text-shadow 0.25s, box-shadow 0.25s;
   margin-left: 8px;
 }
 
 .cyber-btn:hover {
-  color: var(--cyber-accent) !important;
-  border-color: rgba(31, 228, 255, 0.45) !important;
+  color: #7cffff !important;
+  border-color: rgba(77, 240, 255, 0.75) !important;
   text-shadow: 0 0 8px var(--cyber-accent);
-  box-shadow: 0 0 12px rgba(31, 228, 255, 0.18);
+  box-shadow: 0 0 12px rgba(61, 240, 255, 0.25);
 }
 
 .header-decoration {

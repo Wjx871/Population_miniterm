@@ -126,12 +126,12 @@ const {
   flex-direction: column;
   color: var(--cyber-text-primary);
   background-color: var(--cyber-bg-color);
+  /* 中心略提亮，弱化网格，避免整屏发灰发暗 */
   background-image:
-    radial-gradient(ellipse at center, var(--cyber-bg-mid) 0%, var(--cyber-bg-color) 70%),
-    linear-gradient(var(--cyber-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--cyber-grid) 1px, transparent 1px);
-  background-size: 100% 100%, 48px 48px, 48px 48px;
-  background-position: center, center, center;
+    radial-gradient(ellipse at 50% 35%, rgba(18, 72, 140, 0.55) 0%, transparent 55%),
+    radial-gradient(ellipse at center, var(--cyber-bg-mid) 0%, var(--cyber-bg-color) 78%);
+  background-size: 100% 100%, 100% 100%;
+  background-position: center, center;
 }
 
 .kpi-grid {

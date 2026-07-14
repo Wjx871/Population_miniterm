@@ -56,20 +56,21 @@ const statusText = computed(() => {
   align-items: center;
   padding: 0 40px;
   font-size: 13px;
-  color: var(--cyber-text-secondary);
-  border-top: 1px solid rgba(31, 228, 255, 0.18);
-  background: linear-gradient(0deg, rgba(2, 13, 34, 0.92) 0%, rgba(4, 25, 58, 0.35) 100%);
-  box-shadow: inset 0 1px 0 rgba(31, 228, 255, 0.12);
+  color: #d8ecff;
+  border-top: 1px solid rgba(77, 240, 255, 0.28);
+  background: linear-gradient(0deg, rgba(4, 22, 48, 0.96) 0%, rgba(8, 36, 72, 0.72) 100%);
+  box-shadow: inset 0 1px 0 rgba(77, 240, 255, 0.18);
 }
 
 .label {
-  color: var(--cyber-text-muted);
+  color: #b7d8f5;
 }
 
 .value {
-  color: var(--cyber-text-primary);
+  color: #ffffff;
   font-family: 'Courier New', Courier, monospace;
   letter-spacing: 0.5px;
+  font-weight: 600;
 }
 
 .status-indicator {

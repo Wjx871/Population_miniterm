@@ -145,18 +145,20 @@ const rankingList = computed(() => {
 
 .rank-label {
   font-size: 13px;
-  color: var(--cyber-text-primary);
+  color: #ffffff;
+  font-weight: 500;
 }
 
 .rank-value {
   font-size: 14px;
-  color: var(--cyber-accent);
+  color: #7cffff;
   font-family: 'Courier New', Courier, monospace;
+  font-weight: 700;
 }
 
 .unit {
   font-size: 12px;
-  color: var(--cyber-text-muted);
+  color: #c5e4ff;
   margin-left: 2px;
 }
 

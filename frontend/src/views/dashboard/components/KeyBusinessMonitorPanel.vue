@@ -87,21 +87,21 @@ export default {
 }
 
 .monitor-card {
-  background: var(--cyber-panel-bg-soft);
-  border: 1px solid rgba(31, 228, 255, 0.16);
+  background: rgba(12, 48, 96, 0.75);
+  border: 1px solid rgba(77, 240, 255, 0.28);
   border-radius: 4px;
   display: flex;
   align-items: center;
   padding: 12px;
   gap: 12px;
   transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
-  box-shadow: inset 0 0 12px rgba(31, 228, 255, 0.04);
+  box-shadow: inset 0 0 12px rgba(61, 240, 255, 0.06);
 }
 
 .monitor-card:hover {
-  background: rgba(31, 228, 255, 0.08);
-  border-color: rgba(31, 228, 255, 0.35);
-  box-shadow: inset 0 0 12px rgba(31, 228, 255, 0.12), 0 0 12px rgba(31, 228, 255, 0.08);
+  background: rgba(20, 70, 130, 0.85);
+  border-color: rgba(77, 240, 255, 0.55);
+  box-shadow: inset 0 0 12px rgba(61, 240, 255, 0.14), 0 0 12px rgba(61, 240, 255, 0.12);
 }
 
 .monitor-icon {
@@ -126,8 +126,9 @@ export default {
 }
 
 .monitor-label {
-  font-size: 12px;
-  color: var(--cyber-text-secondary);
+  font-size: 13px;
+  color: #e2f3ff;
+  font-weight: 500;
 }
 
 .monitor-value-wrapper {
@@ -137,15 +138,15 @@ export default {
 }
 
 .monitor-value {
-  font-size: 20px;
-  color: var(--cyber-text-primary);
+  font-size: 22px;
+  color: #ffffff;
   font-weight: bold;
   font-family: 'Courier New', Courier, monospace;
-  text-shadow: 0 0 10px rgba(31, 228, 255, 0.25);
+  text-shadow: 0 0 10px rgba(61, 240, 255, 0.4);
 }
 
 .monitor-unit {
   font-size: 12px;
-  color: var(--cyber-text-muted);
+  color: #c5e4ff;
 }
 </style>

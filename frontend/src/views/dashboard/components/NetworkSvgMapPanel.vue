@@ -56,13 +56,13 @@ defineProps({
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(31, 228, 255, 0.22);
+  border: 1px solid rgba(77, 240, 255, 0.35);
   background:
-    radial-gradient(ellipse at center, rgba(31, 228, 255, 0.08) 0%, transparent 55%),
-    linear-gradient(180deg, rgba(4, 25, 58, 0.25) 0%, rgba(2, 13, 34, 0.45) 100%);
+    radial-gradient(ellipse at center, rgba(40, 120, 210, 0.28) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(10, 42, 90, 0.55) 0%, rgba(4, 22, 52, 0.7) 100%);
   box-shadow:
-    inset 0 0 30px rgba(31, 228, 255, 0.08),
-    0 0 24px rgba(31, 228, 255, 0.08);
+    inset 0 0 30px rgba(61, 240, 255, 0.1),
+    0 0 24px rgba(61, 240, 255, 0.12);
   overflow: hidden;
 }
 
@@ -112,8 +112,9 @@ defineProps({
   height: 100%;
   object-fit: contain;
   z-index: 2;
-  filter: drop-shadow(0 0 24px rgba(31, 228, 255, 0.4)) brightness(1.15);
-  mix-blend-mode: screen;
+  /* 去掉 screen 混合，避免整块发黑发虚 */
+  filter: drop-shadow(0 0 20px rgba(61, 240, 255, 0.35)) brightness(1.08) contrast(1.05);
+  mix-blend-mode: normal;
 }
 
 .visual-caption {
@@ -128,9 +129,9 @@ defineProps({
   padding: 4px 12px;
   font-size: 12px;
   letter-spacing: 2px;
-  color: var(--cyber-text-secondary);
-  background: rgba(2, 13, 34, 0.55);
-  border: 1px solid rgba(31, 228, 255, 0.25);
+  color: #e8f6ff;
+  background: rgba(4, 22, 48, 0.72);
+  border: 1px solid rgba(77, 240, 255, 0.4);
   backdrop-filter: blur(2px);
 }
 

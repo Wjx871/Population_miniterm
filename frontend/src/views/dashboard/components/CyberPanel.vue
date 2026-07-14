@@ -55,10 +55,11 @@ defineProps({
   height: 100%;
   min-height: 0;
   padding: 1px;
-  background: var(--cyber-panel-bg);
+  background: linear-gradient(180deg, rgba(12, 48, 96, 0.95) 0%, rgba(6, 28, 62, 0.96) 100%);
+  border: 1px solid rgba(77, 240, 255, 0.22);
   box-shadow:
-    inset 0 0 22px rgba(31, 228, 255, 0.05),
-    0 0 14px rgba(31, 228, 255, 0.05);
+    inset 0 0 22px rgba(61, 240, 255, 0.06),
+    0 0 16px rgba(61, 240, 255, 0.08);
   display: flex;
   flex-direction: column;
 }
@@ -152,11 +153,11 @@ defineProps({
 }
 
 .title-text {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--cyber-text-primary);
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
   letter-spacing: 1px;
-  text-shadow: 0 0 8px rgba(31, 228, 255, 0.55);
+  text-shadow: 0 0 10px rgba(61, 240, 255, 0.65);
 }
 
 .header-extra {

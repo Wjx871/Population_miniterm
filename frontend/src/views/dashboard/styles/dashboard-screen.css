@@ -1,24 +1,24 @@
-/* 大屏深色变量体系 */
+/* 大屏深色变量体系 — 优先可读性与对比度 */
 :root {
-  --cyber-bg-color: #020d22;
-  --cyber-bg-mid: #05193c;
-  --cyber-panel-bg: rgba(4, 25, 58, 0.84);
-  --cyber-panel-bg-soft: rgba(6, 34, 75, 0.66);
-  --cyber-panel-header: rgba(15, 45, 105, 0.4);
-  --cyber-border-color: rgba(30, 208, 255, 0.35);
-  --cyber-border-highlight: #1fe4ff;
-  --cyber-text-primary: #f4fbff;
-  --cyber-text-secondary: #9db8d4;
-  --cyber-text-muted: #5f84a8;
-  --cyber-accent: #1fe4ff;
-  --cyber-accent-glow: rgba(31, 228, 255, 0.55);
-  --cyber-secondary: #2f7bff;
-  --cyber-green: #39e58c;
-  --cyber-yellow: #ffd166;
-  --cyber-red: #ff6b6b;
-  --cyber-blue: #3b82f6;
-  --cyber-purple: #a66cff;
-  --cyber-grid: rgba(48, 138, 210, 0.12);
+  --cyber-bg-color: #03122b;
+  --cyber-bg-mid: #0a2a55;
+  --cyber-panel-bg: rgba(8, 36, 78, 0.92);
+  --cyber-panel-bg-soft: rgba(12, 48, 96, 0.82);
+  --cyber-panel-header: rgba(18, 58, 118, 0.55);
+  --cyber-border-color: rgba(64, 210, 255, 0.55);
+  --cyber-border-highlight: #4df0ff;
+  --cyber-text-primary: #ffffff;
+  --cyber-text-secondary: #d4e9ff;
+  --cyber-text-muted: #a8c8e8;
+  --cyber-accent: #3df0ff;
+  --cyber-accent-glow: rgba(61, 240, 255, 0.7);
+  --cyber-secondary: #4d8dff;
+  --cyber-green: #4dff9a;
+  --cyber-yellow: #ffe08a;
+  --cyber-red: #ff7b7b;
+  --cyber-blue: #5aa8ff;
+  --cyber-purple: #c08cff;
+  --cyber-grid: rgba(80, 170, 230, 0.08);
   --cyber-design-width: 1920px;
   --cyber-design-height: 1080px;
   --radius-large: 12px;

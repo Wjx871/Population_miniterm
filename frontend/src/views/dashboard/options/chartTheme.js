@@ -1,31 +1,31 @@
 /** 大屏 ECharts 主题单一真相源 */
 
 export const dashboardChartColors = [
-  '#1fe4ff', // cyan
-  '#39e58c', // green
-  '#ffd166', // yellow
-  '#ff6b6b', // red
-  '#2f7bff', // blue
-  '#a66cff'  // purple
+  '#3df0ff', // cyan
+  '#4dff9a', // green
+  '#ffe08a', // yellow
+  '#ff7b7b', // red
+  '#5aa8ff', // blue
+  '#c08cff'  // purple
 ];
 
-export const accentCyan = '#1fe4ff';
-export const accentBlue = '#2f7bff';
-export const accentGreen = '#39e58c';
-export const accentYellow = '#ffd166';
-export const accentRed = '#ff6b6b';
-export const chartBg = '#020d22';
+export const accentCyan = '#3df0ff';
+export const accentBlue = '#5aa8ff';
+export const accentGreen = '#4dff9a';
+export const accentYellow = '#ffe08a';
+export const accentRed = '#ff7b7b';
+export const chartBg = '#03122b';
 
-const axisLineColor = 'rgba(132, 188, 234, 0.35)';
-const splitLineColor = 'rgba(80, 151, 216, 0.13)';
-const axisLabelColor = '#9db8d4';
+const axisLineColor = 'rgba(180, 220, 255, 0.45)';
+const splitLineColor = 'rgba(120, 180, 230, 0.18)';
+const axisLabelColor = '#d4e9ff';
 
 export const darkTooltip = {
-  backgroundColor: 'rgba(2, 15, 40, 0.94)',
-  borderColor: 'rgba(31, 228, 255, 0.55)',
+  backgroundColor: 'rgba(4, 22, 48, 0.96)',
+  borderColor: 'rgba(77, 240, 255, 0.65)',
   borderWidth: 1,
-  textStyle: { color: '#f4fbff' },
-  extraCssText: 'box-shadow: 0 0 18px rgba(0,136,255,0.18); backdrop-filter: blur(4px);'
+  textStyle: { color: '#ffffff' },
+  extraCssText: 'box-shadow: 0 0 18px rgba(0,136,255,0.22); backdrop-filter: blur(4px);'
 };
 
 export const darkLegend = {

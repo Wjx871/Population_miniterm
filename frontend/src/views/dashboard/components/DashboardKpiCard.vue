@@ -68,25 +68,27 @@ const iconComponent = computed(() => {
 <style scoped>
 .kpi-card {
   position: relative;
-  background: var(--cyber-panel-bg);
+  background: linear-gradient(135deg, rgba(14, 52, 108, 0.95) 0%, rgba(8, 34, 74, 0.98) 100%);
   padding: 16px 18px;
   display: flex;
   align-items: center;
   gap: 16px;
   overflow: hidden;
+  border: 1px solid rgba(77, 240, 255, 0.28);
   box-shadow:
-    inset 0 0 20px rgba(31, 228, 255, 0.05),
-    0 0 16px rgba(31, 228, 255, 0.06);
-  transition: box-shadow 0.3s ease, background 0.3s ease;
+    inset 0 0 18px rgba(61, 240, 255, 0.08),
+    0 0 14px rgba(61, 240, 255, 0.1);
+  transition: box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
   /* 左下右上的小切角 */
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
 
 .kpi-card:hover {
-  background: var(--cyber-panel-bg-soft);
+  background: linear-gradient(135deg, rgba(18, 64, 128, 0.98) 0%, rgba(10, 42, 90, 1) 100%);
+  border-color: rgba(77, 240, 255, 0.5);
   box-shadow:
-    inset 0 0 28px rgba(31, 228, 255, 0.12),
-    0 0 18px rgba(31, 228, 255, 0.12);
+    inset 0 0 24px rgba(61, 240, 255, 0.14),
+    0 0 18px rgba(61, 240, 255, 0.16);
 }
 
 /* 绘制机甲边框 */
@@ -142,8 +144,9 @@ const iconComponent = computed(() => {
 
 .kpi-label {
   font-size: 14px;
-  color: var(--cyber-text-secondary);
+  color: #e8f6ff;
   letter-spacing: 1px;
+  font-weight: 500;
 }
 
 .kpi-value-container {
@@ -154,16 +157,16 @@ const iconComponent = computed(() => {
 
 .kpi-value {
   font-family: 'Courier New', Courier, monospace;
-  font-size: 28px;
+  font-size: 30px;
   font-weight: bold;
-  color: var(--cyber-text-primary);
+  color: #ffffff;
   line-height: 1;
-  text-shadow: 0 0 10px rgba(244, 251, 255, 0.28), 0 0 18px var(--cyber-accent-glow);
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.45), 0 0 20px var(--cyber-accent-glow);
 }
 
 .kpi-unit {
   font-size: 14px;
-  color: var(--cyber-text-muted);
+  color: #c5e4ff;
 }
 
 /* 装饰小横条 */

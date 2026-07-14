@@ -62,9 +62,9 @@ const maleRatio = computed(() => props.data?.gender?.male || 0)
 const femaleRatio = computed(() => props.data?.gender?.female || 0)
 
 const genderRingStyle = computed(() => {
-  // 男性科技蓝，女性紫粉辅助色
+  // 男性亮蓝，女性亮紫 — 提高对比度
   return {
-    background: `conic-gradient(var(--cyber-blue) 0% ${maleRatio.value}%, var(--cyber-purple) ${maleRatio.value}% 100%)`
+    background: `conic-gradient(#5aa8ff 0% ${maleRatio.value}%, #c08cff ${maleRatio.value}% 100%)`
   }
 })
 
@@ -105,9 +105,9 @@ const ageGroups = computed(() => {
   width: 110px;
   height: 110px;
   border-radius: 50%;
-  background: radial-gradient(circle at center, rgba(6, 20, 50, 0.9) 0%, rgba(3, 8, 22, 1) 100%);
+  background: radial-gradient(circle at center, rgba(12, 40, 80, 0.95) 0%, rgba(6, 24, 52, 1) 100%);
   padding: 8px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(0, 229, 255, 0.2);
+  box-shadow: 0 0 18px rgba(61, 240, 255, 0.25), inset 0 0 15px rgba(61, 240, 255, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -183,14 +183,15 @@ const ageGroups = computed(() => {
 }
 
 .legend-item .label {
-  color: var(--cyber-text-secondary);
+  color: #e2f3ff;
   width: 40px;
 }
 
 .legend-item .value {
-  color: #fff;
+  color: #ffffff;
   font-weight: bold;
   font-family: 'Courier New', Courier, monospace;
+  text-shadow: 0 0 8px rgba(61, 240, 255, 0.35);
 }
 
 .age-section {
@@ -210,7 +211,7 @@ const ageGroups = computed(() => {
 .age-label {
   width: 65px;
   font-size: 13px;
-  color: var(--cyber-text-secondary);
+  color: #e2f3ff;
   text-align: left;
   flex-shrink: 0;
 }
@@ -258,9 +259,10 @@ const ageGroups = computed(() => {
 .age-value {
   width: 42px;
   font-size: 13px;
-  color: var(--cyber-accent);
+  color: #7cffff;
   font-family: 'Courier New', Courier, monospace;
   text-align: right;
   flex-shrink: 0;
+  font-weight: 700;
 }
 </style>
