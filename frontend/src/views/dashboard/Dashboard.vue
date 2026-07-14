@@ -10,22 +10,7 @@
         </div>
       </div>
       <div class="hero-illustration">
-        <!-- SVG Mocking the ID card design in the screenshot -->
-        <svg width="220" height="120" viewBox="0 0 220 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="ill-svg">
-          <rect x="20" y="20" width="160" height="90" rx="8" fill="url(#paint0_linear)" opacity="0.9" />
-          <rect x="40" y="45" width="40" height="40" rx="20" fill="white" opacity="0.3" />
-          <circle cx="60" cy="55" r="8" fill="white" />
-          <path d="M48 70C48 64 54 62 60 62C66 62 72 64 72 70" stroke="white" stroke-width="3" stroke-linecap="round"/>
-          <rect x="95" y="45" width="60" height="6" rx="3" fill="white" opacity="0.8" />
-          <rect x="95" y="60" width="60" height="6" rx="3" fill="white" opacity="0.8" />
-          <rect x="95" y="75" width="40" height="6" rx="3" fill="white" opacity="0.5" />
-          <defs>
-            <linearGradient id="paint0_linear" x1="20" y1="20" x2="180" y2="110" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#409eff" />
-              <stop offset="1" stop-color="#1677ff" />
-            </linearGradient>
-          </defs>
-        </svg>
+        <img src="/media/hero-illustration.jpg" class="ill-img" alt="Illustration" />
       </div>
       <div class="hero-actions">
         <p class="actions-title">快捷操作</p>
@@ -155,9 +140,12 @@ onMounted(refresh)
   opacity: 0.8;
 }
 
-.ill-svg {
-  filter: drop-shadow(0 10px 20px rgba(22, 119, 255, 0.2));
+.ill-img {
+  width: 280px;
+  object-fit: contain;
+  mix-blend-mode: darken;
   transform: rotate(-5deg) scale(1.1);
+  filter: drop-shadow(0 10px 20px rgba(22, 119, 255, 0.15));
 }
 
 /* 右侧快捷操作 */
