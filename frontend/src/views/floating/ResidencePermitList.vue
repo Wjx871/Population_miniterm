@@ -2,6 +2,9 @@
   <div class="page-container" v-loading="loading">
     <div class="page-header">
       <div><h1>居住证管理</h1><p class="subtitle">课程模拟系统，所有证件信息仅用于演示。</p></div>
+      <div class="header-actions">
+        <el-button v-if="canApply" type="primary" @click="openCreate">新增居住证</el-button>
+      </div>
     </div>
 
     <el-tabs v-model="activeTab" @tab-change="onTabChange">
@@ -48,6 +51,8 @@
         <ExpiringPermitList />
       </el-tab-pane>
     </el-tabs>
+
+    <FirstIssueDialog v-model="createVisible" @confirm="goCreateFirstIssue" />
   </div>
 </template>
 
@@ -60,6 +65,7 @@ import AppPagination from '../../components/common/AppPagination.vue'
 import StatusTag from '../../components/common/StatusTag.vue'
 import SensitiveText from '../../components/common/SensitiveText.vue'
 import ExpiringPermitList from './ExpiringPermitList.vue'
+import FirstIssueDialog from './components/FirstIssueDialog.vue'
 import { getResidencePermitPage } from '../../api/floatingResidence'
 import { normalizeResidencePermitList } from '../../adapters/residencePermit'
 import { normalizePageResult } from '../../utils/page'
@@ -74,6 +80,7 @@ const userStore = useUserStore()
 const loading = ref(false)
 const records = ref([])
 const activeTab = ref('list')
+const createVisible = ref(false)
 const pager = reactive({ current: 1, size: 20, total: 0 })
 const query = reactive({ permitNo: '', personName: '', identityNo: '', currentRegionCode: '', status: '', validFrom: '', validTo: '' })
 
@@ -109,6 +116,12 @@ function handleReset() {
 function goEndorsement(row) { router.push(`/residence-permits/${row.permitId}/endorsement/apply`) }
 function goCancellation(row) { router.push(`/residence-permits/${row.permitId}/cancellation/apply`) }
 
+function openCreate() { createVisible.value = true }
+function goCreateFirstIssue(payload) {
+  createVisible.value = false
+  router.push(`/residence-permits/first-issue?floatingId=${payload.floatingId}`)
+}
+
 function onTabChange(tab) {
   if (tab === 'list') load()
 }
@@ -125,7 +138,8 @@ watch(() => pager.size, () => { pager.current = 1; load() })
 
 <style scoped>
 .page-container{display:flex;flex-direction:column;gap:16px}
-.page-header{display:flex;justify-content:space-between;align-items:end}
+.page-header{display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:12px}
 .page-header h1{margin:0 0 8px}
 .subtitle{margin:0;color:var(--el-text-color-secondary)}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap}
 </style>
