@@ -154,7 +154,7 @@
 | 问题 | 根因与修改 | 数据/HTTP | 测试 | 状态 |
 |---|---|---|---|---|
 | FUNC-CANCELLATION-001 | 只读详情错误调用带 `FOR UPDATE` 的户籍查询；拆分非锁定详情查询与执行行锁 | 不改数据；500→200，缺失仍 404 | Phase04 注销详情回归 | CLOSED |
-| FUNC-PERMIT-001 | 700001 只有通用申请和最终证件，缺专业申请；接口继续使用通用 applicationId，前端友好处理 404 | 提供幂等 DEMO SQL，尚未执行；404 保持 | Phase05 200/404 契约 | DATA_REQUIRED |
+| FUNC-PERMIT-001 | 700001 原缺少居住证专业申请记录；接口继续使用通用 applicationId，幂等 DEMO SQL 已补齐专业链路 | SQL 重复执行无重复数据；专业详情 200 | Phase05 200/404 契约 + 正式库接口复核 | CLOSED |
 | FUNC-MIGRATION-001 | 选择器发送中文状态“正常”而后端要求 `ACTIVE`，且未传区划、吞掉失败 | 不改数据；搜索 200，失败与空结果分离 | 前端搜索契约 + Playwright | CLOSED |
 | FUNC-MIGRATION-002 | 人员选择后未查询当前有效户籍 | 不补造王家兴户籍；前端提前阻止，后端 409 保留 | 前端资格契约 | CLOSED |
 | UI-FUNC-001 | 人口抽屉仍为开发占位文案 | 复用脱敏综合档案接口，增加 loading/empty/error/retry | 前端关联信息契约 | CLOSED |
@@ -163,4 +163,4 @@
 | UI-DISPLAY-002 | 状态映射不完整、列宽不足 | StatusTag 统一映射，状态列 130px + tooltip | 状态/源码契约 + Playwright | CLOSED |
 | UI-DISPLAY-003 | 迁移表单 120px 标签宽度不足 | 迁入/迁出统一 136px，并设置 nowrap | 样式契约 + Playwright | CLOSED |
 
-最终门禁已完成：后端 326/326、前端 195/195、Playwright 20/20 全部通过，HTTP 500、控制台 error、`pageerror` 以及两类目标 warning 均为 0。除 FUNC-PERMIT-001 仍需按需执行幂等 DEMO SQL 外，其余 8 项最终状态为 CLOSED；未修改 `population_miniterm` 现有业务数据。
+最终门禁已完成：后端 326/326、前端 195/195、Playwright 20/20 全部通过，HTTP 500、控制台 error、`pageerror` 以及两类目标 warning 均为 0。用户执行幂等 DEMO SQL 后，`DEMO-PERMIT-001` 专业详情接口复核为 200，全部 9 项最终状态为 CLOSED。
