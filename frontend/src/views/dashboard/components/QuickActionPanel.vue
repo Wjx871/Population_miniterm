@@ -30,11 +30,11 @@ defineProps({
   color: #111827;
 }
 :deep(.el-card__header) {
-  padding: 16px 20px;
+  padding: 16px 20px 8px;
   border-bottom: 1px solid #f3f4f6;
 }
 :deep(.el-card__body) {
-  padding: 20px;
+  padding: 6px 20px 16px;
 }
 .actions {
   display: flex;
@@ -46,7 +46,7 @@ defineProps({
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 11px 16px;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   cursor: pointer;

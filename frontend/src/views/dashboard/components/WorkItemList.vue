@@ -62,7 +62,7 @@ defineEmits(['retry'])
   font-weight: 500;
 }
 :deep(.el-card__header) {
-  padding: 16px 20px;
+  padding: 16px 20px 8px;
   border-bottom: 1px solid #f3f4f6;
 }
 :deep(.el-card__body) {
@@ -73,12 +73,12 @@ defineEmits(['retry'])
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 0;
+  padding: 20px 0 18px;
   color: #9ca3af;
 }
 .empty-icon {
   font-size: 48px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   opacity: 0.5;
   color: #d1d5db;
 }

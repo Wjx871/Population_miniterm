@@ -24,12 +24,12 @@ defineProps({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 110px;
-  padding: 24px;
+  height: 100%;
+  padding: 20px 26px;
   border-radius: 12px;
   background: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-  border: none;
+  box-shadow: 0 6px 18px rgba(36, 67, 109, 0.045);
+  border: 1px solid rgba(235, 239, 245, .82);
 }
 .stat-content {
   display: flex;
@@ -37,8 +37,8 @@ defineProps({
 }
 .stat-label {
   font-size: 14px;
-  color: #6b7280;
-  margin-bottom: 16px;
+  color: #657a99;
+  margin-bottom: 8px;
 }
 .stat-value {
   font-size: 32px;
@@ -52,13 +52,24 @@ defineProps({
   font-size: 12px;
 }
 .stat-icon-wrapper {
-  width: 52px;
-  height: 52px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 28px;
+  position: relative;
+  flex: 0 0 auto;
+}
+.stat-icon-wrapper::before {
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: 14px;
+  width: 1px;
+  height: 36px;
+  background: #e2e8f2;
 }
 /* Color Themes */
 .blue { background: #e6f4ff; color: #1677ff; }

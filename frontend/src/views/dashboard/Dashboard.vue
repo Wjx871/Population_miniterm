@@ -4,29 +4,29 @@
       <div class="hero-content">
         <p class="eyebrow">OPERATIONS DESK</p>
         <h1>工作台</h1>
-        <p>欢迎，{{ userStore.roleLabel }}。以下均为当前授权范围内的实时聚合数据。</p>
+        <p class="hero-description">欢迎，{{ userStore.roleLabel }}。以下均为当前授权范围内的实时聚合数据。</p>
         <div class="time-box">
           <el-icon><Clock /></el-icon> <span>更新时间：{{ formatDateTime(overview.generatedAt) || '未加载' }}</span>
         </div>
       </div>
       <div class="hero-illustration">
-        <img src="/media/hero-illustration.jpg" class="ill-img" alt="Illustration" />
+        <img src="/media/hero-illustration-v2.png" class="ill-img" alt="蓝色人口信息卡片三维插画" />
       </div>
       <div class="hero-actions">
         <p class="actions-title">快捷操作</p>
         <div class="action-buttons">
-          <div class="action-btn" @click="$router.push('/queries/comprehensive')" v-if="can('population:view')">
+          <button type="button" class="action-btn" @click="$router.push('/queries/comprehensive')" v-if="can('population:view')">
             <div class="icon-wrap"><el-icon><Search /></el-icon></div>
             <span>人口综合查询</span>
-          </div>
-          <div class="action-btn" @click="$router.push('/statistics/dashboard')" v-if="can('statistics:view')">
+          </button>
+          <button type="button" class="action-btn" @click="$router.push('/statistics/dashboard')" v-if="can('statistics:view')">
             <div class="icon-wrap"><el-icon><DataAnalysis /></el-icon></div>
             <span>数据大屏</span>
-          </div>
-          <div class="action-btn" @click="refresh">
+          </button>
+          <button type="button" class="action-btn" @click="refresh">
             <div class="icon-wrap"><el-icon :class="{'is-loading': refreshing}"><Refresh /></el-icon></div>
             <span>刷新数据</span>
-          </div>
+          </button>
         </div>
       </div>
     </header>
@@ -34,7 +34,7 @@
       <template #default><el-button link type="primary" @click="refresh">重试</el-button></template>
     </el-alert>
     <section class="stat-grid">
-      <DashboardStatCard label="当前户籍人口" :value="overview.registeredPopulation" :icon="User" colorTheme="blue" />
+      <DashboardStatCard label="当前户籍人口" :value="overview.registeredPopulation" :icon="UserFilled" colorTheme="blue" />
       <DashboardStatCard label="在册流动人口" :value="overview.activeFloatingPopulation" :icon="UserFilled" colorTheme="teal" />
       <DashboardStatCard label="有效居住证" :value="overview.activeResidencePermits" :icon="Postcard" colorTheme="orange" />
       <DashboardStatCard v-if="can('approval:view')" label="待审批" :value="overview.pendingApprovals" :icon="Finished" colorTheme="purple" />
@@ -49,7 +49,7 @@
 </template>
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Refresh, User, UserFilled, Postcard, Finished, Warning, TrendCharts, Search, DataAnalysis, Switch, Clock } from '@element-plus/icons-vue'
+import { Refresh, UserFilled, Postcard, Finished, Warning, TrendCharts, Search, DataAnalysis, Switch, Clock } from '@element-plus/icons-vue'
 import { useUserStore } from '../../stores/user'
 import { PERMISSIONS } from '../../constants/permissions'
 import { formatDateTime } from '../../utils/date'
@@ -84,107 +84,130 @@ onMounted(refresh)
 
 /* 头部横幅 */
 .hero-banner {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(390px, 1fr) minmax(350px, 0.95fr) auto;
+  column-gap: 24px;
   align-items: center;
-  padding: 24px 32px;
+  height: 230px;
+  padding: 24px 36px;
   border-radius: var(--radius-large);
-  background: linear-gradient(135deg, #f0f7ff 0%, #e6f3ff 100%);
+  background:
+    radial-gradient(circle at 61% 56%, rgba(111, 169, 255, 0.14), transparent 31%),
+    linear-gradient(118deg, #fbfdff 0%, #f4f8ff 50%, #f8fbff 100%);
+  border: 1px solid rgba(255, 255, 255, 0.92);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  box-shadow: 0 7px 24px rgba(32, 75, 132, 0.035);
 }
 
 .hero-content {
   flex: 1;
   position: relative;
   z-index: 2;
+  transform: translateY(-36px);
 }
 
 .eyebrow {
-  font-size: 11px;
-  letter-spacing: .14em;
+  font-size: 12px;
+  letter-spacing: .08em;
   font-weight: 700;
-  color: #1677ff;
-  margin-bottom: 8px;
+  color: #45628d;
+  margin-bottom: 6px;
 }
 
 .hero-content h1 {
-  font-size: 28px;
-  color: #1f2937;
-  margin: 0 0 12px;
-  font-weight: 600;
+  font-size: 34px;
+  line-height: 1.25;
+  color: #12233e;
+  margin: 0 0 8px;
+  font-weight: 700;
+  letter-spacing: .02em;
 }
 
-.hero-content p {
-  color: #4b5563;
+.hero-description {
+  color: #243957;
   font-size: 14px;
-  margin-bottom: 20px;
+  margin-bottom: 37px;
 }
 
 .time-box {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #8c8c8c;
+  color: #6d82a0;
   font-size: 13px;
 }
 
 /* 中间插画区域 */
 .hero-illustration {
-  flex: 1;
+  align-self: stretch;
   display: flex;
   justify-content: center;
+  align-items: center;
   position: relative;
   z-index: 1;
-  opacity: 0.8;
+  min-width: 0;
+  pointer-events: none;
 }
 
 .ill-img {
-  width: 280px;
+  width: min(540px, 42vw);
+  max-width: none;
+  height: 246px;
   object-fit: contain;
-  mix-blend-mode: darken;
-  transform: rotate(-5deg) scale(1.1);
-  filter: drop-shadow(0 10px 20px rgba(22, 119, 255, 0.15));
+  opacity: .96;
+  transform: translate(-8px, -31px) scaleX(1.16) scaleY(1.25);
+  filter: saturate(.94) contrast(.97);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
 }
 
 /* 右侧快捷操作 */
 .hero-actions {
   position: relative;
   z-index: 2;
-  margin-left: 30px;
+  transform: translate(-12px, -30px);
 }
 
 .actions-title {
   font-size: 13px;
   color: #4b5563;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   font-weight: 500;
 }
 
 .action-buttons {
   display: flex;
-  gap: 12px;
+  gap: 18px;
 }
 
 .action-btn {
+  appearance: none;
+  border: 1px solid rgba(229, 235, 245, .88);
   background: white;
-  border-radius: 12px;
-  padding: 16px 12px;
-  width: 96px;
+  border-radius: 11px;
+  padding: 13px 8px 12px;
+  width: 114px;
+  height: 104px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  font-family: inherit;
+  box-shadow: 0 7px 18px rgba(39, 73, 119, 0.055);
   transition: all 0.2s ease;
 }
 
 .action-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(22, 119, 255, 0.1);
+}
+
+.action-btn:focus-visible {
+  outline: 3px solid rgba(47, 99, 226, .2);
+  outline-offset: 2px;
 }
 
 .icon-wrap {
@@ -204,4 +227,4 @@ onMounted(refresh)
   color: #4b5563;
 }
 
-.stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.content-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.chart-card{padding:20px;border-radius:12px;background:#fff;border:none;box-shadow:0 4px 12px rgba(0,0,0,0.03);}.section-heading{display:flex;justify-content:space-between}.section-heading h2{font-size:15px;font-weight:600;color:#111827;}.section-heading p{font-size:12px;color:#6b7280;margin-top:4px}@media(max-width:1200px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:900px){.hero-banner{flex-direction:column;align-items:flex-start;gap:24px}.hero-illustration{display:none}.action-buttons{flex-wrap:wrap}.stat-grid,.content-grid{grid-template-columns:1fr}}</style>
+.stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:115px;column-gap:20px;row-gap:18px;margin-top:3px}.content-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(168px,auto);gap:16px;margin-top:-2px}.chart-card{padding:20px;border-radius:12px;background:#fff;border:none;box-shadow:0 4px 12px rgba(0,0,0,0.03);}.section-heading{display:flex;justify-content:space-between}.section-heading h2{font-size:15px;font-weight:600;color:#111827;}.section-heading p{font-size:12px;color:#6b7280;margin-top:4px}@media(max-width:1280px){.hero-banner{grid-template-columns:minmax(330px,1fr) minmax(280px,.8fr) auto;padding-inline:28px}.ill-img{width:430px}.action-buttons{gap:10px}.action-btn{width:94px}.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:115px}}@media(max-width:900px){.hero-banner{display:flex;flex-direction:column;align-items:flex-start;gap:22px;height:auto;padding:26px}.hero-actions{transform:none}.hero-illustration{display:none}.action-buttons{flex-wrap:wrap}.action-btn{width:108px}.stat-grid,.content-grid{grid-template-columns:1fr}.stat-grid{grid-auto-rows:115px}}</style>

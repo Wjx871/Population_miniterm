@@ -240,13 +240,14 @@ export default {
 }
 
 .navbar {
-  height: 60px;
-  background: #171b26; /* 深邃控制台颜色 */
+  height: 65px;
+  flex: 0 0 65px;
+  background: linear-gradient(100deg, #0a1b33 0%, #112640 100%);
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 24px;
+  padding: 0 40px 0 30px;
   box-shadow: 0 1px 4px rgba(0,21,41,0.08);
   z-index: 10;
 }
@@ -262,17 +263,17 @@ export default {
 }
 
 .system-title {
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 1px;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: .5px;
 }
 
 .system-badge {
   font-size: 12px;
   background: rgba(255,255,255,0.25);
-  padding: 3px 10px;
-  border-radius: 12px;
-  margin-left: 8px;
+  padding: 4px 14px;
+  border-radius: 14px;
+  margin-left: 4px;
   color: rgba(255,255,255,0.9);
 }
 
@@ -309,7 +310,8 @@ export default {
 }
 
 .sidebar {
-  width: 240px;
+  width: 254px;
+  flex: 0 0 254px;
   background-color: white;
   border-right: 1px solid var(--el-border-color-light, #e4e7ed);
   display: flex;
@@ -320,30 +322,41 @@ export default {
   flex: 1;
   border-right: none;
   overflow-y: auto;
+  padding: 20px 15px 0;
+}
+
+:deep(.el-menu-item),
+:deep(.el-sub-menu__title) {
+  height: 52px;
+  margin-bottom: 7px;
+  padding: 0 17px !important;
+  border-radius: 8px;
+  color: #263b59;
+  font-size: 15px;
+}
+
+:deep(.el-menu-item .el-icon),
+:deep(.el-sub-menu__title .el-icon) {
+  font-size: 20px;
+  margin-right: 14px;
 }
 
 :deep(.el-menu-item.is-active) {
-  background-color: #e6f7ff !important;
-  color: #1677ff !important;
+  background: linear-gradient(100deg, #edf4ff 0%, #e9f0fd 100%) !important;
+  color: #2861d5 !important;
 }
 
 :deep(.el-menu-item.is-active)::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background-color: #1677ff;
+  display: none;
 }
 
 .sidebar-footer {
-  padding: 16px;
+  padding: 20px 16px 22px;
   font-size: 12px;
   color: var(--el-text-color-regular, #606266);
   text-align: center;
   border-top: 1px solid var(--el-border-color-light, #e4e7ed);
-  background-color: #fafafa;
+  background: linear-gradient(180deg, #fbfcfe 0%, #f4f7fb 100%);
 }
 
 .sidebar-footer p {
@@ -354,7 +367,7 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: #f0f2f5;
+  background-color: #f4f7fb;
   min-width: 0; /* 修复 flex 子项内容过宽导致溢出的问题 */
   overflow: hidden;
 }
@@ -366,8 +379,18 @@ export default {
 
 .page-wrapper {
   flex: 1;
-  padding: 20px 24px;
+  padding: 22px;
   overflow: auto; /* 允许横向和纵向滚动 */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.page-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.page-wrapper::-webkit-scrollbar-thumb {
+  background: transparent;
 }
 
 /* 沉浸式大屏模式样式 */
