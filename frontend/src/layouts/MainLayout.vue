@@ -62,9 +62,9 @@
         </div>
       </aside>
 
-      <main class="main-content">
+      <main class="main-content" :class="{ 'is-immersive': isImmersive }">
         <!-- 面包屑导航 -->
-        <div class="breadcrumb-container" v-if="$route.path !== '/home'">
+        <div class="breadcrumb-container" v-if="$route.path !== '/home' && !isImmersive">
           <el-breadcrumb separator="/">
             <el-breadcrumb-item :to="{ path: '/home' }">工作台</el-breadcrumb-item>
             <el-breadcrumb-item v-if="$route.meta.group">{{ $route.meta.group }}</el-breadcrumb-item>
@@ -110,6 +110,8 @@ import { ElMessageBox, ElMessage } from 'element-plus';
 const userStore = useUserStore();
 const router = useRouter();
 const route = useRoute();
+
+const isImmersive = computed(() => route.meta.immersive === true);
 
 /** 菜单图标映射：路由 meta.icon 为字符串名，这里转为真实组件 */
 const MENU_ICON_MAP = Object.freeze({
@@ -349,5 +351,15 @@ export default {
   flex: 1;
   padding: 20px;
   overflow: auto; /* 允许横向和纵向滚动 */
+}
+
+/* 沉浸式大屏模式样式 */
+.main-content.is-immersive {
+  background-color: #020f28;
+}
+
+.main-content.is-immersive .page-wrapper {
+  padding: 0;
+  overflow: hidden;
 }
 </style>

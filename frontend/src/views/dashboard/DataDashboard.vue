@@ -1,161 +1,111 @@
 <template>
-  <div ref="screen" class="data-dashboard">
-    <header class="screen-header">
-      <div>
-        <p class="eyebrow">POPULATION ANALYTICS</p>
-        <h1>数据统计大屏</h1>
-        <p>课程教学模拟系统，统计结果仅用于项目演示。</p>
-        <small>更新时间：{{ formatDateTime(overview.generatedAt || charts.generatedAt) || '未加载' }}</small>
-      </div>
-      <div class="header-actions">
-        <el-button :icon="Refresh" :loading="loading" @click="loadAll">刷新</el-button>
-        <el-button :icon="FullScreen" @click="toggleFullscreen">全屏</el-button>
-      </div>
-    </header>
+  <div ref="wrapperRef" class="dashboard-wrapper">
+    <div ref="canvasRef" class="dashboard-canvas">
+      <!-- 顶部 Header 骨架 -->
+      <header class="dashboard-header-skeleton">
+        <h2>数据大屏 - 沉浸式布局占位</h2>
+        <el-button type="primary" @click="toggleFullscreen">
+          {{ isFullscreen ? '退出全屏' : '全屏' }}
+        </el-button>
+      </header>
 
-    <section class="metric-grid">
-      <div v-if="overviewError" class="panel-error metric-error">
-        <span>指标加载失败</span>
-        <el-button link type="primary" :loading="overviewLoading" @click="loadOverview">重试</el-button>
-      </div>
-      <DashboardStatCard label="当前户籍人口" :value="overview.registeredPopulation"/>
-      <DashboardStatCard label="在册流动人口" :value="overview.activeFloatingPopulation"/>
-      <DashboardStatCard label="有效居住证" :value="overview.activeResidencePermits"/>
-      <DashboardStatCard label="待审批" :value="overview.pendingApprovals"/>
-      <DashboardStatCard label="即将到期" :value="overview.expiringResidencePermits"/>
-    </section>
-
-    <section class="chart-grid">
-      <div v-if="chartsError" class="panel-error chart-error">
-        <span>图表加载失败</span>
-        <el-button link type="primary" :loading="chartsLoading" @click="loadCharts">重试</el-button>
-      </div>
-      <el-card shadow="never">
-        <template #header>近 30 日迁入迁出趋势</template>
-        <MigrationTrendChart :points="charts.migrationTrend"/>
-      </el-card>
-      <el-card shadow="never">
-        <template #header>当前业务规模</template>
-        <BusinessScaleChart :rows="charts.businessScale"/>
-      </el-card>
-      <el-card shadow="never">
-        <template #header>居住证状态分布</template>
-        <PermitStatusChart :rows="charts.permitStatusDistribution"/>
-      </el-card>
-      <el-card shadow="never">
-        <template #header>行政区划户籍人口 Top 8</template>
-        <RegionRankingChart :rows="charts.registeredPopulationByRegion"/>
-      </el-card>
-    </section>
+      <!-- 主要内容区骨架 -->
+      <main class="dashboard-content-skeleton">
+        <div class="column left-column">
+          <div class="panel">面板 1</div>
+          <div class="panel">面板 2</div>
+        </div>
+        <div class="column center-column">
+          <div class="panel center-panel">中央态势图</div>
+        </div>
+        <div class="column right-column">
+          <div class="panel">面板 3</div>
+          <div class="panel">面板 4</div>
+        </div>
+      </main>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { FullScreen, Refresh } from '@element-plus/icons-vue'
-import { formatDateTime } from '../../utils/date'
-import { getDashboardCharts, getDashboardOverview } from '../../api/dashboard'
-import { normalizeDashboardCharts, normalizeDashboardOverview } from '../../adapters/dashboard'
-import DashboardStatCard from './components/DashboardStatCard.vue'
-import MigrationTrendChart from './components/MigrationTrendChart.vue'
-import BusinessScaleChart from './components/BusinessScaleChart.vue'
-import PermitStatusChart from './components/PermitStatusChart.vue'
-import RegionRankingChart from './components/RegionRankingChart.vue'
+import { ref } from 'vue';
+import { useDashboardScale } from './composables/useDashboardScale';
+import { useDashboardFullscreen } from './composables/useDashboardFullscreen';
 
-const screen = ref(null)
-const overviewLoading = ref(false)
-const chartsLoading = ref(false)
-const overviewError = ref(false)
-const chartsError = ref(false)
-const overview = reactive(normalizeDashboardOverview())
-const charts = reactive(normalizeDashboardCharts())
-let timer = null
+const wrapperRef = ref(null);
+const canvasRef = ref(null);
 
-const loading = computed(() => overviewLoading.value || chartsLoading.value)
+// 绑定缩放
+useDashboardScale(wrapperRef, canvasRef, 1920, 1080);
 
-async function loadOverview() {
-  if (overviewLoading.value) return
-  overviewLoading.value = true
-  try {
-    const data = await getDashboardOverview()
-    Object.assign(overview, normalizeDashboardOverview(data))
-    overviewError.value = false
-  } catch {
-    overviewError.value = true
-  } finally {
-    overviewLoading.value = false
-  }
-}
-
-async function loadCharts() {
-  if (chartsLoading.value) return
-  chartsLoading.value = true
-  try {
-    const data = await getDashboardCharts({ days: 30, regionLimit: 8 })
-    Object.assign(charts, normalizeDashboardCharts(data))
-    chartsError.value = false
-  } catch {
-    chartsError.value = true
-  } finally {
-    chartsLoading.value = false
-  }
-}
-
-async function loadAll() {
-  if (loading.value) return
-  const results = await Promise.allSettled([loadOverview(), loadCharts()])
-  // allSettled 保证任一失败不抛到外层，局部状态由各自 load 函数维护
-  void results
-}
-
-function schedule() {
-  clearInterval(timer)
-  timer = setInterval(() => {
-    if (!document.hidden && !loading.value) {
-      loadAll()
-    }
-  }, 300000)
-}
-
-function onVisibility() {
-  if (!document.hidden && !loading.value) {
-    loadAll()
-  }
-}
-
-async function toggleFullscreen() {
-  if (document.fullscreenElement) {
-    await document.exitFullscreen()
-  } else {
-    await screen.value?.requestFullscreen?.()
-  }
-}
-
-onMounted(() => {
-  loadAll()
-  schedule()
-  document.addEventListener('visibilitychange', onVisibility)
-})
-
-onBeforeUnmount(() => {
-  clearInterval(timer)
-  document.removeEventListener('visibilitychange', onVisibility)
-})
+// 绑定全屏
+const { isFullscreen, toggleFullscreen } = useDashboardFullscreen();
 </script>
 
 <style scoped>
-.data-dashboard{display:flex;flex-direction:column;gap:16px;min-height:100%;padding:4px}
-.screen-header{display:flex;justify-content:space-between;align-items:flex-end;padding:20px 22px;border-radius:var(--radius-large);background:linear-gradient(135deg,#0f2858,#1e40af);color:#fff}
-.screen-header h1{font-size:25px;color:#fff;margin:3px 0}
-.screen-header p,.screen-header small{color:#dbeafe}
-.screen-header small{display:block;margin-top:8px}
-.header-actions{display:flex;gap:8px}
-.metric-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;position:relative}
-.chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;position:relative}
-.chart-grid :deep(.el-card){border-radius:var(--radius-large)}
-.panel-error{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:8px;background:rgba(254,226,226,.95);color:#991b1b;border:1px solid #fecaca}
-.metric-error{grid-column:1 / -1}
-.chart-error{grid-column:1 / -1}
-@media(max-width:1200px){.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.chart-grid{grid-template-columns:1fr}}
-@media(max-width:760px){.screen-header{align-items:flex-start;flex-direction:column;gap:14px}.metric-grid{grid-template-columns:1fr}}
+.dashboard-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #020f28; /* 深色背景 */
+  overflow: hidden;
+}
+
+.dashboard-canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: center center;
+  /* js 会动态写入 transform: translate(-50%, -50%) scale(xxx); */
+  display: flex;
+  flex-direction: column;
+  color: white;
+  background-image: radial-gradient(circle at center, #05193c 0%, #020f28 100%);
+}
+
+.dashboard-header-skeleton {
+  height: 80px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-content-skeleton {
+  flex: 1;
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.left-column, .right-column {
+  width: 450px;
+}
+
+.center-column {
+  flex: 1;
+}
+
+.panel {
+  background: rgba(10, 30, 70, 0.5);
+  border: 1px solid rgba(41, 215, 255, 0.2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.5);
+}
 </style>
