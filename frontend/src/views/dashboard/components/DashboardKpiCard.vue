@@ -2,7 +2,7 @@
   <div class="kpi-card">
     <div class="kpi-icon-wrapper">
       <el-icon class="kpi-icon">
-        <component :is="icon" />
+        <component :is="iconComponent" />
       </el-icon>
     </div>
     <div class="kpi-info">
@@ -20,7 +20,10 @@
 
 <script setup>
 import { computed, toRefs } from 'vue'
+import { User, UserFilled, Postcard, Document, Warning, TrendCharts } from '@element-plus/icons-vue'
 import { useNumberAnimation } from '../composables/useNumberAnimation'
+
+const iconMap = { User, UserFilled, Postcard, Document, Warning, TrendCharts }
 
 const props = defineProps({
   label: String,
@@ -46,6 +49,10 @@ const displayValue = computed(() => {
     return '—'
   }
   return animatedValue.value.toLocaleString()
+})
+
+const iconComponent = computed(() => {
+  return typeof props.icon === 'string' ? iconMap[props.icon] : props.icon
 })
 </script>
 

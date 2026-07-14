@@ -36,6 +36,14 @@ export function useDashboardData() {
       Object.keys(normalized).forEach(key => {
         overview[key] = normalized[key]
       })
+      
+      // 因为 normalizeAdapter 严格遵循后端真实的 DTO 会剔除前端 mock 的数据，
+      // 所以对于演示模式专属的数据，我们需要手动注入。
+      if (isDemo) {
+        overview.populationStructure = data.populationStructure
+        overview.keyBusiness = data.keyBusiness
+      }
+      
       overviewError.value = false
     } catch (e) {
       console.error('Failed to load dashboard overview', e)
@@ -61,6 +69,12 @@ export function useDashboardData() {
       Object.keys(normalized).forEach(key => {
         charts[key] = normalized[key]
       })
+      
+      // 注入被 adapter 剔除的演示数据
+      if (isDemo) {
+        charts.populationScaleTrend = data.populationScaleTrend
+      }
+
       chartsError.value = false
     } catch (e) {
       console.error('Failed to load dashboard charts', e)
