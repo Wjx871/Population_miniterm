@@ -15,7 +15,7 @@
         <el-form-item label="身份证号"><el-input v-model="query.identityNo" clearable placeholder="身份证号" /></el-form-item>
         <el-form-item label="当前区划"><el-input v-model="query.currentRegionCode" clearable placeholder="区划编码" /></el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="query.status" clearable placeholder="全部">
+          <el-select v-model="query.status" clearable placeholder="全部" style="width: 140px">
             <el-option v-for="(label, code) in statusOptions" :key="code" :label="label" :value="code" />
           </el-select>
         </el-form-item>

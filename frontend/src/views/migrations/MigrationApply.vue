@@ -6,7 +6,7 @@
       <el-form ref="formRef" class="migration-form" :model="form" :rules="rules" label-width="136px" @submit.prevent>
         <el-form-item label="申请标题" prop="title"><el-input v-model.trim="form.title" maxlength="200" show-word-limit /></el-form-item>
         <el-form-item label="办理人员" prop="personId"><PersonSelect v-model="form.personId" :disabled="isReadonly" @select="handlePersonSelect" /></el-form-item>
-        <el-form-item label="迁移类型" prop="migrationType"><el-select v-model="form.migrationType" :disabled="isReadonly"><el-option v-for="item in MIGRATION_TYPE_OPTIONS" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item>
+        <el-form-item label="迁移类型" prop="migrationType"><el-select v-model="form.migrationType" :disabled="isReadonly" style="width: 100%"><el-option v-for="item in MIGRATION_TYPE_OPTIONS" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item>
         <template v-if="isIn">
           <el-form-item label="迁出地行政区划"><el-input v-model.trim="form.fromRegionCode" :disabled="isReadonly" maxlength="20" /></el-form-item>
           <el-form-item label="迁出地地址" prop="fromAddress"><el-input v-model.trim="form.fromAddress" :disabled="isReadonly" maxlength="255" /></el-form-item>

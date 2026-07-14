@@ -33,6 +33,7 @@
         type="HOUSEHOLD_TYPE"
         placeholder="请选择户籍类型"
         :clearable="false"
+        style="width: 100%"
       />
     </el-form-item>
 
@@ -41,6 +42,7 @@
         v-model="form.regionCode"
         :check-strictly="true"
         placeholder="请选择行政区划"
+        style="width: 100%"
       />
     </el-form-item>
 
@@ -56,11 +58,11 @@
     </el-form-item>
 
     <el-form-item label="所属区划" prop="regionCode">
-      <RegionCascader v-model="form.regionCode" />
+      <RegionCascader v-model="form.regionCode" style="width: 100%" />
     </el-form-item>
 
     <el-form-item label="家庭户类型" prop="householdType">
-      <DictionarySelect v-model="form.householdType" type="HOUSEHOLD_TYPE" />
+      <DictionarySelect v-model="form.householdType" type="HOUSEHOLD_TYPE" style="width: 100%" />
     </el-form-item>
 
     <el-form-item label="立户日期" prop="establishDate">

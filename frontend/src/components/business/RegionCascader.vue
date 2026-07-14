@@ -16,6 +16,7 @@
     :placeholder="loadFailed ? '区划暂不可用' : placeholder"
     :clearable="clearable"
     filterable
+    style="width: 100%"
     @update:model-value="handleChange"
   />
 </template>

@@ -3,7 +3,7 @@
     <template #header>上传申请材料</template>
     <el-form :model="form" label-width="100px" @submit.prevent>
       <el-form-item label="材料类型" required>
-        <el-select v-model="form.materialType" placeholder="请选择业务规则要求的材料" @change="applyMaterialRule">
+        <el-select v-model="form.materialType" placeholder="请选择业务规则要求的材料" style="width: 100%" @change="applyMaterialRule">
           <el-option v-for="item in materialOptions" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </el-form-item>

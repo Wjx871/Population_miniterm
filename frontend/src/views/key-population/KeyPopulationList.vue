@@ -22,12 +22,12 @@
           <DictionarySelect v-model="query.populationType" type="KEY_POPULATION_TYPE" clearable style="width: 160px" />
         </el-form-item>
         <el-form-item label="关注等级">
-          <el-select v-model="query.attentionLevel" clearable style="width: 120px">
+          <el-select v-model="query.attentionLevel" clearable style="width: 140px">
             <el-option v-for="(label, value) in ATTENTION_LEVEL" :key="value" :label="label" :value="value" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="query.status" clearable style="width: 120px">
+          <el-select v-model="query.status" clearable style="width: 140px">
             <el-option v-for="(label, value) in KEY_POPULATION_STATUS" :key="value" :label="label" :value="value" />
           </el-select>
         </el-form-item>

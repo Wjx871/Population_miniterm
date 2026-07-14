@@ -6,6 +6,7 @@
     :placeholder="loadFailed ? '加载失败' : placeholder"
     :clearable="clearable"
     filterable
+    style="width: 100%"
     @update:model-value="handleChange"
   >
     <!-- 保留历史数据的展示：同时识别编码与名称 -->

@@ -2,7 +2,7 @@
   <div>
     <el-form inline style="margin-bottom:16px">
       <el-form-item label="到期窗口">
-        <el-select v-model="windowDays" placeholder="请选择" @change="load">
+        <el-select v-model="windowDays" placeholder="请选择" style="width: 140px" @change="load">
           <el-option v-for="d in dayOptions" :key="d" :label="`${d} 天`" :value="d" />
         </el-select>
       </el-form-item>
