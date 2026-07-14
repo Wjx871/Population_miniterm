@@ -2,10 +2,11 @@ const auth = require('../../services/auth')
 const storage = require('../../utils/storage')
 const { normalizeUser } = require('../../adapters/auth')
 const { messageOf } = require('../../utils/error')
+const { reset401Guard } = require('../../services/request')
 
 Page({
   data: { username: '', password: '', showPassword: false, remember: true, loading: false, error: '' },
-  onLoad() { this.setData({ username: storage.getRememberedUsername() }) },
+  onLoad() { reset401Guard(); this.setData({ username: storage.getRememberedUsername() }) },
   inputUsername(e) { this.setData({ username: e.detail.value, error: '' }) },
   inputPassword(e) { this.setData({ password: e.detail.value, error: '' }) },
   togglePassword() { this.setData({ showPassword: !this.data.showPassword }) },

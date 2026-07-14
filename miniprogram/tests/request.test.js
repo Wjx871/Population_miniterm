@@ -16,7 +16,7 @@ const requestApi = require('../services/request')
 
 test('统一解包 ApiResponse.data', () => assert.deepEqual(requestApi.parseResponse({ statusCode: 200, data: { code: 200, data: { id: 1 } } }), { id: 1 }))
 test('Token 自动加入 Bearer 请求头', () => { storageApi.setToken('test-token'); assert.equal(requestApi.headers().Authorization, 'Bearer test-token') })
-test('401 清理会话并跳转登录', () => { storageApi.setToken('expired'); storageApi.setUser({ userId: 1 }); assert.throws(() => requestApi.parseResponse({ statusCode: 401, data: { code: 401 } }), /登录状态已失效/); assert.equal(storageApi.getToken(), ''); assert.equal(storageApi.getUser(), null); assert.equal(calls.relaunch > 0, true) })
+test('并发 401 清理会话且只跳转一次登录页', () => { const before = calls.relaunch; requestApi.reset401Guard(); storageApi.setToken('expired'); storageApi.setUser({ userId: 1 }); assert.throws(() => requestApi.parseResponse({ statusCode: 401, data: { code: 401 } }), /登录状态已失效/); assert.throws(() => requestApi.parseResponse({ statusCode: 401, data: { code: 401 } }), /登录状态已失效/); assert.equal(storageApi.getToken(), ''); assert.equal(storageApi.getUser(), null); assert.equal(calls.relaunch - before, 1) })
 test('403 提示权限不足且不清理 Token', () => { storageApi.setToken('valid'); assert.throws(() => requestApi.parseResponse({ statusCode: 403, data: { code: 403 } }), /权限不足/); assert.equal(storageApi.getToken(), 'valid'); assert.equal(calls.toast.at(-1), '权限不足') })
 test('400 展示后端具体消息', () => assert.throws(() => requestApi.parseResponse({ statusCode: 400, data: { code: 400, message: '用户名不能为空' } }), /用户名不能为空/))
 test('404 使用记录不可见文案', () => assert.throws(() => requestApi.parseResponse({ statusCode: 404, data: { code: 404 } }), /记录不存在或无权查看/))

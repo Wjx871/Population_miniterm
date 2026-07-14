@@ -14,7 +14,7 @@ function expireSession() {
   try { getApp().setUser(null) } catch (error) {}
   if (redirecting401) return
   redirecting401 = true
-  wx.reLaunch({ url: '/pages/login/index', complete: () => { redirecting401 = false } })
+  wx.reLaunch({ url: '/pages/login/index' })
 }
 
 function parseResponse(response) {

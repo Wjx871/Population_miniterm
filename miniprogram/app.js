@@ -16,7 +16,9 @@ App({
       const user = await authService.me()
       storage.setUser(user)
       this.globalData.user = user
-      if (getCurrentPages().length === 0) wx.reLaunch({ url: '/pages/dashboard/index' })
+      const pages = getCurrentPages()
+      const current = pages[pages.length - 1]
+      if (!current || current.route === 'pages/login/index') wx.reLaunch({ url: '/pages/dashboard/index' })
     } catch (error) {
       if (error.statusCode !== 401) this.toLogin()
     } finally {
