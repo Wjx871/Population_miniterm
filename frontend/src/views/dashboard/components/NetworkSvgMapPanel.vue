@@ -1,7 +1,7 @@
 <template>
   <div class="network-map-panel">
     <!-- 替换为生成的静态特效图 -->
-    <img src="@/assets/images/center-map.jpg" class="static-center-map" alt="中央态势分布图" />
+    <img src="../../../assets/images/center-map.jpg" class="static-center-map" alt="中央态势分布图" />
     
     <!-- 装饰光环 -->
     <div class="glow-ring glow-1"></div>
