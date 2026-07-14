@@ -62,8 +62,9 @@ const maleRatio = computed(() => props.data?.gender?.male || 0)
 const femaleRatio = computed(() => props.data?.gender?.female || 0)
 
 const genderRingStyle = computed(() => {
+  // 男性科技蓝，女性紫粉辅助色
   return {
-    background: `conic-gradient(var(--cyber-blue) 0% ${maleRatio.value}%, var(--cyber-red) ${maleRatio.value}% 100%)`
+    background: `conic-gradient(var(--cyber-blue) 0% ${maleRatio.value}%, var(--cyber-purple) ${maleRatio.value}% 100%)`
   }
 })
 
@@ -177,8 +178,8 @@ const ageGroups = computed(() => {
 }
 
 .legend-item.female .dot {
-  background: var(--cyber-red);
-  box-shadow: 0 0 8px var(--cyber-red);
+  background: var(--cyber-purple);
+  box-shadow: 0 0 8px var(--cyber-purple);
 }
 
 .legend-item .label {
@@ -210,14 +211,15 @@ const ageGroups = computed(() => {
   width: 65px;
   font-size: 13px;
   color: var(--cyber-text-secondary);
-  text-align: right;
+  text-align: left;
+  flex-shrink: 0;
 }
 
 .age-bar-wrapper {
   flex: 1;
-  height: 6px;
+  height: 8px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 3px;
+  border-radius: 4px;
   overflow: hidden;
   position: relative;
 }
@@ -227,14 +229,14 @@ const ageGroups = computed(() => {
   content: '';
   position: absolute;
   top: 0; bottom: 0; left: 0; right: 0;
-  box-shadow: inset 0 0 4px rgba(0, 229, 255, 0.1);
-  border-radius: 3px;
+  box-shadow: inset 0 0 4px rgba(31, 228, 255, 0.1);
+  border-radius: 4px;
 }
 
 .age-bar {
   height: 100%;
-  background: linear-gradient(90deg, rgba(0, 229, 255, 0.2) 0%, #00e5ff 100%);
-  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(31, 228, 255, 0.18) 0%, var(--cyber-accent) 100%);
+  border-radius: 4px;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 0 10px var(--cyber-accent-glow);
   position: relative;
@@ -254,9 +256,11 @@ const ageGroups = computed(() => {
 }
 
 .age-value {
-  width: 40px;
+  width: 42px;
   font-size: 13px;
   color: var(--cyber-accent);
   font-family: 'Courier New', Courier, monospace;
+  text-align: right;
+  flex-shrink: 0;
 }
 </style>

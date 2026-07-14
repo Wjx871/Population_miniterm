@@ -28,6 +28,7 @@ const hasData = computed(() => {
 
 <style scoped>
 .scale-panel {
-  height: 250px; /* 固定高度，作为中间底部的面板 */
+  height: 100%;
+  min-height: 0;
 }
 </style>

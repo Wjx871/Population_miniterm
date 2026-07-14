@@ -8,8 +8,8 @@
         <div class="monitor-info">
           <div class="monitor-label">{{ item.label }}</div>
           <div class="monitor-value-wrapper">
-            <span class="monitor-value">{{ item.value !== null ? item.value : '—' }}</span>
-            <span class="monitor-unit" v-if="item.value !== null">{{ item.unit }}</span>
+            <span class="monitor-value">{{ item.displayValue }}</span>
+            <span class="monitor-unit">{{ item.unit }}</span>
           </div>
         </div>
       </div>
@@ -29,34 +29,39 @@ const props = defineProps({
   }
 })
 
+const formatMonitorValue = (value) => {
+  if (value === null || value === undefined || value === '') return '0'
+  return value
+}
+
 // 根据文档方案
 const monitorList = computed(() => {
   return [
     {
       key: 'keyPopulation',
       label: '重点人口在册',
-      value: props.data?.activeKeyPopulation ?? null,
+      displayValue: formatMonitorValue(props.data?.activeKeyPopulation),
       unit: '人',
       icon: 'UserFilled'
     },
     {
       key: 'cancellation',
       label: '注销申请',
-      value: props.data?.pendingCancellation ?? null,
+      displayValue: formatMonitorValue(props.data?.pendingCancellation),
       unit: '件',
       icon: 'CircleClose'
     },
     {
       key: 'expiring',
       label: '即将到期证件',
-      value: props.data?.expiringCertificate ?? props.data?.expiringResidencePermits ?? null,
+      displayValue: formatMonitorValue(props.data?.expiringCertificate ?? props.data?.expiringResidencePermits),
       unit: '张',
       icon: 'Postcard'
     },
     {
       key: 'sensitiveExport',
       label: '敏感导出申请',
-      value: props.data?.pendingSensitiveExport ?? null,
+      displayValue: formatMonitorValue(props.data?.pendingSensitiveExport),
       unit: '件',
       icon: 'Download'
     }
@@ -82,32 +87,36 @@ export default {
 }
 
 .monitor-card {
-  background: rgba(10, 30, 70, 0.5);
-  border: 1px solid rgba(41, 215, 255, 0.1);
-  border-radius: 6px;
+  background: var(--cyber-panel-bg-soft);
+  border: 1px solid rgba(31, 228, 255, 0.16);
+  border-radius: 4px;
   display: flex;
   align-items: center;
   padding: 12px;
   gap: 12px;
-  transition: all 0.3s;
+  transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+  box-shadow: inset 0 0 12px rgba(31, 228, 255, 0.04);
 }
 
 .monitor-card:hover {
-  background: rgba(41, 215, 255, 0.08);
-  border-color: rgba(41, 215, 255, 0.3);
-  box-shadow: inset 0 0 10px rgba(41, 215, 255, 0.1);
+  background: rgba(31, 228, 255, 0.08);
+  border-color: rgba(31, 228, 255, 0.35);
+  box-shadow: inset 0 0 12px rgba(31, 228, 255, 0.12), 0 0 12px rgba(31, 228, 255, 0.08);
 }
 
 .monitor-icon {
   width: 36px;
   height: 36px;
-  background: rgba(41, 215, 255, 0.1);
-  border-radius: 8px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(31, 228, 255, 0.18) 0%, rgba(47, 123, 255, 0.1) 100%);
+  border: 1px solid rgba(31, 228, 255, 0.35);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
   color: var(--cyber-accent);
+  box-shadow: 0 0 10px rgba(31, 228, 255, 0.15);
 }
 
 .monitor-info {
@@ -129,9 +138,10 @@ export default {
 
 .monitor-value {
   font-size: 20px;
-  color: #fff;
+  color: var(--cyber-text-primary);
   font-weight: bold;
   font-family: 'Courier New', Courier, monospace;
+  text-shadow: 0 0 10px rgba(31, 228, 255, 0.25);
 }
 
 .monitor-unit {

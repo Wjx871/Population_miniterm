@@ -107,25 +107,27 @@ const rankingList = computed(() => {
 
 /* 前三名特殊高亮着色 */
 .rank-1 {
-  background: rgba(255, 69, 0, 0.2);
-  color: #ff4500;
-  text-shadow: 0 0 8px #ff4500;
-  border-color: #ff4500;
-  box-shadow: inset 0 0 10px rgba(255, 69, 0, 0.6);
+  background: rgba(255, 107, 107, 0.18);
+  color: var(--cyber-red);
+  text-shadow: 0 0 8px var(--cyber-red);
+  border-color: var(--cyber-red);
+  box-shadow: inset 0 0 10px rgba(255, 107, 107, 0.45);
 }
 
 .rank-2 {
-  background: rgba(255, 165, 0, 0.2);
-  color: #ffa500;
-  text-shadow: 0 0 8px #ffa500;
-  border-color: #ffa500;
-  box-shadow: inset 0 0 10px rgba(255, 165, 0, 0.6);
+  background: rgba(255, 209, 102, 0.16);
+  color: var(--cyber-yellow);
+  text-shadow: 0 0 8px var(--cyber-yellow);
+  border-color: var(--cyber-yellow);
+  box-shadow: inset 0 0 10px rgba(255, 209, 102, 0.4);
 }
 
 .rank-3 {
-  background: rgba(252, 211, 77, 0.2);
-  color: var(--cyber-yellow);
-  border-color: var(--cyber-yellow);
+  background: rgba(57, 229, 140, 0.14);
+  color: var(--cyber-green);
+  text-shadow: 0 0 8px var(--cyber-green);
+  border-color: var(--cyber-green);
+  box-shadow: inset 0 0 10px rgba(57, 229, 140, 0.35);
 }
 
 .rank-info {
@@ -174,7 +176,7 @@ const rankingList = computed(() => {
 
 .rank-bar {
   height: 100%;
-  background: linear-gradient(90deg, rgba(0, 229, 255, 0.1) 0%, rgba(0, 229, 255, 1) 100%);
+  background: linear-gradient(90deg, rgba(31, 228, 255, 0.1) 0%, var(--cyber-accent) 100%);
   transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 0 10px var(--cyber-accent-glow);
   position: relative;

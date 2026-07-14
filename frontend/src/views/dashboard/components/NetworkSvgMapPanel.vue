@@ -1,7 +1,29 @@
 <template>
   <div class="network-map-panel">
-    <!-- 替换为指定的科幻视频 -->
-    <video src="/media/7月14日.mp4" autoplay loop muted class="static-center-video" alt="中央态势分布图"></video>
+    <div class="visual-frame">
+      <span class="frame-corner tl"></span>
+      <span class="frame-corner tr"></span>
+      <span class="frame-corner bl"></span>
+      <span class="frame-corner br"></span>
+      <div class="scan-line" aria-hidden="true"></div>
+      <div class="glow-ring" aria-hidden="true"></div>
+
+      <!-- 中央主视觉视频（用户后续可单独深度优化） -->
+      <video
+        src="/media/7月14日.mp4"
+        autoplay
+        loop
+        muted
+        playsinline
+        class="static-center-video"
+        aria-label="中央态势分布图"
+      ></video>
+
+      <div class="visual-caption">
+        <span class="caption-dot"></span>
+        <span>核心态势可视化</span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -20,25 +42,115 @@ defineProps({
   position: relative;
   width: 100%;
   height: 100%;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
 }
 
+.visual-frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(31, 228, 255, 0.22);
+  background:
+    radial-gradient(ellipse at center, rgba(31, 228, 255, 0.08) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(4, 25, 58, 0.25) 0%, rgba(2, 13, 34, 0.45) 100%);
+  box-shadow:
+    inset 0 0 30px rgba(31, 228, 255, 0.08),
+    0 0 24px rgba(31, 228, 255, 0.08);
+  overflow: hidden;
+}
+
+.frame-corner {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--cyber-accent);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.frame-corner.tl { top: 6px; left: 6px; border-right: none; border-bottom: none; }
+.frame-corner.tr { top: 6px; right: 6px; border-left: none; border-bottom: none; }
+.frame-corner.bl { bottom: 6px; left: 6px; border-right: none; border-top: none; }
+.frame-corner.br { bottom: 6px; right: 6px; border-left: none; border-top: none; }
+
+.glow-ring {
+  position: absolute;
+  width: min(62%, 420px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(31, 228, 255, 0.18);
+  box-shadow:
+    0 0 30px rgba(31, 228, 255, 0.12),
+    inset 0 0 30px rgba(31, 228, 255, 0.08);
+  pointer-events: none;
+  z-index: 1;
+  animation: ring-breathe 4.5s ease-in-out infinite;
+}
+
+.scan-line {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(31, 228, 255, 0.55), transparent);
+  box-shadow: 0 0 12px rgba(31, 228, 255, 0.45);
+  z-index: 3;
+  pointer-events: none;
+  animation: scan-move 5.5s linear infinite;
+  opacity: 0.55;
+}
+
 .static-center-video {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  z-index: 10;
-  filter: drop-shadow(0 0 30px rgba(0, 229, 255, 0.5)) brightness(1.2);
-  /* 确保黑底色融入深蓝背景 */
+  z-index: 2;
+  filter: drop-shadow(0 0 24px rgba(31, 228, 255, 0.4)) brightness(1.15);
   mix-blend-mode: screen;
 }
 
-@keyframes float-map {
-  0% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-8px) scale(1.01); }
-  100% { transform: translateY(0) scale(1); }
+.visual-caption {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--cyber-text-secondary);
+  background: rgba(2, 13, 34, 0.55);
+  border: 1px solid rgba(31, 228, 255, 0.25);
+  backdrop-filter: blur(2px);
+}
+
+.caption-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cyber-green);
+  box-shadow: 0 0 8px var(--cyber-green);
+}
+
+@keyframes scan-move {
+  0% { top: 12%; opacity: 0; }
+  10% { opacity: 0.55; }
+  90% { opacity: 0.45; }
+  100% { top: 86%; opacity: 0; }
+}
+
+@keyframes ring-breathe {
+  0%, 100% { transform: scale(0.96); opacity: 0.55; }
+  50% { transform: scale(1.03); opacity: 0.9; }
 }
 </style>
