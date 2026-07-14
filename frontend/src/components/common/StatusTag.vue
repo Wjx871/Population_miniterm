@@ -23,6 +23,8 @@ const props = defineProps({
 });
 
 const EXTRA_STATUS_LABEL = Object.freeze({
+  PENDING_CANCELLATION: '待注销',
+  ARCHIVED: '已归档',
   RELEASED: '已解除',
   FAILED: '失败',
   EXPIRED: '已过期',
@@ -33,10 +35,10 @@ const EXTRA_STATUS_LABEL = Object.freeze({
 
 const tagType = computed(() => {
   const v = props.value || '';
-  if (['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'PENDING', 'PROCESSING'].includes(v)) return 'primary';
+  if (['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'PENDING', 'PROCESSING', 'PENDING_CANCELLATION'].includes(v)) return 'primary';
   if (['APPROVED', 'VERIFIED', 'COMPLETED', 'ACTIVE', 'ENABLED'].includes(v)) return 'success';
   if (['REJECTED', 'FAILED'].includes(v)) return 'danger';
-  if (['WITHDRAWN', 'CANCELLED', 'LEFT', 'DISABLED', 'RELEASED'].includes(v)) return 'info';
+  if (['WITHDRAWN', 'CANCELLED', 'LEFT', 'DISABLED', 'RELEASED', 'ARCHIVED'].includes(v)) return 'info';
   if (['EXPIRED'].includes(v)) return 'warning';
   if (v.includes('正常') || v.includes('启用') || v.includes('有效') || v.includes('迁入')) {
     return 'success';

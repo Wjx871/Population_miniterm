@@ -16,3 +16,7 @@ export function queryHouseholds(params = {}) {
 export function queryMigrationHistory(params = {}) {
   return request({ url: '/query/migration-history', method: 'get', params: clean(toSpringPageParams(params)) })
 }
+
+export function getComprehensivePersonProfile(personId) {
+  return request({ url: `/queries/persons/${personId}`, method: 'get' })
+}

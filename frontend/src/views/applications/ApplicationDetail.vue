@@ -45,6 +45,9 @@
       :detail="displayDetail"
       :subject="subjectDetail"
     />
+    <el-alert v-if="professionalError" type="error" :closable="false" show-icon :title="professionalError">
+      <el-button link type="primary" @click="load">重试</el-button>
+    </el-alert>
     <!-- 新业务统一字段面板 -->
     <ProfessionalFieldsPanel
       v-if="genericDetailFields.length"
@@ -129,7 +132,7 @@ import { BUSINESS_TYPE_LABEL } from '../../constants/application'
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { formatDateTime } from '../../utils/date'
-import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
+import { getApiErrorCode, getApiErrorMessage, isApiConflict } from '../../utils/apiError'
 import { getApplicationBusinessHandler } from '../../features/applications/handlers'
 
 const route = useRoute()
@@ -143,6 +146,7 @@ const executing = ref(false)
 const application = ref(null)
 /** 单一专业详情，不再按 family 拆多组 ref */
 const professionalDetail = ref(null)
+const professionalError = ref('')
 const migrationPerson = ref(null)
 const materials = ref([])
 const logs = ref([])
@@ -295,14 +299,21 @@ async function load() {
     materials.value = materialResult || []
     logs.value = logResult || []
     professionalDetail.value = null
+    professionalError.value = ''
     migrationPerson.value = null
 
     const currentHandler = getApplicationBusinessHandler(application.value?.businessType)
     if (currentHandler) {
-      const rawDetail = await currentHandler.loadDetail(
-        applicationId.value,
-        application.value?.businessType
-      )
+      let rawDetail
+      try {
+        rawDetail = await currentHandler.loadDetail(applicationId.value, application.value?.businessType)
+      } catch (error) {
+        const missingPermit = currentHandler.family === 'permit' && Number(getApiErrorCode(error)) === 404
+        professionalError.value = missingPermit
+          ? '该申请缺少居住证专业记录'
+          : getApiErrorMessage(error, '专业详情加载失败，请重试')
+        return true
+      }
       const normalized = typeof currentHandler.normalizeDetail === 'function'
         ? currentHandler.normalizeDetail(rawDetail)
         : rawDetail
