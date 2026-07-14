@@ -9,7 +9,7 @@
       <div class="user-area" v-if="userStore.isLoggedIn">
         <span class="username">
           欢迎您，{{ userStore.displayName }}
-          <el-tag :type="roleBadgeType" size="small" effect="dark" class="role-badge">
+          <el-tag color="#f56c6c" size="small" effect="dark" class="role-badge" style="border: none;">
             {{ userStore.roleLabel }}
           </el-tag>
         </span>
@@ -241,14 +241,13 @@ export default {
 
 .navbar {
   height: 60px;
-  /* 稳重的政务/企业级深蓝色渐变 */
-  background: linear-gradient(90deg, #0f2c59 0%, #174282 100%);
+  background: #171b26; /* 深邃控制台颜色 */
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 4px rgba(0,21,41,0.08);
   z-index: 10;
 }
 
@@ -270,10 +269,11 @@ export default {
 
 .system-badge {
   font-size: 12px;
-  background: rgba(255,255,255,0.2);
-  padding: 2px 8px;
-  border-radius: 4px;
+  background: rgba(255,255,255,0.25);
+  padding: 3px 10px;
+  border-radius: 12px;
   margin-left: 8px;
+  color: rgba(255,255,255,0.9);
 }
 
 .user-area {
@@ -291,7 +291,7 @@ export default {
 
 .role-badge {
   font-size: 12px;
-  border: none;
+  border-radius: 4px;
 }
 
 .logout-btn {
@@ -322,6 +322,21 @@ export default {
   overflow-y: auto;
 }
 
+:deep(.el-menu-item.is-active) {
+  background-color: #e6f7ff !important;
+  color: #1677ff !important;
+}
+
+:deep(.el-menu-item.is-active)::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #1677ff;
+}
+
 .sidebar-footer {
   padding: 16px;
   font-size: 12px;
@@ -339,19 +354,19 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: var(--el-bg-color-page, #f5f7fa);
+  background-color: #f0f2f5;
   min-width: 0; /* 修复 flex 子项内容过宽导致溢出的问题 */
   overflow: hidden;
 }
 
 .breadcrumb-container {
-  padding: 16px 20px 0 20px;
-  background-color: var(--el-bg-color-page, #f5f7fa);
+  padding: 16px 24px 0 24px;
+  background-color: #f0f2f5;
 }
 
 .page-wrapper {
   flex: 1;
-  padding: 20px;
+  padding: 20px 24px;
   overflow: auto; /* 允许横向和纵向滚动 */
 }
 
