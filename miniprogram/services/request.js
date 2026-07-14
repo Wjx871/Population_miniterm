@@ -1,6 +1,7 @@
 const { BASE_URL } = require('../config/index')
 const storage = require('../utils/storage')
 const { DEFAULT_MESSAGES, apiError } = require('../utils/error')
+const { cleanQueryParams } = require('../utils/request-params')
 
 let redirecting401 = false
 
@@ -28,11 +29,12 @@ function parseResponse(response) {
 }
 
 function request(options) {
+  const method = (options.method || 'GET').toUpperCase()
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${BASE_URL}${options.url}`,
-      method: options.method || 'GET',
-      data: options.data,
+      method,
+      data: method === 'GET' ? cleanQueryParams(options.data) : options.data,
       header: headers(options.header),
       timeout: options.timeout || 15000,
       success(response) { try { resolve(parseResponse(response)) } catch (error) { reject(error) } },
