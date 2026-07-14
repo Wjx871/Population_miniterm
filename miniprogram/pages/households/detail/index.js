@@ -1,0 +1,5 @@
+const service = require('../../../services/household')
+const adapter = require('../../../adapters/household')
+const { guard } = require('../../../utils/permission')
+const { messageOf } = require('../../../utils/error')
+Page({ data: { id: null, household: null, members: [], loading: true, error: '' }, onLoad(options) { this.setData({ id: options.id }); if (guard('household:view')) this.load() }, async load() { this.setData({ loading: true, error: '' }); try { const [raw, members] = await Promise.all([service.detail(this.data.id), service.members(this.data.id)]); const household = adapter.normalize(raw); this.setData({ household, members: (members || household.members || []).map(adapter.member) }) } catch (error) { this.setData({ error: messageOf(error), household: null }) } finally { this.setData({ loading: false }) } }, openPerson(e) { wx.navigateTo({ url: `/pages/persons/detail/index?id=${e.currentTarget.dataset.id}` }) } })
