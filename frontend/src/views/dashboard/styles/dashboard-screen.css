@@ -1,20 +1,26 @@
 /* 大屏深色变量体系 */
 :root {
-  --cyber-bg-color: #030816;
-  --cyber-panel-bg: rgba(6, 20, 50, 0.6);
+  --cyber-bg-color: #020d22;
+  --cyber-bg-mid: #05193c;
+  --cyber-panel-bg: rgba(4, 25, 58, 0.84);
+  --cyber-panel-bg-soft: rgba(6, 34, 75, 0.66);
   --cyber-panel-header: rgba(15, 45, 105, 0.4);
-  --cyber-border-color: #1a4f8f;
-  --cyber-border-highlight: #29d7ff;
-  --cyber-text-primary: #edf8ff;
-  --cyber-text-secondary: #8fb5d4;
-  --cyber-text-muted: #537ca2;
-  --cyber-accent: #00e5ff;
-  --cyber-accent-glow: rgba(0, 229, 255, 0.6);
-  --cyber-green: #00ffaa;
-  --cyber-yellow: #fcd34d;
-  --cyber-red: #ff4d4f;
+  --cyber-border-color: rgba(30, 208, 255, 0.35);
+  --cyber-border-highlight: #1fe4ff;
+  --cyber-text-primary: #f4fbff;
+  --cyber-text-secondary: #9db8d4;
+  --cyber-text-muted: #5f84a8;
+  --cyber-accent: #1fe4ff;
+  --cyber-accent-glow: rgba(31, 228, 255, 0.55);
+  --cyber-secondary: #2f7bff;
+  --cyber-green: #39e58c;
+  --cyber-yellow: #ffd166;
+  --cyber-red: #ff6b6b;
   --cyber-blue: #3b82f6;
-  
+  --cyber-purple: #a66cff;
+  --cyber-grid: rgba(48, 138, 210, 0.12);
+  --cyber-design-width: 1920px;
+  --cyber-design-height: 1080px;
   --radius-large: 12px;
 }
 
@@ -32,4 +38,33 @@
 }
 .dashboard-wrapper ::-webkit-scrollbar-thumb:hover {
   background: var(--cyber-accent);
+}
+
+/* 画布模式：全屏/大窗缩放 */
+.dashboard-wrapper.is-scale-mode {
+  overflow: hidden;
+}
+
+.dashboard-wrapper.is-scale-mode .dashboard-canvas.design-canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--cyber-design-width);
+  height: var(--cyber-design-height);
+  min-width: var(--cyber-design-width);
+  min-height: var(--cyber-design-height);
+  transform-origin: center center;
+}
+
+/* 画布模式：非全屏小窗可滚动 */
+.dashboard-wrapper.is-scroll-mode {
+  overflow: auto;
+}
+
+.dashboard-wrapper.is-scroll-mode .dashboard-canvas {
+  position: relative;
+  width: 100%;
+  min-width: 1400px;
+  min-height: 100%;
+  transform: none !important;
 }

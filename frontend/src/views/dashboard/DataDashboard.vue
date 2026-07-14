@@ -1,9 +1,13 @@
 <template>
-  <div ref="wrapperRef" class="dashboard-wrapper">
-    <div ref="canvasRef" class="dashboard-canvas">
+  <div
+    ref="wrapperRef"
+    class="dashboard-wrapper"
+    :class="mode === 'scale' ? 'is-scale-mode' : 'is-scroll-mode'"
+  >
+    <div ref="canvasRef" class="dashboard-canvas" :class="{ 'design-canvas': mode === 'scale' }">
       <!-- 顶部 Header -->
-      <DashboardScreenHeader 
-        :is-fullscreen="isFullscreen" 
+      <DashboardScreenHeader
+        :is-fullscreen="isFullscreen"
         :is-demo="isDemo"
         :loading="overviewLoading || chartsLoading"
         @refresh="loadAll"
@@ -42,7 +46,7 @@
         </div>
       </main>
 
-      <DashboardFooter 
+      <DashboardFooter
         :update-time="overview.generatedAt || charts.generatedAt"
         :overview-error="overviewError"
         :charts-error="chartsError"
@@ -54,6 +58,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useDashboardFullscreen } from './composables/useDashboardFullscreen';
+import { useDashboardScale } from './composables/useDashboardScale';
 import { useDashboardData } from './composables/useDashboardData';
 import DashboardScreenHeader from './components/DashboardScreenHeader.vue';
 import DashboardFooter from './components/DashboardFooter.vue';
@@ -76,10 +81,15 @@ import PopulationScalePanel from './components/PopulationScalePanel.vue';
 const wrapperRef = ref(null);
 const canvasRef = ref(null);
 
-// 移除原有的自动缩放逻辑，改用原生滚动条适应小屏幕
-
 // 绑定全屏
 const { isFullscreen, toggleFullscreen } = useDashboardFullscreen();
+
+// 混合缩放：全屏/大窗 scale，小窗 scroll
+const { mode } = useDashboardScale(wrapperRef, canvasRef, {
+  designWidth: 1920,
+  designHeight: 1080,
+  isFullscreen
+});
 
 // 绑定数据层
 const {
@@ -103,65 +113,76 @@ const {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #020f28; /* 深色背景 */
-  overflow: auto; /* 允许滚动 */
+  background-color: var(--cyber-bg-color);
 }
 
 .dashboard-canvas {
   position: relative;
   width: 100%;
-  min-width: 1400px; /* 保证排版不会过度挤压变形 */
+  min-width: 1400px;
   min-height: 100%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  color: white;
-  background-image: radial-gradient(circle at center, #05193c 0%, #020f28 100%);
+  color: var(--cyber-text-primary);
+  background-color: var(--cyber-bg-color);
+  background-image:
+    radial-gradient(ellipse at center, var(--cyber-bg-mid) 0%, var(--cyber-bg-color) 70%),
+    linear-gradient(var(--cyber-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--cyber-grid) 1px, transparent 1px);
+  background-size: 100% 100%, 48px 48px, 48px 48px;
+  background-position: center, center, center;
 }
 
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 16px;
-  padding: 16px 20px 0;
+  gap: 14px;
+  padding: 12px 20px 0;
   z-index: 1;
+  flex-shrink: 0;
 }
 
 .dashboard-content-skeleton {
   flex: 1;
   display: flex;
-  gap: 20px;
-  padding: 20px;
+  gap: 16px;
+  padding: 16px 20px;
+  min-height: 0;
 }
 
 .column {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+  min-height: 0;
 }
 
 .left-column, .right-column {
   flex: 3;
+  min-width: 0;
 }
 
 .center-column {
   flex: 4;
+  min-width: 0;
 }
 
 .panel {
   flex: 1;
-  /* CyberPanel 内部有自己的样式，这里只需要控制它在 flex 列中的占比即可 */
-  height: calc(33.33% - 14px); /* 减去 gap 的分配 */
+  height: calc(33.33% - 11px);
+  min-height: 0;
 }
 
 .center-top {
   flex: 1;
   position: relative;
-  min-height: 400px;
+  min-height: 0;
 }
 
 .center-bottom {
-  height: 280px;
-  margin-top: 16px;
+  height: 260px;
+  flex-shrink: 0;
+  margin-top: 0;
 }
 </style>
