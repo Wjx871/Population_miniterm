@@ -18,6 +18,15 @@
           class="cyber-btn"
           type="primary" 
           link 
+          :icon="Back" 
+          @click="$router.push('/home')"
+        >
+          返回系统
+        </el-button>
+        <el-button 
+          class="cyber-btn"
+          type="primary" 
+          link 
           :icon="Refresh" 
           :loading="loading" 
           @click="$emit('refresh')"
@@ -43,7 +52,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { Refresh, FullScreen, Close } from '@element-plus/icons-vue'
+import { Refresh, FullScreen, Close, Back } from '@element-plus/icons-vue'
 import { formatDateTime } from '../../../utils/date'
 
 defineProps({

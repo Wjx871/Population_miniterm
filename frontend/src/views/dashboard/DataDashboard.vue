@@ -53,7 +53,6 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useDashboardScale } from './composables/useDashboardScale';
 import { useDashboardFullscreen } from './composables/useDashboardFullscreen';
 import { useDashboardData } from './composables/useDashboardData';
 import DashboardScreenHeader from './components/DashboardScreenHeader.vue';
@@ -77,8 +76,7 @@ import PopulationScalePanel from './components/PopulationScalePanel.vue';
 const wrapperRef = ref(null);
 const canvasRef = ref(null);
 
-// 绑定缩放
-useDashboardScale(wrapperRef, canvasRef, 1920, 1080);
+// 移除原有的自动缩放逻辑，改用原生滚动条适应小屏幕
 
 // 绑定全屏
 const { isFullscreen, toggleFullscreen } = useDashboardFullscreen();
@@ -106,17 +104,15 @@ const {
   width: 100%;
   height: 100%;
   background-color: #020f28; /* 深色背景 */
-  overflow: hidden;
+  overflow: auto; /* 允许滚动 */
 }
 
 .dashboard-canvas {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 1920px;
-  height: 1080px;
-  transform-origin: center center;
-  /* js 会动态写入 transform: translate(-50%, -50%) scale(xxx); */
+  position: relative;
+  width: 100%;
+  min-width: 1400px; /* 保证排版不会过度挤压变形 */
+  min-height: 100%;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   color: white;
