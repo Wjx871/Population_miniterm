@@ -51,3 +51,5 @@ cache/
 
 # Browser automation temporary artifacts
 .playwright-cli/
+frontend/playwright-report/
+frontend/test-results/
