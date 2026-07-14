@@ -20,10 +20,23 @@ export function executeFloatingApplication(applicationId, version) {
 }
 
 export function getFloatingPopulationPage(params) {
-  const includeHistory = params && params.includeHistory ? { includeHistory: true } : {}
-  const next = { ...params, ...includeHistory }
-  delete next.includeHistory
-  return request({ url: '/floating-populations', method: 'get', params: toSpringPageParams(next) })
+  const raw = params || {}
+  const { current, size } = raw
+  // 仅在用户打开「包含历史」开关时才请求历史行；否则显式传 false，方便排错并避免依赖后端默认值。
+  const next = {
+    registrationNo: raw.registrationNo,
+    personName: raw.personName,
+    identityNo: raw.identityNo,
+    currentRegionCode: raw.currentRegionCode,
+    status: raw.status,
+    includeHistory: raw.includeHistory === true
+  }
+  // 仅保留有意义的查询条件（去除空串/null/undefined），避免向 URL 中追加无意义参数
+  Object.keys(next).forEach((key) => {
+    const value = next[key]
+    if (value === '' || value === null || value === undefined) delete next[key]
+  })
+  return request({ url: '/floating-populations', method: 'get', params: toSpringPageParams({ ...next, current, size }) })
 }
 
 export function getFloatingPopulationById(floatingId) {
@@ -71,7 +84,26 @@ export function cancelResidencePermitApplication(applicationId, version) {
 // ==================== 正式居住证查询 (4) ====================
 
 export function getResidencePermitPage(params) {
-  return request({ url: '/residence-permits', method: 'get', params: toSpringPageParams(params) })
+  const raw = params || {}
+  const { current, size } = raw
+  // 仅保留有意义的查询条件，去除空串/null/undefined。
+  // 重要：currentRegionCode/status 等字段在 MyBatis 中使用 OGNL 的 !=null 判断，
+  // 空字符串会进入分支并以「= ''」参与过滤，把所有数据过滤掉；validFrom/validTo
+  // 经 Spring 的 LocalDate 解析失败还会导致 400。
+  const next = {
+    permitNo: raw.permitNo,
+    personName: raw.personName,
+    identityNo: raw.identityNo,
+    currentRegionCode: raw.currentRegionCode,
+    status: raw.status,
+    validFrom: raw.validFrom,
+    validTo: raw.validTo
+  }
+  Object.keys(next).forEach((key) => {
+    const value = next[key]
+    if (value === '' || value === null || value === undefined) delete next[key]
+  })
+  return request({ url: '/residence-permits', method: 'get', params: toSpringPageParams({ ...next, current, size }) })
 }
 
 export function getResidencePermitById(permitId) {
