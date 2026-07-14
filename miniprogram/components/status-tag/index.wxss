@@ -1,0 +1,1 @@
+.tag{display:inline-block;padding:6rpx 16rpx;border-radius:999rpx;background:#e9f3fd;color:#1769aa;font-size:24rpx}.success{background:#e8f7ee;color:#22834c}.warning{background:#fff4dc;color:#a76800}.danger{background:#fdebec;color:#b53138}

@@ -1,0 +1,24 @@
+{
+  "pages": [
+    "pages/login/index",
+    "pages/dashboard/index",
+    "pages/persons/list/index",
+    "pages/persons/detail/index",
+    "pages/households/list/index",
+    "pages/households/detail/index",
+    "pages/applications/list/index",
+    "pages/applications/detail/index",
+    "pages/approvals/list/index",
+    "pages/approvals/detail/index",
+    "pages/profile/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "人口数据库移动端",
+    "navigationBarBackgroundColor": "#1769aa",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f4f7fb",
+    "backgroundTextStyle": "dark"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

@@ -1,0 +1,1 @@
+.sensitive{display:flex;gap:10rpx;align-items:flex-start}.sensitive text:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sensitive.expanded text:first-child{white-space:normal;word-break:break-all}.more{color:#1769aa;flex-shrink:0}

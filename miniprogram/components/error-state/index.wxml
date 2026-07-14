@@ -1,0 +1,1 @@
+<view class="error"><view>{{message}}</view><button size="mini" class="retry" bindtap="retry">重新加载</button></view>

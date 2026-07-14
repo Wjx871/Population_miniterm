@@ -1,0 +1,1 @@
+Component({ properties: { value: { type: String, value: '—' }, expandable: { type: Boolean, value: false } }, data: { expanded: false }, methods: { toggle() { if (this.data.expandable) this.setData({ expanded: !this.data.expanded }) } } })

@@ -1,0 +1,1 @@
+<view class="sensitive {{expanded?'expanded':''}}" bindtap="toggle"><text>{{value || '—'}}</text><text wx:if="{{expandable}}" class="more">{{expanded?'收起':'展开'}}</text></view>
