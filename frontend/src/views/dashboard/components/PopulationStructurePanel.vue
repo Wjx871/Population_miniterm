@@ -101,34 +101,55 @@ const ageGroups = computed(() => {
 
 .gender-ring-wrapper {
   position: relative;
-  width: 100px;
-  height: 100px;
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
-  background: var(--cyber-panel-bg);
+  background: radial-gradient(circle at center, rgba(6, 20, 50, 0.9) 0%, rgba(3, 8, 22, 1) 100%);
   padding: 8px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(0, 229, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 外发光虚线环 */
+.gender-ring-wrapper::before {
+  content: '';
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  border-radius: 50%;
+  border: 1px dashed rgba(0, 229, 255, 0.4);
+  animation: spin 20s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
 }
 
 .gender-ring {
   width: 100%;
   height: 100%;
   border-radius: 50%;
+  position: relative;
+  z-index: 2;
 }
 
 .gender-center {
   position: absolute;
-  top: 14px;
-  left: 14px;
-  right: 14px;
-  bottom: 14px;
+  top: 18px;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
   background: var(--cyber-bg-color);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  color: var(--cyber-text-secondary);
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+  font-size: 28px;
+  color: var(--cyber-accent);
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9);
+  z-index: 3;
+  filter: drop-shadow(0 0 5px var(--cyber-accent-glow));
 }
 
 .gender-legend {
@@ -194,18 +215,42 @@ const ageGroups = computed(() => {
 
 .age-bar-wrapper {
   flex: 1;
-  height: 8px;
-  background: rgba(41, 215, 255, 0.1);
-  border-radius: 4px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
   overflow: hidden;
+  position: relative;
+}
+
+/* 背景轨道光环 */
+.age-bar-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; left: 0; right: 0;
+  box-shadow: inset 0 0 4px rgba(0, 229, 255, 0.1);
+  border-radius: 3px;
 }
 
 .age-bar {
   height: 100%;
-  background: linear-gradient(90deg, var(--cyber-blue) 0%, var(--cyber-accent) 100%);
-  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(0, 229, 255, 0.2) 0%, #00e5ff 100%);
+  border-radius: 3px;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 8px var(--cyber-accent-glow);
+  box-shadow: 0 0 10px var(--cyber-accent-glow);
+  position: relative;
+}
+
+/* 光点头部 */
+.age-bar::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: 0 0 8px #fff;
 }
 
 .age-value {

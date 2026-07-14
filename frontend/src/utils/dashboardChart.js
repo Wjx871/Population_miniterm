@@ -4,33 +4,43 @@ import * as theme from '../views/dashboard/options/chartTheme.js'
 export function migrationTrendOption(points = []) {
   const rows = Array.isArray(points) ? points : []
   return {
-    color: [theme.dashboardChartColors[0], theme.dashboardChartColors[4]], // 迁入亮蓝，迁出深蓝
-    tooltip: { ...theme.darkTooltip, trigger: 'axis' },
-    legend: { ...theme.darkLegend, data: ['迁入', '迁出'], top: 0, right: 0 },
+    color: ['#00e5ff', '#3b82f6'], // 迁入荧光青，迁出亮蓝
+    tooltip: { 
+      ...theme.darkTooltip, 
+      trigger: 'axis',
+      backgroundColor: 'rgba(6, 20, 50, 0.8)',
+      borderColor: '#00e5ff',
+      borderWidth: 1,
+      textStyle: { color: '#fff' }
+    },
+    legend: { ...theme.darkLegend, data: ['迁入', '迁出'], top: 0, right: 0, icon: 'roundRect' },
     grid: { ...theme.darkGrid, top: 40, bottom: 20 },
     xAxis: { 
       ...theme.darkCategoryAxis, 
-      data: rows.map((item) => item.date || '') 
+      data: rows.map((item) => item.date || ''),
+      axisLine: { lineStyle: { color: 'rgba(0, 229, 255, 0.3)' } }
     },
     yAxis: { 
       ...theme.darkValueAxis,
-      minInterval: 1
+      minInterval: 1,
+      splitLine: { lineStyle: { type: 'dashed', color: 'rgba(255, 255, 255, 0.05)' } }
     },
     series: [
       { 
         name: '迁入', 
         type: 'line', 
-        smooth: 0.35, 
-        symbol: 'circle',
+        smooth: 0.4, 
+        symbol: 'emptyCircle',
         symbolSize: 6,
-        lineStyle: { width: 3 },
+        showSymbol: false,
+        lineStyle: { width: 3, shadowBlur: 10, shadowColor: 'rgba(0, 229, 255, 0.8)' },
         data: rows.map((item) => item.inCount ?? 0), 
         areaStyle: { 
           color: {
             type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(41, 215, 255, 0.4)' },
-              { offset: 1, color: 'rgba(41, 215, 255, 0.05)' }
+              { offset: 0, color: 'rgba(0, 229, 255, 0.4)' },
+              { offset: 1, color: 'rgba(0, 229, 255, 0.01)' }
             ]
           }
         } 
@@ -38,17 +48,18 @@ export function migrationTrendOption(points = []) {
       { 
         name: '迁出', 
         type: 'line', 
-        smooth: 0.35, 
-        symbol: 'circle',
+        smooth: 0.4, 
+        symbol: 'emptyCircle',
         symbolSize: 6,
-        lineStyle: { width: 3 },
+        showSymbol: false,
+        lineStyle: { width: 3, shadowBlur: 10, shadowColor: 'rgba(59, 130, 246, 0.8)' },
         data: rows.map((item) => item.outCount ?? 0), 
         areaStyle: { 
           color: {
             type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
               { offset: 0, color: 'rgba(59, 130, 246, 0.4)' },
-              { offset: 1, color: 'rgba(59, 130, 246, 0.05)' }
+              { offset: 1, color: 'rgba(59, 130, 246, 0.01)' }
             ]
           }
         } 
@@ -115,15 +126,18 @@ export function approvalStatusOption(rows = []) {
     series: [
       {
         type: 'pie',
-        radius: ['48%', '72%'],
+        radius: ['55%', '75%'], // 加粗环形
         center: ['35%', '50%'],
         avoidLabelOverlap: false,
         label: { show: false },
         labelLine: { show: false },
         data: chartData,
         itemStyle: {
-          borderWidth: 2,
-          borderColor: '#020f28'
+          borderWidth: 4,
+          borderColor: '#030816', // 极暗底色分割
+          borderRadius: 10, // 圆角分段
+          shadowBlur: 10,
+          shadowColor: 'rgba(0, 0, 0, 0.5)'
         }
       }
     ]
@@ -167,21 +181,29 @@ export function businessTypeShareOption(rows = []) {
       { 
         type: 'bar', 
         barWidth: 12,
+        showBackground: true, // 显示深色底槽
+        backgroundStyle: {
+          color: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: [0, 6, 6, 0]
+        },
         itemStyle: {
           borderRadius: [0, 6, 6, 0],
           color: {
             type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
             colorStops: [
-              { offset: 0, color: 'rgba(41, 215, 255, 0.2)' },
-              { offset: 1, color: 'rgba(41, 215, 255, 1)' }
+              { offset: 0, color: 'rgba(0, 229, 255, 0.1)' },
+              { offset: 1, color: 'rgba(0, 229, 255, 1)' }
             ]
-          }
+          },
+          shadowBlur: 8,
+          shadowColor: 'rgba(0, 229, 255, 0.5)'
         },
         label: {
           show: true,
           position: 'right',
-          color: '#fff',
+          color: '#00e5ff',
           fontFamily: 'Courier New',
+          fontWeight: 'bold',
           formatter: (params) => {
             const val = params.value
             return val
@@ -197,19 +219,27 @@ export function businessTypeShareOption(rows = []) {
 export function populationScaleOption(trendData = []) {
   const rows = Array.isArray(trendData) ? trendData : []
   return {
-    color: [theme.dashboardChartColors[4], theme.dashboardChartColors[1], theme.dashboardChartColors[2]],
-    tooltip: { ...theme.darkTooltip, trigger: 'axis', axisPointer: { type: 'shadow' } },
-    legend: { ...theme.darkLegend, data: ['户籍人口', '流动人口', '有效居住证'], top: 0 },
+    color: ['#00e5ff', '#00ffaa', '#fcd34d'],
+    tooltip: { 
+      ...theme.darkTooltip, 
+      trigger: 'axis', 
+      axisPointer: { type: 'shadow' },
+      backgroundColor: 'rgba(6, 20, 50, 0.8)',
+      borderColor: '#00e5ff',
+      textStyle: { color: '#fff' }
+    },
+    legend: { ...theme.darkLegend, data: ['户籍人口', '流动人口', '有效居住证'], top: 0, icon: 'circle' },
     grid: { ...theme.darkGrid, top: 40, bottom: 20 },
     xAxis: { 
       ...theme.darkCategoryAxis, 
-      data: rows.map(r => r.date || '当前') 
+      data: rows.map(r => r.date || '当前'),
+      axisLine: { lineStyle: { color: 'rgba(0, 229, 255, 0.3)' } }
     },
     yAxis: { 
       ...theme.darkValueAxis,
       minInterval: 1,
       splitLine: {
-        lineStyle: { color: 'rgba(80, 151, 216, 0.1)', type: 'dashed' }
+        lineStyle: { color: 'rgba(255, 255, 255, 0.05)', type: 'dashed' }
       }
     },
     series: [
@@ -221,8 +251,10 @@ export function populationScaleOption(trendData = []) {
           borderRadius: [4, 4, 0, 0],
           color: {
             type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [{ offset: 0, color: '#3b82f6' }, { offset: 1, color: 'rgba(59,130,246,0.1)' }]
-          }
+            colorStops: [{ offset: 0, color: '#00e5ff' }, { offset: 1, color: 'rgba(0, 229, 255, 0.1)' }]
+          },
+          shadowBlur: 8,
+          shadowColor: 'rgba(0, 229, 255, 0.4)'
         },
         data: rows.map(r => r.registeredPopulation || 0)
       },
@@ -234,8 +266,10 @@ export function populationScaleOption(trendData = []) {
           borderRadius: [4, 4, 0, 0],
           color: {
             type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [{ offset: 0, color: '#00ffaa' }, { offset: 1, color: 'rgba(0,255,170,0.1)' }]
-          }
+            colorStops: [{ offset: 0, color: '#00ffaa' }, { offset: 1, color: 'rgba(0, 255, 170, 0.1)' }]
+          },
+          shadowBlur: 8,
+          shadowColor: 'rgba(0, 255, 170, 0.4)'
         },
         data: rows.map(r => r.floatingPopulation || 0)
       },
@@ -247,8 +281,10 @@ export function populationScaleOption(trendData = []) {
           borderRadius: [4, 4, 0, 0],
           color: {
             type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [{ offset: 0, color: '#fcd34d' }, { offset: 1, color: 'rgba(252,211,77,0.1)' }]
-          }
+            colorStops: [{ offset: 0, color: '#fcd34d' }, { offset: 1, color: 'rgba(252, 211, 77, 0.1)' }]
+          },
+          shadowBlur: 8,
+          shadowColor: 'rgba(252, 211, 77, 0.4)'
         },
         data: rows.map(r => r.residencePermits || 0)
       }
