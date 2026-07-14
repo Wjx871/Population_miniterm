@@ -9,12 +9,10 @@ export const PERMISSIONS = Object.freeze({
   
   /** 工作台与数据统计大屏 */
   STATISTICS_VIEW: 'statistics:view',
+  LOG_VIEW: 'log:view',
   
   HOUSEHOLD_VIEW: 'household:view',
-  HOUSEHOLD_CREATE: 'household:create',
-  HOUSEHOLD_UPDATE: 'household:update',
-  HOUSEHOLD_MEMBER_MANAGE: 'household:member:manage',
-  HOUSEHOLD_DELETE: 'household:delete',
+  HOUSEHOLD_EDIT: 'household:edit',
   
   MIGRATION_VIEW: 'migration:view',
   MIGRATION_IN_CREATE: 'migration:in:create',

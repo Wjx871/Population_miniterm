@@ -1,5 +1,5 @@
-import request from './request'
-import { toSpringPageParams } from '../utils/page'
+import request from './request.js'
+import { toSpringPageParams } from '../utils/page.js'
 
 export function createNormalExport(payload) {
   return request({ url: '/exports/normal', method: 'post', data: payload })
@@ -14,11 +14,7 @@ export function getExportApplicationDetail(applicationId) {
 }
 
 export function executeSensitiveExport(applicationId, version) {
-  return request({
-    url: `/exports/sensitive/applications/${applicationId}/execute`,
-    method: 'post',
-    data: { version }
-  })
+  return request({url:`/exports/sensitive/applications/${applicationId}/execute`,method:'post',data:{version}})
 }
 
 export function getExportPage(params) {

@@ -9,6 +9,10 @@
       <el-input :model-value="householdNo" disabled />
     </el-form-item>
 
+    <el-form-item v-if="!isEdit" label="户籍编号" prop="householdNo">
+      <el-input v-model.trim="form.householdNo" maxlength="30" placeholder="请输入唯一户号" />
+    </el-form-item>
+
     <el-form-item v-if="isEdit" label="户主">
       <el-input :model-value="headPersonDisplay" disabled />
     </el-form-item>
@@ -26,6 +30,14 @@
         maxlength="255"
         show-word-limit
       />
+    </el-form-item>
+
+    <el-form-item label="所属区划" prop="regionCode">
+      <RegionCascader v-model="form.regionCode" />
+    </el-form-item>
+
+    <el-form-item label="家庭户类型" prop="householdType">
+      <DictionarySelect v-model="form.householdType" type="HOUSEHOLD_TYPE" />
     </el-form-item>
 
     <el-form-item label="立户日期" prop="establishDate">
@@ -49,6 +61,8 @@
 import { computed, reactive, ref, watch } from 'vue'
 import PersonSelect from '../../../components/business/PersonSelect.vue'
 import StatusTag from '../../../components/common/StatusTag.vue'
+import DictionarySelect from '../../../components/business/DictionarySelect.vue'
+import RegionCascader from '../../../components/business/RegionCascader.vue'
 import { formatDate } from '../../../utils/date'
 
 const props = defineProps({
@@ -82,17 +96,23 @@ const emit = defineEmits(['update:modelValue'])
 
 const formRef = ref(null)
 const form = reactive({
+  householdNo: '',
   headPersonId: null,
   address: '',
+  regionCode: '',
+  householdType: '',
   establishDate: '',
 })
 
 const rules = computed(() => {
   const base = {
     address: [{ required: true, message: '请输入户籍地址', trigger: 'blur' }],
+    regionCode: [{ required: true, message: '请选择所属区划', trigger: 'change' }],
+    householdType: [{ required: true, message: '请选择家庭户类型', trigger: 'change' }],
     establishDate: [{ required: true, message: '请选择立户日期', trigger: 'change' }],
   }
   if (!props.isEdit) {
+    base.householdNo = [{ required: true, message: '请输入户籍编号', trigger: 'blur' }]
     base.headPersonId = [{ required: true, message: '请选择户主', trigger: 'change' }]
   }
   return base
@@ -115,8 +135,11 @@ function disableFutureDate(date) {
 
 function syncFromModel(value) {
   Object.assign(form, {
+    householdNo: value?.householdNo ?? '',
     headPersonId: value?.headPersonId ?? null,
     address: value?.address ?? '',
+    regionCode: value?.regionCode ?? '',
+    householdType: value?.householdType ?? '',
     establishDate: value?.establishDate ? formatDate(value.establishDate) : '',
   })
 }

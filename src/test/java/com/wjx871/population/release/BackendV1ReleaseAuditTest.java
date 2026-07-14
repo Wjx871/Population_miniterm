@@ -56,6 +56,11 @@ class BackendV1ReleaseAuditTest {
                 "doc/development/backend-v1-completion-report.md", ".env.example");
         required.forEach(path -> assertThat(Files.exists(ROOT.resolve(path))).as(path).isTrue());
     }
+    @Test void demoDataUsesCanonicalBusinessAndPermitStatuses() throws Exception {
+        String demo = Files.readString(ROOT.resolve("doc/database/demo_data.sql"));
+        assertThat(demo).contains("'RESIDENCE_PERMIT_FIRST_ISSUE'", "'ACTIVE',1")
+                .doesNotContain("'RESIDENCE_PERMIT_APPLICATION'", "'VALID',1");
+    }
     private static String text(Path root) throws IOException {
         StringBuilder result = new StringBuilder();
         for (Path path : files(root)) if (Files.isRegularFile(path)) result.append(Files.readString(path));
