@@ -1,0 +1,13 @@
+<view class="page">
+  <view class="hero card"><view><view class="welcome">您好，{{user.displayName}}</view><view class="muted">{{user.roleDisplay}} · {{user.dataScopeDisplay}}</view></view><view class="avatar">{{user.avatarText}}</view></view>
+  <view class="section-title">数据概览</view>
+  <loading-state wx:if="{{loading}}" />
+  <error-state wx:elif="{{error}}" message="{{error}}" bindretry="load" />
+  <view wx:else class="grid stats">
+    <view class="stat"><view class="muted">人口数量</view><view class="stat-number">{{stats.population === null ? '—' : stats.population}}</view></view>
+    <view class="stat"><view class="muted">家庭户数量</view><view class="stat-number">{{stats.households === null ? '—' : stats.households}}</view></view>
+    <view class="stat"><view class="muted">待审批数量</view><view class="stat-number">{{stats.pending === null ? '—' : stats.pending}}</view></view>
+  </view>
+  <view class="section-title functions">常用功能</view>
+  <view class="entry card" wx:for="{{entries}}" wx:key="title" data-url="{{item.url}}" bindtap="open"><view class="entry-icon">{{item.icon}}</view><view class="entry-main"><view>{{item.title}}</view><view class="muted entry-desc">{{item.desc}}</view></view><view class="arrow">›</view></view>
+</view>

@@ -1,0 +1,1 @@
+{ "navigationBarTitleText": "个人中心", "usingComponents": { "loading-state": "/components/loading-state/index", "error-state": "/components/error-state/index" } }
