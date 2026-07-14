@@ -1,1 +1,5 @@
-{ "navigationBarTitleText": "系统登录" }
+{
+  "navigationBarTitleText": "系统登录",
+  "navigationBarBackgroundColor": "#F3F7FC",
+  "navigationBarTextStyle": "black"
+}

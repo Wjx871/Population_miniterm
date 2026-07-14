@@ -1,11 +1,76 @@
 <view class="login-page">
-  <view class="brand"><view class="emblem">数</view><view class="brand-title">人口数据库管理系统</view><view class="brand-subtitle">内部移动管理端 V1</view></view>
-  <view class="login-card">
-    <input class="input" placeholder="用户名" value="{{username}}" bindinput="inputUsername" />
-    <view class="password-wrap"><input class="input password" placeholder="密码" password="{{!showPassword}}" value="{{password}}" bindinput="inputPassword" /><text class="toggle" bindtap="togglePassword">{{showPassword?'隐藏':'显示'}}</text></view>
-    <view class="remember" bindtap="toggleRemember"><text class="box">{{remember?'✓':''}}</text><text>记住账号（不保存密码）</text></view>
-    <view wx:if="{{error}}" class="login-error">{{error}}</view>
-    <button class="primary" loading="{{loading}}" disabled="{{loading}}" bindtap="submit">{{loading?'正在登录':'登录'}}</button>
+  <view class="brand-section">
+    <view class="brand-mark" aria-hidden="true">
+      <view class="brand-mark__ring">
+        <view class="brand-mark__person brand-mark__person--main"></view>
+        <view class="brand-mark__person brand-mark__person--left"></view>
+        <view class="brand-mark__person brand-mark__person--right"></view>
+      </view>
+    </view>
+    <view class="brand-title">人口数据库管理系统</view>
+    <view class="brand-subtitle">微信小程序移动管理端</view>
+    <view class="brand-values">规范管理 · 精准服务 · 数据安全</view>
   </view>
-  <view class="security">仅限内部授权人员使用 · 敏感数据以服务端脱敏结果为准</view>
+
+  <view class="login-card form-card">
+    <view class="form-heading">账号登录</view>
+    <view class="form-description">请输入系统分配的管理账号</view>
+
+    <view class="input-row">
+      <view class="input-symbol" aria-hidden="true">账</view>
+      <input
+        class="login-input"
+        placeholder="请输入用户名"
+        value="{{username}}"
+        maxlength="64"
+        confirm-type="next"
+        bindinput="inputUsername"
+      />
+    </view>
+
+    <view class="input-row">
+      <view class="input-symbol" aria-hidden="true">密</view>
+      <input
+        class="login-input password-input"
+        placeholder="请输入密码"
+        password="{{!showPassword}}"
+        value="{{password}}"
+        maxlength="128"
+        confirm-type="done"
+        bindinput="inputPassword"
+        bindconfirm="submit"
+      />
+      <button class="password-toggle" bindtap="togglePassword">
+        {{showPassword ? '隐藏' : '显示'}}
+      </button>
+    </view>
+
+    <view class="form-options" bindtap="toggleRemember">
+      <view class="checkbox {{remember ? 'checkbox--checked' : ''}}">
+        <text wx:if="{{remember}}">✓</text>
+      </view>
+      <text>记住账号</text>
+      <text class="option-note">不会保存密码</text>
+    </view>
+
+    <view wx:if="{{error}}" class="login-error" role="alert">
+      <view class="error-dot">!</view>
+      <text>{{error}}</text>
+    </view>
+
+    <button
+      class="primary-button login-button"
+      loading="{{loading}}"
+      disabled="{{loading}}"
+      bindtap="submit"
+    >{{loading ? '正在登录' : '登录'}}</button>
+  </view>
+
+  <view class="security-note">
+    <view class="security-icon">✓</view>
+    <view>
+      <view>请使用系统分配的管理账号登录</view>
+      <view class="security-subtext">账号权限由系统管理员统一配置</view>
+    </view>
+  </view>
 </view>

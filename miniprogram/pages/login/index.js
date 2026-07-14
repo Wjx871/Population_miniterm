@@ -1,32 +1,64 @@
 const auth = require('../../services/auth')
 const storage = require('../../utils/storage')
 const { normalizeUser } = require('../../adapters/auth')
-const { messageOf } = require('../../utils/error')
+const { validateCredentials, safeLoginError } = require('../../utils/login')
 const { reset401Guard } = require('../../services/request')
 
 Page({
-  data: { username: '', password: '', showPassword: false, remember: true, loading: false, error: '' },
-  onLoad() { reset401Guard(); this.setData({ username: storage.getRememberedUsername() }) },
-  inputUsername(e) { this.setData({ username: e.detail.value, error: '' }) },
-  inputPassword(e) { this.setData({ password: e.detail.value, error: '' }) },
-  togglePassword() { this.setData({ showPassword: !this.data.showPassword }) },
-  toggleRemember() { this.setData({ remember: !this.data.remember }) },
+  data: {
+    username: '',
+    password: '',
+    showPassword: false,
+    remember: true,
+    loading: false,
+    error: ''
+  },
+
+  onLoad() {
+    reset401Guard()
+    this.setData({ username: storage.getRememberedUsername() })
+  },
+
+  inputUsername(event) {
+    this.setData({ username: event.detail.value, error: '' })
+  },
+
+  inputPassword(event) {
+    this.setData({ password: event.detail.value, error: '' })
+  },
+
+  togglePassword() {
+    this.setData({ showPassword: !this.data.showPassword })
+  },
+
+  toggleRemember() {
+    this.setData({ remember: !this.data.remember })
+  },
+
   async submit() {
+    if (this.data.loading) return
     const username = this.data.username.trim()
-    if (!username || !this.data.password) { this.setData({ error: '请输入用户名和密码' }); return }
+    const validationError = validateCredentials(username, this.data.password)
+    if (validationError) {
+      this.setData({ error: validationError })
+      return
+    }
+
     this.setData({ loading: true, error: '' })
     try {
       const session = await auth.login(username, this.data.password)
       storage.setToken(session.token)
       const user = normalizeUser(await auth.me())
       storage.setUser(user)
-      this.data.remember ? storage.rememberUsername(username) : storage.rememberUsername('')
+      storage.rememberUsername(this.data.remember ? username : '')
       getApp().setUser(user)
       this.setData({ password: '' })
       wx.reLaunch({ url: '/pages/dashboard/index' })
     } catch (error) {
       if (error.statusCode !== 401) storage.clearSession()
-      this.setData({ error: error.statusCode === 0 ? '后端服务不可达，请检查服务地址和网络' : messageOf(error), password: '' })
-    } finally { this.setData({ loading: false }) }
+      this.setData({ error: safeLoginError(error), password: '' })
+    } finally {
+      this.setData({ loading: false })
+    }
   }
 })
