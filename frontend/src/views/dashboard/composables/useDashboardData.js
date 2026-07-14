@@ -12,8 +12,8 @@ export function useDashboardData() {
   const overview = reactive({})
   const charts = reactive({})
   
-  // 检查是否开启演示模式
-  const isDemo = import.meta.env.VITE_DASHBOARD_DEMO === 'true'
+  // 检查是否开启演示模式（默认开启，除非显式设为 'false'，方便在不重启Vite时直接生效）
+  const isDemo = import.meta.env.VITE_DASHBOARD_DEMO !== 'false'
 
   let timer = null
 

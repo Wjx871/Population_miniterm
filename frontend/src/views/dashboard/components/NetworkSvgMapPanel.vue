@@ -40,11 +40,11 @@ const networkMapOption = computed(() => {
     const y = Math.sin(angle) * radius
     
     // 模拟不同大小
-    const symbolSize = 20 + (item.count / 350000) * 40
+    const symbolSize = 20 + (item.value / 350000) * 40
 
     return {
       name: item.regionName,
-      value: item.count,
+      value: item.value,
       x,
       y,
       symbolSize: Math.max(15, symbolSize),
@@ -89,7 +89,7 @@ const networkMapOption = computed(() => {
     source: item.regionName,
     target: '数据中心',
     lineStyle: {
-      width: 1 + (item.count / 350000) * 3,
+      width: 1 + (item.value / 350000) * 3,
       curveness: 0.2
     }
   }))
