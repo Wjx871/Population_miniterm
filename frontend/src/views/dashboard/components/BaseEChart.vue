@@ -117,7 +117,8 @@ onBeforeUnmount(() => {
 .chart-root {
   width: 100%;
   height: 100%;
-  min-height: 220px;
+  /* 不设 min-height，避免在固定高度面板内撑破导致坐标轴文字被裁切 */
+  min-height: 0;
 }
 
 .chart-empty {

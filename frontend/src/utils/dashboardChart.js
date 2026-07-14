@@ -152,26 +152,29 @@ export function approvalStatusOption(rows = []) {
         }
       }
     },
+    // 中心文案与 pie.center 对齐，避免偏移发虚
     title: {
       text: `{total|${formatNum(total)}}\n{label|总计}`,
-      left: '34%',
-      top: '42%',
+      left: '35%',
+      top: '50%',
       textAlign: 'center',
+      textVerticalAlign: 'middle',
       textStyle: {
         rich: {
           total: {
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: 'bold',
             color: '#ffffff',
             fontFamily: 'Courier New',
-            lineHeight: 24,
-            textShadowColor: 'rgba(61,240,255,0.55)',
-            textShadowBlur: 8
+            lineHeight: 28,
+            textShadowColor: 'rgba(255,255,255,0.45)',
+            textShadowBlur: 10
           },
           label: {
-            fontSize: 12,
-            color: '#a8c8e8',
-            lineHeight: 18
+            fontSize: 13,
+            fontWeight: 600,
+            color: '#e8f6ff',
+            lineHeight: 22
           }
         }
       }
@@ -179,7 +182,7 @@ export function approvalStatusOption(rows = []) {
     series: [
       {
         type: 'pie',
-        radius: ['52%', '72%'],
+        radius: ['50%', '70%'],
         center: ['35%', '50%'],
         avoidLabelOverlap: true,
         label: { show: false },
@@ -290,62 +293,111 @@ export function populationScaleOption(trendData = []) {
     theme.dashboardChartColors[2]
   ]
 
+  // 日期过长时缩短显示，避免 X 轴被裁切
+  const formatAxisDate = (date) => {
+    if (!date || typeof date !== 'string') return date || '当前'
+    // 2026-07-08 -> 07-08
+    if (/^\d{4}-\d{2}-\d{2}/.test(date)) return date.slice(5, 10)
+    return date
+  }
+
   return {
     color: colors,
     tooltip: {
       ...theme.darkTooltip,
       trigger: 'axis',
-      axisPointer: { type: 'shadow' }
+      axisPointer: { type: 'shadow' },
+      formatter: (params) => {
+        if (!Array.isArray(params) || params.length === 0) return ''
+        const idx = params[0].dataIndex
+        const fullDate = rows[idx]?.date || params[0].axisValue || ''
+        const lines = params.map(
+          (p) => `${p.marker}${p.seriesName}：${Number(p.value || 0).toLocaleString()}`
+        )
+        return `${fullDate}<br/>${lines.join('<br/>')}`
+      }
     },
     legend: {
       ...theme.darkLegend,
       data: ['户籍人口', '流动人口', '有效居住证'],
-      top: 0,
-      icon: 'circle'
+      top: 4,
+      icon: 'circle',
+      textStyle: { color: '#e8f6ff', fontSize: 12 }
     },
-    grid: { ...theme.darkGrid, top: 40, bottom: 20 },
+    // 底部预留足够空间，防止日期标签被裁切
+    grid: {
+      ...theme.darkGrid,
+      top: 36,
+      bottom: 8,
+      left: 12,
+      right: 16,
+      containLabel: true
+    },
     xAxis: {
       ...theme.darkCategoryAxis,
-      data: rows.map((r) => r.date || '当前')
+      data: rows.map((r) => formatAxisDate(r.date)),
+      axisLabel: {
+        color: '#e8f6ff',
+        fontSize: 12,
+        margin: 10,
+        hideOverlap: true,
+        interval: 0
+      },
+      axisLine: {
+        lineStyle: { color: 'rgba(180, 220, 255, 0.45)' }
+      }
     },
     yAxis: {
       ...theme.darkValueAxis,
-      minInterval: 1
+      minInterval: 1,
+      axisLabel: {
+        color: '#d4e9ff',
+        fontSize: 11,
+        formatter: (v) => {
+          if (v >= 10000) return `${(v / 10000).toFixed(v % 10000 === 0 ? 0 : 1)}万`
+          return String(v)
+        }
+      },
+      splitLine: {
+        show: true,
+        lineStyle: { type: 'dashed', color: 'rgba(120, 180, 230, 0.18)' }
+      }
     },
     series: [
       {
         name: '户籍人口',
         type: 'bar',
-        barWidth: 14,
+        barWidth: 12,
+        barGap: '30%',
         itemStyle: {
           borderRadius: [4, 4, 0, 0],
           color: theme.verticalBarGradient(colors[0]),
           shadowBlur: 8,
-          shadowColor: 'rgba(31, 228, 255, 0.4)'
+          shadowColor: 'rgba(61, 240, 255, 0.4)'
         },
         data: rows.map((r) => r.registeredPopulation || 0)
       },
       {
         name: '流动人口',
         type: 'bar',
-        barWidth: 14,
+        barWidth: 12,
         itemStyle: {
           borderRadius: [4, 4, 0, 0],
           color: theme.verticalBarGradient(colors[1]),
           shadowBlur: 8,
-          shadowColor: 'rgba(57, 229, 140, 0.4)'
+          shadowColor: 'rgba(77, 255, 154, 0.4)'
         },
         data: rows.map((r) => r.floatingPopulation || 0)
       },
       {
         name: '有效居住证',
         type: 'bar',
-        barWidth: 14,
+        barWidth: 12,
         itemStyle: {
           borderRadius: [4, 4, 0, 0],
           color: theme.verticalBarGradient(colors[2]),
           shadowBlur: 8,
-          shadowColor: 'rgba(255, 209, 102, 0.4)'
+          shadowColor: 'rgba(255, 224, 138, 0.4)'
         },
         data: rows.map((r) => r.residencePermits || 0)
       }

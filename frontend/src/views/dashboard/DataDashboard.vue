@@ -214,8 +214,10 @@ const {
 }
 
 .center-bottom {
-  height: 260px;
+  height: 280px;
   flex-shrink: 0;
   margin-top: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 </style>

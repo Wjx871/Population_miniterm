@@ -31,4 +31,16 @@ const hasData = computed(() => {
   height: 100%;
   min-height: 0;
 }
+
+/* 确保图表区域吃满面板内容区，不溢出裁切坐标轴 */
+.scale-panel :deep(.panel-content) {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.scale-panel :deep(.base-echart-wrapper),
+.scale-panel :deep(.chart-root) {
+  height: 100%;
+  min-height: 0;
+}
 </style>
