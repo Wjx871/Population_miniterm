@@ -23,15 +23,17 @@
       <!-- 主要内容区骨架 -->
       <main class="dashboard-content-skeleton">
         <div class="column left-column">
-          <div class="panel">面板 1</div>
-          <div class="panel">面板 2</div>
+          <PopulationStructurePanel class="panel" :data="overview.populationStructure" />
+          <MigrationTrendPanel class="panel" :data="charts.migrationTrend" />
+          <BusinessRankingPanel class="panel" :data="charts.businessScale" />
         </div>
         <div class="column center-column">
           <div class="panel center-panel">中央态势图</div>
         </div>
         <div class="column right-column">
-          <div class="panel">面板 3</div>
-          <div class="panel">面板 4</div>
+          <ApprovalStatusPanel class="panel" :data="charts.permitStatusDistribution" />
+          <KeyBusinessMonitorPanel class="panel" :data="overview.keyBusiness" />
+          <BusinessTypeSharePanel class="panel" :data="charts.businessScale" />
         </div>
       </main>
 
@@ -52,6 +54,16 @@ import { useDashboardData } from './composables/useDashboardData';
 import DashboardScreenHeader from './components/DashboardScreenHeader.vue';
 import DashboardFooter from './components/DashboardFooter.vue';
 import DashboardKpiCard from './components/DashboardKpiCard.vue';
+
+// Left panels
+import PopulationStructurePanel from './components/PopulationStructurePanel.vue';
+import MigrationTrendPanel from './components/MigrationTrendPanel.vue';
+import BusinessRankingPanel from './components/BusinessRankingPanel.vue';
+
+// Right panels
+import ApprovalStatusPanel from './components/ApprovalStatusPanel.vue';
+import KeyBusinessMonitorPanel from './components/KeyBusinessMonitorPanel.vue';
+import BusinessTypeSharePanel from './components/BusinessTypeSharePanel.vue';
 
 const wrapperRef = ref(null);
 const canvasRef = ref(null);
@@ -132,6 +144,12 @@ const {
 }
 
 .panel {
+  flex: 1;
+  /* CyberPanel 内部有自己的样式，这里只需要控制它在 flex 列中的占比即可 */
+  height: calc(33.33% - 14px); /* 减去 gap 的分配 */
+}
+
+.center-panel {
   background: rgba(10, 30, 70, 0.5);
   border: 1px solid rgba(41, 215, 255, 0.2);
   border-radius: 8px;
@@ -141,5 +159,6 @@ const {
   flex: 1;
   font-size: 24px;
   color: rgba(255, 255, 255, 0.5);
+  height: 100%;
 }
 </style>
