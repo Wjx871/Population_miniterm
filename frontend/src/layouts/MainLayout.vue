@@ -1,6 +1,6 @@
 <template>
   <div class="layout-container">
-    <header class="navbar">
+    <header class="navbar" v-if="!isImmersive">
       <div class="logo-area">
         <el-icon class="logo-icon"><Platform /></el-icon>
         <span class="system-title">人口数据库管理系统</span>
@@ -20,7 +20,7 @@
     </header>
 
     <div class="main-layout">
-      <aside class="sidebar">
+      <aside class="sidebar" v-if="!isImmersive">
         <el-menu
           router
           :default-active="activeMenu"
