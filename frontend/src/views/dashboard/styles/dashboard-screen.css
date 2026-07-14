@@ -1,16 +1,18 @@
 /* 大屏深色变量体系 */
 :root {
-  --cyber-bg-color: #020f28;
-  --cyber-panel-bg: rgba(10, 30, 70, 0.45);
-  --cyber-border-color: rgba(41, 215, 255, 0.25);
+  --cyber-bg-color: #030816;
+  --cyber-panel-bg: rgba(6, 20, 50, 0.6);
+  --cyber-panel-header: rgba(15, 45, 105, 0.4);
+  --cyber-border-color: #1a4f8f;
+  --cyber-border-highlight: #29d7ff;
   --cyber-text-primary: #edf8ff;
   --cyber-text-secondary: #8fb5d4;
   --cyber-text-muted: #537ca2;
-  --cyber-accent: #29d7ff;
-  --cyber-accent-glow: rgba(41, 215, 255, 0.5);
+  --cyber-accent: #00e5ff;
+  --cyber-accent-glow: rgba(0, 229, 255, 0.6);
   --cyber-green: #00ffaa;
   --cyber-yellow: #fcd34d;
-  --cyber-red: #f87171;
+  --cyber-red: #ff4d4f;
   --cyber-blue: #3b82f6;
   
   --radius-large: 12px;

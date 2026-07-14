@@ -1,5 +1,11 @@
 <template>
   <div class="kpi-card">
+    <!-- 机甲外边框 -->
+    <div class="kpi-border top"></div>
+    <div class="kpi-border bottom"></div>
+    <div class="kpi-border left"></div>
+    <div class="kpi-border right"></div>
+    
     <div class="kpi-icon-wrapper">
       <el-icon class="kpi-icon">
         <component :is="iconComponent" />
@@ -12,9 +18,12 @@
         <span class="kpi-unit" v-if="unit && displayValue !== '—'">{{ unit }}</span>
       </div>
     </div>
-    <!-- 装饰角 -->
-    <div class="kpi-corner kpi-top-left"></div>
-    <div class="kpi-corner kpi-bottom-right"></div>
+    
+    <!-- 数据趋势箭头装饰（示例） -->
+    <div class="kpi-trend-decor">
+      <div class="trend-dot"></div>
+      <div class="trend-line"></div>
+    </div>
   </div>
 </template>
 
@@ -59,49 +68,64 @@ const iconComponent = computed(() => {
 <style scoped>
 .kpi-card {
   position: relative;
-  background: linear-gradient(135deg, rgba(10, 30, 70, 0.6) 0%, rgba(2, 15, 40, 0.8) 100%);
-  border: 1px solid rgba(41, 215, 255, 0.15);
-  border-radius: 8px;
-  padding: 16px;
+  background: var(--cyber-panel-bg);
+  padding: 20px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.05);
   transition: all 0.3s ease;
+  /* 左下右上的小切角 */
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
 
 .kpi-card:hover {
-  border-color: rgba(41, 215, 255, 0.4);
-  box-shadow: 0 0 16px rgba(41, 215, 255, 0.15);
+  background: rgba(10, 30, 80, 0.6);
+  box-shadow: inset 0 0 30px rgba(0, 229, 255, 0.15);
   transform: translateY(-2px);
 }
 
-/* 内部发光 */
-.kpi-card::before {
+/* 绘制机甲边框 */
+.kpi-border {
+  position: absolute;
+  background: var(--cyber-border-color);
+  z-index: 2;
+}
+
+.kpi-border.top { top: 0; left: 10px; right: 0; height: 1px; }
+.kpi-border.bottom { bottom: 0; left: 0; right: 10px; height: 1px; }
+.kpi-border.left { top: 10px; bottom: 0; left: 0; width: 1px; }
+.kpi-border.right { top: 0; bottom: 10px; right: 0; width: 1px; }
+
+/* 顶部高亮科技发光线 */
+.kpi-border.top::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: radial-gradient(circle at 10% 50%, rgba(41, 215, 255, 0.05) 0%, transparent 60%);
-  pointer-events: none;
+  top: 0;
+  left: 10%;
+  width: 40%;
+  height: 2px;
+  background: var(--cyber-accent);
+  box-shadow: 0 0 10px var(--cyber-accent-glow);
 }
 
 .kpi-icon-wrapper {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: rgba(41, 215, 255, 0.1);
-  border: 1px solid rgba(41, 215, 255, 0.3);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%; /* 圆形图标底座 */
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.2) 0%, rgba(0, 100, 255, 0.1) 100%);
+  border: 1px solid rgba(0, 229, 255, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 0 10px rgba(41, 215, 255, 0.2);
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.2), inset 0 0 10px rgba(0, 229, 255, 0.2);
 }
 
 .kpi-icon {
-  font-size: 24px;
-  color: var(--cyber-accent);
-  filter: drop-shadow(0 0 4px var(--cyber-accent-glow));
+  font-size: 26px;
+  color: #fff;
+  filter: drop-shadow(0 0 6px var(--cyber-accent-glow));
 }
 
 .kpi-info {
@@ -109,7 +133,7 @@ const iconComponent = computed(() => {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .kpi-label {
@@ -126,40 +150,39 @@ const iconComponent = computed(() => {
 
 .kpi-value {
   font-family: 'Courier New', Courier, monospace;
-  font-size: 28px;
+  font-size: 32px;
   font-weight: bold;
   color: #fff;
   line-height: 1;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 0 20px var(--cyber-accent-glow);
 }
 
 .kpi-unit {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--cyber-text-muted);
 }
 
-/* 装饰角 */
-.kpi-corner {
+/* 装饰小横条 */
+.kpi-trend-decor {
   position: absolute;
-  width: 8px;
-  height: 8px;
-  border: 2px solid var(--cyber-accent);
-  opacity: 0.6;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.5;
 }
 
-.kpi-top-left {
-  top: 0;
-  left: 0;
-  border-right: none;
-  border-bottom: none;
-  border-top-left-radius: 8px;
+.trend-dot {
+  width: 4px;
+  height: 4px;
+  background: var(--cyber-accent);
+  box-shadow: 0 0 4px var(--cyber-accent);
 }
 
-.kpi-bottom-right {
-  bottom: 0;
-  right: 0;
-  border-left: none;
-  border-top: none;
-  border-bottom-right-radius: 8px;
+.trend-line {
+  width: 20px;
+  height: 2px;
+  background: var(--cyber-accent);
 }
 </style>
