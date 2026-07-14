@@ -40,6 +40,13 @@
         ORDER BY p.permission_code
     </select>
 
+    <select id="selectAllEnabledPermissionCodes" resultType="string">
+        SELECT p.permission_code
+        FROM sys_permission p
+        WHERE p.status = 'ENABLED'
+        ORDER BY p.permission_code
+    </select>
+
     <update id="updateLastLogin">
         UPDATE sys_user
         SET last_login_time = CURRENT_TIMESTAMP,

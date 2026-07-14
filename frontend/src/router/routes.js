@@ -55,7 +55,7 @@ export const routes = [
         path: 'statistics/dashboard',
         name: 'DataDashboard',
         component: () => import('../views/dashboard/DataDashboard.vue'),
-        meta: { title: '数据大屏', minLevel: 1, permission: PERMISSIONS.STATISTICS_VIEW, menu: true, group: '查询统计', order: 36, icon: 'DataAnalysis' }
+        meta: { title: '数据大屏', minLevel: 1, permission: PERMISSIONS.STATISTICS_VIEW, menu: true, group: '查询统计', order: 36, icon: 'DataAnalysis', immersive: true }
       },
       {
         path: 'exports',

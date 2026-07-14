@@ -26,3 +26,10 @@ test('permissionContract: verify sensitive data view constant and old constant r
   assert.equal(PERMISSIONS.SENSITIVE_DATA_VIEW_FULL, 'sensitive-data:view-full')
   assert.equal(PERMISSIONS.PERSON_SENSITIVE_VIEW, undefined)
 })
+
+test('permissionContract: household write aliases map to backend household:edit', () => {
+  assert.equal(PERMISSIONS.HOUSEHOLD_EDIT, 'household:edit')
+  assert.equal(PERMISSIONS.HOUSEHOLD_CREATE, 'household:edit')
+  assert.equal(PERMISSIONS.HOUSEHOLD_UPDATE, 'household:edit')
+  assert.equal(PERMISSIONS.HOUSEHOLD_MEMBER_MANAGE, 'household:edit')
+})

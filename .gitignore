@@ -53,3 +53,5 @@ cache/
 .playwright-cli/
 frontend/playwright-report/
 frontend/test-results/
+
+# User assets

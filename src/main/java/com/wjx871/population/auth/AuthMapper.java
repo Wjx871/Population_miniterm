@@ -11,5 +11,8 @@ public interface AuthMapper {
 
     List<String> selectPermissionCodesByRoleId(Long roleId);
 
+    /** 系统管理员始终加载全部启用权限，避免角色授权遗漏导致降权。 */
+    List<String> selectAllEnabledPermissionCodes();
+
     int updateLastLogin(@Param("userId") Long userId, @Param("ipAddress") String ipAddress);
 }

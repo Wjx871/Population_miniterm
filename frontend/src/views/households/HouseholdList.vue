@@ -207,10 +207,12 @@ const openCreateDialog = () => {
   formModel.value = {
     householdNo: '',
     headPersonId: null,
-    address: '',
+    householdType: 'FAMILY',
     regionCode: '',
-    householdType: '',
+    address: '',
     establishDate: '',
+    status: 'ACTIVE',
+    version: 0,
   }
   dialogVisible.value = true
   householdFormRef.value?.clearValidate()
@@ -239,9 +241,11 @@ const openEditDialog = async (row) => {
     formModel.value = {
       householdNo: detail.householdNo,
       address: detail.address,
-      regionCode: detail.regionCode,
-      householdType: detail.householdType,
+      regionCode: detail.regionCode || '',
+      householdType: detail.householdType || 'FAMILY',
       establishDate: formatDate(detail.establishDate),
+      status: detail.status || 'ACTIVE',
+      version: detail.version ?? 0,
     }
     householdFormRef.value?.clearValidate()
   } catch (error) {

@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,15 +16,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 验证 population:view 与 statistics:view 在查询/工作台接口上的 200/403 语义。
- * 权限种子仅在本测试事务内通过 JdbcTemplate 写入，不修改全局 schema.sql。
+ * 不使用类级 @Transactional：登录/拒绝访问会以 REQUIRES_NEW 写 operation_log，
+ * 需要立刻可见已提交的用户行，避免外键失败。
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Transactional
 class QueryDashboardPermissionIntegrationTest {
 
     private static final long STATISTICS_PERMISSION_ID = 9101L;
@@ -47,12 +47,10 @@ class QueryDashboardPermissionIntegrationTest {
 
     @BeforeEach
     void seedPermissionMatrix() {
+        cleanupSeedData();
         // password: 123456 (same bcrypt seed as schema.sql demo accounts)
         String hash = "$2a$10$hqLjVyldvMDp7tlJcpkDZOaTT1dCAuSA5I7FgRfD/B7QXluT8ArB.";
 
-        jdbcTemplate.update("DELETE FROM sys_role_permission WHERE permission_id = ?", STATISTICS_PERMISSION_ID);
-        jdbcTemplate.update("DELETE FROM sys_permission WHERE permission_id = ? OR permission_code = 'statistics:view'",
-                STATISTICS_PERMISSION_ID);
         jdbcTemplate.update("""
                 INSERT INTO sys_permission (permission_id, permission_code, permission_name, module_name, permission_type, status)
                 VALUES (?, 'statistics:view', '查看统计', 'STATISTICS', 'API', 'ENABLED')
@@ -63,8 +61,6 @@ class QueryDashboardPermissionIntegrationTest {
         insertRole(BOTH_ROLE_ID, "BOTH_M5", "人口与统计");
         insertRole(NONE_ROLE_ID, "NONE_M5", "无查询统计权限");
 
-        jdbcTemplate.update("DELETE FROM sys_role_permission WHERE role_id IN (?,?,?,?)",
-                POP_ONLY_ROLE_ID, STAT_ONLY_ROLE_ID, BOTH_ROLE_ID, NONE_ROLE_ID);
         // population:view is permission_id=1 in schema.sql
         jdbcTemplate.update("INSERT INTO sys_role_permission(role_id, permission_id) VALUES (?, 1)", POP_ONLY_ROLE_ID);
         jdbcTemplate.update("INSERT INTO sys_role_permission(role_id, permission_id) VALUES (?, ?)",
@@ -77,6 +73,25 @@ class QueryDashboardPermissionIntegrationTest {
         insertUser(STAT_ONLY_USER_ID, "m5_stat_only", STAT_ONLY_ROLE_ID, hash);
         insertUser(BOTH_USER_ID, "m5_both", BOTH_ROLE_ID, hash);
         insertUser(NONE_USER_ID, "m5_none", NONE_ROLE_ID, hash);
+    }
+
+    @AfterEach
+    void cleanupPermissionMatrix() {
+        cleanupSeedData();
+    }
+
+    private void cleanupSeedData() {
+        jdbcTemplate.update("DELETE FROM operation_log WHERE user_id IN (?,?,?,?)",
+                POP_ONLY_USER_ID, STAT_ONLY_USER_ID, BOTH_USER_ID, NONE_USER_ID);
+        jdbcTemplate.update("DELETE FROM sys_user WHERE user_id IN (?,?,?,?) OR username IN (?,?,?,?)",
+                POP_ONLY_USER_ID, STAT_ONLY_USER_ID, BOTH_USER_ID, NONE_USER_ID,
+                "m5_pop_only", "m5_stat_only", "m5_both", "m5_none");
+        jdbcTemplate.update("DELETE FROM sys_role_permission WHERE role_id IN (?,?,?,?) OR permission_id = ?",
+                POP_ONLY_ROLE_ID, STAT_ONLY_ROLE_ID, BOTH_ROLE_ID, NONE_ROLE_ID, STATISTICS_PERMISSION_ID);
+        jdbcTemplate.update("DELETE FROM sys_role WHERE role_id IN (?,?,?,?)",
+                POP_ONLY_ROLE_ID, STAT_ONLY_ROLE_ID, BOTH_ROLE_ID, NONE_ROLE_ID);
+        jdbcTemplate.update("DELETE FROM sys_permission WHERE permission_id = ? OR permission_code = 'statistics:view'",
+                STATISTICS_PERMISSION_ID);
     }
 
     @Test
@@ -123,9 +138,6 @@ class QueryDashboardPermissionIntegrationTest {
     }
 
     private void insertRole(long roleId, String code, String name) {
-        jdbcTemplate.update("DELETE FROM sys_user WHERE role_id = ?", roleId);
-        jdbcTemplate.update("DELETE FROM sys_role_permission WHERE role_id = ?", roleId);
-        jdbcTemplate.update("DELETE FROM sys_role WHERE role_id = ?", roleId);
         jdbcTemplate.update("""
                 INSERT INTO sys_role (role_id, role_code, role_name, role_level, data_scope, status)
                 VALUES (?, ?, ?, 'L1', 'ALL', 'ENABLED')
@@ -133,7 +145,6 @@ class QueryDashboardPermissionIntegrationTest {
     }
 
     private void insertUser(long userId, String username, long roleId, String hash) {
-        jdbcTemplate.update("DELETE FROM sys_user WHERE user_id = ? OR username = ?", userId, username);
         jdbcTemplate.update("""
                 INSERT INTO sys_user (user_id, username, password_hash, role_id, department_id, real_name, status)
                 VALUES (?, ?, ?, ?, 1, ?, 'ENABLED')

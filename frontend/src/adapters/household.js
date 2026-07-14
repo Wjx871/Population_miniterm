@@ -32,6 +32,7 @@ export function normalizeHousehold(raw) {
       headPersonName: '',
       address: '',
       regionCode: '',
+      regionCode: '',
       householdType: null,
       status: '',
       establishDate: null,
@@ -48,6 +49,7 @@ export function normalizeHousehold(raw) {
     headPersonId: pickFirst(raw.headPersonId, raw.headId),
     headPersonName: trimOrEmpty(raw.headPersonName || raw.headName),
     address: trimOrEmpty(raw.address),
+    regionCode: trimOrEmpty(raw.regionCode),
     regionCode: trimOrEmpty(raw.regionCode),
     householdType: raw.householdType ?? null,
     status: trimOrEmpty(raw.status),
@@ -114,12 +116,16 @@ export function normalizeHouseholdMembers(records, headPersonId = null) {
 }
 
 export function toCreateHouseholdPayload(form = {}) {
+  const headPersonId = form.headPersonId == null || form.headPersonId === ''
+    ? null
+    : Number(form.headPersonId)
+
   return {
     householdNo: trimOrEmpty(form.householdNo),
-    headPersonId: form.headPersonId ?? null,
+    headPersonId: Number.isFinite(headPersonId) ? headPersonId : null,
     address: trimOrEmpty(form.address),
     regionCode: trimOrEmpty(form.regionCode),
-    householdType: trimOrEmpty(form.householdType),
+    householdType: trimOrEmpty(form.householdType) || 'FAMILY',
     establishDate: toDatePayload(form.establishDate),
   }
 }
@@ -127,7 +133,7 @@ export function toCreateHouseholdPayload(form = {}) {
 /**
  * 基础信息编辑：不含户主、状态、成员列表。
  */
-export function toUpdateHouseholdPayload(form = {}, latestDetail = {}) {
+export function toUpdateHouseholdPayload(form = {}, latestDetail = form) {
   const detail = normalizeHousehold(latestDetail)
   if (!detail.status || detail.version === null) throw new Error('最新家庭户详情缺少状态或版本，无法提交更新')
   return {

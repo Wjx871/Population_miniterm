@@ -24,6 +24,7 @@ test('integration configuration uses the health endpoint and /api proxy contract
   assert.match(startFrontend, /check_backend_health\.ps1/)
   assert.match(startFrontend, /API 基址/)
   assert.match(startFrontend, /VITE_API_BASE_URL/)
+  assert.match(startFrontend, /npm --prefix "%FRONTEND_DIR%" run dev/)
   assert.match(healthScript, /\/api\/health/)
   assert.match(healthScript, /exit 2/)
   assert.match(healthScript, /exit 3/)

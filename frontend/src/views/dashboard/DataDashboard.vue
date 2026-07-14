@@ -1,161 +1,223 @@
 <template>
-  <div ref="screen" class="data-dashboard">
-    <header class="screen-header">
-      <div>
-        <p class="eyebrow">POPULATION ANALYTICS</p>
-        <h1>数据统计大屏</h1>
-        <p>课程教学模拟系统，统计结果仅用于项目演示。</p>
-        <small>更新时间：{{ formatDateTime(overview.generatedAt || charts.generatedAt) || '未加载' }}</small>
-      </div>
-      <div class="header-actions">
-        <el-button :icon="Refresh" :loading="loading" @click="loadAll">刷新</el-button>
-        <el-button :icon="FullScreen" @click="toggleFullscreen">全屏</el-button>
-      </div>
-    </header>
+  <div
+    ref="wrapperRef"
+    class="dashboard-wrapper"
+    :class="mode === 'scale' ? 'is-scale-mode' : 'is-scroll-mode'"
+  >
+    <div ref="canvasRef" class="dashboard-canvas" :class="{ 'design-canvas': mode === 'scale' }">
+      <!-- 顶部 Header -->
+      <DashboardScreenHeader
+        :is-fullscreen="isFullscreen"
+        :is-demo="isDemo"
+        :loading="overviewLoading || chartsLoading"
+        @refresh="loadAll"
+        @toggle-fullscreen="toggleFullscreen"
+      />
 
-    <section class="metric-grid">
-      <div v-if="overviewError" class="panel-error metric-error">
-        <span>指标加载失败</span>
-        <el-button link type="primary" :loading="overviewLoading" @click="loadOverview">重试</el-button>
-      </div>
-      <DashboardStatCard label="当前户籍人口" :value="overview.registeredPopulation"/>
-      <DashboardStatCard label="在册流动人口" :value="overview.activeFloatingPopulation"/>
-      <DashboardStatCard label="有效居住证" :value="overview.activeResidencePermits"/>
-      <DashboardStatCard label="待审批" :value="overview.pendingApprovals"/>
-      <DashboardStatCard label="即将到期" :value="overview.expiringResidencePermits"/>
-    </section>
+      <!-- 顶部 KPI 指标区 -->
+      <section class="kpi-grid">
+        <DashboardKpiCard label="当前户籍人口" :value="overview.registeredPopulation" icon="UserFilled" tone="cyan" />
+        <DashboardKpiCard label="在册流动人口" :value="overview.activeFloatingPopulation" icon="User" tone="blue" />
+        <DashboardKpiCard label="有效居住证" :value="overview.activeResidencePermits" icon="Postcard" unit="张" tone="green" />
+        <DashboardKpiCard label="待审批业务" :value="overview.pendingApprovals" icon="Document" unit="件" tone="yellow" />
+        <DashboardKpiCard label="证件即将到期" :value="overview.expiringResidencePermits" icon="Warning" unit="张" tone="red" />
+        <DashboardKpiCard label="本期净流入" :value="(overview.migrationInPeriod || 0) - (overview.migrationOutPeriod || 0)" icon="TrendCharts" tone="purple" />
+      </section>
 
-    <section class="chart-grid">
-      <div v-if="chartsError" class="panel-error chart-error">
-        <span>图表加载失败</span>
-        <el-button link type="primary" :loading="chartsLoading" @click="loadCharts">重试</el-button>
-      </div>
-      <el-card shadow="never">
-        <template #header>近 30 日迁入迁出趋势</template>
-        <MigrationTrendChart :points="charts.migrationTrend"/>
-      </el-card>
-      <el-card shadow="never">
-        <template #header>当前业务规模</template>
-        <BusinessScaleChart :rows="charts.businessScale"/>
-      </el-card>
-      <el-card shadow="never">
-        <template #header>居住证状态分布</template>
-        <PermitStatusChart :rows="charts.permitStatusDistribution"/>
-      </el-card>
-      <el-card shadow="never">
-        <template #header>行政区划户籍人口 Top 8</template>
-        <RegionRankingChart :rows="charts.registeredPopulationByRegion"/>
-      </el-card>
-    </section>
+      <!-- 主要内容区骨架 -->
+      <main class="dashboard-content-skeleton">
+        <div class="column left-column">
+          <PopulationStructurePanel class="panel" :data="overview.populationStructure" />
+          <MigrationTrendPanel class="panel" :data="charts.migrationTrend" />
+          <BusinessRankingPanel class="panel" :data="charts.businessScale" />
+        </div>
+        <div class="column center-column">
+          <div class="center-top">
+            <NetworkSvgMapPanel :data="charts.registeredPopulationByRegion" />
+          </div>
+          <div class="center-bottom">
+            <PopulationScalePanel :data="charts.populationScaleTrend" />
+          </div>
+        </div>
+        <div class="column right-column">
+          <ApprovalStatusPanel class="panel" :data="charts.permitStatusDistribution" />
+          <KeyBusinessMonitorPanel class="panel" :data="overview.keyBusiness" />
+          <BusinessTypeSharePanel class="panel" :data="charts.businessScale" />
+        </div>
+      </main>
+
+      <DashboardFooter
+        :update-time="overview.generatedAt || charts.generatedAt"
+        :overview-error="overviewError"
+        :charts-error="chartsError"
+      />
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { FullScreen, Refresh } from '@element-plus/icons-vue'
-import { formatDateTime } from '../../utils/date'
-import { getDashboardCharts, getDashboardOverview } from '../../api/dashboard'
-import { normalizeDashboardCharts, normalizeDashboardOverview } from '../../adapters/dashboard'
-import DashboardStatCard from './components/DashboardStatCard.vue'
-import MigrationTrendChart from './components/MigrationTrendChart.vue'
-import BusinessScaleChart from './components/BusinessScaleChart.vue'
-import PermitStatusChart from './components/PermitStatusChart.vue'
-import RegionRankingChart from './components/RegionRankingChart.vue'
+import { ref } from 'vue';
+import { useDashboardFullscreen } from './composables/useDashboardFullscreen';
+import { useDashboardScale } from './composables/useDashboardScale';
+import { useDashboardData } from './composables/useDashboardData';
+import DashboardScreenHeader from './components/DashboardScreenHeader.vue';
+import DashboardFooter from './components/DashboardFooter.vue';
+import DashboardKpiCard from './components/DashboardKpiCard.vue';
 
-const screen = ref(null)
-const overviewLoading = ref(false)
-const chartsLoading = ref(false)
-const overviewError = ref(false)
-const chartsError = ref(false)
-const overview = reactive(normalizeDashboardOverview())
-const charts = reactive(normalizeDashboardCharts())
-let timer = null
+// Left panels
+import PopulationStructurePanel from './components/PopulationStructurePanel.vue';
+import MigrationTrendPanel from './components/MigrationTrendPanel.vue';
+import BusinessRankingPanel from './components/BusinessRankingPanel.vue';
 
-const loading = computed(() => overviewLoading.value || chartsLoading.value)
+// Right panels
+import ApprovalStatusPanel from './components/ApprovalStatusPanel.vue';
+import KeyBusinessMonitorPanel from './components/KeyBusinessMonitorPanel.vue';
+import BusinessTypeSharePanel from './components/BusinessTypeSharePanel.vue';
 
-async function loadOverview() {
-  if (overviewLoading.value) return
-  overviewLoading.value = true
-  try {
-    const data = await getDashboardOverview()
-    Object.assign(overview, normalizeDashboardOverview(data))
-    overviewError.value = false
-  } catch {
-    overviewError.value = true
-  } finally {
-    overviewLoading.value = false
-  }
-}
+// Center panels
+import NetworkSvgMapPanel from './components/NetworkSvgMapPanel.vue';
+import PopulationScalePanel from './components/PopulationScalePanel.vue';
 
-async function loadCharts() {
-  if (chartsLoading.value) return
-  chartsLoading.value = true
-  try {
-    const data = await getDashboardCharts({ days: 30, regionLimit: 8 })
-    Object.assign(charts, normalizeDashboardCharts(data))
-    chartsError.value = false
-  } catch {
-    chartsError.value = true
-  } finally {
-    chartsLoading.value = false
-  }
-}
+const wrapperRef = ref(null);
+const canvasRef = ref(null);
 
-async function loadAll() {
-  if (loading.value) return
-  const results = await Promise.allSettled([loadOverview(), loadCharts()])
-  // allSettled 保证任一失败不抛到外层，局部状态由各自 load 函数维护
-  void results
-}
+// 绑定全屏
+const { isFullscreen, toggleFullscreen } = useDashboardFullscreen();
 
-function schedule() {
-  clearInterval(timer)
-  timer = setInterval(() => {
-    if (!document.hidden && !loading.value) {
-      loadAll()
-    }
-  }, 300000)
-}
+// 混合缩放：全屏/大窗 scale，小窗 scroll
+const { mode } = useDashboardScale(wrapperRef, canvasRef, {
+  designWidth: 1920,
+  designHeight: 1080,
+  isFullscreen
+});
 
-function onVisibility() {
-  if (!document.hidden && !loading.value) {
-    loadAll()
-  }
-}
-
-async function toggleFullscreen() {
-  if (document.fullscreenElement) {
-    await document.exitFullscreen()
-  } else {
-    await screen.value?.requestFullscreen?.()
-  }
-}
-
-onMounted(() => {
-  loadAll()
-  schedule()
-  document.addEventListener('visibilitychange', onVisibility)
-})
-
-onBeforeUnmount(() => {
-  clearInterval(timer)
-  document.removeEventListener('visibilitychange', onVisibility)
-})
+// 绑定数据层
+const {
+  overview,
+  charts,
+  overviewLoading,
+  chartsLoading,
+  overviewError,
+  chartsError,
+  isDemo,
+  loadAll
+} = useDashboardData();
 </script>
 
 <style scoped>
-.data-dashboard{display:flex;flex-direction:column;gap:16px;min-height:100%;padding:4px}
-.screen-header{display:flex;justify-content:space-between;align-items:flex-end;padding:20px 22px;border-radius:var(--radius-large);background:linear-gradient(135deg,#0f2858,#1e40af);color:#fff}
-.screen-header h1{font-size:25px;color:#fff;margin:3px 0}
-.screen-header p,.screen-header small{color:#dbeafe}
-.screen-header small{display:block;margin-top:8px}
-.header-actions{display:flex;gap:8px}
-.metric-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;position:relative}
-.chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;position:relative}
-.chart-grid :deep(.el-card){border-radius:var(--radius-large)}
-.panel-error{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:8px;background:rgba(254,226,226,.95);color:#991b1b;border:1px solid #fecaca}
-.metric-error{grid-column:1 / -1}
-.chart-error{grid-column:1 / -1}
-@media(max-width:1200px){.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.chart-grid{grid-template-columns:1fr}}
-@media(max-width:760px){.screen-header{align-items:flex-start;flex-direction:column;gap:14px}.metric-grid{grid-template-columns:1fr}}
+@import './styles/dashboard-screen.css';
+
+.dashboard-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--cyber-bg-color);
+}
+
+.dashboard-canvas {
+  position: relative;
+  width: 100%;
+  min-width: 1400px;
+  min-height: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  color: var(--cyber-text-primary);
+  background-color: var(--cyber-bg-color);
+  background-image:
+    radial-gradient(ellipse at 50% 28%, rgba(28, 96, 180, 0.42) 0%, transparent 52%),
+    radial-gradient(ellipse at 15% 80%, rgba(120, 70, 220, 0.12) 0%, transparent 35%),
+    radial-gradient(ellipse at 85% 70%, rgba(40, 180, 160, 0.1) 0%, transparent 30%),
+    radial-gradient(ellipse at center, var(--cyber-bg-mid) 0%, var(--cyber-bg-color) 78%);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-position: center, center, center, center;
+  overflow: hidden;
+}
+
+/* 低频扫描光，增强大屏科技感 */
+.dashboard-canvas::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 18%;
+  top: -20%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(61, 240, 255, 0.035) 45%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+  animation: screen-scan 9s linear infinite;
+}
+
+@keyframes screen-scan {
+  0% { top: -20%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.dashboard-canvas > * {
+  position: relative;
+  z-index: 1;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  padding: 12px 20px 0;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.dashboard-content-skeleton {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  padding: 16px 20px;
+  min-height: 0;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.left-column, .right-column {
+  flex: 4;
+  min-width: 0;
+}
+
+.center-column {
+  flex: 3;
+  min-width: 0;
+}
+
+.panel {
+  flex: 1;
+  height: calc(33.33% - 11px);
+  min-height: 0;
+}
+
+.center-top {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.center-bottom {
+  height: 280px;
+  flex-shrink: 0;
+  margin-top: 0;
+  min-height: 0;
+  overflow: hidden;
+}
 </style>

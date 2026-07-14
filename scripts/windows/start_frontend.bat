@@ -192,14 +192,16 @@ echo     household  HOUSEHOLD_MANAGER
 echo     approver   APPROVER
 echo.
 echo   按 Ctrl+C 可停止前端开发服务器。
-echo   关闭本窗口仅停止前端；后端需单独关闭。
+echo   关闭本窗口仅停止前端。
+echo   后端需在其独立窗口中关闭。
 echo ============================================================
 echo.
 
 REM ---------- 9. 启动 Vite ----------
 echo [信息] 正在启动 Vite 开发服务器...
 echo.
-call npm run dev
+REM 明确指定前端目录，避免调用方的当前目录异常时在仓库根目录寻找 package.json。
+call npm --prefix "%FRONTEND_DIR%" run dev
 set "EXIT_CODE=%errorlevel%"
 
 if not "%EXIT_CODE%"=="0" (

@@ -74,10 +74,18 @@ public class AuthService implements UserDetailsService {
     }
 
     private AuthenticatedUser toAuthenticatedUser(SystemUser user) {
-        List<String> permissions = authMapper.selectPermissionCodesByRoleId(user.getRoleId());
+        List<String> permissions = resolvePermissions(user);
         return new AuthenticatedUser(user.getUserId(), user.getUsername(), user.getPasswordHash(),
                 user.getRealName(), user.getStatus(), user.getRoleId(), user.getRoleCode(), user.getRoleName(),
                 user.getRoleLevel(), user.getDataScope(), user.getRoleStatus(), user.getDepartmentId(),
                 user.getDepartmentName(), user.getRegionCode(), List.copyOf(permissions));
+    }
+
+    private List<String> resolvePermissions(SystemUser user) {
+        // SYSTEM_ADMIN 始终拥有全部启用权限，保证最高操作权不被角色授权表遗漏影响。
+        if ("SYSTEM_ADMIN".equals(user.getRoleCode())) {
+            return authMapper.selectAllEnabledPermissionCodes();
+        }
+        return authMapper.selectPermissionCodesByRoleId(user.getRoleId());
     }
 }

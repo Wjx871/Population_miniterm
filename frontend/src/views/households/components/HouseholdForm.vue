@@ -9,16 +9,39 @@
       <el-input :model-value="householdNo" disabled />
     </el-form-item>
 
-    <el-form-item v-if="!isEdit" label="户籍编号" prop="householdNo">
-      <el-input v-model.trim="form.householdNo" maxlength="30" placeholder="请输入唯一户号" />
+    <el-form-item v-else label="户籍编号" prop="householdNo">
+      <el-input
+        v-model="form.householdNo"
+        placeholder="请输入户籍编号"
+        maxlength="30"
+        show-word-limit
+        clearable
+      />
     </el-form-item>
 
     <el-form-item v-if="isEdit" label="户主">
       <el-input :model-value="headPersonDisplay" disabled />
     </el-form-item>
 
-    <el-form-item v-if="!isEdit" label="户主" prop="headPersonId">
+    <el-form-item v-else label="户主" prop="headPersonId">
       <PersonSelect v-model="form.headPersonId" status="正常" />
+    </el-form-item>
+
+    <el-form-item label="户籍类型" prop="householdType">
+      <DictionarySelect
+        v-model="form.householdType"
+        type="HOUSEHOLD_TYPE"
+        placeholder="请选择户籍类型"
+        :clearable="false"
+      />
+    </el-form-item>
+
+    <el-form-item label="所属区划" prop="regionCode">
+      <RegionCascader
+        v-model="form.regionCode"
+        :check-strictly="true"
+        placeholder="请选择行政区划"
+      />
     </el-form-item>
 
     <el-form-item label="户籍地址" prop="address">
@@ -98,21 +121,40 @@ const formRef = ref(null)
 const form = reactive({
   householdNo: '',
   headPersonId: null,
-  address: '',
+  householdType: 'FAMILY',
   regionCode: '',
-  householdType: '',
+  address: '',
   establishDate: '',
+  status: '',
+  version: 0,
 })
 
 const rules = computed(() => {
   const base = {
     address: [{ required: true, message: '请输入户籍地址', trigger: 'blur' }],
     regionCode: [{ required: true, message: '请选择所属区划', trigger: 'change' }],
-    householdType: [{ required: true, message: '请选择家庭户类型', trigger: 'change' }],
+    householdType: [{ required: true, message: '请选择户籍类型', trigger: 'change' }],
     establishDate: [{ required: true, message: '请选择立户日期', trigger: 'change' }],
   }
   if (!props.isEdit) {
-    base.householdNo = [{ required: true, message: '请输入户籍编号', trigger: 'blur' }]
+    base.householdNo = [
+      { required: true, message: '请输入户籍编号', trigger: 'blur' },
+      {
+        validator: (_rule, value, callback) => {
+          const text = String(value || '').trim()
+          if (!text) {
+            callback(new Error('请输入户籍编号'))
+            return
+          }
+          if (text.length > 30) {
+            callback(new Error('户籍编号不能超过30个字符'))
+            return
+          }
+          callback()
+        },
+        trigger: 'blur',
+      },
+    ]
     base.headPersonId = [{ required: true, message: '请选择户主', trigger: 'change' }]
   }
   return base
@@ -137,10 +179,12 @@ function syncFromModel(value) {
   Object.assign(form, {
     householdNo: value?.householdNo ?? '',
     headPersonId: value?.headPersonId ?? null,
-    address: value?.address ?? '',
+    householdType: value?.householdType || 'FAMILY',
     regionCode: value?.regionCode ?? '',
-    householdType: value?.householdType ?? '',
+    address: value?.address ?? '',
     establishDate: value?.establishDate ? formatDate(value.establishDate) : '',
+    status: value?.status ?? '',
+    version: value?.version ?? 0,
   })
 }
 

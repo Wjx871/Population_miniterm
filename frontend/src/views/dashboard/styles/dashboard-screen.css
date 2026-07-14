@@ -1,0 +1,70 @@
+/* 大屏深色变量体系 — 优先可读性与对比度 */
+:root {
+  --cyber-bg-color: #03122b;
+  --cyber-bg-mid: #0a2a55;
+  --cyber-panel-bg: rgba(8, 36, 78, 0.92);
+  --cyber-panel-bg-soft: rgba(12, 48, 96, 0.82);
+  --cyber-panel-header: rgba(18, 58, 118, 0.55);
+  --cyber-border-color: rgba(64, 210, 255, 0.55);
+  --cyber-border-highlight: #4df0ff;
+  --cyber-text-primary: #ffffff;
+  --cyber-text-secondary: #d4e9ff;
+  --cyber-text-muted: #a8c8e8;
+  --cyber-accent: #3df0ff;
+  --cyber-accent-glow: rgba(61, 240, 255, 0.7);
+  --cyber-secondary: #4d8dff;
+  --cyber-green: #4dff9a;
+  --cyber-yellow: #ffe08a;
+  --cyber-red: #ff7b7b;
+  --cyber-blue: #5aa8ff;
+  --cyber-purple: #c08cff;
+  --cyber-grid: rgba(80, 170, 230, 0.08);
+  --cyber-design-width: 1920px;
+  --cyber-design-height: 1080px;
+  --radius-large: 12px;
+}
+
+/* 全局滚动条美化（仅在大屏生效的区域） */
+.dashboard-wrapper ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.dashboard-wrapper ::-webkit-scrollbar-track {
+  background: rgba(2, 15, 40, 0.5);
+}
+.dashboard-wrapper ::-webkit-scrollbar-thumb {
+  background: var(--cyber-border-color);
+  border-radius: 3px;
+}
+.dashboard-wrapper ::-webkit-scrollbar-thumb:hover {
+  background: var(--cyber-accent);
+}
+
+/* 画布模式：全屏/大窗缩放 */
+.dashboard-wrapper.is-scale-mode {
+  overflow: hidden;
+}
+
+.dashboard-wrapper.is-scale-mode .dashboard-canvas.design-canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--cyber-design-width);
+  height: var(--cyber-design-height);
+  min-width: var(--cyber-design-width);
+  min-height: var(--cyber-design-height);
+  transform-origin: center center;
+}
+
+/* 画布模式：非全屏小窗可滚动 */
+.dashboard-wrapper.is-scroll-mode {
+  overflow: auto;
+}
+
+.dashboard-wrapper.is-scroll-mode .dashboard-canvas {
+  position: relative;
+  width: 100%;
+  min-width: 1400px;
+  min-height: 100%;
+  transform: none !important;
+}

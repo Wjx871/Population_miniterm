@@ -1,6 +1,6 @@
 <template>
   <div class="layout-container">
-    <header class="navbar">
+    <header class="navbar" v-if="!isImmersive">
       <div class="logo-area">
         <el-icon class="logo-icon"><Platform /></el-icon>
         <span class="system-title">人口数据库管理系统</span>
@@ -20,7 +20,7 @@
     </header>
 
     <div class="main-layout">
-      <aside class="sidebar">
+      <aside class="sidebar" v-if="!isImmersive">
         <el-menu
           router
           :default-active="activeMenu"
@@ -62,9 +62,9 @@
         </div>
       </aside>
 
-      <main class="main-content">
+      <main class="main-content" :class="{ 'is-immersive': isImmersive }">
         <!-- 面包屑导航 -->
-        <div class="breadcrumb-container" v-if="$route.path !== '/home'">
+        <div class="breadcrumb-container" v-if="$route.path !== '/home' && !isImmersive">
           <el-breadcrumb separator="/">
             <el-breadcrumb-item :to="{ path: '/home' }">工作台</el-breadcrumb-item>
             <el-breadcrumb-item v-if="$route.meta.group">{{ $route.meta.group }}</el-breadcrumb-item>
@@ -110,6 +110,8 @@ import { ElMessageBox, ElMessage } from 'element-plus';
 const userStore = useUserStore();
 const router = useRouter();
 const route = useRoute();
+
+const isImmersive = computed(() => route.meta.immersive === true);
 
 /** 菜单图标映射：路由 meta.icon 为字符串名，这里转为真实组件 */
 const MENU_ICON_MAP = Object.freeze({
@@ -239,7 +241,8 @@ export default {
 
 .navbar {
   height: 60px;
-  background-color: var(--el-color-primary, #409eff);
+  /* 稳重的政务/企业级深蓝色渐变 */
+  background: linear-gradient(90deg, #0f2c59 0%, #174282 100%);
   color: white;
   display: flex;
   justify-content: space-between;
@@ -296,6 +299,7 @@ export default {
 }
 .logout-btn:hover {
   color: white;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .main-layout {
@@ -349,5 +353,15 @@ export default {
   flex: 1;
   padding: 20px;
   overflow: auto; /* 允许横向和纵向滚动 */
+}
+
+/* 沉浸式大屏模式样式 */
+.main-content.is-immersive {
+  background-color: #020f28;
+}
+
+.main-content.is-immersive .page-wrapper {
+  padding: 0;
+  overflow: hidden;
 }
 </style>
