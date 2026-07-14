@@ -70,9 +70,9 @@ watch(() => props.loading, (isLoading) => {
   if (isLoading) {
     chart.showLoading({
       text: '数据加载中',
-      color: '#29d7ff',
-      textColor: '#8fb5d4',
-      maskColor: 'rgba(2, 15, 40, 0.4)',
+      color: '#1fe4ff',
+      textColor: '#9db8d4',
+      maskColor: 'rgba(2, 13, 34, 0.45)',
       zlevel: 0
     })
   } else {

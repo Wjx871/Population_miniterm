@@ -53,10 +53,12 @@ defineProps({
 .cyber-panel {
   position: relative;
   height: 100%;
-  padding: 1px; /* 留出边框位置 */
-  /* 使用切割多边形作为整体背景，切掉四个角 */
+  min-height: 0;
+  padding: 1px;
   background: var(--cyber-panel-bg);
-  box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.05);
+  box-shadow:
+    inset 0 0 22px rgba(31, 228, 255, 0.05),
+    0 0 14px rgba(31, 228, 255, 0.05);
   display: flex;
   flex-direction: column;
 }
@@ -108,23 +110,34 @@ defineProps({
 
 .panel-header {
   height: 40px;
+  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: relative;
   margin: 10px 10px 0 10px;
-  border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+  border-bottom: 1px solid rgba(31, 228, 255, 0.16);
 }
 
 .header-title-bg {
   height: 100%;
   display: flex;
   align-items: center;
-  /* 左侧渐变高亮刷色背景，模拟参考图的科技色块 */
-  background: linear-gradient(90deg, rgba(0, 229, 255, 0.15) 0%, transparent 100%);
+  background: linear-gradient(90deg, rgba(31, 228, 255, 0.16) 0%, transparent 100%);
   padding: 0 40px 0 10px;
-  /* 左边直角，右边切掉一个小角 */
   clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 100%, 0% 100%);
+  position: relative;
+}
+
+.header-title-bg::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  background: var(--cyber-accent);
+  box-shadow: 0 0 8px var(--cyber-accent-glow);
 }
 
 .header-title {
@@ -139,11 +152,11 @@ defineProps({
 }
 
 .title-text {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  color: #fff;
+  color: var(--cyber-text-primary);
   letter-spacing: 1px;
-  text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+  text-shadow: 0 0 8px rgba(31, 228, 255, 0.55);
 }
 
 .header-extra {
@@ -152,7 +165,8 @@ defineProps({
 
 .panel-content {
   flex: 1;
-  padding: 16px;
+  min-height: 0;
+  padding: 14px;
   position: relative;
   overflow: hidden;
   display: flex;

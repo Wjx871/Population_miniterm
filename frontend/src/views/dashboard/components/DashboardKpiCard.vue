@@ -69,21 +69,24 @@ const iconComponent = computed(() => {
 .kpi-card {
   position: relative;
   background: var(--cyber-panel-bg);
-  padding: 20px;
+  padding: 16px 18px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   overflow: hidden;
-  box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.05);
-  transition: all 0.3s ease;
+  box-shadow:
+    inset 0 0 20px rgba(31, 228, 255, 0.05),
+    0 0 16px rgba(31, 228, 255, 0.06);
+  transition: box-shadow 0.3s ease, background 0.3s ease;
   /* 左下右上的小切角 */
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
 
 .kpi-card:hover {
-  background: rgba(10, 30, 80, 0.6);
-  box-shadow: inset 0 0 30px rgba(0, 229, 255, 0.15);
-  transform: translateY(-2px);
+  background: var(--cyber-panel-bg-soft);
+  box-shadow:
+    inset 0 0 28px rgba(31, 228, 255, 0.12),
+    0 0 18px rgba(31, 228, 255, 0.12);
 }
 
 /* 绘制机甲边框 */
@@ -111,20 +114,21 @@ const iconComponent = computed(() => {
 }
 
 .kpi-icon-wrapper {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%; /* 圆形图标底座 */
-  background: linear-gradient(135deg, rgba(0, 229, 255, 0.2) 0%, rgba(0, 100, 255, 0.1) 100%);
-  border: 1px solid rgba(0, 229, 255, 0.4);
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(31, 228, 255, 0.22) 0%, rgba(47, 123, 255, 0.12) 100%);
+  border: 1px solid rgba(31, 228, 255, 0.42);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 15px rgba(0, 229, 255, 0.2), inset 0 0 10px rgba(0, 229, 255, 0.2);
+  box-shadow: 0 0 15px rgba(31, 228, 255, 0.2), inset 0 0 10px rgba(31, 228, 255, 0.2);
 }
 
 .kpi-icon {
-  font-size: 26px;
-  color: #fff;
+  font-size: 24px;
+  color: var(--cyber-text-primary);
   filter: drop-shadow(0 0 6px var(--cyber-accent-glow));
 }
 
@@ -150,11 +154,11 @@ const iconComponent = computed(() => {
 
 .kpi-value {
   font-family: 'Courier New', Courier, monospace;
-  font-size: 32px;
+  font-size: 28px;
   font-weight: bold;
-  color: #fff;
+  color: var(--cyber-text-primary);
   line-height: 1;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 0 20px var(--cyber-accent-glow);
+  text-shadow: 0 0 10px rgba(244, 251, 255, 0.28), 0 0 18px var(--cyber-accent-glow);
 }
 
 .kpi-unit {

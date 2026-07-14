@@ -181,14 +181,15 @@ onUnmounted(() => {
 }
 
 .header-title {
-  font-size: 34px;
-  font-weight: bold;
+  font-size: 32px;
+  font-weight: 800;
   color: #fff;
   margin: 0;
-  letter-spacing: 4px;
-  text-shadow: 0 2px 10px rgba(0, 229, 255, 0.8), 0 0 20px rgba(0, 229, 255, 0.4);
-  background: linear-gradient(to bottom, #ffffff 0%, #b3e5fc 100%);
+  letter-spacing: 6px;
+  text-shadow: 0 2px 12px rgba(31, 228, 255, 0.75), 0 0 22px rgba(31, 228, 255, 0.35);
+  background: linear-gradient(to bottom, #ffffff 0%, #b8ecff 55%, #7dd8ff 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -220,14 +221,22 @@ onUnmounted(() => {
 .cyber-btn {
   color: var(--cyber-text-primary) !important;
   font-size: 14px;
-  transition: all 0.3s;
-  margin-left: 12px;
+  min-height: 32px;
+  padding: 4px 10px !important;
+  border: 1px solid transparent !important;
+  border-radius: 2px;
+  transition: color 0.25s, border-color 0.25s, text-shadow 0.25s, box-shadow 0.25s;
+  margin-left: 8px;
 }
 
 .cyber-btn:hover {
   color: var(--cyber-accent) !important;
+  border-color: rgba(31, 228, 255, 0.45) !important;
   text-shadow: 0 0 8px var(--cyber-accent);
+  box-shadow: 0 0 12px rgba(31, 228, 255, 0.18);
 }
 
-/* 移除旧版底部装饰线，改用头部整体CSS控制 */
+.header-decoration {
+  display: none;
+}
 </style>
