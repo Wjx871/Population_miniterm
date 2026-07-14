@@ -4,10 +4,21 @@
       <!-- 顶部 Header -->
       <DashboardScreenHeader 
         :is-fullscreen="isFullscreen" 
-        :is-demo="false"
-        :loading="false"
+        :is-demo="isDemo"
+        :loading="overviewLoading || chartsLoading"
+        @refresh="loadAll"
         @toggle-fullscreen="toggleFullscreen"
       />
+
+      <!-- 顶部 KPI 指标区 -->
+      <section class="kpi-grid">
+        <DashboardKpiCard label="当前户籍人口" :value="overview.registeredPopulation" icon="UserFilled" />
+        <DashboardKpiCard label="在册流动人口" :value="overview.activeFloatingPopulation" icon="User" />
+        <DashboardKpiCard label="有效居住证" :value="overview.activeResidencePermits" icon="Postcard" unit="张" />
+        <DashboardKpiCard label="待审批业务" :value="overview.pendingApprovals" icon="Document" unit="件" />
+        <DashboardKpiCard label="证件即将到期" :value="overview.expiringResidencePermits" icon="Warning" unit="张" />
+        <DashboardKpiCard label="本期净流入" :value="(overview.migrationInPeriod || 0) - (overview.migrationOutPeriod || 0)" icon="TrendCharts" />
+      </section>
 
       <!-- 主要内容区骨架 -->
       <main class="dashboard-content-skeleton">
@@ -24,8 +35,11 @@
         </div>
       </main>
 
-      <!-- 底部 Footer -->
-      <DashboardFooter />
+      <DashboardFooter 
+        :update-time="overview.generatedAt || charts.generatedAt"
+        :overview-error="overviewError"
+        :charts-error="chartsError"
+      />
     </div>
   </div>
 </template>
@@ -34,8 +48,10 @@
 import { ref } from 'vue';
 import { useDashboardScale } from './composables/useDashboardScale';
 import { useDashboardFullscreen } from './composables/useDashboardFullscreen';
+import { useDashboardData } from './composables/useDashboardData';
 import DashboardScreenHeader from './components/DashboardScreenHeader.vue';
 import DashboardFooter from './components/DashboardFooter.vue';
+import DashboardKpiCard from './components/DashboardKpiCard.vue';
 
 const wrapperRef = ref(null);
 const canvasRef = ref(null);
@@ -45,6 +61,18 @@ useDashboardScale(wrapperRef, canvasRef, 1920, 1080);
 
 // 绑定全屏
 const { isFullscreen, toggleFullscreen } = useDashboardFullscreen();
+
+// 绑定数据层
+const {
+  overview,
+  charts,
+  overviewLoading,
+  chartsLoading,
+  overviewError,
+  chartsError,
+  isDemo,
+  loadAll
+} = useDashboardData();
 </script>
 
 <style scoped>
@@ -72,6 +100,14 @@ const { isFullscreen, toggleFullscreen } = useDashboardFullscreen();
   flex-direction: column;
   color: white;
   background-image: radial-gradient(circle at center, #05193c 0%, #020f28 100%);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  padding: 16px 20px 0;
+  z-index: 1;
 }
 
 .dashboard-content-skeleton {
