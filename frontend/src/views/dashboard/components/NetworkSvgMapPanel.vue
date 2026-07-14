@@ -9,7 +9,7 @@
       <div class="glow-ring" aria-hidden="true"></div>
 
       <video
-        src="/media/cyber-video-2.mp4"
+        :src="'/media/cyber-video-2.mp4'"
         autoplay
         loop
         muted
