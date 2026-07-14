@@ -6,6 +6,20 @@
 
 人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。
 
+## 微信小程序移动管理端 V1
+
+仓库根目录的 `miniprogram` 是原生微信小程序内部移动管理端，复用现有 Spring Boot `/api`、JWT、权限、数据范围和脱敏规则。V1 提供系统账号登录、移动工作台、人口/家庭户查询、我的申请、移动审批和个人中心；审批通过不会自动执行专业业务。
+
+使用微信开发者工具直接导入 `miniprogram`。模拟器默认访问 `http://127.0.0.1:8080`；真机必须配置电脑局域网 IP 或已部署的 HTTPS 后端，正式发布还需在微信公众平台配置 request/uploadFile/downloadFile 合法域名。完整说明见 [开发指南](docs/miniprogram/miniprogram-development-guide.md)、[API 契约](docs/miniprogram/miniprogram-api-contract.md)、[测试报告](docs/miniprogram/miniprogram-test-report.md)和[演示脚本](docs/miniprogram/miniprogram-demo-script.md)。
+
+```powershell
+cd miniprogram
+npm test
+npm run check
+```
+
+本项目不提交真实 AppID、AppSecret、局域网 IP、Token 或 `config/local.js`。五个课程演示账号为 `viewer/population/household/approver/admin`，本地演示初始密码 `123456`。
+
 ## 第三阶段：户籍迁移闭环
 
 系统现支持申请制迁入/迁出、单级审批后的显式业务执行、当前户籍唯一登记、家庭成员同步、迁出历史快照、户主变更及同市跨区批次关联。操作顺序为：创建迁移草稿 → 上传必需材料 → 提交/审批 → 授权经办人确认执行。审批通过不会自动改变户籍。
