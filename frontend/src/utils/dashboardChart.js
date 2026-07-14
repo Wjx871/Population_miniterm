@@ -1,4 +1,4 @@
-import * as theme from '../views/dashboard/options/chartTheme'
+import * as theme from '../views/dashboard/options/chartTheme.js'
 
 // 近30日迁入迁出趋势
 export function migrationTrendOption(points = []) {
@@ -254,4 +254,15 @@ export function populationScaleOption(trendData = []) {
       }
     ]
   }
+}
+
+// Legacy options for old components (kept to prevent breakages)
+export function namedCountOption(rows = [], type = 'bar') {
+  const data = Array.isArray(rows) ? rows : []
+  return { series: [{ type: 'bar', data: data.map((item) => item.value ?? 0) }] }
+}
+
+export function regionRankingOption(rows = []) {
+  const data = Array.isArray(rows) ? rows : []
+  return { series: [{ type: 'bar', data: data.map((item) => item.value ?? 0) }] }
 }

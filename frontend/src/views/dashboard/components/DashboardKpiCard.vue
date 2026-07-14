@@ -19,7 +19,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, toRefs } from 'vue'
+import { useNumberAnimation } from '../composables/useNumberAnimation'
 
 const props = defineProps({
   label: String,
@@ -37,11 +38,14 @@ const props = defineProps({
   }
 })
 
+const { value } = toRefs(props)
+const animatedValue = useNumberAnimation(value)
+
 const displayValue = computed(() => {
   if (props.value === null || props.value === undefined || props.value === '') {
     return '—'
   }
-  return props.value.toLocaleString()
+  return animatedValue.value.toLocaleString()
 })
 </script>
 
