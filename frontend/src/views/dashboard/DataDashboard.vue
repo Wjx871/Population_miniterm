@@ -145,11 +145,11 @@ const {
 }
 
 .left-column, .right-column {
-  width: 450px;
+  flex: 3;
 }
 
 .center-column {
-  flex: 1;
+  flex: 4;
 }
 
 .panel {
