@@ -28,7 +28,12 @@
           <BusinessRankingPanel class="panel" :data="charts.businessScale" />
         </div>
         <div class="column center-column">
-          <div class="panel center-panel">中央态势图</div>
+          <div class="center-top">
+            <NetworkSvgMapPanel :data="charts.registeredPopulationByRegion" />
+          </div>
+          <div class="center-bottom">
+            <PopulationScalePanel :data="charts.populationScaleTrend" />
+          </div>
         </div>
         <div class="column right-column">
           <ApprovalStatusPanel class="panel" :data="charts.permitStatusDistribution" />
@@ -64,6 +69,10 @@ import BusinessRankingPanel from './components/BusinessRankingPanel.vue';
 import ApprovalStatusPanel from './components/ApprovalStatusPanel.vue';
 import KeyBusinessMonitorPanel from './components/KeyBusinessMonitorPanel.vue';
 import BusinessTypeSharePanel from './components/BusinessTypeSharePanel.vue';
+
+// Center panels
+import NetworkSvgMapPanel from './components/NetworkSvgMapPanel.vue';
+import PopulationScalePanel from './components/PopulationScalePanel.vue';
 
 const wrapperRef = ref(null);
 const canvasRef = ref(null);
@@ -149,16 +158,14 @@ const {
   height: calc(33.33% - 14px); /* 减去 gap 的分配 */
 }
 
-.center-panel {
-  background: rgba(10, 30, 70, 0.5);
-  border: 1px solid rgba(41, 215, 255, 0.2);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.center-top {
   flex: 1;
-  font-size: 24px;
-  color: rgba(255, 255, 255, 0.5);
-  height: 100%;
+  position: relative;
+  min-height: 400px;
+}
+
+.center-bottom {
+  height: 280px;
+  margin-top: 16px;
 }
 </style>
