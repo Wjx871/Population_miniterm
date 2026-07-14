@@ -29,9 +29,9 @@
           <div v-for="item in ageGroups" :key="item.label" class="age-row">
             <div class="age-label">{{ item.label }}</div>
             <div class="age-bar-wrapper">
-              <div class="age-bar" :style="{ width: item.percent + '%' }"></div>
+              <div class="age-bar" :style="{ width: item.barPercent + '%' }"></div>
             </div>
-            <div class="age-value">{{ item.value !== null ? item.percent + '%' : '—' }}</div>
+            <div class="age-value">{{ item.value !== null ? item.truePercent + '%' : '—' }}</div>
           </div>
         </div>
       </div>
@@ -71,15 +71,19 @@ const genderRingStyle = computed(() => {
 const ageGroups = computed(() => {
   if (!hasData.value) return []
   const max = Math.max(...props.data.ageGroups.map(g => g.value || 0))
+  const total = props.data.ageGroups.reduce((sum, g) => sum + (g.value || 0), 0)
   return props.data.ageGroups.map(g => {
-    let percent = 0
-    if (g.value !== null && max > 0) {
-      percent = Math.round((g.value / max) * 100)
+    let truePercent = 0
+    let barPercent = 0
+    if (g.value !== null) {
+      if (total > 0) truePercent = Math.round((g.value / total) * 100)
+      if (max > 0) barPercent = Math.round((g.value / max) * 100)
     }
     return {
       label: g.label,
       value: g.value,
-      percent: percent || 0
+      truePercent,
+      barPercent
     }
   })
 })
@@ -90,20 +94,20 @@ const ageGroups = computed(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  gap: 20px;
+  gap: 8px;
 }
 
 .gender-section {
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 10px 0;
+  padding: 4px 0;
 }
 
 .gender-ring-wrapper {
   position: relative;
-  width: 110px;
-  height: 110px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
   background: radial-gradient(circle at center, rgba(12, 40, 80, 0.95) 0%, rgba(6, 24, 52, 1) 100%);
   padding: 8px;
@@ -197,7 +201,7 @@ const ageGroups = computed(() => {
 .age-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   flex: 1;
   justify-content: center;
 }

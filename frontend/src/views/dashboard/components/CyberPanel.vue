@@ -157,7 +157,7 @@ defineProps({
   display: flex;
   align-items: center;
   background: linear-gradient(90deg, rgba(31, 228, 255, 0.16) 0%, transparent 100%);
-  padding: 0 40px 0 10px;
+  padding: 0 40px 0 18px;
   clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 100%, 0% 100%);
   position: relative;
 }
@@ -177,6 +177,7 @@ defineProps({
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: 12px;
 }
 
 .title-icon {
@@ -190,6 +191,7 @@ defineProps({
   color: #ffffff;
   letter-spacing: 1px;
   text-shadow: 0 0 10px rgba(61, 240, 255, 0.65);
+  padding-left: 4px;
 }
 
 .header-extra {

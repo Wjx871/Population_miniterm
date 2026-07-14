@@ -10,7 +10,7 @@
 
       <!-- 中央主视觉视频（用户后续可单独深度优化） -->
       <video
-        src="/media/7月14日.mp4"
+        src="/media/cyber-video-2.mp4"
         autoplay
         loop
         muted
@@ -18,11 +18,6 @@
         class="static-center-video"
         aria-label="中央态势分布图"
       ></video>
-
-      <div class="visual-caption">
-        <span class="caption-dot"></span>
-        <span>核心态势可视化</span>
-      </div>
     </div>
   </div>
 </template>
@@ -117,32 +112,7 @@ defineProps({
   mix-blend-mode: normal;
 }
 
-.visual-caption {
-  position: absolute;
-  left: 50%;
-  bottom: 14px;
-  transform: translateX(-50%);
-  z-index: 5;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 12px;
-  font-size: 12px;
-  letter-spacing: 2px;
-  color: #e8f6ff;
-  background: rgba(4, 22, 48, 0.72);
-  border: 1px solid rgba(77, 240, 255, 0.4);
-  backdrop-filter: blur(2px);
-}
-
-.caption-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--cyber-green);
-  box-shadow: 0 0 8px var(--cyber-green);
-}
-
+/* Caption removed */
 @keyframes scan-move {
   0% { top: 12%; opacity: 0; }
   10% { opacity: 0.55; }

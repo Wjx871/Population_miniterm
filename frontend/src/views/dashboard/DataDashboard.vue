@@ -192,12 +192,12 @@ const {
 }
 
 .left-column, .right-column {
-  flex: 3;
+  flex: 4;
   min-width: 0;
 }
 
 .center-column {
-  flex: 4;
+  flex: 3;
   min-width: 0;
 }
 

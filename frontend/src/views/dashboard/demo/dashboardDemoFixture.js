@@ -5,10 +5,10 @@ export const demoOverview = {
   registeredPopulation: 1254300,
   activeFloatingPopulation: 342100,
   activeResidencePermits: 128900,
-  pendingApprovals: 42,
-  expiringResidencePermits: 156,
-  migrationInPeriod: 3200,
-  migrationOutPeriod: 1850,
+  pendingApprovals: 25000,
+  expiringResidencePermits: 12500,
+  migrationInPeriod: 45000,
+  migrationOutPeriod: 31500,
   
   // 以下为真实接口可能缺失，但在演示中需要饱满效果的补充数据
   populationStructure: {
@@ -40,18 +40,18 @@ export const demoCharts = {
     }
   }),
   businessScale: [
-    { code: 'MIGRATION_IN', label: '迁入登记', value: 3200 },
-    { code: 'MIGRATION_OUT', label: '迁出登记', value: 1850 },
-    { code: 'RESIDENCE_PERMIT', label: '居住证办理', value: 1500 },
-    { code: 'CANCELLATION', label: '人员注销', value: 450 },
-    { code: 'KEY_POPULATION', label: '重点人口', value: 120 },
-    { code: 'CERTIFICATE', label: '证明开具', value: 890 }
+    { code: 'MIGRATION_IN', label: '迁入登记', value: 45000 },
+    { code: 'MIGRATION_OUT', label: '迁出登记', value: 31500 },
+    { code: 'RESIDENCE_PERMIT', label: '居住证办理', value: 38000 },
+    { code: 'CANCELLATION', label: '人员注销', value: 12500 },
+    { code: 'KEY_POPULATION', label: '重点人口', value: 8500 },
+    { code: 'CERTIFICATE', label: '证明开具', value: 26000 }
   ],
   permitStatusDistribution: [
-    { code: 'PENDING', label: '待审批', value: 250 },
-    { code: 'APPROVED', label: '已审批', value: 128000 },
-    { code: 'REJECTED', label: '已驳回', value: 120 },
-    { code: 'COMPLETED', label: '已完成', value: 8500 }
+    { code: 'PENDING', label: '待审批', value: 25000 },
+    { code: 'APPROVED', label: '已审批', value: 48000 },
+    { code: 'REJECTED', label: '已驳回', value: 12000 },
+    { code: 'COMPLETED', label: '已完成', value: 35000 }
   ],
   registeredPopulationByRegion: [
     { regionCode: '110101', regionName: '东城区', value: 150000 },
