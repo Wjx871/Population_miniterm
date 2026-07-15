@@ -12,6 +12,7 @@ const pageReady = ref(false)
 const imageReady = ref(false)
 const sapphireImageReady = ref(false)
 const isLeaving = ref(false)
+const pointerTrails = ref([])
 
 let targetX = 0
 let targetY = 0
@@ -21,8 +22,16 @@ let animationFrame = 0
 let navigationTimer = 0
 let motionQuery
 let reducedMotion = false
+let pointerIsMouse = false
+let trailSequence = 0
+let lastTrailTime = 0
+let lastTrailX = Number.NaN
+let lastTrailY = Number.NaN
 let sessionRestore = Promise.resolve(false)
 const preloaders = []
+const TRAIL_INTERVAL = 90
+const TRAIL_DISTANCE = 16
+const MAX_TRAILS = 20
 
 function defaultPointer() {
   return {
@@ -47,18 +56,51 @@ function animatePointer() {
   }
 
   writePointer()
+  addPointerTrail(currentX, currentY)
   animationFrame = window.requestAnimationFrame(animatePointer)
 }
 
 function movePointer(event) {
   targetX = event.clientX
   targetY = event.clientY
+  pointerIsMouse = event.pointerType === 'mouse'
 }
 
 function resetPointer() {
+  pointerIsMouse = false
+  lastTrailX = Number.NaN
+  lastTrailY = Number.NaN
   const next = defaultPointer()
   targetX = next.x
   targetY = next.y
+}
+
+function addPointerTrail(x, y) {
+  if (
+    !pointerIsMouse
+    || reducedMotion
+    || !sapphireImageReady.value
+    || isLeaving.value
+  ) return
+
+  const now = performance.now()
+  const distance = Number.isFinite(lastTrailX)
+    ? Math.hypot(x - lastTrailX, y - lastTrailY)
+    : Number.POSITIVE_INFINITY
+
+  if (now - lastTrailTime < TRAIL_INTERVAL || distance < TRAIL_DISTANCE) return
+
+  pointerTrails.value = [
+    ...pointerTrails.value,
+    { id: ++trailSequence, x, y },
+  ].slice(-MAX_TRAILS)
+  lastTrailTime = now
+  lastTrailX = x
+  lastTrailY = y
+}
+
+function removePointerTrail(id) {
+  pointerTrails.value = pointerTrails.value.filter(trail => trail.id !== id)
 }
 
 function handleResize() {
@@ -76,6 +118,7 @@ function handleResize() {
 function handleMotionPreference(event) {
   reducedMotion = event.matches
   if (reducedMotion) {
+    pointerTrails.value = []
     currentX = targetX
     currentY = targetY
     writePointer()
@@ -86,6 +129,7 @@ function enterSystem() {
   if (isLeaving.value) return
 
   isLeaving.value = true
+  pointerTrails.value = []
   if (stage.value) {
     stage.value.style.setProperty('--exit-x', `${currentX}px`)
     stage.value.style.setProperty('--exit-y', `${currentY}px`)
@@ -136,6 +180,7 @@ onBeforeUnmount(() => {
   window.clearTimeout(navigationTimer)
   window.removeEventListener('resize', handleResize)
   motionQuery?.removeEventListener('change', handleMotionPreference)
+  pointerTrails.value = []
   for (const preloader of preloaders) {
     preloader.onload = null
     preloader.onerror = null
@@ -167,6 +212,33 @@ onBeforeUnmount(() => {
       aria-hidden="true"
     />
     <div
+      class="visual visual-breath"
+      :style="{ backgroundImage: `url(${launchSapphireVisual})` }"
+      aria-hidden="true"
+    />
+    <div
+      class="visual visual-breath-return"
+      :style="{ backgroundImage: `url(${launchVisual})` }"
+      aria-hidden="true"
+    />
+    <div
+      v-for="trail in pointerTrails"
+      :key="trail.id"
+      class="visual visual-trail"
+      :style="{
+        backgroundImage: `url(${launchSapphireVisual})`,
+        '--trail-x': `${trail.x}px`,
+        '--trail-y': `${trail.y}px`,
+      }"
+      aria-hidden="true"
+      @animationend="removePointerTrail(trail.id)"
+    />
+    <div
+      class="visual visual-pointer"
+      :style="{ backgroundImage: `url(${launchSapphireVisual})` }"
+      aria-hidden="true"
+    />
+    <div
       class="visual visual-exit"
       :style="{ backgroundImage: `url(${launchSapphireVisual})` }"
       aria-hidden="true"
@@ -194,7 +266,7 @@ onBeforeUnmount(() => {
   --reveal-y: 30vh;
   --exit-x: 76vw;
   --exit-y: 30vh;
-  --reveal-radius: clamp(96px, 10vw, 180px);
+  --reveal-radius: clamp(78px, 8vw, 142px);
   position: fixed;
   inset: 0;
   isolation: isolate;
@@ -224,6 +296,7 @@ onBeforeUnmount(() => {
 }
 
 .is-sapphire-image-ready .visual-sapphire,
+.is-sapphire-image-ready .visual-pointer,
 .is-sapphire-image-ready .visual-exit,
 .is-image-ready .visual-base {
   opacity: 1;
@@ -234,39 +307,167 @@ onBeforeUnmount(() => {
   transition: opacity 900ms ease;
 }
 
-.is-sapphire-image-ready .visual-base {
+.visual-pointer {
+  z-index: 5;
+  pointer-events: none;
   -webkit-mask-image: radial-gradient(
     circle var(--reveal-radius) at var(--reveal-x) var(--reveal-y),
-    transparent 0%,
-    transparent 58%,
-    rgba(0, 0, 0, 0.16) 72%,
-    rgba(0, 0, 0, 0.72) 90%,
-    #000 100%
+    #000 0%,
+    #000 58%,
+    rgba(0, 0, 0, 0.84) 72%,
+    rgba(0, 0, 0, 0.28) 90%,
+    transparent 100%
   );
   mask-image: radial-gradient(
     circle var(--reveal-radius) at var(--reveal-x) var(--reveal-y),
-    transparent 0%,
-    transparent 58%,
-    rgba(0, 0, 0, 0.16) 72%,
-    rgba(0, 0, 0, 0.72) 90%,
-    #000 100%
+    #000 0%,
+    #000 58%,
+    rgba(0, 0, 0, 0.84) 72%,
+    rgba(0, 0, 0, 0.28) 90%,
+    transparent 100%
   );
 }
 
-.visual-exit {
+.visual-trail {
+  --trail-radius: clamp(62px, 6.6vw, 118px);
+  z-index: 4;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(
+    circle var(--trail-radius) at var(--trail-x) var(--trail-y),
+    #000 0%,
+    rgba(0, 0, 0, 0.94) 34%,
+    rgba(0, 0, 0, 0.58) 61%,
+    rgba(0, 0, 0, 0.16) 84%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    circle var(--trail-radius) at var(--trail-x) var(--trail-y),
+    #000 0%,
+    rgba(0, 0, 0, 0.94) 34%,
+    rgba(0, 0, 0, 0.58) 61%,
+    rgba(0, 0, 0, 0.16) 84%,
+    transparent 100%
+  );
+  animation: pointer-trail-fade 1800ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+.visual-breath,
+.visual-breath-return {
+  --breath-radius: 12vmax;
+  pointer-events: none;
+  opacity: 0;
+  -webkit-mask-image: radial-gradient(
+    circle var(--breath-radius) at 100% 0%,
+    #000 0,
+    #000 max(0px, calc(var(--breath-radius) - 10vmax)),
+    rgba(0, 0, 0, 0.72) max(0px, calc(var(--breath-radius) - 6vmax)),
+    transparent var(--breath-radius)
+  );
+  mask-image: radial-gradient(
+    circle var(--breath-radius) at 100% 0%,
+    #000 0,
+    #000 max(0px, calc(var(--breath-radius) - 10vmax)),
+    rgba(0, 0, 0, 0.72) max(0px, calc(var(--breath-radius) - 6vmax)),
+    transparent var(--breath-radius)
+  );
+}
+
+.visual-breath {
   z-index: 2;
+}
+
+.visual-breath-return {
+  z-index: 3;
+}
+
+.is-page-ready.is-image-ready.is-sapphire-image-ready .visual-breath {
+  animation: launch-breathe-spread 11s ease-in-out 600ms infinite both;
+}
+
+.is-page-ready.is-image-ready.is-sapphire-image-ready .visual-breath-return {
+  animation: launch-breathe-return 11s ease-in-out 600ms infinite both;
+}
+
+.is-leaving .visual-breath,
+.is-leaving .visual-breath-return {
+  animation-play-state: paused;
+}
+
+.visual-exit {
+  z-index: 6;
   pointer-events: none;
   clip-path: circle(0 at var(--exit-x) var(--exit-y));
   transition: clip-path 620ms cubic-bezier(0.65, 0, 0.18, 1);
+}
+
+@keyframes pointer-trail-fade {
+  0% {
+    opacity: 0.72;
+  }
+
+  32% {
+    opacity: 0.52;
+  }
+
+  100% {
+    opacity: 0;
+  }
 }
 
 .is-leaving .visual-exit {
   clip-path: circle(150vmax at var(--exit-x) var(--exit-y));
 }
 
+@property --breath-radius {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 12vmax;
+}
+
+@keyframes launch-breathe-spread {
+  0%,
+  30%,
+  100% {
+    --breath-radius: 12vmax;
+    opacity: 0;
+  }
+
+  33% {
+    opacity: 1;
+  }
+
+  58%,
+  82% {
+    --breath-radius: 152vmax;
+    opacity: 1;
+  }
+
+  86% {
+    opacity: 0;
+  }
+}
+
+@keyframes launch-breathe-return {
+  0%,
+  47% {
+    --breath-radius: 12vmax;
+    opacity: 0;
+  }
+
+  48% {
+    opacity: 1;
+  }
+
+  72%,
+  100% {
+    --breath-radius: 152vmax;
+    opacity: 1;
+  }
+}
+
 .visual-shade {
   position: absolute;
-  z-index: 3;
+  z-index: 7;
   inset: 0;
   pointer-events: none;
   background:
@@ -276,7 +477,7 @@ onBeforeUnmount(() => {
 
 .launch-copy {
   position: absolute;
-  z-index: 4;
+  z-index: 8;
   top: 50%;
   left: clamp(28px, 6.4vw, 112px);
   width: min(720px, 48vw);
@@ -441,7 +642,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 760px) {
   .launch {
-    --reveal-radius: min(25vmax, 180px);
+    --reveal-radius: min(22vmax, 150px);
   }
 
   .visual {
@@ -508,7 +709,11 @@ onBeforeUnmount(() => {
 
 @media (hover: none) and (pointer: coarse) {
   .launch {
-    --reveal-radius: min(29vmax, 210px);
+    --reveal-radius: min(25vmax, 170px);
+  }
+
+  .visual-trail {
+    display: none;
   }
 }
 
@@ -525,6 +730,13 @@ onBeforeUnmount(() => {
 
   .visual {
     transform: none;
+  }
+
+  .visual-breath,
+  .visual-breath-return,
+  .visual-trail {
+    animation: none !important;
+    opacity: 0 !important;
   }
 
   .is-sapphire-image-ready .visual-exit {
