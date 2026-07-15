@@ -51,6 +51,9 @@ for (const file of walk(root)) {
     }
     if (/[→▶›]/u.test(source)) failures.push(`${relative} 使用字符箭头`)
     if (/https?:\/\//i.test(source)) failures.push(`${relative} 使用远程资源`)
+    if (/^pages\/(persons|households)\//.test(relative) && /activeMemberCount\s*\|\|\s*0/.test(source)) {
+      failures.push(`${relative} 将缺失成员数伪装为 0`)
+    }
     const stack = []
     const voidTags = new Set(['input', 'image', 'icon', 'progress'])
     for (const match of source.matchAll(/<\/?([\w-]+)(?:\s[^<>]*?)?\s*\/?>/g)) {
@@ -65,6 +68,10 @@ for (const file of walk(root)) {
   if (file.endsWith('.wxss')) {
     const source = fs.readFileSync(file, 'utf8')
     if (/https?:\/\//i.test(source)) failures.push(`${relative} 使用远程样式资源`)
+  }
+  if (file.endsWith('.js') && /^pages\/(persons|households)\//.test(relative)) {
+    const source = fs.readFileSync(file, 'utf8')
+    if (/wx\.setStorage(?:Sync)?\s*\(/.test(source)) failures.push(`${relative} 缓存人口或家庭户敏感数据`)
   }
 }
 

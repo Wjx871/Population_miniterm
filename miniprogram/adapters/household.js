@@ -1,9 +1,66 @@
-const { formatDate } = require('../utils/date')
-const STATUS = { ACTIVE: '有效', PENDING_CANCELLATION: '待注销', ARCHIVED: '已归档', CANCELLED: '已注销', '正常': '有效', '有效': '有效' }
-function member(row) { row = row || {}; return Object.assign({}, row, { personName: row.personName || '—', relationshipDisplay: row.relationship || '—', idCardDisplay: row.idCard || '—', phoneDisplay: row.phone || '—', statusDisplay: STATUS[row.status] || row.status || '—' }) }
+const display = require('../utils/demographic-display')
+
+function memberCount(value) {
+  const available = typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) && value >= 0
+  return {
+    activeMemberCount: available ? value : null,
+    activeMemberCountAvailable: available,
+    activeMemberCountDisplay: available ? `${value} 人` : '成员数暂不可用'
+  }
+}
+
+function member(row) {
+  row = row || {}
+  const rawStatus = row.status
+  const rawRelationship = row.relationship
+  const rawGender = row.gender
+  return Object.assign({}, row, {
+    personName: display.displayValue(row.personName),
+    rawRelationship,
+    relationshipDisplay: display.displayEnum(rawRelationship, display.RELATIONSHIP, '关系未登记'),
+    householdHead: String(rawRelationship || '').toUpperCase() === 'HEAD',
+    rawGender,
+    genderAvailable: rawGender !== undefined && rawGender !== null && rawGender !== '',
+    genderDisplay: display.displayEnum(rawGender, display.GENDER, '未登记'),
+    idCardDisplay: display.displayValue(row.idCard),
+    phoneDisplay: display.displayValue(row.phone),
+    rawStatus,
+    statusDisplay: display.displayEnum(rawStatus, display.MEMBER_STATUS, '状态未登记'),
+    statusTone: display.statusTone(rawStatus)
+  })
+}
+
 function normalize(row) {
   row = row || {}
-  return Object.assign({}, row, { householdNo: row.householdNo || '—', headPersonName: row.headPersonName || '—', addressDisplay: row.address || '—', establishDateDisplay: formatDate(row.establishDate), statusDisplay: STATUS[row.status] || row.status || '—', members: (row.members || []).map(member) })
+  const rawStatus = row.status
+  const rawHouseholdType = row.householdType
+  return Object.assign({}, row, memberCount(row.activeMemberCount), {
+    householdNo: display.displayValue(row.householdNo),
+    headPersonName: display.displayValue(row.headPersonName),
+    addressDisplay: display.displayValue(row.address),
+    regionCodeDisplay: display.displayValue(row.regionCode),
+    establishDateDisplay: display.displayDate(row.establishDate),
+    rawHouseholdType,
+    householdTypeDisplay: display.displayEnum(rawHouseholdType, display.HOUSEHOLD_TYPE, '类型未登记'),
+    rawStatus,
+    statusDisplay: display.displayEnum(rawStatus, display.HOUSEHOLD_STATUS, '状态未登记'),
+    statusTone: display.statusTone(rawStatus),
+    members: (Array.isArray(row.members) ? row.members : []).map(member)
+  })
 }
-function normalizePage(page) { return { records: (page && page.content || []).map(normalize), total: Number(page && page.totalElements || 0), number: Number(page && page.number || 0), last: Boolean(page && page.last) } }
-module.exports = { STATUS, normalize, normalizePage, member }
+
+function pageTotal(page) {
+  const value = page && page.totalElements
+  const available = typeof value === 'number' && Number.isFinite(value) && value >= 0
+  return { total: available ? value : null, totalAvailable: available, totalDisplay: available ? String(value) : '数量暂不可用' }
+}
+
+function normalizePage(page) {
+  return Object.assign({
+    records: ((page && page.content) || []).map(normalize),
+    number: Number.isInteger(page && page.number) ? page.number : 0,
+    last: Boolean(page && page.last)
+  }, pageTotal(page))
+}
+
+module.exports = { member, memberCount, normalize, normalizePage, pageTotal }

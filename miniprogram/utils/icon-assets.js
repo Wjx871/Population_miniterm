@@ -98,6 +98,10 @@ const TABLER_ASSETS = Object.freeze({
   "map-pin": Object.freeze({
     body: "<path d=\"M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0\" />\n  <path d=\"M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0\" />",
     sha: "67ede20ca52fadc2322c9ffe22e54c8073210b05"
+  }),
+  "archive": Object.freeze({
+    body: "<path d=\"M3 6a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2\" />\n  <path d=\"M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10\" />\n  <path d=\"M10 12l4 0\" />",
+    sha: "67ede20ca52fadc2322c9ffe22e54c8073210b05"
   })
 })
 

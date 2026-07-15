@@ -1,1 +1,29 @@
-.result-title{margin:10rpx 4rpx}.result-title .section-title{margin:0}.household-no{font-size:32rpx;font-weight:600}.line{margin-top:14rpx}.detail-link{text-align:right;margin-top:18rpx}.end{text-align:center;color:#99a5b2;padding:24rpx}
+.archive-page { overflow-x: hidden; }
+.page-intro { display: flex; align-items: center; gap: 20rpx; margin-bottom: 24rpx; padding: 26rpx 28rpx; color: #fff; background: linear-gradient(135deg, #0b2f6b, #1677ff); border-radius: 22rpx; box-shadow: 0 10rpx 26rpx rgba(11, 47, 107, 0.14); }
+.intro-icon, .household-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.intro-icon { width: 78rpx; height: 78rpx; background: rgba(255, 255, 255, 0.14); border-radius: 20rpx; }
+.intro-copy { min-width: 0; }
+.page-title { margin: 0; color: #fff; font-size: 36rpx; }
+.intro-description { margin-top: 4rpx; color: #e7f1ff; font-size: 23rpx; }
+.filter-card { padding: 24rpx; }
+.filter-heading { margin-bottom: 18rpx; }
+.filter-title { color: #123b7a; font-size: 28rpx; font-weight: 650; }
+.filter-toggle { display: flex; align-items: center; gap: 5rpx; color: #1677ff; font-size: 22rpx; }
+.input-shell, .picker-shell { display: flex; align-items: center; gap: 14rpx; min-height: 80rpx; padding: 0 20rpx; background: #f8faff; border: 1rpx solid #e5eaf2; border-radius: 15rpx; }
+.filter-input { min-width: 0; height: 78rpx; flex: 1; color: #17233d; }
+.advanced-filters { display: flex; flex-direction: column; gap: 14rpx; margin-top: 14rpx; }
+.picker-shell { color: #667085; }
+.search-actions { margin-top: 18rpx; }
+.result-header { margin: 30rpx 4rpx 18rpx; align-items: flex-end; }
+.result-header .section-title { margin-bottom: 0; }
+.result-caption { margin-top: 3rpx; color: #8a94a6; font-size: 21rpx; }
+.result-total { flex-shrink: 0; color: #667085; font-size: 22rpx; }
+.household-card { display: flex; align-items: center; gap: 18rpx; }
+.household-icon { width: 72rpx; height: 72rpx; align-self: flex-start; background: #eaf3ff; border-radius: 20rpx; }
+.household-content { min-width: 0; flex: 1; }
+.household-heading { display: flex; align-items: center; gap: 14rpx; min-width: 0; }
+.household-no { flex: 1; color: #17233d; font-size: 29rpx; font-weight: 700; }
+.household-meta { display: flex; flex-wrap: wrap; gap: 8rpx 18rpx; margin-top: 9rpx; color: #123b7a; font-size: 22rpx; }
+.info-line { margin-top: 8rpx; color: #667085; font-size: 22rpx; overflow-wrap: anywhere; }
+.address-line { white-space: normal; word-break: break-word; }
+.end-state { padding: 24rpx; color: #8a94a6; font-size: 22rpx; text-align: center; }

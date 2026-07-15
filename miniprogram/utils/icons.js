@@ -120,6 +120,7 @@ const ICON_RESOURCE_NAMES = Object.freeze({
   'migration-out': 'logout-2',
   'residence-permit': 'id',
   location: 'map-pin',
+  archive: 'archive',
   application: 'file-description',
   approval: 'clipboard-check',
   profile: 'user-circle',

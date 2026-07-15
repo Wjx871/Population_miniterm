@@ -1,1 +1,63 @@
-<view class="page"><view class="card"><input class="input" placeholder="户籍编号" value="{{householdNo}}" bindinput="inputNo"/><input class="input" placeholder="户主姓名" value="{{headPersonName}}" bindinput="inputHead"/><view class="search-actions"><button class="primary" bindtap="search">查询</button><button class="ghost" bindtap="reset">重置</button></view></view><view class="row-between result-title"><view class="section-title">查询结果</view><text class="muted">共 {{total}} 户</text></view><loading-state wx:if="{{loading}}"/><error-state wx:elif="{{error}}" message="{{error}}" bindretry="search"/><empty-state wx:elif="{{!records.length}}" text="未查询到家庭户"/><view wx:else><view class="card" wx:for="{{records}}" wx:key="householdId" data-id="{{item.householdId}}" bindtap="open"><view class="row-between"><view class="household-no">{{item.householdNo}}</view><status-tag text="{{item.statusDisplay}}"/></view><view class="muted line">户主：{{item.headPersonName}}</view><view class="muted line ellipsis">地址：{{item.addressDisplay}}</view><view class="muted line">成员：{{item.activeMemberCount || 0}} 人</view><view class="link detail-link">查看详情 <app-icon name="chevron-right" size="24" /></view></view><loading-state wx:if="{{loadingMore}}" text="加载更多…"/><view wx:if="{{last && records.length}}" class="end">已加载全部家庭户</view></view></view>
+<view class="page archive-page">
+  <view class="page-intro">
+    <view class="intro-icon"><app-icon name="household" size="48" color="#FFFFFF" /></view>
+    <view class="intro-copy">
+      <view class="page-title">家庭户信息</view>
+      <view class="intro-description">查询家庭户档案及成员</view>
+    </view>
+  </view>
+
+  <view class="filter-card card">
+    <view class="filter-heading row-between">
+      <view class="filter-title">搜索筛选</view>
+      <view class="filter-toggle" bindtap="toggleFilters">
+        <text>{{filtersExpanded ? '收起筛选' : '更多筛选'}}</text>
+        <app-icon name="chevron-down" size="24" tone="primary" />
+      </view>
+    </view>
+    <view class="input-shell">
+      <app-icon name="household" size="28" tone="muted" />
+      <input class="filter-input" placeholder="输入户籍编号" value="{{householdNo}}" bindinput="inputNo" />
+    </view>
+    <view wx:if="{{filtersExpanded}}" class="advanced-filters">
+      <view class="input-shell">
+        <app-icon name="person" size="28" tone="muted" />
+        <input class="filter-input" placeholder="输入户主姓名" value="{{headPersonName}}" bindinput="inputHead" />
+      </view>
+      <picker range="{{typeOptions}}" range-key="label" value="{{typeIndex}}" bindchange="changeType">
+        <view class="picker-shell row-between"><text>{{typeOptions[typeIndex].label}}</text><app-icon name="chevron-down" size="24" tone="muted" /></view>
+      </picker>
+      <picker range="{{statusOptions}}" range-key="label" value="{{statusIndex}}" bindchange="changeStatus">
+        <view class="picker-shell row-between"><text>{{statusOptions[statusIndex].label}}</text><app-icon name="chevron-down" size="24" tone="muted" /></view>
+      </picker>
+    </view>
+    <view class="search-actions"><button class="primary" bindtap="search">查询</button><button class="ghost" bindtap="reset">重置</button></view>
+  </view>
+
+  <view class="result-header row-between">
+    <view><view class="section-title">查询结果</view><view class="result-caption">数据按当前账号权限范围展示</view></view>
+    <text wx:if="{{totalAvailable}}" class="result-total">共 {{totalDisplay}} 户</text>
+    <text wx:else class="result-total">{{totalDisplay}}</text>
+  </view>
+
+  <loading-state wx:if="{{loading}}" text="正在查询家庭户档案…" />
+  <error-state wx:elif="{{error}}" type="{{errorType}}" message="{{error}}" showRetry="{{errorType !== 'forbidden'}}" bindretry="search" />
+  <empty-state wx:elif="{{!records.length}}" title="未查询到家庭户" description="请调整查询条件后重试" />
+  <block wx:else>
+    <view class="household-card list-card" wx:for="{{records}}" wx:key="householdId" data-id="{{item.householdId}}" bindtap="open">
+      <view class="household-icon"><app-icon name="household" size="40" tone="primary" /></view>
+      <view class="household-content">
+        <view class="household-heading">
+          <view class="household-no ellipsis">{{item.householdNo}}</view>
+          <status-tag text="{{item.statusDisplay}}" type="{{item.statusTone}}" size="small" />
+        </view>
+        <view class="household-meta"><text>{{item.householdTypeDisplay}}</text><text>{{item.activeMemberCountDisplay}}</text></view>
+        <view class="info-line">户主：{{item.headPersonName}}</view>
+        <view class="info-line address-line">地址：{{item.addressDisplay}}</view>
+      </view>
+      <app-icon name="chevron-right" size="28" tone="muted" />
+    </view>
+    <loading-state wx:if="{{loadingMore}}" text="加载更多…" />
+    <view wx:if="{{last && records.length}}" class="end-state">已加载全部家庭户档案</view>
+  </block>
+</view>
