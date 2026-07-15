@@ -33,7 +33,7 @@ test('integration configuration uses the health endpoint and /api proxy contract
   assert.doesNotMatch(startAll, /\/api\/auth\/login/)
   assert.doesNotMatch(startFrontend, /\/api\/auth\/login/)
   assert.doesNotMatch(authApi, /\/auth\/register/)
-  assert.match(readme, /V4_010/)
+  assert.match(readme, /V4_012/)
   assert.match(fullStack, /\$frontend\/api\/auth\/login/)
   assert.match(fullStack, /function Assert-HttpSuccess/)
   assert.match(fullStack, /Assert-HttpSuccess \(Invoke-Http -Method Get -Url "\$frontend\/"\)/)
