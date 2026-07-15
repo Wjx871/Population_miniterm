@@ -173,6 +173,13 @@ INSERT INTO sys_role_permission(role_id,permission_id) VALUES
  (1,4),(2,4),(2,5),(2,6),(2,7),(2,8),(2,9),(2,10),(2,11),
  (3,4),(3,5),(3,6),(3,7),(3,8),(3,9),(3,10),(3,11),(3,12),(3,13),(3,14),
  (5,4),(5,5),(5,6),(5,7),(5,8),(5,9),(5,10),(5,11),(6,4),(6,9),(6,12),(6,13),(6,14);
+-- phase 12 application return-after-approve workflow
+INSERT INTO sys_permission(permission_id,permission_code,permission_name,module_name,permission_type,status)
+ VALUES(61,'application:return','退回已批准申请','APPLICATION','API','ENABLED');
+-- HOUSEHOLD_MANAGER (role_id=5) 是日常审批通过后的执行/复核人员，授予 application:return；
+-- SYSTEM_ADMIN (role_id=3) 默认全权；审批人（role_id=6）不持有，避免自批自退。
+INSERT INTO sys_role_permission(role_id,permission_id) VALUES(3,61),(5,61);
+
 ALTER TABLE person ADD COLUMN current_status_code VARCHAR(30) DEFAULT 'PENDING';
 ALTER TABLE household ADD COLUMN region_code VARCHAR(20) DEFAULT '110000';
 ALTER TABLE household ADD COLUMN version INT DEFAULT 0 NOT NULL;

@@ -38,6 +38,8 @@ const tagType = computed(() => {
   if (['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'PENDING', 'PROCESSING', 'PENDING_CANCELLATION'].includes(v)) return 'primary';
   if (['APPROVED', 'VERIFIED', 'COMPLETED', 'ACTIVE', 'ENABLED'].includes(v)) return 'success';
   if (['REJECTED', 'FAILED'].includes(v)) return 'danger';
+  if (['RETURNED'].includes(v)) return 'warning';
+  if (['RESUBMITTED'].includes(v)) return 'primary';
   if (['WITHDRAWN', 'CANCELLED', 'LEFT', 'DISABLED', 'RELEASED', 'ARCHIVED'].includes(v)) return 'info';
   if (['EXPIRED'].includes(v)) return 'warning';
   if (v.includes('正常') || v.includes('启用') || v.includes('有效') || v.includes('迁入')) {
