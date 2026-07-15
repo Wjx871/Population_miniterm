@@ -31,24 +31,65 @@ public class ApprovalService {
         BusinessApplication a = applications.require(applicationId);
         AuthenticatedUser u = CurrentUserContext.requireUser();
         applications.assertOwner(a, u);
-        stateMachine.requireDraft(a.getStatus());
+        stateMachine.requireResubmittable(a.getStatus());
         submissionValidators.stream().filter(v -> v.supports(a.getBusinessType())).forEach(v -> v.validate(a));
         if (materials.countRequired(applicationId) == 0) throw conflict("缺少必需材料，无法提交");
-        if (applicationMapper.updateStatus(applicationId, ApplicationStatus.DRAFT, ApplicationStatus.UNDER_REVIEW, a.getVersion()) == 0) ApplicationService.conflict();
+        ApplicationStatus fromStatus = a.getStatus();
+        if (applicationMapper.updateStatus(applicationId, fromStatus, ApplicationStatus.UNDER_REVIEW, a.getVersion()) == 0) ApplicationService.conflict();
         notifyStatus(a, ApplicationStatus.UNDER_REVIEW);
-        ApprovalRequest r = new ApprovalRequest();
-        r.setApprovalNo(ApplicationService.generateNumber("APR")); r.setApplicationId(applicationId);
-        r.setStatus(ApprovalStatus.PENDING); r.setCurrentDepartmentId(a.getApplicantDepartmentId());
-        r.setCurrentRegionCode(a.getApplicantRegionCode()); r.setSubmittedBy(u.userId());
-        r.setSubmittedAt(LocalDateTime.now()); r.setVersion(0); mapper.insert(r);
-        logs.insert(ApprovalLog.of(r.getApprovalId(), applicationId, ApprovalAction.SUBMIT, ApplicationStatus.DRAFT.name(), ApplicationStatus.UNDER_REVIEW.name(), u.userId(), null, audit.clientIp(request)));
-        audit.recordTransactional(u.userId(), "APPLICATION_SUBMIT", request);
+
+        // RETURNED 状态下重新提交：复用已有的 sys_approval_request 行（受 application_id UNIQUE 约束），
+        // 将其决策字段清空并重新置为 PENDING；首次提交则新建审批单。
+        Long approvalId;
+        if (fromStatus == ApplicationStatus.RETURNED) {
+            LocalDateTime resubmitAt = LocalDateTime.now();
+            int rows = mapper.resetForResubmit(applicationId, u.userId(), resubmitAt);
+            if (rows == 0) throw conflict("审批单不可重置，请联系管理员");
+            ApprovalRequest r = mapper.selectByApplicationId(applicationId)
+                    .orElseThrow(() -> notFound("审批请求不存在"));
+            approvalId = r.getApprovalId();
+            logs.insert(ApprovalLog.of(r.getApprovalId(), applicationId, ApprovalAction.SUBMIT,
+                    fromStatus.name(), ApplicationStatus.UNDER_REVIEW.name(),
+                    u.userId(), "申请人补充后重新提交", audit.clientIp(request)));
+            audit.recordTransactional(u.userId(), "APPLICATION_RESUBMIT", request);
+        } else {
+            ApprovalRequest r = new ApprovalRequest();
+            r.setApprovalNo(ApplicationService.generateNumber("APR"));
+            r.setApplicationId(applicationId);
+            r.setStatus(ApprovalStatus.PENDING);
+            r.setCurrentDepartmentId(a.getApplicantDepartmentId());
+            r.setCurrentRegionCode(a.getApplicantRegionCode());
+            r.setSubmittedBy(u.userId());
+            r.setSubmittedAt(LocalDateTime.now());
+            r.setVersion(0);
+            mapper.insert(r);
+            approvalId = r.getApprovalId();
+            logs.insert(ApprovalLog.of(r.getApprovalId(), applicationId, ApprovalAction.SUBMIT,
+                    ApplicationStatus.DRAFT.name(), ApplicationStatus.UNDER_REVIEW.name(),
+                    u.userId(), null, audit.clientIp(request)));
+            audit.recordTransactional(u.userId(), "APPLICATION_SUBMIT", request);
+        }
     }
 
     @Transactional
     public void withdraw(Long id, HttpServletRequest request) {
         BusinessApplication a = applications.require(id); AuthenticatedUser u = CurrentUserContext.requireUser();
         applications.assertOwner(a, u); stateMachine.requireWithdrawable(a.getStatus());
+
+        // RETURNED 状态来自审批通过后的退回，此时审批单早已不是 PENDING，
+        // 不能走「撤回审批单」路径；直接置申请状态为 WITHDRAWN 即可。
+        if (a.getStatus() == ApplicationStatus.RETURNED) {
+            if (applicationMapper.updateStatus(id, ApplicationStatus.RETURNED, ApplicationStatus.WITHDRAWN, a.getVersion()) == 0) {
+                ApplicationService.conflict();
+            }
+            notifyStatus(a, ApplicationStatus.WITHDRAWN);
+            logs.insert(ApprovalLog.of(null, id, ApprovalAction.WITHDRAW,
+                    ApplicationStatus.RETURNED.name(), ApplicationStatus.WITHDRAWN.name(),
+                    u.userId(), "被退回后申请人放弃", audit.clientIp(request)));
+            audit.recordTransactional(u.userId(), "APPLICATION_WITHDRAW_AFTER_RETURN", request);
+            return;
+        }
+
         ApprovalRequest r = mapper.selectByApplicationId(id).orElseThrow(() -> notFound("审批请求不存在"));
         if (r.getStatus() != ApprovalStatus.PENDING) throw conflict("审批已处理，不能撤回");
         if (mapper.decide(r.getApprovalId(), ApprovalStatus.PENDING, ApprovalStatus.CANCELLED, r.getVersion(), u.userId(), "申请人撤回") == 0) ApplicationService.conflict();

@@ -48,6 +48,18 @@ public class ApplicationController {
     @PostMapping("/{id}/withdraw") @PreAuthorize("hasAuthority('application:withdraw')")
     public ApiResponse<Void> withdraw(@PathVariable Long id, HttpServletRequest request) { approvalService.withdraw(id,request); return ApiResponse.ok(null); }
 
+    /**
+     * 执行人/复核岗把已批准、待执行的申请退回给申请人，不会改写既有审批结论。
+     * 审批人不持有 application:return 权限，因此该按钮对审批人不可见。
+     */
+    @PostMapping("/{id}/return") @PreAuthorize("hasAuthority('application:return')")
+    public ApiResponse<Void> returnApplication(@PathVariable Long id,
+                                               @Valid @RequestBody com.wjx871.population.application.ReturnApplicationRequest request,
+                                               HttpServletRequest httpRequest) {
+        service.returnApplication(id, request, httpRequest);
+        return ApiResponse.ok(null);
+    }
+
     @GetMapping("/{id}/approval-logs") @PreAuthorize("hasAnyAuthority('application:view','approval:view')")
     public ApiResponse<List<ApprovalLogView>> logs(@PathVariable Long id) { return ApiResponse.ok(approvalService.logs(id)); }
 }

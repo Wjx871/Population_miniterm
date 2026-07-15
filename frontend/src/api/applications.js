@@ -21,6 +21,15 @@ export function withdrawApplication(applicationId) {
   return request({ url: `/applications/${applicationId}/withdraw`, method: 'post' })
 }
 
+/**
+ * 执行人 / 复核岗退回已批准申请，区别于审批人驳回：
+ *   - 退回不改写审批结论，而是让申请回到申请人侧进行补正或撤回；
+ *   - 后端权限码 application:return（HOUSEHOLD_MANAGER、SYSTEM_ADMIN 持有）。
+ */
+export function returnApplication(applicationId, payload) {
+  return request({ url: `/applications/${applicationId}/return`, method: 'post', data: payload })
+}
+
 export function cancelDraftApplication(applicationId) {
   return request({ url: `/applications/${applicationId}`, method: 'delete' })
 }

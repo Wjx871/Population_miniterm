@@ -30,6 +30,7 @@ export const PERMISSIONS = Object.freeze({
   APPLICATION_EDIT: 'application:edit',
   APPLICATION_SUBMIT: 'application:submit',
   APPLICATION_WITHDRAW: 'application:withdraw',
+  APPLICATION_RETURN: 'application:return',
   
   MATERIAL_VIEW: 'material:view',
   MATERIAL_UPLOAD: 'material:upload',

@@ -92,6 +92,7 @@
       @submit="submit"
       @withdraw="withdraw"
       @cancel="cancelDraft"
+      @return-application="returnApproved"
     />
   </div>
 
@@ -121,6 +122,7 @@ import {
   cancelDraftApplication,
   getApplicationApprovalLogs,
   getApplicationDetail,
+  returnApplication,
   submitApplication,
   withdrawApplication
 } from '../../api/applications'
@@ -394,6 +396,49 @@ async function cancelDraft() {
   } catch (error) {
     if (isApiConflict(error)) await load()
     ElMessage.error(getApiErrorMessage(error, '取消草稿失败'))
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+async function returnApproved() {
+  if (application.value?.status !== 'APPROVED') {
+    ElMessage.error('仅已通过且待执行的申请可以退回')
+    return
+  }
+  if (!userStore.hasPermission(PERMISSIONS.APPLICATION_RETURN)) {
+    ElMessage.error('当前账号无权退回已批准申请')
+    return
+  }
+  const { value: comment, action } = await ElMessageBox.prompt(
+    '退回会通知申请人补正或撤回，但不会改写之前的审批结论。请填写退回说明（10~500 字）。',
+    '退回申请',
+    {
+      type: 'warning',
+      confirmButtonText: '确认退回',
+      cancelButtonText: '取消',
+      inputType: 'textarea',
+      inputPlaceholder: '请说明退回原因，例如：材料不全 / 数据不一致 / 政策变化',
+      inputValidator: (value) => {
+        if (!value || !value.trim()) return '退回说明不能为空'
+        if (value.trim().length < 10) return '退回说明至少 10 个字符'
+        if (value.length > 500) return '退回说明不能超过 500 个字符'
+        return true
+      }
+    }
+  )
+  if (action !== 'confirm' || !comment) return
+  actionLoading.value = true
+  try {
+    await returnApplication(applicationId.value, {
+      comment: comment.trim(),
+      version: application.value.version
+    })
+    ElMessage.success('申请已退回，等待申请人处理')
+    await load()
+  } catch (error) {
+    if (isApiConflict(error)) await load()
+    ElMessage.error(getApiErrorMessage(error, '退回申请失败'))
   } finally {
     actionLoading.value = false
   }

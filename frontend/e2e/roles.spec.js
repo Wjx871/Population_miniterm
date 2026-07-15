@@ -7,7 +7,7 @@ test.describe('五角色权限与会话隔离', () => {
     await loginAs(page, USERS.viewer)
     await refreshAndAssertIdentity(page, USERS.viewer)
     await expectHealthyPage(page, '/persons', '人口信息管理')
-    await expect(page.getByRole('button', { name: /新增|编辑|删除|审批|执行/ })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: /新增|编辑|删除|审批|执行|退回/ })).toHaveCount(0)
     await expectHealthyPage(page, '/queries/comprehensive', '人口综合查询')
     await expectForbiddenAndSession(page, USERS.viewer, '/approvals')
   })
@@ -42,6 +42,8 @@ test.describe('五角色权限与会话隔离', () => {
     await page.getByRole('tab', { name: '已办审批' }).click()
     await expect(page.getByRole('tab', { name: '已办审批' })).toHaveAttribute('aria-selected', 'true')
     await expect(page.getByRole('button', { name: /执行/ })).toHaveCount(0)
+    // 审批人不持有 application:return，按钮对审批人不可见；这是「不篡改审批结论」的职责边界保护。
+    await expect(page.getByRole('button', { name: /退回/ })).toHaveCount(0)
     await expectForbiddenAndSession(page, USERS.approver, '/logs/operations')
   })
 

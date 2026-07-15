@@ -108,6 +108,33 @@ public class ApplicationService {
                 ApplicationStatus.CANCELLED.name(), user.userId(), null, audit.clientIp(request)));
     }
 
+    /**
+     * 执行人/复核岗退回已批准但尚未执行的申请：
+     *   - 状态由 APPROVED 转为 RETURNED，保留此前审批轨迹不变；
+     *   - 调用方必须具备 application:return 权限（由 Controller 上的 @PreAuthorize 强制）；
+     *   - 申请人收到退回后可再次走 submit（{@link com.wjx871.population.approval.ApprovalService#submit}）
+     *     或直接撤回，无需新建审批单。
+     *   - 乐观锁：调用方必须携带 version（与申请表的当前 version 一致），冲突时返回 409。
+     */
+    @Transactional
+    public void returnApplication(Long id,
+                                  com.wjx871.population.application.ReturnApplicationRequest req,
+                                  HttpServletRequest httpRequest) {
+        BusinessApplication value = require(id);
+        stateMachine.requireReturnable(value.getStatus());
+        if (req.version() == null) throw new BusinessException(HttpStatus.BAD_REQUEST, "version 不能为空");
+        // 乐观锁由 mapper 的 WHERE version=#{expectedVersion} 强制：客户端版本必须与当前一致，
+        // 否则 update 返回 0、抛 409，前端刷新后再试。
+        if (mapper.updateStatus(id, ApplicationStatus.APPROVED, ApplicationStatus.RETURNED, req.version()) == 0) {
+            conflict();
+        }
+        AuthenticatedUser user = CurrentUserContext.requireUser();
+        approvalLogMapper.insert(ApprovalLog.of(null, id, ApprovalAction.RETURN,
+                ApplicationStatus.APPROVED.name(), ApplicationStatus.RETURNED.name(),
+                user.userId(), req.comment(), audit.clientIp(httpRequest)));
+        audit.recordTransactional(user.userId(), "APPLICATION_RETURN", httpRequest);
+    }
+
     public BusinessApplication require(Long id) {
         return mapper.selectById(id).orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "申请不存在"));
     }

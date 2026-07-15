@@ -4,6 +4,8 @@ export const APPLICATION_STATUS = Object.freeze({
   UNDER_REVIEW: '审批中',
   APPROVED: '已通过，待执行',
   REJECTED: '已驳回',
+  RETURNED: '已退回，待处理',
+  RESUBMITTED: '已重新提交',
   WITHDRAWN: '已撤回',
   COMPLETED: '已办结',
   CANCELLED: '已取消',
@@ -38,7 +40,8 @@ export const BUSINESS_TYPE_LABEL = Object.freeze({
 })
 
 export const READONLY_APPLICATION_STATUS = new Set([
-  'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'WITHDRAWN', 'COMPLETED', 'CANCELLED',
+  'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'RETURNED', 'RESUBMITTED',
+  'WITHDRAWN', 'COMPLETED', 'CANCELLED',
 ])
 
 export const APPROVAL_STATUS = Object.freeze({
