@@ -3,12 +3,14 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user.js'
 import launchVisual from '../assets/images/launch-visual.webp'
+import launchSapphireVisual from '../assets/images/launch-visual-sapphire.png'
 
 const router = useRouter()
 const userStore = useUserStore()
 const stage = ref(null)
 const pageReady = ref(false)
 const imageReady = ref(false)
+const sapphireImageReady = ref(false)
 const isLeaving = ref(false)
 
 let targetX = 0
@@ -19,8 +21,8 @@ let animationFrame = 0
 let navigationTimer = 0
 let motionQuery
 let reducedMotion = false
-let preloader
 let sessionRestore = Promise.resolve(false)
+const preloaders = []
 
 function defaultPointer() {
   return {
@@ -110,10 +112,19 @@ onMounted(() => {
   animationFrame = window.requestAnimationFrame(animatePointer)
   window.requestAnimationFrame(() => { pageReady.value = true })
 
-  preloader = new Image()
-  preloader.onload = () => { imageReady.value = true }
-  preloader.onerror = () => { imageReady.value = false }
-  preloader.src = launchVisual
+  const basePreloader = new Image()
+  basePreloader.decoding = 'async'
+  basePreloader.onload = () => { imageReady.value = true }
+  basePreloader.onerror = () => { imageReady.value = false }
+  basePreloader.src = launchVisual
+  preloaders.push(basePreloader)
+
+  const sapphirePreloader = new Image()
+  sapphirePreloader.decoding = 'async'
+  sapphirePreloader.onload = () => { sapphireImageReady.value = true }
+  sapphirePreloader.onerror = () => { sapphireImageReady.value = false }
+  sapphirePreloader.src = launchSapphireVisual
+  preloaders.push(sapphirePreloader)
 
   if (userStore.accessToken && !userStore.sessionChecked) {
     sessionRestore = userStore.restoreSession().catch(() => false)
@@ -125,7 +136,7 @@ onBeforeUnmount(() => {
   window.clearTimeout(navigationTimer)
   window.removeEventListener('resize', handleResize)
   motionQuery?.removeEventListener('change', handleMotionPreference)
-  if (preloader) {
+  for (const preloader of preloaders) {
     preloader.onload = null
     preloader.onerror = null
   }
@@ -139,30 +150,35 @@ onBeforeUnmount(() => {
     :class="{
       'is-page-ready': pageReady,
       'is-image-ready': imageReady,
+      'is-sapphire-image-ready': sapphireImageReady,
       'is-leaving': isLeaving,
     }"
     @pointermove="movePointer"
     @pointerleave="resetPointer"
   >
     <div
+      class="visual visual-sapphire"
+      :style="{ backgroundImage: `url(${launchSapphireVisual})` }"
+      aria-hidden="true"
+    />
+    <div
       class="visual visual-base"
       :style="{ backgroundImage: `url(${launchVisual})` }"
       aria-hidden="true"
     />
     <div
-      class="visual visual-reveal"
-      :style="{ backgroundImage: `url(${launchVisual})` }"
-      aria-hidden="true"
-    />
-    <div
       class="visual visual-exit"
-      :style="{ backgroundImage: `url(${launchVisual})` }"
+      :style="{ backgroundImage: `url(${launchSapphireVisual})` }"
       aria-hidden="true"
     />
+
     <div class="visual-shade" aria-hidden="true" />
 
     <section class="launch-copy" aria-labelledby="launch-title">
-      <h1 id="launch-title">人口数据库管理系统</h1>
+      <h1 id="launch-title">
+        <span class="title-primary">人口数据库</span>
+        <span class="title-secondary">管理系统</span>
+      </h1>
       <p>Population Management System</p>
       <button type="button" :disabled="isLeaving" @click="enterSystem">
         <span>进入系统</span>
@@ -178,7 +194,7 @@ onBeforeUnmount(() => {
   --reveal-y: 30vh;
   --exit-x: 76vw;
   --exit-y: 30vh;
-  --reveal-radius: clamp(210px, 23vw, 390px);
+  --reveal-radius: clamp(96px, 10vw, 180px);
   position: fixed;
   inset: 0;
   isolation: isolate;
@@ -194,49 +210,52 @@ onBeforeUnmount(() => {
 
 .visual {
   position: absolute;
-  z-index: -4;
-  inset: -1.5%;
+  z-index: 0;
+  inset: 0;
   background-position: center;
   background-repeat: no-repeat;
-  background-size: cover;
+  background-size: contain;
   opacity: 0;
-  transform: scale(1.025);
-  will-change: opacity, filter, transform;
+  will-change: opacity, transform, clip-path;
 }
 
-.is-image-ready .visual {
+.visual-sapphire {
+  z-index: 0;
+}
+
+.is-sapphire-image-ready .visual-sapphire,
+.is-sapphire-image-ready .visual-exit,
+.is-image-ready .visual-base {
   opacity: 1;
 }
 
 .visual-base {
-  filter: saturate(0.16) brightness(0.35) contrast(1.18) blur(0.45px);
-  transition: opacity 900ms ease, filter 620ms ease;
+  z-index: 1;
+  transition: opacity 900ms ease;
 }
 
-.visual-reveal {
-  z-index: -3;
-  filter: saturate(1.04) brightness(0.96) contrast(1.08);
+.is-sapphire-image-ready .visual-base {
   -webkit-mask-image: radial-gradient(
     circle var(--reveal-radius) at var(--reveal-x) var(--reveal-y),
-    #000 0%,
-    #000 48%,
-    rgba(0, 0, 0, 0.9) 64%,
-    rgba(0, 0, 0, 0.34) 82%,
-    transparent 100%
+    transparent 0%,
+    transparent 58%,
+    rgba(0, 0, 0, 0.16) 72%,
+    rgba(0, 0, 0, 0.72) 90%,
+    #000 100%
   );
   mask-image: radial-gradient(
     circle var(--reveal-radius) at var(--reveal-x) var(--reveal-y),
-    #000 0%,
-    #000 48%,
-    rgba(0, 0, 0, 0.9) 64%,
-    rgba(0, 0, 0, 0.34) 82%,
-    transparent 100%
+    transparent 0%,
+    transparent 58%,
+    rgba(0, 0, 0, 0.16) 72%,
+    rgba(0, 0, 0, 0.72) 90%,
+    #000 100%
   );
 }
 
 .visual-exit {
-  z-index: -2;
-  filter: saturate(1.08) brightness(1) contrast(1.08);
+  z-index: 2;
+  pointer-events: none;
   clip-path: circle(0 at var(--exit-x) var(--exit-y));
   transition: clip-path 620ms cubic-bezier(0.65, 0, 0.18, 1);
 }
@@ -247,7 +266,7 @@ onBeforeUnmount(() => {
 
 .visual-shade {
   position: absolute;
-  z-index: -1;
+  z-index: 3;
   inset: 0;
   pointer-events: none;
   background:
@@ -257,9 +276,10 @@ onBeforeUnmount(() => {
 
 .launch-copy {
   position: absolute;
+  z-index: 4;
   top: 50%;
   left: clamp(28px, 6.4vw, 112px);
-  width: min(620px, 44vw);
+  width: min(720px, 48vw);
   transform: translateY(-46%);
 }
 
@@ -276,19 +296,51 @@ onBeforeUnmount(() => {
 }
 
 .launch-copy h1 {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   margin: 0;
-  max-width: 10em;
+  max-width: 11em;
+  color: #f4f7fb;
   font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
   font-size: clamp(42px, 5vw, 80px);
-  font-weight: 300;
-  line-height: 1.18;
-  letter-spacing: 0.08em;
-  text-wrap: balance;
+  font-weight: 200;
+  line-height: 1;
   text-shadow: 0 2px 28px rgba(0, 0, 0, 0.36);
 }
 
+.launch-copy h1::before {
+  position: absolute;
+  top: 0.05em;
+  left: -26px;
+  width: 1px;
+  height: 1.72em;
+  content: "";
+  background: linear-gradient(180deg, #70e0d6 0%, rgba(242, 162, 82, 0.82) 58%, transparent 100%);
+}
+
+.title-primary {
+  display: block;
+  font-weight: 200;
+  letter-spacing: 0.12em;
+}
+
+.title-secondary {
+  display: block;
+  align-self: flex-start;
+  margin-top: 0.28em;
+  margin-left: 0.68em;
+  color: rgba(239, 247, 249, 0.9);
+  font-size: 0.64em;
+  font-weight: 300;
+  letter-spacing: 0.42em;
+}
+
 .launch-copy p {
-  margin: 20px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 26px 0 0 2.15em;
   color: rgba(229, 239, 247, 0.6);
   font-family: Arial, Helvetica, sans-serif;
   font-size: clamp(11px, 0.95vw, 15px);
@@ -299,12 +351,20 @@ onBeforeUnmount(() => {
   transition-delay: 90ms;
 }
 
+.launch-copy p::before {
+  width: 34px;
+  height: 1px;
+  content: "";
+  background: linear-gradient(90deg, rgba(99, 218, 210, 0.9), rgba(99, 218, 210, 0.08));
+}
+
 .launch-copy button {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: 18px;
   margin-top: clamp(44px, 7vh, 72px);
+  margin-left: 2.15em;
   padding: 12px 0 14px;
   overflow: visible;
   color: #f5f9fc;
@@ -381,12 +441,12 @@ onBeforeUnmount(() => {
 
 @media (max-width: 760px) {
   .launch {
-    --reveal-radius: min(46vmax, 340px);
+    --reveal-radius: min(25vmax, 180px);
   }
 
   .visual {
-    inset: -2%;
-    background-position: 58% center;
+    inset: 0;
+    background-position: center;
   }
 
   .visual-shade {
@@ -405,21 +465,40 @@ onBeforeUnmount(() => {
   }
 
   .launch-copy h1 {
-    max-width: 9em;
+    max-width: 10em;
     font-size: clamp(34px, 10.4vw, 52px);
-    line-height: 1.2;
-    letter-spacing: 0.05em;
+  }
+
+  .launch-copy h1::before {
+    left: -12px;
+  }
+
+  .title-primary {
+    letter-spacing: 0.08em;
+  }
+
+  .title-secondary {
+    margin-top: 0.24em;
+    margin-left: 0.14em;
+    font-size: 0.68em;
+    letter-spacing: 0.28em;
   }
 
   .launch-copy p {
     margin-top: 14px;
+    margin-left: 0;
     font-size: 10px;
     letter-spacing: 0.2em;
+  }
+
+  .launch-copy p::before {
+    width: 22px;
   }
 
   .launch-copy button {
     min-height: 44px;
     margin-top: 36px;
+    margin-left: 0;
   }
 
   .is-leaving .launch-copy {
@@ -429,7 +508,7 @@ onBeforeUnmount(() => {
 
 @media (hover: none) and (pointer: coarse) {
   .launch {
-    --reveal-radius: min(54vmax, 440px);
+    --reveal-radius: min(29vmax, 210px);
   }
 }
 
@@ -448,28 +527,13 @@ onBeforeUnmount(() => {
     transform: none;
   }
 
-  .visual-reveal {
-    -webkit-mask-image: radial-gradient(
-      circle min(46vmax, 520px) at var(--reveal-x) var(--reveal-y),
-      #000 0%,
-      #000 64%,
-      transparent 100%
-    );
-    mask-image: radial-gradient(
-      circle min(46vmax, 520px) at var(--reveal-x) var(--reveal-y),
-      #000 0%,
-      #000 64%,
-      transparent 100%
-    );
-  }
-
-  .is-image-ready .visual-exit {
+  .is-sapphire-image-ready .visual-exit {
     transition: opacity 80ms linear !important;
     clip-path: none;
     opacity: 0;
   }
 
-  .is-image-ready.is-leaving .visual-exit {
+  .is-sapphire-image-ready.is-leaving .visual-exit {
     opacity: 1;
   }
 }
