@@ -37,6 +37,7 @@ button::after {
 }
 
 .tab-page {
+  padding-bottom: calc(148rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(148rpx + env(safe-area-inset-bottom));
 }
 
@@ -45,7 +46,8 @@ button::after {
 }
 
 .tab-safe-bottom {
-  height: calc(124rpx + env(safe-area-inset-bottom));
+  height: calc(148rpx + constant(safe-area-inset-bottom));
+  height: calc(148rpx + env(safe-area-inset-bottom));
 }
 
 .page-section {

@@ -62,6 +62,33 @@ test('custom tab icons exist and bottom safe-area styling is present', () => {
   assert.match(source('../app.wxss'), /\.tab-page[\s\S]*safe-area-inset-bottom/)
 })
 
+test('custom tab bar keeps navigation content separate from the safe area', () => {
+  const styles = source('../custom-tab-bar/index.wxss')
+  const markup = source('../custom-tab-bar/index.wxml')
+  const appStyles = source('../app.wxss')
+  const primaryPages = [
+    '../pages/dashboard/index.wxml',
+    '../pages/business/index.wxml',
+    '../pages/handling/index.wxml',
+    '../pages/profile/index.wxml'
+  ]
+
+  assert.match(styles, /min-height:\s*calc\(116rpx \+ env\(safe-area-inset-bottom\)\)/)
+  assert.match(styles, /padding-bottom:\s*env\(safe-area-inset-bottom\)/)
+  assert.match(styles, /\.tab-item\s*\{[^}]*flex-direction:\s*column;/s)
+  assert.match(styles, /\.tab-item\s*\{[^}]*gap:\s*8rpx;/s)
+  assert.match(styles, /\.tab-icon\s*\{[^}]*height:\s*44rpx;/s)
+  assert.match(styles, /\.tab-label\s*\{[^}]*line-height:\s*28rpx;/s)
+  assert.doesNotMatch(styles, /margin-(?:top|bottom):\s*-/)
+  assert.doesNotMatch(styles, /translateY\s*\(/)
+  assert.doesNotMatch(styles, /\.(?:tab-icon|tab-label)\s*\{[^}]*position:\s*absolute;/s)
+  assert.doesNotMatch(styles, /\.tab-item--selected\s+\.tab-label/)
+  assert.equal((markup.match(/<app-icon/g) || []).length, 1)
+  assert.match(markup, /size="40"/)
+  assert.match(appStyles, /\.tab-page\s*\{[^}]*148rpx[^}]*safe-area-inset-bottom/s)
+  for (const page of primaryPages) assert.match(source(page), /class="[^"]*\btab-page\b/)
+})
+
 test('login and secondary detail pages are not tab bar routes', () => {
   const app = JSON.parse(source('../app.json'))
   const tabRoutes = app.tabBar.list.map((item) => item.pagePath)
