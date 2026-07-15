@@ -5,7 +5,7 @@ const path = require('node:path')
 
 const business = require('../adapters/business')
 const handling = require('../adapters/handling')
-const { TAB_INDEX, syncTabBar, resetTabBar } = require('../utils/tab-bar')
+const { TAB_INDEX, syncTabBar, resetTabBar } = require('../utils/tabBar.js')
 
 function source(relativePath) {
   return fs.readFileSync(path.resolve(__dirname, relativePath), 'utf8')

@@ -1,6 +1,6 @@
 const { normalizeUser } = require('../../adapters/auth')
 const { businessEntries } = require('../../adapters/business')
-const { syncTabBar } = require('../../utils/tab-bar')
+const { syncTabBar } = require('../../utils/tabBar.js')
 
 Page({
   data: {

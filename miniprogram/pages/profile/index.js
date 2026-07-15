@@ -3,7 +3,7 @@ const dashboard = require('../../services/dashboard')
 const storage = require('../../utils/storage')
 const { normalizeUser } = require('../../adapters/auth')
 const { messageOf } = require('../../utils/error')
-const { syncTabBar, resetTabBar } = require('../../utils/tab-bar')
+const { syncTabBar, resetTabBar } = require('../../utils/tabBar.js')
 Page({
   data: { user: {}, health: null, loading: false, error: '', loggingOut: false },
   onShow() { syncTabBar(this, 'profile'); this.setData({ user: normalizeUser(getApp().globalData.user) }); this.loadHealth() },

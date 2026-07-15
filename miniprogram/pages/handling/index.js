@@ -2,7 +2,7 @@ const dashboard = require('../../services/dashboard')
 const { normalizeUser } = require('../../adapters/auth')
 const { handlingEntries, normalizePendingSummary } = require('../../adapters/handling')
 const { can } = require('../../utils/permission')
-const { syncTabBar } = require('../../utils/tab-bar')
+const { syncTabBar } = require('../../utils/tabBar.js')
 
 Page({
   data: {
