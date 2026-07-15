@@ -32,7 +32,31 @@ function normalize(row) {
     isApproved, isExecuted
   })
 }
-function approval(row) { row = row || {}; return Object.assign({}, row, { title: row.title || row.applicationNo || '未命名申请', businessTypeDisplay: BUSINESS[row.businessType] || row.businessType || '—', statusDisplay: STATUS[row.status] || row.status || '—', submittedAtDisplay: formatDateTime(row.submittedAt) }) }
+function approval(row) {
+  row = row || {}
+  const rawStatus = row.status || ''
+  let waitingDisplay = ''
+  const submitted = row.submittedAt && new Date(row.submittedAt)
+  if (rawStatus === 'PENDING' && submitted && !Number.isNaN(submitted.getTime())) {
+    const days = Math.max(0, Math.floor((Date.now() - submitted.getTime()) / 86400000))
+    waitingDisplay = days > 0 ? `已等待 ${days} 天` : '今日提交'
+  }
+  return Object.assign({}, row, {
+    title: row.title || row.applicationNo || '未命名申请', rawStatus,
+    businessTypeDisplay: BUSINESS[row.businessType] || (row.businessType ? '其他业务' : '—'),
+    statusDisplay: STATUS[rawStatus] || (rawStatus ? '未知状态' : '—'),
+    statusTone: resolveStatus({ status: rawStatus }).type,
+    submittedAtDisplay: formatDateTime(row.submittedAt), waitingDisplay,
+    actionDisplay: rawStatus === 'PENDING' ? '进入审批' : '查看结果'
+  })
+}
+function approvalDetail(row) {
+  const detail = approval(row)
+  return Object.assign(detail, {
+    decidedAtDisplay: formatDateTime(detail.decidedAt),
+    decisionCommentDisplay: detail.decisionComment || '无补充意见'
+  })
+}
 function material(row) { row = row || {}; return Object.assign({}, row, { materialName: row.materialName || row.originalFilename || '未命名材料', verifyStatusDisplay: VERIFY[row.verifyStatus] || (row.verifyStatus ? '状态待确认' : '未核验'), requiredDisplay: row.requiredFlag ? '必交材料' : '补充材料', viewable: Boolean(row.materialId) }) }
 function log(row) { row = row || {}; return Object.assign({}, row, { actionDisplay: ACTIONS[row.action] || STATUS[row.toStatus] || '办理进度更新', timeDisplay: formatDateTime(row.operationTime), commentDisplay: row.comment || '无补充说明' }) }
 function professionalFields(raw) {
@@ -61,4 +85,4 @@ function approvalResult(logs) {
   return latest ? { available: true, result: latest.actionDisplay, comment: latest.commentDisplay, time: latest.timeDisplay } : { available: false }
 }
 function normalizePage(page) { return { records: (page && page.content || []).map(normalize), total: Number(page && page.totalElements || 0), number: Number(page && page.number || 0), last: Boolean(page && page.last) } }
-module.exports = { STATUS, BUSINESS, VERIFY, ACTIONS, normalize, normalizePage, approval, material, log, professionalFields, progress, approvalResult }
+module.exports = { STATUS, BUSINESS, VERIFY, ACTIONS, normalize, normalizePage, approval, approvalDetail, material, log, professionalFields, progress, approvalResult }
