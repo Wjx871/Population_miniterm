@@ -84,7 +84,7 @@ VALUES (1, 'QUERY', '查询部门', '110000', 'ENABLED', 1),
        (5, 'APPROVAL', '审批部门', '110000', 'ENABLED', 5);
 
 INSERT INTO sys_role (role_id, role_code, role_name, role_level, data_scope, status)
-VALUES (1, 'QUERY_VIEWER', '查询统计人员', 'L1', 'DEPARTMENT', 'ENABLED'),
+VALUES (1, 'QUERY_VIEWER', '查询统计人员', 'L1', 'ALL', 'ENABLED'),
        (2, 'POPULATION_MANAGER', '人口信息管理人员', 'L2', 'REGION', 'ENABLED'),
        (3, 'SYSTEM_ADMIN', '系统管理员', 'L3', 'ALL', 'ENABLED'),
        (4, 'DISABLED_ROLE', '停用角色', 'L1', 'SELF', 'DISABLED'),

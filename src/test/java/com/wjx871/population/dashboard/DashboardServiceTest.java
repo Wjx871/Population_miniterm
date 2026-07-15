@@ -15,6 +15,7 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -56,5 +57,31 @@ class DashboardServiceTest {
         assertThat(result.getMigrationTrend()).extracting(MigrationTrendPoint::getOutCount).containsExactly(0L, 0L, 2L);
         assertThat(result.getBusinessScale()).extracting(NamedCountView::getCode)
                 .containsExactly("REGISTERED", "FLOATING_ACTIVE", "PERMIT_ACTIVE");
+    }
+
+    @Test
+    void overviewEscalatesViewerDepartmentScopeToAll() {
+        SecurityContextHolder.clearContext();
+        AuthenticatedUser viewer = new AuthenticatedUser(8L, "viewer", "", "Viewer", "ENABLED", 1L,
+                "QUERY_VIEWER", "Query Viewer", null, DataScope.DEPARTMENT, "ENABLED",
+                20L, "QUERY", "110000", List.of("statistics:view"));
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(viewer, null, viewer.getAuthorities()));
+        when(mapper.countRegisteredPopulation(any())).thenReturn(0L);
+        when(mapper.countActiveFloating(any())).thenReturn(0L);
+        when(mapper.countActivePermits(any())).thenReturn(0L);
+        when(mapper.countPendingApprovals(any())).thenReturn(0L);
+        when(mapper.countExpiringPermits(any(LocalDate.class), any(LocalDate.class), any())).thenReturn(0L);
+        when(mapper.countMigrationsIn(any(LocalDate.class), any(LocalDate.class), any())).thenReturn(0L);
+        when(mapper.countMigrationsOut(any(LocalDate.class), any(LocalDate.class), any())).thenReturn(0L);
+
+        service.overview(7, 30);
+
+        ArgumentCaptor<com.wjx871.population.security.DataScopeCriteria> captor =
+                ArgumentCaptor.forClass(com.wjx871.population.security.DataScopeCriteria.class);
+        org.mockito.Mockito.verify(mapper, org.mockito.Mockito.atLeastOnce())
+                .countRegisteredPopulation(captor.capture());
+        assertThat(captor.getAllValues())
+                .allSatisfy(c -> assertThat(c.dataScope()).isEqualTo(DataScope.ALL));
     }
 }
