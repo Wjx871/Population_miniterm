@@ -66,7 +66,8 @@ test('app-icon resources come from the reviewed Tabler subset only', () => {
     'activity',
     'refresh',
     'layout-dashboard',
-    'chevron-down'
+    'chevron-down',
+    'map-pin'
   ])
   for (const asset of Object.values(TABLER_ASSETS)) {
     assert.match(asset.sha, /^[0-9a-f]{40}$/)
