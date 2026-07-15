@@ -3,7 +3,7 @@ const adapter = require('../../../adapters/application')
 const { permissionsOf } = require('../../../utils/permission')
 const { messageOf } = require('../../../utils/error')
 Page({
-  data: { id: null, application: null, materials: [], logs: [], professionalFields: [], professionalMessage: '', loading: true, error: '', openingMaterial: null },
+  data: { id: null, application: null, materials: [], logs: [], progress: [], approvalResult: { available: false }, professionalFields: [], professionalMessage: '', loading: true, error: '', openingMaterial: null },
   onLoad(options) { this.setData({ id: options.id }); this.load() },
   async load() {
     this.setData({ loading: true, error: '', professionalMessage: '' })
@@ -15,8 +15,8 @@ Page({
       const materials = results[0].status === 'fulfilled' ? (results[0].value || []).map(adapter.material) : []
       const logs = results[1].status === 'fulfilled' ? (results[1].value || []).map(adapter.log) : []
       let professionalMessage = ''
-      if (results[2].status === 'rejected') professionalMessage = results[2].reason.statusCode === 404 ? '专业业务记录不存在，通用申请信息仍可查看。' : '专业业务摘要暂不可查看。'
-      this.setData({ application, materials, logs, professionalFields: results[2].status === 'fulfilled' ? adapter.professionalFields(results[2].value) : [], professionalMessage })
+      if (results[2].status === 'rejected') professionalMessage = results[2].reason.statusCode === 404 ? '相关业务信息暂未登记，申请基本信息仍可查看。' : '相关业务信息暂时无法加载。'
+      this.setData({ application, materials, logs, progress: adapter.progress(application), approvalResult: adapter.approvalResult(logs), professionalFields: results[2].status === 'fulfilled' ? adapter.professionalFields(results[2].value) : [], professionalMessage })
     } catch (error) { this.setData({ application: null, error: messageOf(error) }) }
     finally { this.setData({ loading: false }) }
   },

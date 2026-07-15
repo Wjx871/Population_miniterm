@@ -1,6 +1,64 @@
-<view class="page"><loading-state wx:if="{{loading}}"/><error-state wx:elif="{{error}}" message="{{error}}" bindretry="load"/><view wx:else>
-  <view class="card"><view class="row-between"><view class="application-no">{{application.applicationNo}}</view><status-tag text="{{application.statusDisplay}}"/></view><view class="title app-title">{{application.title}}</view><view class="field"><text class="label">业务类型</text><text class="value">{{application.businessTypeDisplay}}</text></view><view class="field"><text class="label">申请人</text><text class="value">{{application.applicantName || '—'}}</text></view><view class="field"><text class="label">申请原因</text><text class="value">{{application.reason || '—'}}</text></view><view class="field"><text class="label">创建时间</text><text class="value">{{application.createdAtDisplay}}</text></view><view class="field"><text class="label">最终执行状态</text><text class="value">{{application.statusDisplay === '已完成' ? '已完成' : '尚未完成专业执行'}}</text></view></view>
-  <view class="card"><view class="section-title">专业业务摘要</view><view wx:if="{{professionalMessage}}" class="notice">{{professionalMessage}}</view><view wx:for="{{professionalFields}}" wx:key="key" class="field"><text class="label">{{item.label}}</text><text class="value">{{item.value}}</text></view><view wx:if="{{!professionalFields.length && !professionalMessage}}" class="muted">该业务没有额外的移动端摘要。</view></view>
-  <view class="card"><view class="section-title">申请材料</view><empty-state wx:if="{{!materials.length}}" text="暂无材料或无材料查看权限"/><view class="material" wx:for="{{materials}}" wx:key="materialId"><view class="row-between"><view class="material-name">{{item.materialName}}</view><status-tag text="{{item.verifyStatusDisplay}}"/></view><view class="muted meta">{{item.materialTypeDisplay}} · {{item.requiredDisplay}}</view><button wx:if="{{item.viewable}}" size="mini" class="ghost preview" loading="{{openingMaterial===item.materialId}}" data-id="{{item.materialId}}" data-type="{{item.contentType}}" bindtap="openMaterial">查看文件</button></view></view>
-  <view class="card"><view class="section-title">审批轨迹</view><empty-state wx:if="{{!logs.length}}" text="暂无审批轨迹"/><view class="timeline" wx:for="{{logs}}" wx:key="logId"><view class="dot"></view><view class="timeline-main"><view>{{item.actionDisplay}}</view><view class="muted small">{{item.timeDisplay}}</view><view class="comment">{{item.commentDisplay}}</view></view></view></view>
-</view></view>
+<view class="page application-detail-page">
+  <loading-state wx:if="{{loading}}" text="正在加载申请详情…" />
+  <error-state wx:elif="{{error}}" message="{{error}}" bindretry="load" />
+  <view wx:else>
+    <view class="summary-card application-summary">
+      <view class="row-between summary-top">
+        <view class="business-name">{{application.businessTypeDisplay}}</view>
+        <status-tag text="{{application.statusDisplay}}" type="{{application.statusTone}}" />
+      </view>
+      <view class="application-title">{{application.title}}</view>
+      <view class="summary-meta">申请编号 {{application.applicationNo}}</view>
+      <view class="status-guidance">{{application.nextStepDisplay}}</view>
+    </view>
+
+    <view class="section-card">
+      <view class="section-title">申请信息</view>
+      <view class="field"><text class="label">申请人</text><text class="value">{{application.applicantName || '暂未登记'}}</text></view>
+      <view class="field"><text class="label">提交时间</text><text class="value">{{application.submittedTimeDisplay}}</text></view>
+      <view class="field"><text class="label">申请原因</text><text class="value">{{application.reason || '暂未登记'}}</text></view>
+      <view class="field"><text class="label">业务办理</text><text class="value {{application.isExecuted ? 'text-success' : ''}}">{{application.executionDisplay}}</text></view>
+    </view>
+
+    <view class="section-card">
+      <view class="section-title">办理进度</view>
+      <view class="progress-item progress-item--{{item.state}}" wx:for="{{progress}}" wx:key="key">
+        <view class="progress-marker"></view>
+        <view class="progress-content">
+          <view class="row-between"><text class="progress-title">{{item.title}}</text><text class="progress-time">{{item.time}}</text></view>
+          <view class="progress-result">{{item.result}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-card">
+      <view class="section-title">业务信息</view>
+      <view wx:if="{{professionalMessage}}" class="notice">{{professionalMessage}}</view>
+      <view wx:for="{{professionalFields}}" wx:key="key" class="field"><text class="label">{{item.label}}</text><text class="value">{{item.value}}</text></view>
+      <view wx:if="{{!professionalFields.length && !professionalMessage}}" class="muted">该申请暂无其他业务信息</view>
+    </view>
+
+    <view class="section-card">
+      <view class="section-title">申请材料</view>
+      <empty-state wx:if="{{!materials.length}}" title="无需额外材料" description="该业务当前没有需要查看的申请材料" />
+      <view class="material" wx:for="{{materials}}" wx:key="materialId">
+        <view class="row-between"><view class="material-name">{{item.materialName}}</view><status-tag text="{{item.verifyStatusDisplay}}" size="small" /></view>
+        <view class="muted meta">{{item.requiredDisplay}}</view>
+        <button wx:if="{{item.viewable}}" size="mini" class="ghost preview" loading="{{openingMaterial===item.materialId}}" data-id="{{item.materialId}}" data-type="{{item.contentType}}" bindtap="openMaterial">查看材料</button>
+      </view>
+    </view>
+
+    <view wx:if="{{approvalResult.available}}" class="section-card approval-result">
+      <view class="section-title">审批结果</view>
+      <view class="field"><text class="label">处理结果</text><text class="value">{{approvalResult.result}}</text></view>
+      <view class="field"><text class="label">审批意见</text><text class="value">{{approvalResult.comment}}</text></view>
+      <view class="field"><text class="label">处理时间</text><text class="value">{{approvalResult.time}}</text></view>
+    </view>
+
+    <view class="section-card">
+      <view class="section-title">办理记录</view>
+      <empty-state wx:if="{{!logs.length}}" title="暂无办理记录" description="申请进入处理后将在这里显示进度" />
+      <view class="timeline" wx:for="{{logs}}" wx:key="logId"><view class="dot"></view><view class="timeline-main"><view>{{item.actionDisplay}}</view><view class="muted small">{{item.timeDisplay}}</view><view class="comment">{{item.commentDisplay}}</view></view></view>
+    </view>
+  </view>
+</view>
