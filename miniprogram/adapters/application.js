@@ -1,15 +1,16 @@
 const { formatDateTime } = require('../utils/date')
 const { resolveStatus } = require('../utils/status')
-const STATUS = { DRAFT: '草稿', SUBMITTED: '已提交', UNDER_REVIEW: '审批中', APPROVED: '已通过', REJECTED: '已驳回', WITHDRAWN: '已撤回', COMPLETED: '已完成', CANCELLED: '已取消', PENDING: '待审批' }
+const STATUS = { DRAFT: '草稿', SUBMITTED: '已提交', UNDER_REVIEW: '审批中', APPROVED: '已通过', REJECTED: '已驳回', RETURNED: '已退回', RESUBMITTED: '已重新提交', WITHDRAWN: '已撤回', COMPLETED: '已完成', CANCELLED: '已取消', PENDING: '待审批' }
 const BUSINESS = { GENERAL_SERVICE: '通用服务', PERSON_CANCELLATION: '人员注销', HOUSEHOLD_CANCELLATION: '家庭户注销', MIGRATION_IN: '迁入', MIGRATION_OUT: '迁出', FLOATING_REGISTRATION: '流动人口登记', RESIDENCE_PERMIT_FIRST_ISSUE: '居住证首次申领', RESIDENCE_PERMIT_ENDORSEMENT: '居住证签注', RESIDENCE_PERMIT_CANCELLATION: '居住证注销', KEY_POPULATION_REGISTER: '重点人口建档', KEY_POPULATION_RELEASE: '重点人口解除', SENSITIVE_DATA_EXPORT: '敏感数据导出' }
 const VERIFY = { PENDING: '待核验', VERIFIED: '已核验', REJECTED: '核验不通过', APPROVED: '已核验' }
-const ACTIONS = { CREATE: '创建申请', SUBMIT: '提交申请', APPROVE: '审批通过', REJECT: '审批驳回', WITHDRAW: '撤回申请', CANCEL: '取消申请', MATERIAL_VERIFY: '材料核验通过', MATERIAL_REJECT: '材料核验不通过', EXECUTE: '业务办理完成' }
+const ACTIONS = { CREATE: '创建申请', SUBMIT: '提交申请', RESUBMIT: '重新提交', APPROVE: '审批通过', REJECT: '审批驳回', RETURN: '退回申请', WITHDRAW: '撤回申请', CANCEL: '取消申请', MATERIAL_VERIFY: '材料核验通过', MATERIAL_REJECT: '材料核验不通过', EXECUTE: '业务办理完成' }
 
 function guidance(status) {
   const messages = {
     DRAFT: '申请尚未提交，暂未进入审批', SUBMITTED: '材料已提交，正在等待审核，无需重复提交',
     UNDER_REVIEW: '材料已提交，正在等待审核，无需重复提交', PENDING: '材料已提交，正在等待审核，无需重复提交',
     APPROVED: '审批已通过，等待业务办理', REJECTED: '申请未通过，请查看审批意见',
+    RETURNED: '申请已退回，请按意见修改后重新提交', RESUBMITTED: '申请已重新提交，正在等待审核',
     COMPLETED: '业务已办理完成', WITHDRAWN: '申请已撤回，如仍需办理请重新发起申请', CANCELLED: '申请已取消'
   }
   return messages[status] || '请查看办理进度了解当前情况'
@@ -29,7 +30,7 @@ function normalize(row) {
     submittedAtDisplay: formatDateTime(row.submittedAt), submittedTimeDisplay: formatDateTime(row.submittedAt || row.createdAt),
     completedAtDisplay: formatDateTime(row.completedAt), executionRawStatus: rawStatus,
     executionDisplay: isExecuted ? '业务已办理完成' : isApproved ? '等待业务办理' : '尚未进入办理环节',
-    isApproved, isExecuted
+    isApproved, isExecuted, canWithdraw: ['SUBMITTED', 'UNDER_REVIEW', 'RETURNED'].includes(rawStatus)
   })
 }
 function approval(row) {
@@ -68,16 +69,25 @@ function professionalFields(raw) {
     return { key, label: labels[key], value: STATUS[value] || BUSINESS[value] || (/^[A-Z][A-Z0-9_]*$/.test(value) ? '相关信息已登记' : value) }
   })
 }
-function progress(application) {
+function progress(application, logs) {
   const app = application || normalize(null)
   const raw = app.rawStatus
-  const reviewed = ['APPROVED', 'REJECTED', 'COMPLETED'].includes(raw)
-  return [
-    { key: 'submitted', title: '提交申请', state: app.submittedAt ? 'done' : raw === 'DRAFT' ? 'current' : 'done', time: app.submittedAtDisplay, result: app.submittedAt ? '申请已提交' : '等待提交' },
-    { key: 'review', title: '受理审核', state: ['SUBMITTED', 'UNDER_REVIEW', 'PENDING'].includes(raw) ? 'current' : reviewed ? 'done' : 'waiting', time: '—', result: reviewed ? '审核已完成' : ['SUBMITTED', 'UNDER_REVIEW', 'PENDING'].includes(raw) ? '正在审核' : '等待受理' },
-    { key: 'decision', title: '审批决定', state: reviewed ? 'done' : 'waiting', time: reviewed ? app.completedAtDisplay : '—', result: reviewed ? app.statusDisplay : '等待审批' },
-    { key: 'execution', title: '业务办理', state: app.isExecuted ? 'done' : app.isApproved ? 'current' : 'waiting', time: app.isExecuted ? app.completedAtDisplay : '—', result: app.executionDisplay }
-  ]
+  const history = logs || []
+  const latest = (actions) => [...history].reverse().find((item) => actions.includes(item.action))
+  const created = { key: 'draft', title: '已保存草稿', state: raw === 'DRAFT' ? 'current' : 'done', time: app.createdAtDisplay, result: raw === 'DRAFT' ? '等待补充材料并提交' : '申请已创建' }
+  if (raw === 'DRAFT') return [created]
+  const submitLog = latest(['SUBMIT', 'RESUBMIT'])
+  const items = [created, { key: 'submitted', title: raw === 'RESUBMITTED' ? '已重新提交' : '已提交', state: 'done', time: submitLog ? submitLog.timeDisplay : app.submittedAtDisplay, result: '申请已进入审核流程' }]
+  if (['SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED', 'PENDING'].includes(raw)) return items.concat({ key: 'review', title: '审批中', state: 'current', time: '—', result: '等待审核人员处理' })
+  const decisionLog = latest(['APPROVE', 'REJECT', 'RETURN'])
+  if (['APPROVED', 'REJECTED', 'RETURNED', 'COMPLETED'].includes(raw)) items.push({ key: 'decision', title: raw === 'RETURNED' ? '已退回' : '审批决定', state: raw === 'RETURNED' ? 'current' : 'done', time: decisionLog ? decisionLog.timeDisplay : '—', result: app.statusDisplay })
+  if (raw === 'APPROVED') items.push({ key: 'execution', title: '待业务执行', state: 'current', time: '—', result: '请在 Web 端完成专业业务执行' })
+  if (raw === 'COMPLETED') items.push({ key: 'execution', title: '已办结', state: 'done', time: app.completedAtDisplay, result: '业务已办理完成' })
+  if (['WITHDRAWN', 'CANCELLED'].includes(raw)) {
+    const closedLog = latest(['WITHDRAW', 'CANCEL'])
+    items.push({ key: 'closed', title: app.statusDisplay, state: 'done', time: closedLog ? closedLog.timeDisplay : '—', result: app.nextStepDisplay })
+  }
+  return items
 }
 function approvalResult(logs) {
   const decisions = (logs || []).filter((item) => item.action === 'APPROVE' || item.action === 'REJECT')

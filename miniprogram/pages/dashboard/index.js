@@ -5,16 +5,18 @@ const { normalizeMetrics, dashboardEntries } = require('../../adapters/dashboard
 const { resolveErrorState } = require('../../utils/error-state')
 const { messageOf } = require('../../utils/error')
 const { syncTabBar } = require('../../utils/tabBar.js')
+const { formatDateTime } = require('../../utils/date')
 
 Page({
   data: {
     user: {},
     entries: [],
-    metrics: normalizeMetrics(null, null),
+    metrics: normalizeMetrics(null, null, null),
     loading: false,
     metricsError: '',
     metricsErrorType: 'unknown',
-    metricNotice: ''
+    metricNotice: '',
+    updatedAtDisplay: '尚未更新'
   },
 
   onShow() {
@@ -30,18 +32,22 @@ Page({
     const user = this.data.user
     const canViewStatistics = can(user, 'statistics:view')
     const canViewHouseholds = can(user, 'household:view')
+    const canViewApplications = can(user, 'application:view')
     this.setData({ loading: true, metricsError: '', metricNotice: '' })
 
     const overviewJob = canViewStatistics ? dashboard.overview() : Promise.resolve(null)
     const householdJob = canViewHouseholds ? dashboard.householdTotal() : Promise.resolve(null)
-    const [overviewResult, householdResult] = await Promise.allSettled([
+    const processingJob = canViewApplications ? dashboard.processingApplications() : Promise.resolve(null)
+    const [overviewResult, householdResult, processingResult] = await Promise.allSettled([
       overviewJob,
-      householdJob
+      householdJob,
+      processingJob
     ])
 
     const metricResults = [
       canViewStatistics ? overviewResult : null,
-      canViewHouseholds ? householdResult : null
+      canViewHouseholds ? householdResult : null,
+      canViewApplications ? processingResult : null
     ].filter(Boolean)
     const metricFailures = metricResults.filter((result) => result.status === 'rejected')
     const allMetricsFailed = metricResults.length > 0 && metricFailures.length === metricResults.length
@@ -53,8 +59,13 @@ Page({
     this.setData({
       metrics: normalizeMetrics(
         overviewResult.status === 'fulfilled' ? overviewResult.value : null,
-        householdResult.status === 'fulfilled' ? householdResult.value : null
+        householdResult.status === 'fulfilled' ? householdResult.value : null,
+        processingResult.status === 'fulfilled' ? processingResult.value : null,
+        user
       ),
+      updatedAtDisplay: overviewResult.status === 'fulfilled' && overviewResult.value
+        ? formatDateTime(overviewResult.value.generatedAt)
+        : '更新时间暂不可用',
       metricsError: allMetricsFailed ? '核心指标暂不可用，请稍后重试' : '',
       metricsErrorType: allMetricsFailed ? resolveErrorState({
         statusCode: firstMetricError && firstMetricError.statusCode,

@@ -8,11 +8,19 @@
     "pages/persons/detail/index",
     "pages/households/list/index",
     "pages/households/detail/index",
+    "pages/permits/list/index",
+    "pages/permits/detail/index",
+    "pages/permits/endorsement/index",
+    "pages/floating/list/index",
+    "pages/floating/detail/index",
+    "pages/migrations/list/index",
+    "pages/migrations/detail/index",
     "pages/applications/list/index",
     "pages/applications/detail/index",
     "pages/approvals/list/index",
     "pages/approvals/detail/index",
-    "pages/profile/index"
+    "pages/profile/index",
+    "pages/profile/permissions/index"
   ],
   "tabBar": {
     "custom": true,

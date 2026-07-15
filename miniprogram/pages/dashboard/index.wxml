@@ -20,6 +20,7 @@
       <view>
         <view class="section-title">核心业务指标</view>
         <view class="section-caption">按当前账号可查看范围展示</view>
+        <view class="section-caption">数据更新：{{updatedAtDisplay}}</view>
       </view>
       <view class="section-extra refresh-action" bindtap="load">
         <app-icon name="refresh" size="24" />
@@ -43,6 +44,8 @@
           class="metric-card metric-card--{{item.tone}} {{item.available ? '' : 'metric-card--unavailable'}}"
           wx:for="{{metrics}}"
           wx:key="key"
+          data-url="{{item.available ? item.url : ''}}"
+          bindtap="open"
         >
           <view class="metric-top">
             <view class="metric-icon metric-icon--{{item.tone}}">

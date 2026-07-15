@@ -63,6 +63,31 @@ function normalizeResidence(row, fallbackAddress) {
   })
 }
 
+function normalizePermit(row) {
+  if (!row || typeof row !== 'object') return null
+  return Object.assign({}, row, {
+    permitNoDisplay: display.displayValue(row.maskedPermitNo || row.permitNo),
+    issueRegionDisplay: display.displayValue(row.issueRegionCode),
+    validFromDisplay: display.displayDate(row.validFrom),
+    validUntilDisplay: display.displayDate(row.validUntil),
+    statusDisplay: display.displayEnum(row.status, { ACTIVE: '有效', EXPIRED: '已过期', CANCELLED: '已注销' }, '状态未登记'),
+    statusTone: display.statusTone(row.status)
+  })
+}
+
+function normalizeMigration(row) {
+  row = row || {}
+  const direction = row.migrationType || row.direction
+  return Object.assign({}, row, {
+    typeDisplay: display.displayEnum(direction, { MIGRATION_IN: '迁入', MIGRATION_OUT: '迁出', IN: '迁入', OUT: '迁出' }, '迁移记录'),
+    businessDateDisplay: display.displayDate(row.businessDate),
+    fromRegionDisplay: display.displayValue(row.fromRegionCode),
+    toRegionDisplay: display.displayValue(row.toRegionCode),
+    statusDisplay: display.displayEnum(row.businessStatus, { DRAFT: '草稿', SUBMITTED: '已提交', UNDER_REVIEW: '审批中', APPROVED: '已通过', COMPLETED: '已办结', REJECTED: '已驳回' }, '状态未登记'),
+    statusTone: display.statusTone(row.businessStatus)
+  })
+}
+
 function pageTotal(page) {
   const value = page && page.totalElements
   const available = typeof value === 'number' && Number.isFinite(value) && value >= 0
@@ -78,4 +103,4 @@ function normalizePage(page) {
   }, total)
 }
 
-module.exports = { normalize, normalizeHousehold, normalizePage, normalizeResidence, pageTotal }
+module.exports = { normalize, normalizeHousehold, normalizePage, normalizeResidence, normalizePermit, normalizeMigration, pageTotal }

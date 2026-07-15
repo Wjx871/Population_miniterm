@@ -4,6 +4,8 @@ function detail(id) { return request({ url: `/api/applications/${id}` }) }
 function logs(id) { return request({ url: `/api/applications/${id}/approval-logs` }) }
 function materials(id) { return request({ url: `/api/applications/${id}/materials` }) }
 function materialFile(id) { return downloadFile({ url: `/api/materials/${id}/download` }) }
+function submit(id) { return request({ url: `/api/applications/${id}/submit`, method: 'POST' }) }
+function withdraw(id) { return request({ url: `/api/applications/${id}/withdraw`, method: 'POST' }) }
 const PROFESSIONAL = {
   MIGRATION_IN: ['/api/migrations/applications/', 'migration:view'], MIGRATION_OUT: ['/api/migrations/applications/', 'migration:view'],
   PERSON_CANCELLATION: ['/api/cancellations/applications/', 'cancellation:view'], HOUSEHOLD_CANCELLATION: ['/api/cancellations/applications/', 'cancellation:view'],
@@ -20,4 +22,4 @@ function professional(id, businessType, permissions) {
   if (!config || !permissions.includes(config[1])) return Promise.resolve(null)
   return request({ url: `${config[0]}${id}` })
 }
-module.exports = { list, detail, logs, materials, materialFile, professional, PROFESSIONAL }
+module.exports = { list, detail, logs, materials, materialFile, submit, withdraw, professional, PROFESSIONAL }

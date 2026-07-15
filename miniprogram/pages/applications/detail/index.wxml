@@ -60,5 +60,6 @@
       <empty-state wx:if="{{!logs.length}}" title="暂无办理记录" description="申请进入处理后将在这里显示进度" />
       <view class="timeline" wx:for="{{logs}}" wx:key="logId"><view class="dot"></view><view class="timeline-main"><view>{{item.actionDisplay}}</view><view class="muted small">{{item.timeDisplay}}</view><view class="comment">{{item.commentDisplay}}</view></view></view>
     </view>
+    <view wx:if="{{canWithdraw}}" class="safe-actions"><button class="danger-outline-button" loading="{{withdrawing}}" disabled="{{withdrawing}}" bindtap="withdraw">撤回申请</button></view>
   </view>
 </view>

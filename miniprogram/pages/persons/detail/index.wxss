@@ -101,3 +101,12 @@
   color: #1677ff;
   font-size: 24rpx;
 }
+
+.migration-summary {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #e5eaf2;
+}
+
+.migration-summary:last-child {
+  border-bottom: 0;
+}

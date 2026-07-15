@@ -10,6 +10,14 @@ const HANDLING_ENTRIES = Object.freeze([
     icon: 'application'
   }),
   Object.freeze({
+    key: 'endorsement',
+    title: '居住证签注申请',
+    description: '移动端轻量提交，审批后由 Web 端办结',
+    permissions: ['residence-permit:apply', 'residence-permit:expiry:view'],
+    url: '/pages/permits/endorsement/index',
+    icon: 'residence-permit'
+  }),
+  Object.freeze({
     key: 'approval',
     title: '审批办理',
     description: '处理权限范围内的待办事项',
@@ -20,7 +28,9 @@ const HANDLING_ENTRIES = Object.freeze([
 ])
 
 function handlingEntries(user) {
-  return HANDLING_ENTRIES.filter((entry) => can(user, entry.permission))
+  return HANDLING_ENTRIES.filter((entry) => entry.permissions
+    ? entry.permissions.every((permission) => can(user, permission))
+    : can(user, entry.permission))
 }
 
 function normalizePendingSummary(raw) {

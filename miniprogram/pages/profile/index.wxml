@@ -16,11 +16,12 @@
   </view>
 
   <view class="section-card">
-    <view class="section-title">我的工作职责</view>
-    <empty-state wx:if="{{!user.duties.length}}" title="暂无工作职责" description="当前账号尚未配置可使用的业务功能" />
+    <view class="section-title">权限摘要</view>
+    <empty-state wx:if="{{!user.dutySummary.length}}" title="暂无工作职责" description="当前账号尚未配置可使用的业务功能" />
     <view wx:else class="duty-list">
-      <view class="duty-item" wx:for="{{user.duties}}" wx:key="key"><text class="duty-dot"></text><text>{{item.label}}</text></view>
+      <view class="duty-item" wx:for="{{user.dutySummary}}" wx:key="key"><text class="duty-dot"></text><text>{{item.label}}</text></view>
     </view>
+    <view class="feature-item" data-url="/pages/profile/permissions/index" bindtap="openFeature"><view class="feature-copy"><view class="feature-title">查看完整权限</view><view class="feature-description">查看当前账号的职责与可用功能</view></view><app-icon name="chevron-right" size="26" tone="muted" /></view>
   </view>
 
   <view class="section-card">

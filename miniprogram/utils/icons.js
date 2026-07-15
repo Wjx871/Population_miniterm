@@ -108,6 +108,9 @@ const ICON_RESOURCE_NAMES = Object.freeze({
   'checkbox-checked': 'square-check',
   'error-circle': 'alert-circle',
   'shield-check': 'shield-check',
+  permission: 'shield-check',
+  security: 'shield-check',
+  'check-circle': 'square-check',
   user: 'user-shield',
   department: 'building',
   health: 'activity',
@@ -122,6 +125,8 @@ const ICON_RESOURCE_NAMES = Object.freeze({
   location: 'map-pin',
   archive: 'archive',
   application: 'file-description',
+  material: 'file-description',
+  history: 'archive',
   approval: 'clipboard-check',
   profile: 'user-circle',
   refresh: 'refresh'

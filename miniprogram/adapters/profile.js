@@ -11,12 +11,15 @@ const DUTY_DEFINITIONS = Object.freeze([
   { key: 'cancellation', label: '查看注销业务信息', permissions: ['cancellation:view'] },
   { key: 'floating', label: '查看流动人口业务信息', permissions: ['floating:view'] },
   { key: 'permit', label: '查看居住证业务信息', permissions: ['residence-permit:view'] },
+  { key: 'permit-apply', label: '提交居住证签注申请', permissions: ['residence-permit:apply'] },
   { key: 'key-population', label: '查看重点人口业务信息', permissions: ['key-population:view'] }
 ])
 
 const FEATURE_DEFINITIONS = Object.freeze([
   { key: 'population', title: '人口信息', description: '查询人口基础档案', permission: 'population:view', icon: 'population', url: '/pages/persons/list/index' },
   { key: 'household', title: '家庭户', description: '查询家庭户及成员', permission: 'household:view', icon: 'household', url: '/pages/households/list/index' },
+  { key: 'permit', title: '居住证', description: '查询证件和到期状态', permission: 'residence-permit:view', icon: 'residence-permit', url: '/pages/permits/list/index' },
+  { key: 'floating', title: '流动人口', description: '查询居住登记', permission: 'floating:view', icon: 'population', url: '/pages/floating/list/index' },
   { key: 'application', title: '我的申请', description: '查看申请结果与办理进度', permission: 'application:view', icon: 'application', url: '/pages/applications/list/index' },
   { key: 'approval', title: '审批办理', description: '查看并处理审批事项', permission: 'approval:view', icon: 'approval', url: '/pages/approvals/list/index' }
 ])
@@ -27,6 +30,7 @@ function normalizeProfile(raw) {
   return Object.assign({}, user, {
     accountStatusDisplay: user.userId ? '正常' : '状态暂不可用',
     duties: DUTY_DEFINITIONS.filter((item) => item.permissions.some((permission) => permissions.has(permission))),
+    dutySummary: DUTY_DEFINITIONS.filter((item) => item.permissions.some((permission) => permissions.has(permission))).slice(0, 3),
     features: FEATURE_DEFINITIONS.filter((item) => permissions.has(item.permission))
   })
 }

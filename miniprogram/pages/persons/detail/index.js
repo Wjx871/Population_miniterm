@@ -9,6 +9,8 @@ Page({
     person: null,
     household: null,
     residence: null,
+    currentPermit: null,
+    migrationHistory: [],
     profileLoaded: false,
     profileLoading: false,
     profileError: '',
@@ -53,6 +55,8 @@ Page({
       person,
       household: adapter.normalizeHousehold(profile && profile.currentHousehold),
       residence: adapter.normalizeResidence(profile && profile.currentResidence, person.rawAddress),
+      currentPermit: adapter.normalizePermit(profile && profile.currentPermit),
+      migrationHistory: ((profile && profile.migrationHistory) || []).slice(0, 3).map(adapter.normalizeMigration),
       profileLoaded: profileResult.status === 'fulfilled',
       profileError: profileResult.status === 'rejected' ? messageOf(profileResult.reason) : '',
       loading: false
@@ -70,6 +74,8 @@ Page({
         person,
         household: adapter.normalizeHousehold(profile && profile.currentHousehold),
         residence: adapter.normalizeResidence(profile && profile.currentResidence, person.rawAddress),
+        currentPermit: adapter.normalizePermit(profile && profile.currentPermit),
+        migrationHistory: ((profile && profile.migrationHistory) || []).slice(0, 3).map(adapter.normalizeMigration),
         profileLoaded: true
       })
     } catch (error) {

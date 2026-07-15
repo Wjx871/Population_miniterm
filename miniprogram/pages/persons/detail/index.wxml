@@ -57,6 +57,19 @@
       <view wx:if="{{residence.rawStatus}}" class="field"><text class="label">居住状态</text><status-tag text="{{residence.statusDisplay}}" type="{{residence.statusTone}}" size="small" /></view>
     </view>
 
+    <view wx:if="{{currentPermit}}" class="detail-section card">
+      <view class="section-heading"><view class="section-icon"><app-icon name="residence-permit" size="28" tone="primary" /></view><view class="section-title">当前居住证</view></view>
+      <view class="field"><text class="label">证件编号</text><sensitive-text class="value" value="{{currentPermit.permitNoDisplay}}" /></view>
+      <view class="field"><text class="label">签发区域</text><text class="value">{{currentPermit.issueRegionDisplay}}</text></view>
+      <view class="field"><text class="label">有效期限</text><text class="value">{{currentPermit.validFromDisplay}} 至 {{currentPermit.validUntilDisplay}}</text></view>
+      <view class="field"><text class="label">证件状态</text><status-tag text="{{currentPermit.statusDisplay}}" type="{{currentPermit.statusTone}}" size="small" /></view>
+    </view>
+
+    <view wx:if="{{migrationHistory.length}}" class="detail-section card">
+      <view class="section-heading"><view class="section-icon"><app-icon name="history" size="28" tone="primary" /></view><view class="section-title">近期迁移记录</view></view>
+      <view class="migration-summary" wx:for="{{migrationHistory}}" wx:key="migrationId"><view class="row-between"><text class="value">{{item.typeDisplay}} · {{item.businessDateDisplay}}</text><status-tag text="{{item.statusDisplay}}" type="{{item.statusTone}}" size="small" /></view><view class="muted">{{item.fromRegionDisplay}} 至 {{item.toRegionDisplay}}</view></view>
+    </view>
+
     <view class="detail-section card">
       <view class="section-heading">
         <view class="section-icon"><app-icon name="household" size="28" tone="primary" /></view>

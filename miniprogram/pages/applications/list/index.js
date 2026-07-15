@@ -2,7 +2,7 @@ const service = require('../../../services/application')
 const adapter = require('../../../adapters/application')
 const { guard } = require('../../../utils/permission')
 const { messageOf } = require('../../../utils/error')
-const STATUS_OPTIONS = [{ label: '全部状态', value: '' }, { label: '草稿', value: 'DRAFT' }, { label: '审批中', value: 'UNDER_REVIEW' }, { label: '已通过', value: 'APPROVED' }, { label: '已驳回', value: 'REJECTED' }, { label: '已完成', value: 'COMPLETED' }, { label: '已撤回', value: 'WITHDRAWN' }]
+const STATUS_OPTIONS = [{ label: '全部状态', value: '' }, { label: '草稿', value: 'DRAFT' }, { label: '已提交', value: 'SUBMITTED' }, { label: '审批中', value: 'UNDER_REVIEW' }, { label: '已退回', value: 'RETURNED' }, { label: '已重新提交', value: 'RESUBMITTED' }, { label: '已通过', value: 'APPROVED' }, { label: '已驳回', value: 'REJECTED' }, { label: '已完成', value: 'COMPLETED' }, { label: '已撤回', value: 'WITHDRAWN' }]
 Page({
   data: { applicationNo: '', statusIndex: 0, statusOptions: STATUS_OPTIONS, records: [], page: 0, size: 10, total: 0, last: false, loading: false, loadingMore: false, error: '' },
   onLoad() { if (this._initialLoadStarted) return; this._initialLoadStarted = true; if (guard('application:view')) return this.load(true) },
