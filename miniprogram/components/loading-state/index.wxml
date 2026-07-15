@@ -1,0 +1,8 @@
+<view class="loading-state {{compact ? 'loading-state--compact' : ''}}">
+  <view class="spinner" aria-hidden="true"></view>
+  <text class="loading-text">{{text}}</text>
+  <view wx:if="{{!compact}}" class="loading-placeholder" aria-hidden="true">
+    <view class="placeholder-line placeholder-line--wide"></view>
+    <view class="placeholder-line"></view>
+  </view>
+</view>

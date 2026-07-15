@@ -1,0 +1,87 @@
+<view class="page archive-page">
+  <view class="page-intro">
+    <view class="intro-icon">
+      <app-icon name="population" size="48" color="#FFFFFF" />
+    </view>
+    <view class="intro-copy">
+      <view class="page-title">人口信息</view>
+      <view class="intro-description">查询人口基础档案</view>
+    </view>
+  </view>
+
+  <view class="filter-card card">
+    <view class="filter-heading row-between">
+      <view class="filter-title">搜索筛选</view>
+      <view class="filter-toggle" bindtap="toggleFilters">
+        <text>{{filtersExpanded ? '收起筛选' : '更多筛选'}}</text>
+        <app-icon name="chevron-down" size="24" tone="primary" />
+      </view>
+    </view>
+    <view class="input-shell">
+      <app-icon name="person" size="28" tone="muted" />
+      <input class="filter-input" placeholder="输入姓名" value="{{name}}" bindinput="inputName" />
+    </view>
+    <view wx:if="{{filtersExpanded}}" class="advanced-filters">
+      <view class="input-shell">
+        <app-icon name="id-card" size="28" tone="muted" />
+        <input class="filter-input" placeholder="输入身份证号" value="{{idCard}}" bindinput="inputIdCard" />
+      </view>
+      <picker range="{{statusOptions}}" range-key="label" value="{{statusIndex}}" bindchange="changeStatus">
+        <view class="picker-shell row-between">
+          <text>{{statusOptions[statusIndex].label}}</text>
+          <app-icon name="chevron-down" size="24" tone="muted" />
+        </view>
+      </picker>
+    </view>
+    <view class="search-actions">
+      <button class="primary" bindtap="search">查询</button>
+      <button class="ghost" bindtap="reset">重置</button>
+    </view>
+  </view>
+
+  <view class="result-header row-between">
+    <view>
+      <view class="section-title">查询结果</view>
+      <view class="result-caption">数据按当前账号权限范围展示</view>
+    </view>
+    <text wx:if="{{totalAvailable}}" class="result-total">共 {{totalDisplay}} 条</text>
+    <text wx:else class="result-total">{{totalDisplay}}</text>
+  </view>
+
+  <loading-state wx:if="{{loading}}" text="正在查询人口档案…" />
+  <error-state wx:elif="{{error}}" type="{{errorType}}" message="{{error}}" showRetry="{{errorType !== 'forbidden'}}" bindretry="search" />
+  <empty-state
+    wx:elif="{{!records.length}}"
+    title="未查询到人口记录"
+    description="请调整查询条件后重试"
+  />
+  <block wx:else>
+    <view
+      class="person-card list-card"
+      wx:for="{{records}}"
+      wx:key="personId"
+      data-id="{{item.personId}}"
+      bindtap="open"
+    >
+      <view class="person-avatar">
+        <app-icon name="person" size="40" tone="primary" />
+      </view>
+      <view class="person-content">
+        <view class="person-heading">
+          <view class="person-name ellipsis">{{item.name}}</view>
+          <status-tag text="{{item.statusDisplay}}" type="{{item.statusTone}}" size="small" />
+        </view>
+        <view class="person-meta">
+          <text>{{item.genderDisplay}}</text>
+          <text>{{item.birthDateDisplay}}</text>
+          <text wx:if="{{item.personTypeAvailable}}">{{item.personTypeDisplay}}</text>
+        </view>
+        <view class="identity-line">身份证号：{{item.idCardDisplay}}</view>
+        <view class="identity-line">手机号：{{item.phoneDisplay}}</view>
+      </view>
+      <app-icon name="chevron-right" size="28" tone="muted" />
+    </view>
+    <loading-state wx:if="{{loadingMore}}" text="加载更多…" />
+    <view wx:if="{{last && records.length}}" class="end-state">已加载全部人口档案</view>
+  </block>
+</view>

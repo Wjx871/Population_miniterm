@@ -54,4 +54,8 @@ cache/
 frontend/playwright-report/
 frontend/test-results/
 
+# WeChat developer tools local settings
+miniprogram/project.private.config.json
+miniprogram/config/local.js
+
 # User assets

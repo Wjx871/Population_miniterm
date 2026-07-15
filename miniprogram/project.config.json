@@ -1,0 +1,14 @@
+{
+  "description": "人口数据库管理系统微信小程序移动管理端 V1",
+  "miniprogramRoot": "./",
+  "projectname": "population-miniprogram-v1",
+  "appid": "touristappid",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true
+  },
+  "compileType": "miniprogram"
+}

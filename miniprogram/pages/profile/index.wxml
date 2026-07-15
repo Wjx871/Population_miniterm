@@ -1,0 +1,47 @@
+<view class="page tab-page">
+  <view class="profile summary-card">
+    <view class="avatar">{{user.avatarText}}</view>
+    <view class="profile-main">
+      <view class="title name">{{user.displayName}}</view>
+      <view class="role-row"><text>{{user.roleDisplay}}</text><text class="account-status"><text class="status-dot success"></text>{{user.accountStatusDisplay}}</text></view>
+      <view class="muted username">账号 {{user.username || '—'}}</view>
+    </view>
+  </view>
+
+  <view class="section-card">
+    <view class="section-title">组织信息</view>
+    <view class="field"><text class="label">所属部门</text><text class="value">{{user.departmentDisplay}}</text></view>
+    <view class="field"><text class="label">可查看范围</text><text class="value">{{user.dataScopeDisplay}}</text></view>
+    <view class="field"><text class="label">管辖区域</text><text class="value">{{user.regionCode || '暂未配置'}}</text></view>
+  </view>
+
+  <view class="section-card">
+    <view class="section-title">我的工作职责</view>
+    <empty-state wx:if="{{!user.duties.length}}" title="暂无工作职责" description="当前账号尚未配置可使用的业务功能" />
+    <view wx:else class="duty-list">
+      <view class="duty-item" wx:for="{{user.duties}}" wx:key="key"><text class="duty-dot"></text><text>{{item.label}}</text></view>
+    </view>
+  </view>
+
+  <view class="section-card">
+    <view class="section-title">可用功能</view>
+    <empty-state wx:if="{{!user.features.length}}" title="暂无可用功能" description="如需使用业务功能，请联系系统管理员" />
+    <view wx:else class="feature-list">
+      <view class="feature-item" wx:for="{{user.features}}" wx:key="key" data-url="{{item.url}}" bindtap="openFeature">
+        <view class="feature-icon"><app-icon name="{{item.icon}}" size="36" tone="primary" /></view>
+        <view class="feature-copy"><view class="feature-title">{{item.title}}</view><view class="feature-description">{{item.description}}</view></view>
+        <app-icon name="chevron-right" size="26" tone="muted" />
+      </view>
+    </view>
+  </view>
+
+  <view class="section-card system-card">
+    <view class="section-title">关于本系统</view>
+    <view class="field"><text class="label">系统名称</text><text class="value">{{appInfo.name}}</text></view>
+    <view class="field"><text class="label">当前版本</text><text class="value">{{appInfo.version}}</text></view>
+    <view class="system-description">用于人口档案、家庭户、申请和审批事项的移动查询与办理。</view>
+    <view class="privacy-note"><app-icon name="security" size="28" tone="primary" /><text>仅展示当前工作所需信息，敏感内容按账号权限隐藏。</text></view>
+  </view>
+
+  <view class="safe-actions"><button class="danger-outline-button" loading="{{loggingOut}}" disabled="{{loggingOut}}" bindtap="logout">退出当前账号</button></view>
+</view>

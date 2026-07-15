@@ -1,0 +1,243 @@
+.dashboard-page {
+  overflow-x: hidden;
+}
+
+.user-summary {
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+  padding: 28rpx;
+  color: #fff;
+  background: linear-gradient(135deg, #0b2f6b, #1677ff);
+  border: 0;
+  box-shadow: 0 10rpx 28rpx rgba(11, 47, 107, 0.16);
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 92rpx;
+  height: 92rpx;
+  flex-shrink: 0;
+  background: linear-gradient(145deg, #fff, #eaf3ff);
+  border: 5rpx solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+}
+
+.user-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.welcome {
+  overflow: hidden;
+  font-size: 34rpx;
+  font-weight: 700;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-meta {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+  margin-top: 10rpx;
+  color: #e7f1ff;
+  font-size: 23rpx;
+}
+
+.role-chip {
+  padding: 4rpx 12rpx;
+  flex-shrink: 0;
+  color: #0b2f6b;
+  font-size: 21rpx;
+  font-weight: 600;
+  background: #fff;
+  border-radius: 999rpx;
+}
+
+.department {
+  color: #e7f1ff;
+}
+
+.department-row {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  min-width: 0;
+}
+
+.system-status {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 12rpx;
+  color: #e7f1ff;
+  font-size: 22rpx;
+}
+
+.dashboard-footer .status-dot {
+  margin-right: 9rpx;
+  background: #98a2b3;
+}
+
+.dashboard-footer .status-dot.success {
+  background: #55d99d;
+}
+
+.dashboard-footer .status-dot.danger {
+  background: #ff8589;
+}
+
+.section-caption {
+  margin-top: -10rpx;
+  color: #8a94a6;
+  font-size: 22rpx;
+}
+
+.refresh-action {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 8rpx 12rpx;
+  color: #1677ff;
+  background: #eaf3ff;
+  border-radius: 999rpx;
+}
+
+.metric-notice {
+  margin-bottom: 18rpx;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18rpx;
+}
+
+.metric-card {
+  min-width: 0;
+  min-height: 174rpx;
+  padding: 20rpx;
+  background: #fff;
+  border: 1rpx solid #e5eaf2;
+  border-radius: 20rpx;
+  box-shadow: 0 8rpx 24rpx rgba(22, 51, 92, 0.05);
+}
+
+.metric-card--warning .metric-value {
+  color: #b76e00;
+}
+
+.metric-card--unavailable .metric-value {
+  color: #98a2b3;
+  font-size: 30rpx;
+}
+
+.metric-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10rpx;
+}
+
+.metric-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58rpx;
+  height: 58rpx;
+  color: #1677ff;
+  background: #eaf3ff;
+  border-radius: 17rpx;
+}
+
+.metric-card--warning .metric-icon {
+  color: #b76e00;
+  background: #fff5df;
+}
+
+.unavailable-mark {
+  color: #98a2b3;
+  font-size: 19rpx;
+}
+
+.metric-value {
+  margin-top: 14rpx;
+  color: #123b7a;
+  font-size: 38rpx;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.metric-label {
+  margin-top: 8rpx;
+  color: #667085;
+  font-size: 23rpx;
+  line-height: 1.35;
+}
+
+.entry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18rpx;
+}
+
+.entry-card {
+  min-width: 0;
+  min-height: 190rpx;
+  padding: 24rpx;
+  background: #fff;
+  border: 1rpx solid #e5eaf2;
+  border-radius: 20rpx;
+  box-shadow: 0 8rpx 24rpx rgba(22, 51, 92, 0.05);
+  transition: background-color 120ms ease, transform 120ms ease;
+}
+
+.entry-card:active {
+  background: #f8fbff;
+  transform: scale(0.985);
+}
+
+.entry-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70rpx;
+  height: 70rpx;
+  color: #1677ff;
+  background: #eaf3ff;
+  border-radius: 20rpx;
+}
+
+.entry-title {
+  margin-top: 16rpx;
+  color: #17233d;
+  font-size: 27rpx;
+  font-weight: 650;
+}
+
+.entry-description {
+  margin-top: 6rpx;
+  color: #8a94a6;
+  font-size: 21rpx;
+  line-height: 1.4;
+}
+
+.dashboard-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 4rpx 16rpx 12rpx;
+  color: #8a94a6;
+  font-size: 21rpx;
+}
+
+.footer-divider {
+  margin: 0 10rpx;
+}
