@@ -36,6 +36,9 @@ class Phase12ApplicationReturnIntegrationTest {
         jdbc.update("DELETE FROM sys_approval_log");
         jdbc.update("DELETE FROM sys_approval_request");
         jdbc.update("DELETE FROM application_material");
+        // 必须在 business_application 之前，否则 H2 外键约束会拒绝清理。
+        jdbc.update("DELETE FROM floating_registration_application");
+        jdbc.update("DELETE FROM residence_permit_application");
         jdbc.update("DELETE FROM business_application");
         jdbc.update("DELETE FROM operation_log");
     }
@@ -154,6 +157,40 @@ class Phase12ApplicationReturnIntegrationTest {
                 String.class)).isEqualTo("APPLICATION_WITHDRAW_AFTER_RETURN");
     }
 
+    /**
+     * 流动登记专业申请被退回后申请人在 RETURNED 状态下撤回：
+     * 专业表 {@code floating_registration_application.business_status} 在退回时不会联动，
+     * 监听器在收到 RETURNED→WITHDRAWN 通知时必须以专业表自身的当前状态为 from，
+     * 否则会因为 WHERE business_status='UNDER_REVIEW' 失配返回 0 行并抛 409。
+     */
+    @Test
+    void applicantWithdrawsReturnedFloatingApplication() throws Exception {
+        long id = approvedFloatingApplication("population");
+        assertThat(jdbc.queryForObject(
+                "SELECT business_status FROM floating_registration_application WHERE application_id=?",
+                String.class, id)).isEqualTo("APPROVED");
+
+        mvc.perform(post("/api/applications/" + id + "/return")
+                .header("Authorization", bearer(token("household")))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"comment\":\"材料需补充\",\"version\":2}"))
+            .andExpect(status().isOk());
+        assertThat(statusOf(id)).isEqualTo("RETURNED");
+        // 退回流程不联动专业表，business_status 仍保持 APPROVED，与申请表短暂不同步。
+        assertThat(jdbc.queryForObject(
+                "SELECT business_status FROM floating_registration_application WHERE application_id=?",
+                String.class, id)).isEqualTo("APPROVED");
+
+        // 关键断言：RETURNED 状态下撤回不能再依赖「目标状态反推 from」的写法。
+        mvc.perform(post("/api/applications/" + id + "/withdraw")
+                .header("Authorization", bearer(token("population"))))
+            .andExpect(status().isOk());
+        assertThat(statusOf(id)).isEqualTo("WITHDRAWN");
+        assertThat(jdbc.queryForObject(
+                "SELECT business_status FROM floating_registration_application WHERE application_id=?",
+                String.class, id)).isEqualTo("WITHDRAWN");
+    }
+
     @Test
     void returnOptimisticLockingPreventsDuplicateReturn() throws Exception {
         long id = approvedApplication("population");
@@ -182,6 +219,54 @@ class Phase12ApplicationReturnIntegrationTest {
         Integer v = jdbc.queryForObject(
                 "SELECT version FROM business_application WHERE application_id = ?", Integer.class, id);
         assertThat(v).isEqualTo(2);
+        return id;
+    }
+
+    /**
+     * 创建流动登记专业申请到 APPROVED：先插入 person，再走浮动登记专业入口，
+     * 插入已核验必需材料 + submit + approver 通过。
+     */
+    private long approvedFloatingApplication(String applicant) throws Exception {
+        long personId = 901_001L;
+        jdbc.update("DELETE FROM floating_registration_application WHERE person_id=?", personId);
+        jdbc.update("DELETE FROM business_application WHERE target_person_id=?", personId);
+        jdbc.update("DELETE FROM person WHERE person_id=?", personId);
+        jdbc.update(
+                "INSERT INTO person(person_id,name,gender,id_card,phone,current_address,status,current_status_code)"
+                        + " VALUES(?, '回归测试甲', '1', '110101199001010099', '13800139000', '测试地址', '正常', 'PENDING')",
+                personId);
+
+        String body = mvc.perform(post("/api/floating-registrations/applications")
+                .header("Authorization", bearer(token(applicant)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"personId\":" + personId
+                        + ",\"sourceRegionCode\":\"110000\",\"sourceAddress\":\"本区原址\""
+                        + ",\"currentRegionCode\":\"110000\",\"currentAddress\":\"本区现址\""
+                        + ",\"residenceReasonCode\":\"EMPLOYMENT\",\"residenceProofType\":\"RENTAL_CONTRACT\""
+                        + ",\"arrivalDate\":\"2026-01-01\",\"plannedLeaveDate\":\"2027-01-01\""
+                        + ",\"applicantPhone\":\"13800139000\",\"title\":\"回归流动登记\",\"reason\":\"就业居住\"}"))
+            .andExpect(status().isCreated())
+            .andReturn().getResponse().getContentAsString();
+        long id = json.readTree(body).path("data").path("applicationId").asLong();
+
+        for (String type : java.util.List.of("APPLICANT_IDENTITY_PROOF", "RESIDENCE_ADDRESS_PROOF", "EMPLOYMENT_PROOF")) {
+            String hash = java.util.UUID.randomUUID().toString().replace("-", "")
+                    + java.util.UUID.randomUUID().toString().replace("-", "");
+            jdbc.update(
+                    "INSERT INTO application_material(application_id,material_type,material_name,original_filename,stored_filename,storage_path,content_type,file_size,file_sha256,required_flag,verify_status,verify_user_id,uploaded_by)"
+                            + " VALUES(?, ?, ?, 'x.pdf', ?, 'test', 'application/pdf', 1, ?, 1, 'VERIFIED', 7, 6)",
+                    id, type, type, java.util.UUID.randomUUID() + ".pdf", hash);
+        }
+        mvc.perform(post("/api/applications/" + id + "/submit")
+                .header("Authorization", bearer(token(applicant))))
+            .andExpect(status().isOk());
+        long approval = approvalId(id);
+        mvc.perform(post("/api/approvals/" + approval + "/approve")
+                .header("Authorization", bearer(token("approver")))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"comment\":\"同意\",\"version\":0}"))
+            .andExpect(status().isOk());
+        assertThat(statusOf(id)).isEqualTo("APPROVED");
         return id;
     }
 
