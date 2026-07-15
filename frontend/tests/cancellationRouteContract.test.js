@@ -23,7 +23,7 @@ test('注销列表/申请/归档路由权限与菜单契约', () => {
   assert.equal(list.meta.permission, PERMISSIONS.CANCELLATION_VIEW)
   assert.equal(list.meta.menu, true)
   assert.equal(list.meta.group, '业务办理')
-  assert.equal(list.path, 'cancellations')
+  assert.equal(list.path, '/cancellations')
 
   const apply = findRouteByName(routes, 'CancellationApply')
   assert.ok(apply)
