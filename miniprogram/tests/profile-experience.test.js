@@ -41,7 +41,8 @@ test('profile page no longer requests operational health on show', () => {
 test('profile renders responsibilities without exposing permission codes or infrastructure', () => {
   const markup = source('../pages/profile/index.wxml')
   const script = source('../pages/profile/index.js')
-  assert.match(markup, /我的工作职责/)
+  assert.match(markup, /权限摘要/)
+  assert.match(markup, /查看完整权限/)
   assert.match(markup, /可用功能/)
   assert.match(markup, /敏感内容按账号权限隐藏/)
   assert.doesNotMatch(`${markup}\n${script}`, /user\.permissions|数据库|Redis|MySQL|缓存模式|后端健康|loadHealth/)

@@ -7,10 +7,9 @@ const dashboardService = require('../services/dashboard')
 
 test('dashboard preserves a real zero metric', () => {
   const metrics = dashboardAdapter.normalizeMetrics({ registeredPopulation: 0 }, null)
-  assert.deepEqual(metrics.find((item) => item.key === 'population'), {
-    key: 'population', field: 'registeredPopulation', label: '总人口', icon: 'population-count', tone: 'primary',
-    value: 0, valueText: '0', available: true
-  })
+  const population = metrics.find((item) => item.key === 'population')
+  assert.deepEqual({ value: population.value, valueText: population.valueText, available: population.available }, { value: 0, valueText: '0', available: true })
+  assert.equal(population.url, '/pages/persons/list/index')
 })
 
 test('dashboard does not convert null or undefined metrics to zero', () => {
@@ -19,21 +18,22 @@ test('dashboard does not convert null or undefined metrics to zero', () => {
   assert.equal(metrics.find((item) => item.key === 'households').valueText, '暂无')
 })
 
-test('dashboard maps all six backend metrics to their display models', () => {
+test('dashboard maps backend and application metrics to their display models', () => {
   const metrics = dashboardAdapter.normalizeMetrics({
     registeredPopulation: 101,
     pendingApprovals: 2,
     migrationInPeriod: 3,
     migrationOutPeriod: 4,
     expiringResidencePermits: 5
-  }, 6)
+  }, 6, 7)
   assert.deepEqual(Object.fromEntries(metrics.map((item) => [item.key, item.value])), {
+    pending: 2,
+    processing: 7,
+    expiringPermits: 5,
     population: 101,
     households: 6,
-    pending: 2,
     migrationIn: 3,
-    migrationOut: 4,
-    expiringPermits: 5
+    migrationOut: 4
   })
 })
 

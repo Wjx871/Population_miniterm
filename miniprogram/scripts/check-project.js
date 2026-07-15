@@ -75,6 +75,6 @@ for (const file of walk(root)) {
   }
 }
 
-if (app.pages.length !== 13) failures.push(`页面数量应为 13，实际 ${app.pages.length}`)
+if (app.pages.length !== 21) failures.push(`页面数量应为 21，实际 ${app.pages.length}`)
 if (failures.length) { console.error(failures.join('\n')); process.exit(1) }
 console.log(`PASS：${app.pages.length} 个页面结构完整，JavaScript/WXML 静态检查通过`)

@@ -31,7 +31,7 @@ test('application progress never treats approval as business completion', () => 
   const progress = adapter.progress(adapter.normalize({ status: 'APPROVED', submittedAt: '2026-07-15T10:00:00' }))
   const execution = progress.find((item) => item.key === 'execution')
   assert.equal(execution.state, 'current')
-  assert.equal(execution.result, '等待业务办理')
+  assert.equal(execution.result, '请在 Web 端完成专业业务执行')
 })
 
 test('application detail business decisions do not depend on localized status text', () => {

@@ -120,7 +120,10 @@ test('business center exposes only existing permission-backed routes', () => {
   assert.deepEqual(business.businessEntries({ permissions: [] }), [])
   assert.deepEqual(business.BUSINESS_ENTRIES.map((item) => item.url), [
     '/pages/persons/list/index',
-    '/pages/households/list/index'
+    '/pages/households/list/index',
+    '/pages/permits/list/index',
+    '/pages/floating/list/index',
+    '/pages/migrations/list/index'
   ])
 })
 
@@ -136,6 +139,7 @@ test('handling center exposes only existing permission-backed routes', () => {
   assert.deepEqual(handling.handlingEntries({ permissions: [] }), [])
   assert.deepEqual(handling.HANDLING_ENTRIES.map((item) => item.url), [
     '/pages/applications/list/index',
+    '/pages/permits/endorsement/index',
     '/pages/approvals/list/index'
   ])
 })
@@ -186,7 +190,7 @@ test('business and handling cards navigate to their exact secondary routes', () 
   delete require.cache[target]
   require(target)
   handlingPage.open({ currentTarget: { dataset: { url: handling.HANDLING_ENTRIES[0].url } } })
-  handlingPage.open({ currentTarget: { dataset: { url: handling.HANDLING_ENTRIES[1].url } } })
+  handlingPage.open({ currentTarget: { dataset: { url: handling.HANDLING_ENTRIES[2].url } } })
 
   assert.deepEqual(calls, [
     '/pages/persons/list/index',
