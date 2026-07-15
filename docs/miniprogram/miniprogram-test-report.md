@@ -9,11 +9,12 @@
 | 小程序单元测试 | PASS | `npm test`：123 tests，123 pass，0 fail，0 skipped |
 | 小程序静态检查 | PASS | 13 个页面文件完整；JavaScript/WXML 静态检查通过 |
 | `git diff --check` | PASS | 无空白错误 |
-| 后端 `clean test` | PASS | 326 tests，Failures 0，Errors 0，Skipped 0，BUILD SUCCESS |
-| 后端 `clean package` | PASS | 326 tests，Failures 0，Errors 0，Skipped 0，JAR 构建成功 |
+| 后端 `clean test` | PASS | 327 tests，Failures 0，Errors 0，Skipped 0，BUILD SUCCESS |
+| 后端 `clean package` | PASS | 327 tests，Failures 0，Errors 0，Skipped 0，JAR 构建成功 |
 | PC 前端 `npm install` | PASS | 106 packages，0 vulnerabilities |
 | PC 前端 `test:unit` | PASS | 195 tests，195 pass，0 fail，0 skipped |
 | PC 前端 `check/build` | PASS | 检查与 Vite 生产构建成功；仅有既有依赖注释/包体积警告 |
+| PC 前端 Playwright | PASS | 配置完整运行环境后 20 tests，20 pass；修正了居住证专业区块的过时标题断言 |
 
 自动化覆盖：`ApiResponse<T>` 解包、Bearer Token、会话清理、用户化错误文案、服务完整路径、人口/家庭户 Adapter、申请原始状态与办理进度、申请筛选空状态、审批首次加载去重、审批动作与驳回校验、权限入口、个人中心职责映射、记住账号不保存密码以及 logout 清理。
 
@@ -21,12 +22,14 @@
 
 ## 微信环境状态
 
-当前命令行环境未提供可确认的微信开发者工具 CLI、可登录开发者身份、合法 AppID 或真机，因此未虚报以下结果：
+本机已确认微信开发者工具及 CLI 存在，但开发者工具的“安全设置 → 服务端口”未开启，CLI 拒绝连接。项目使用 `touristappid`，当前命令行不能代替用户的微信会话和真机。因此未虚报以下结果：
 
 - 微信开发者工具编译/交互烟测：未执行。
 - 真机局域网或 HTTPS 联调：未执行。
 - 真机尺寸、滚动、键盘遮挡、刘海和底部安全区：未执行。
 - 运行时 HTTP 500 与 console error 计数：待开发者工具实测。
+
+待用户开启服务端口后，应重新执行编译、两种设备遍历、Console/Network 检查和 13 页截图。未完成前，人工验收状态为“待执行”，不是 PASS。
 
 ## 人工验收步骤
 

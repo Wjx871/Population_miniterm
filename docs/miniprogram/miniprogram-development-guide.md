@@ -60,6 +60,14 @@ npm run check
 
 `npm test` 覆盖统一解包、Bearer 请求头、错误状态、会话生命周期、权限入口、导航、Adapter、申请进度、审批去重与个人中心职责映射；`npm run check` 校验 13 个页面、`custom-tab-bar`、JavaScript/WXML 语法、路由完整性、同节点 `wx:else + wx:for`、远程样式资源、禁止旧接口以及 BASE_URL 是否散落。
 
+## 交付验收流程
+
+1. 先执行小程序 `npm test` 和 `npm run check`，再导入微信开发者工具。
+2. 如需命令行编译或截图，先在“设置 → 安全设置”开启服务端口；未开启时 CLI 无法连接已启动的开发者工具。
+3. 使用 iPhone 14/15 类和小屏安卓模拟器遍历 13 个页面，同时检查 Console 与 Network。
+4. 截图必须使用真实演示数据，保留后端返回的脱敏值，不得在图片中出现 Token、完整身份证号或手机号。
+5. 人工结果和截图归档到 `docs/miniprogram/miniprogram-final-acceptance.md` 与 `docs/miniprogram/screenshots/`。
+
 ## 常见问题
 
 - 页面提示“网络连接异常”：先检查服务健康接口、`BASE_URL`、手机/电脑网络和防火墙。
