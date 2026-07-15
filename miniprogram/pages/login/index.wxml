@@ -3,7 +3,7 @@
     <view class="brand-mark" aria-hidden="true">
       <app-icon name="brand" size="56" tone="deep" />
     </view>
-    <view class="brand-title">人口数据库管理系统</view>
+    <view class="brand-title">人口信息管理系统</view>
     <view class="brand-subtitle">微信小程序移动管理端</view>
     <view class="brand-values">规范管理 · 精准服务 · 数据安全</view>
   </view>

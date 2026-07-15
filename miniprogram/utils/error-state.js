@@ -1,11 +1,11 @@
 const ERROR_STATES = Object.freeze({
-  network: { title: '网络连接失败', description: '请检查网络连接后重试' },
+  network: { title: '网络连接异常', description: '请检查网络后重新加载' },
   unauthorized: { title: '登录已失效', description: '请重新登录后继续操作' },
-  forbidden: { title: '无权访问', description: '当前账号无权查看此内容' },
-  notFound: { title: '记录不存在', description: '记录可能已删除或当前账号不可见' },
-  conflict: { title: '数据状态已发生变化', description: '请刷新页面后重新确认' },
-  server: { title: '系统服务异常', description: '服务暂时不可用，请稍后重试' },
-  unknown: { title: '加载失败', description: '请稍后重试' }
+  forbidden: { title: '无权使用此功能', description: '当前账号没有此功能的使用权限' },
+  notFound: { title: '未找到对应记录', description: '记录可能已被更新，请返回列表确认' },
+  conflict: { title: '记录状态已更新', description: '请刷新后重试' },
+  server: { title: '暂时无法完成操作', description: '请稍后重新加载' },
+  unknown: { title: '加载失败', description: '请重新加载；仍未恢复时请稍后再试' }
 })
 
 const CODE_TYPES = { 0: 'network', 401: 'unauthorized', 403: 'forbidden', 404: 'notFound', 409: 'conflict', 500: 'server' }
@@ -19,7 +19,7 @@ function inferType(type, statusCode, message) {
   if (/无权|权限不足|禁止访问/.test(value)) return 'forbidden'
   if (/不存在|不可见/.test(value)) return 'notFound'
   if (/冲突|状态.*变化|已被处理/.test(value)) return 'conflict'
-  if (/系统服务|服务异常|服务器/.test(value)) return 'server'
+  if (/系统服务|服务异常|服务器|暂时无法完成/.test(value)) return 'server'
   return 'unknown'
 }
 

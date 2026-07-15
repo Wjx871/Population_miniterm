@@ -70,24 +70,24 @@ test('empty-state without an action does not emit or render an empty button', ()
 })
 
 test('error-state maps 403 to forbidden', () => {
-  assert.equal(resolveErrorState({ statusCode: 403 }).title, '无权访问')
+  assert.equal(resolveErrorState({ statusCode: 403 }).title, '无权使用此功能')
 })
 
 test('error-state maps 404 to not found', () => {
-  assert.equal(resolveErrorState({ statusCode: 404 }).title, '记录不存在')
+  assert.equal(resolveErrorState({ statusCode: 404 }).title, '未找到对应记录')
 })
 
 test('error-state maps 409 to conflict', () => {
-  assert.equal(resolveErrorState({ statusCode: 409 }).title, '数据状态已发生变化')
+  assert.equal(resolveErrorState({ statusCode: 409 }).title, '记录状态已更新')
 })
 
 test('error-state maps 500 to server failure', () => {
-  assert.equal(resolveErrorState({ statusCode: 500 }).title, '系统服务异常')
+  assert.equal(resolveErrorState({ statusCode: 500 }).title, '暂时无法完成操作')
 })
 
 test('error-state suppresses backend implementation details', () => {
   const state = resolveErrorState({ statusCode: 500, message: 'java.sql.SQLException: SELECT * FROM users' })
-  assert.equal(state.description, '服务暂时不可用，请稍后重试')
+  assert.equal(state.description, '请稍后重新加载')
 })
 
 test('error-state infers server failure from the existing message-only API', () => {

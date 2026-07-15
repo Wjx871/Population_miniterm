@@ -12,14 +12,6 @@
           <text class="department ellipsis">{{user.departmentDisplay}}</text>
         </view>
       </view>
-      <view class="system-status">
-        <app-icon
-          name="health"
-          size="24"
-          tone="{{health.type === 'neutral' ? 'muted' : health.type}}"
-        />
-        <text>{{health.text}}</text>
-      </view>
     </view>
   </view>
 
@@ -27,7 +19,7 @@
     <view class="section-header">
       <view>
         <view class="section-title">核心业务指标</view>
-        <view class="section-caption">数据按当前账号权限实时加载</view>
+        <view class="section-caption">按当前账号可查看范围展示</view>
       </view>
       <view class="section-extra refresh-action" bindtap="load">
         <app-icon name="refresh" size="24" />
@@ -94,10 +86,4 @@
     </view>
   </view>
 
-  <view class="dashboard-footer">
-    <text class="status-dot {{health.type}}"></text>
-    <text>{{health.text}}</text>
-    <text class="footer-divider">·</text>
-    <text>数据以系统实时查询结果为准</text>
-  </view>
 </view>

@@ -24,7 +24,7 @@ function parseResponse(response) {
   if (statusCode >= 200 && statusCode < 300 && body.code >= 200 && body.code < 300) return body.data
   const code = statusCode || body.code || 0
   if (code === 401) expireSession()
-  if (code === 403) wx.showToast({ title: '权限不足', icon: 'none' })
+  if (code === 403) wx.showToast({ title: '当前账号无权使用', icon: 'none' })
   throw apiError(code, (code === 400 || code === 409) && body.message ? body.message : DEFAULT_MESSAGES[code], body)
 }
 
@@ -38,7 +38,7 @@ function request(options) {
       header: headers(options.header),
       timeout: options.timeout || 15000,
       success(response) { try { resolve(parseResponse(response)) } catch (error) { reject(error) } },
-      fail(error) { reject(apiError(0, '后端服务不可达，请检查网络和服务地址', error)) }
+      fail(error) { reject(apiError(0, '网络连接异常，请检查网络后重试', error)) }
     })
   })
 }

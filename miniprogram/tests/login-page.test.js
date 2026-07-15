@@ -84,7 +84,7 @@ test('login page shows a safe error and clears the password after failure', asyn
   auth.login = async () => { calls.login += 1; throw Object.assign(new Error('java.sql.SQLException'), { statusCode: 500 }) }
   const page = createPage({ username: 'operator', password: 'secret' })
   await page.submit()
-  assert.equal(page.data.error, '系统服务异常，请稍后重试')
+  assert.equal(page.data.error, '暂时无法登录，请稍后重试')
   assert.equal(page.data.password, '')
 })
 

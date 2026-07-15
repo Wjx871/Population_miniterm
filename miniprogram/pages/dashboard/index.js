@@ -1,7 +1,7 @@
 const dashboard = require('../../services/dashboard')
 const { can } = require('../../utils/permission')
 const { normalizeUser } = require('../../adapters/auth')
-const { normalizeMetrics, normalizeHealth, dashboardEntries } = require('../../adapters/dashboard')
+const { normalizeMetrics, dashboardEntries } = require('../../adapters/dashboard')
 const { resolveErrorState } = require('../../utils/error-state')
 const { messageOf } = require('../../utils/error')
 const { syncTabBar } = require('../../utils/tabBar.js')
@@ -11,7 +11,6 @@ Page({
     user: {},
     entries: [],
     metrics: normalizeMetrics(null, null),
-    health: normalizeHealth(null),
     loading: false,
     metricsError: '',
     metricsErrorType: 'unknown',
@@ -35,10 +34,9 @@ Page({
 
     const overviewJob = canViewStatistics ? dashboard.overview() : Promise.resolve(null)
     const householdJob = canViewHouseholds ? dashboard.householdTotal() : Promise.resolve(null)
-    const [overviewResult, householdResult, healthResult] = await Promise.allSettled([
+    const [overviewResult, householdResult] = await Promise.allSettled([
       overviewJob,
-      householdJob,
-      dashboard.health()
+      householdJob
     ])
 
     const metricResults = [
@@ -57,7 +55,6 @@ Page({
         overviewResult.status === 'fulfilled' ? overviewResult.value : null,
         householdResult.status === 'fulfilled' ? householdResult.value : null
       ),
-      health: normalizeHealth(healthResult.status === 'fulfilled' ? healthResult.value : null),
       metricsError: allMetricsFailed ? '核心指标暂不可用，请稍后重试' : '',
       metricsErrorType: allMetricsFailed ? resolveErrorState({
         statusCode: firstMetricError && firstMetricError.statusCode,

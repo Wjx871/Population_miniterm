@@ -86,11 +86,10 @@ global.wx = {
 require('../pages/dashboard/index')
 
 function createPage() {
-  requestCounts = { overview: 0, households: 0, health: 0 }
+  requestCounts = { overview: 0, households: 0 }
   navigated = ''
   dashboardService.overview = async () => { requestCounts.overview += 1; return { registeredPopulation: 0 } }
   dashboardService.householdTotal = async () => { requestCounts.households += 1; return 0 }
-  dashboardService.health = async () => { requestCounts.health += 1; return { database: 'UP' } }
   return Object.assign({}, pageDefinition, {
     data: Object.assign({}, pageDefinition.data),
     setData(update) { Object.assign(this.data, update) }
@@ -102,7 +101,7 @@ test('dashboard refresh guard prevents duplicate requests', async () => {
   const first = page.onShow()
   const duplicate = page.onShow()
   await Promise.all([first, duplicate])
-  assert.deepEqual(requestCounts, { overview: 1, households: 1, health: 1 })
+  assert.deepEqual(requestCounts, { overview: 1, households: 1 })
 })
 
 test('dashboard metric failure does not create fake zero values', async () => {

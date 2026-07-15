@@ -38,7 +38,7 @@ Page({
     } catch (error) {
       this.setData({
         pendingSummary: normalizePendingSummary(null),
-        summaryError: '待审批数据暂不可用，请稍后重试'
+        summaryError: '待办数量暂时无法加载，请重新加载'
       })
     } finally {
       this.setData({ summaryLoading: false })
