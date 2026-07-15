@@ -1,14 +1,23 @@
 <view class="page dashboard-page">
   <view class="user-summary summary-card">
-    <view class="avatar">{{user.avatarText}}</view>
+    <view class="avatar" aria-hidden="true">
+      <app-icon name="user" size="48" tone="deep" />
+    </view>
     <view class="user-main">
       <view class="welcome">您好，{{user.displayName}}</view>
       <view class="user-meta">
         <text class="role-chip">{{user.roleDisplay}}</text>
-        <text class="department ellipsis">{{user.departmentDisplay}}</text>
+        <view class="department-row">
+          <app-icon name="department" size="24" color="#E7F1FF" />
+          <text class="department ellipsis">{{user.departmentDisplay}}</text>
+        </view>
       </view>
       <view class="system-status">
-        <text class="status-dot {{health.type}}"></text>
+        <app-icon
+          name="health"
+          size="24"
+          tone="{{health.type === 'neutral' ? 'muted' : health.type}}"
+        />
         <text>{{health.text}}</text>
       </view>
     </view>
@@ -20,7 +29,10 @@
         <view class="section-title">核心业务指标</view>
         <view class="section-caption">数据按当前账号权限实时加载</view>
       </view>
-      <text class="section-extra" bindtap="load">刷新</text>
+      <view class="section-extra refresh-action" bindtap="load">
+        <app-icon name="refresh" size="24" />
+        <text>刷新</text>
+      </view>
     </view>
 
     <loading-state wx:if="{{loading}}" text="正在加载工作台数据…" />
@@ -41,8 +53,8 @@
           wx:key="key"
         >
           <view class="metric-top">
-            <view class="metric-icon metric-icon--{{item.icon}}">
-              <view class="metric-icon__shape"></view>
+            <view class="metric-icon metric-icon--{{item.tone}}">
+              <app-icon name="{{item.icon}}" size="32" tone="{{item.tone}}" />
             </view>
             <text wx:if="{{!item.available}}" class="unavailable-mark">未提供</text>
           </view>
@@ -73,8 +85,8 @@
         data-url="{{item.url}}"
         bindtap="open"
       >
-        <view class="entry-icon entry-icon--{{item.icon}}">
-          <view class="entry-icon__shape"></view>
+        <view class="entry-icon">
+          <app-icon name="{{item.icon}}" size="40" tone="primary" />
         </view>
         <view class="entry-title">{{item.title}}</view>
         <view class="entry-description">{{item.desc}}</view>

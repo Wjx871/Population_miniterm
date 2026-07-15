@@ -1,12 +1,12 @@
 const { can } = require('../utils/permission')
 
 const METRICS = Object.freeze([
-  { key: 'population', field: 'registeredPopulation', label: '总人口', icon: 'population', tone: 'primary' },
-  { key: 'households', field: 'householdCount', label: '家庭户数量', icon: 'household', tone: 'primary' },
-  { key: 'pending', field: 'pendingApprovals', label: '待审批', icon: 'approval', tone: 'warning' },
-  { key: 'migrationIn', field: 'migrationInPeriod', label: '近30日迁入', icon: 'in', tone: 'primary' },
-  { key: 'migrationOut', field: 'migrationOutPeriod', label: '近30日迁出', icon: 'out', tone: 'primary' },
-  { key: 'expiringPermits', field: 'expiringResidencePermits', label: '即将到期居住证', icon: 'permit', tone: 'warning' }
+  { key: 'population', field: 'registeredPopulation', label: '总人口', icon: 'population-count', tone: 'primary' },
+  { key: 'households', field: 'householdCount', label: '家庭户数量', icon: 'household-count', tone: 'primary' },
+  { key: 'pending', field: 'pendingApprovals', label: '待审批', icon: 'pending-approval', tone: 'warning' },
+  { key: 'migrationIn', field: 'migrationInPeriod', label: '近30日迁入', icon: 'migration-in', tone: 'primary' },
+  { key: 'migrationOut', field: 'migrationOutPeriod', label: '近30日迁出', icon: 'migration-out', tone: 'primary' },
+  { key: 'expiringPermits', field: 'expiringResidencePermits', label: '即将到期居住证', icon: 'residence-permit', tone: 'warning' }
 ])
 
 const ENTRY_DEFINITIONS = Object.freeze([

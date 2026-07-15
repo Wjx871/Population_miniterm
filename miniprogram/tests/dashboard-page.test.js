@@ -8,7 +8,7 @@ const dashboardService = require('../services/dashboard')
 test('dashboard preserves a real zero metric', () => {
   const metrics = dashboardAdapter.normalizeMetrics({ registeredPopulation: 0 }, null)
   assert.deepEqual(metrics.find((item) => item.key === 'population'), {
-    key: 'population', field: 'registeredPopulation', label: '总人口', icon: 'population', tone: 'primary',
+    key: 'population', field: 'registeredPopulation', label: '总人口', icon: 'population-count', tone: 'primary',
     value: 0, valueText: '0', available: true
   })
 })

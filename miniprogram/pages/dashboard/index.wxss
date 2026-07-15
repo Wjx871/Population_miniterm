@@ -20,10 +20,7 @@
   width: 92rpx;
   height: 92rpx;
   flex-shrink: 0;
-  color: #0b2f6b;
-  font-size: 36rpx;
-  font-weight: 700;
-  background: #fff;
+  background: linear-gradient(145deg, #fff, #eaf3ff);
   border: 5rpx solid rgba(255, 255, 255, 0.28);
   border-radius: 50%;
 }
@@ -66,26 +63,31 @@
   color: #e7f1ff;
 }
 
+.department-row {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  min-width: 0;
+}
+
 .system-status {
   display: flex;
   align-items: center;
+  gap: 8rpx;
   margin-top: 12rpx;
   color: #e7f1ff;
   font-size: 22rpx;
 }
 
-.system-status .status-dot,
 .dashboard-footer .status-dot {
   margin-right: 9rpx;
   background: #98a2b3;
 }
 
-.system-status .status-dot.success,
 .dashboard-footer .status-dot.success {
   background: #55d99d;
 }
 
-.system-status .status-dot.danger,
 .dashboard-footer .status-dot.danger {
   background: #ff8589;
 }
@@ -94,6 +96,16 @@
   margin-top: -10rpx;
   color: #8a94a6;
   font-size: 22rpx;
+}
+
+.refresh-action {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 8rpx 12rpx;
+  color: #1677ff;
+  background: #eaf3ff;
+  border-radius: 999rpx;
 }
 
 .metric-notice {
@@ -136,48 +148,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48rpx;
-  height: 48rpx;
+  width: 58rpx;
+  height: 58rpx;
   color: #1677ff;
   background: #eaf3ff;
-  border-radius: 14rpx;
+  border-radius: 17rpx;
 }
 
 .metric-card--warning .metric-icon {
   color: #b76e00;
   background: #fff5df;
-}
-
-.metric-icon__shape {
-  width: 20rpx;
-  height: 20rpx;
-  border: 4rpx solid currentColor;
-  border-radius: 6rpx;
-}
-
-.metric-icon--population .metric-icon__shape,
-.metric-icon--approval .metric-icon__shape {
-  border-radius: 50%;
-}
-
-.metric-icon--in .metric-icon__shape {
-  border-top: 0;
-  border-left: 0;
-  border-radius: 2rpx;
-  transform: rotate(45deg);
-}
-
-.metric-icon--out .metric-icon__shape {
-  border-right: 0;
-  border-bottom: 0;
-  border-radius: 2rpx;
-  transform: rotate(45deg);
-}
-
-.metric-icon--permit .metric-icon__shape {
-  width: 24rpx;
-  height: 16rpx;
-  border-radius: 3rpx;
 }
 
 .unavailable-mark {
@@ -227,42 +207,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 62rpx;
-  height: 62rpx;
+  width: 70rpx;
+  height: 70rpx;
   color: #1677ff;
   background: #eaf3ff;
-  border-radius: 18rpx;
-}
-
-.entry-icon__shape {
-  position: relative;
-  width: 26rpx;
-  height: 26rpx;
-  border: 4rpx solid currentColor;
-  border-radius: 7rpx;
-}
-
-.entry-icon--population .entry-icon__shape,
-.entry-icon--profile .entry-icon__shape {
-  border-radius: 50%;
-}
-
-.entry-icon--household .entry-icon__shape {
-  border-top: 0;
-  transform: rotate(45deg);
-}
-
-.entry-icon--approval .entry-icon__shape::after,
-.entry-icon--application .entry-icon__shape::after {
-  position: absolute;
-  right: 4rpx;
-  bottom: 7rpx;
-  width: 12rpx;
-  height: 6rpx;
-  border-bottom: 3rpx solid currentColor;
-  border-left: 3rpx solid currentColor;
-  transform: rotate(-45deg);
-  content: '';
+  border-radius: 20rpx;
 }
 
 .entry-title {
