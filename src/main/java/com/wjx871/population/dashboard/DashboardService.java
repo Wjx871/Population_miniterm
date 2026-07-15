@@ -1,5 +1,8 @@
 package com.wjx871.population.dashboard;
 
+import com.wjx871.population.security.AuthenticatedUser;
+import com.wjx871.population.security.CurrentUserContext;
+import com.wjx871.population.security.DataScope;
 import com.wjx871.population.security.DataScopeCriteria;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -14,12 +17,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
+    private static final String QUERY_VIEWER_ROLE = "QUERY_VIEWER";
+
     private final DashboardMapper mapper;
     private final Clock clock;
 
     @Transactional(readOnly = true)
     public DashboardOverviewView overview(int periodDays, int expiryDays) {
-        DataScopeCriteria scope = DataScopeCriteria.current();
+        DataScopeCriteria scope = scopeForDashboard();
         LocalDate today = LocalDate.now(clock);
         DashboardOverviewView view = new DashboardOverviewView();
         view.setGeneratedAt(LocalDateTime.now(clock));
@@ -37,7 +42,7 @@ public class DashboardService {
 
     @Transactional(readOnly = true)
     public DashboardChartsView charts(int days, int regionLimit) {
-        DataScopeCriteria scope = DataScopeCriteria.current();
+        DataScopeCriteria scope = scopeForDashboard();
         LocalDate today = LocalDate.now(clock);
         LocalDate from = today.minusDays(days - 1L);
         Map<LocalDate, Long> incoming = asMap(mapper.migrationInTrend(from, today, scope), true);
@@ -57,6 +62,26 @@ public class DashboardService {
         view.setPermitStatusDistribution(mapper.permitStatusDistribution(scope));
         view.setRegisteredPopulationByRegion(mapper.registeredPopulationByRegion(scope, regionLimit));
         return view;
+    }
+
+    /**
+     * Dashboard KPIs describe system-wide master data (person, residence, residence_permit,
+     * floating_population) and business flow counts; they are not "things I produced" reports.
+     * For the read-only QUERY_VIEWER role we therefore widen the data scope to ALL so the
+     * dashboard is not zeroed out by an inherited DEPARTMENT scope, while write APIs still
+     * rely on the role's permission set for authorization. SYSTEM_ADMIN keeps ALL; other
+     * roles (POPULATION_MANAGER, HOUSEHOLD_MANAGER, APPROVER) keep their original scope.
+     */
+    private DataScopeCriteria scopeForDashboard() {
+        DataScopeCriteria scope = DataScopeCriteria.current();
+        if (scope.dataScope() == DataScope.ALL) {
+            return scope;
+        }
+        AuthenticatedUser user = CurrentUserContext.requireUser();
+        if (QUERY_VIEWER_ROLE.equals(user.roleCode())) {
+            return new DataScopeCriteria(DataScope.ALL, scope.userId(), scope.departmentId(), scope.regionCode());
+        }
+        return scope;
     }
 
     private Map<LocalDate, Long> asMap(List<MigrationTrendPoint> points, boolean incoming) {
