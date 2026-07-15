@@ -19,6 +19,9 @@
     "backgroundColor": "#f4f7fb",
     "backgroundTextStyle": "dark"
   },
+  "usingComponents": {
+    "app-icon": "/components/app-icon/index"
+  },
   "style": "v2",
   "sitemapLocation": "sitemap.json"
 }
