@@ -6,14 +6,14 @@
         <el-button class="header-action" v-if="retry" link type="primary" @click="$emit('retry')">重试</el-button>
       </div>
     </template>
-    
+
     <el-alert v-if="error" :title="errorMessage" type="warning" :closable="false" show-icon/>
-    
+
     <div v-else-if="!items.length" class="empty-state">
       <el-icon class="empty-icon"><Document /></el-icon>
       <p>暂无事项</p>
     </div>
-    
+
     <div v-else class="list-wrapper">
       <div v-for="item in items" :key="item.id" class="item">
         <div class="item-content">
