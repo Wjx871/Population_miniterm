@@ -14,13 +14,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 112rpx;
+  width: 148rpx;
   height: 112rpx;
   margin: 0 auto 24rpx;
-  background: linear-gradient(145deg, #fff, #edf5ff);
+  background: #fff;
   border: 2rpx solid rgba(22, 119, 255, 0.2);
   border-radius: 34rpx;
   box-shadow: 0 12rpx 30rpx rgba(18, 59, 122, 0.12);
+}
+
+.brand-logo {
+  display: block;
+  width: 136rpx;
+  height: 96rpx;
 }
 
 .brand-title {
@@ -62,6 +68,7 @@
 }
 
 .input-row {
+  position: relative;
   display: flex;
   align-items: center;
   min-width: 0;
@@ -99,13 +106,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 64rpx;
-  height: 64rpx;
-  margin: 0 0 0 8rpx;
+  width: 88rpx;
+  height: 88rpx;
+  margin: 0;
   padding: 0;
-  flex-shrink: 0;
   color: #1677ff;
   background: transparent;
+}
+
+.password-row {
+  display: grid;
+  grid-template-columns: 48rpx minmax(0, 1fr) 88rpx;
+  column-gap: 14rpx;
+  padding: 0 0 0 18rpx;
+}
+
+.password-row .input-symbol {
+  margin-right: 0;
+}
+
+.password-input {
+  width: 100%;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .form-options {
@@ -188,9 +211,14 @@
   }
 
   .brand-mark {
-    width: 88rpx;
-    height: 88rpx;
+    width: 124rpx;
+    height: 92rpx;
     margin-bottom: 14rpx;
+  }
+
+  .brand-logo {
+    width: 114rpx;
+    height: 80rpx;
   }
 
   .brand-values {

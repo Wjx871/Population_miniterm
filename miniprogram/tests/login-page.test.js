@@ -102,7 +102,16 @@ test('login page saves the session and navigates after success', async () => {
 
 test('login page source has no unsupported account entry or default credential', () => {
   const wxml = fs.readFileSync(path.resolve(__dirname, '../pages/login/index.wxml'), 'utf8')
+  const wxss = fs.readFileSync(path.resolve(__dirname, '../pages/login/index.wxss'), 'utf8')
   const javascript = fs.readFileSync(path.resolve(__dirname, '../pages/login/index.js'), 'utf8')
   assert.doesNotMatch(wxml, /验证码|注册|忘记密码|微信授权|指纹|人脸/)
   assert.doesNotMatch(`${wxml}\n${javascript}`, /123456|defaultPassword|test-password/)
+  assert.match(wxml, /src="\/assets\/images\/system-logo\.png"/)
+  assert.equal(fs.existsSync(path.resolve(__dirname, '../assets/images/system-logo.png')), true)
+  assert.doesNotMatch(wxml, /<app-icon name="brand"/)
+  assert.match(wxml, /class="input-row password-row"/)
+  assert.match(wxml, /<view[\s\S]*?class="password-toggle"[\s\S]*?role="button"/)
+  assert.match(wxss, /\.password-row\s*\{[\s\S]*?display:\s*grid;[\s\S]*?grid-template-columns:\s*48rpx minmax\(0, 1fr\) 88rpx;[\s\S]*?padding:\s*0 0 0 18rpx;/)
+  assert.match(wxss, /\.password-input\s*\{[\s\S]*?width:\s*100%;[\s\S]*?padding:\s*0;/)
+  assert.match(wxss, /\.password-toggle\s*\{[\s\S]*?width:\s*88rpx;/)
 })
