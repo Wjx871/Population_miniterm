@@ -4,6 +4,7 @@ const { normalizeUser } = require('../../adapters/auth')
 const { normalizeMetrics, normalizeHealth, dashboardEntries } = require('../../adapters/dashboard')
 const { resolveErrorState } = require('../../utils/error-state')
 const { messageOf } = require('../../utils/error')
+const { syncTabBar } = require('../../utils/tab-bar')
 
 Page({
   data: {
@@ -18,6 +19,7 @@ Page({
   },
 
   onShow() {
+    syncTabBar(this, 'dashboard')
     const user = normalizeUser(getApp().globalData.user)
     if (!user.userId) return
     this.setData({ user, entries: dashboardEntries(user) })

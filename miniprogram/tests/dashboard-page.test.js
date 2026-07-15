@@ -39,14 +39,14 @@ test('dashboard maps all six backend metrics to their display models', () => {
 
 test('dashboard entries are filtered only by permission codes', () => {
   const viewer = dashboardAdapter.dashboardEntries({ permissions: ['population:view'] })
-  assert.deepEqual(viewer.map((item) => item.key), ['population', 'profile'])
+  assert.deepEqual(viewer.map((item) => item.key), ['population'])
   const approver = dashboardAdapter.dashboardEntries({ permissions: ['approval:view'] })
-  assert.deepEqual(approver.map((item) => item.key), ['approval', 'profile'])
+  assert.deepEqual(approver.map((item) => item.key), ['approval'])
 })
 
 test('dashboard entry order remains stable for a fully authorized user', () => {
   const entries = dashboardAdapter.dashboardEntries({ permissions: ['population:view', 'household:view', 'application:view', 'approval:view'] })
-  assert.deepEqual(entries.map((item) => item.key), ['population', 'household', 'application', 'approval', 'profile'])
+  assert.deepEqual(entries.map((item) => item.key), ['population', 'household', 'application', 'approval'])
 })
 
 test('dashboard user model localizes role and safely defaults department', () => {

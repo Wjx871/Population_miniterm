@@ -36,6 +36,18 @@ button::after {
   max-width: 100%;
 }
 
+.tab-page {
+  padding-bottom: calc(148rpx + env(safe-area-inset-bottom));
+}
+
+.tab-page-content {
+  width: 100%;
+}
+
+.tab-safe-bottom {
+  height: calc(124rpx + env(safe-area-inset-bottom));
+}
+
 .page-section {
   margin-bottom: 32rpx;
 }

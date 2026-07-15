@@ -2,6 +2,8 @@
   "pages": [
     "pages/login/index",
     "pages/dashboard/index",
+    "pages/business/index",
+    "pages/handling/index",
     "pages/persons/list/index",
     "pages/persons/detail/index",
     "pages/households/list/index",
@@ -12,6 +14,19 @@
     "pages/approvals/detail/index",
     "pages/profile/index"
   ],
+  "tabBar": {
+    "custom": true,
+    "color": "#8A94A6",
+    "selectedColor": "#1677FF",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/dashboard/index", "text": "工作台" },
+      { "pagePath": "pages/business/index", "text": "业务" },
+      { "pagePath": "pages/handling/index", "text": "办理" },
+      { "pagePath": "pages/profile/index", "text": "我的" }
+    ]
+  },
   "window": {
     "navigationBarTitleText": "人口数据库移动端",
     "navigationBarBackgroundColor": "#1769aa",

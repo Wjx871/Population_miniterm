@@ -13,8 +13,7 @@ const ENTRY_DEFINITIONS = Object.freeze([
   { key: 'population', title: '人口信息', desc: '查询人口基础档案', permission: 'population:view', url: '/pages/persons/list/index', icon: 'population' },
   { key: 'household', title: '家庭户', desc: '查询家庭户及成员', permission: 'household:view', url: '/pages/households/list/index', icon: 'household' },
   { key: 'application', title: '我的申请', desc: '查看申请和审批轨迹', permission: 'application:view', url: '/pages/applications/list/index', icon: 'application' },
-  { key: 'approval', title: '审批办理', desc: '处理待审批业务事项', permission: 'approval:view', url: '/pages/approvals/list/index', icon: 'approval' },
-  { key: 'profile', title: '个人中心', desc: '账号、权限和服务状态', permission: null, url: '/pages/profile/index', icon: 'profile' }
+  { key: 'approval', title: '审批办理', desc: '处理待审批业务事项', permission: 'approval:view', url: '/pages/approvals/list/index', icon: 'approval' }
 ])
 
 function metricValue(source, field) {

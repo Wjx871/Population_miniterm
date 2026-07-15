@@ -1,4 +1,4 @@
-<view class="page dashboard-page">
+<view class="page tab-page dashboard-page">
   <view class="user-summary summary-card">
     <view class="avatar" aria-hidden="true">
       <app-icon name="user" size="48" tone="deep" />

@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page tab-page">
   <view class="profile card"><view class="avatar">{{user.avatarText}}</view><view><view class="title name">{{user.displayName}}</view><view class="muted">@{{user.username || '—'}}</view></view></view>
   <view class="card"><view class="section-title">账号信息</view><view class="field"><text class="label">角色</text><text class="value">{{user.roleDisplay}}</text></view><view class="field"><text class="label">数据范围</text><text class="value">{{user.dataScopeDisplay}}</text></view><view class="field"><text class="label">部门</text><text class="value">{{user.departmentName || '—'}}</text></view><view class="field"><text class="label">区域编码</text><text class="value">{{user.regionCode || '—'}}</text></view></view>
   <view class="card"><view class="section-title">当前权限摘要</view><view class="permissions"><text wx:for="{{user.permissions}}" wx:key="*this">{{item}}</text><text wx:if="{{!user.permissions.length}}" class="muted">暂无权限</text></view></view>
