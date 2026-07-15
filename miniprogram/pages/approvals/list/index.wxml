@@ -38,7 +38,7 @@
       <view class="muted line">{{item.businessTypeDisplay}}</view>
       <view class="muted line">申请人：{{item.applicantName || '—'}}</view>
       <view class="muted line">提交时间：{{item.submittedAtDisplay}}</view>
-      <view class="link open">进入审批 ›</view>
+      <view class="link open">进入审批 <app-icon name="chevron-right" size="24" /></view>
     </view>
   </block>
 </view>

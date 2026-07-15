@@ -64,7 +64,9 @@ test('app-icon resources come from the reviewed Tabler subset only', () => {
     'shield-check',
     'building',
     'activity',
-    'refresh'
+    'refresh',
+    'layout-dashboard',
+    'chevron-down'
   ])
   for (const asset of Object.values(TABLER_ASSETS)) {
     assert.match(asset.sha, /^[0-9a-f]{40}$/)
@@ -170,7 +172,8 @@ test('login and dashboard visual icon semantics all resolve to reviewed resource
     'household',
     'application',
     'approval',
-    'profile'
+    'profile',
+    'dashboard'
   ]
 
   for (const name of names) assert.equal(resolveIcon({ name }).renderable, true, name)

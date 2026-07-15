@@ -86,6 +86,14 @@ const TABLER_ASSETS = Object.freeze({
   "refresh": Object.freeze({
     body: "<path d=\"M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4\" />\n  <path d=\"M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4\" />",
     sha: "a4f10bd3dcb34ba35011878f7f8b04725afc100d"
+  }),
+  "layout-dashboard": Object.freeze({
+    body: "<path d=\"M5 4h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1\" />\n  <path d=\"M5 16h4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1\" />\n  <path d=\"M15 12h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1\" />\n  <path d=\"M15 4h4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1\" />",
+    sha: "143d38918613a3e13998713fe7aaa1f246df3e6e"
+  }),
+  "chevron-down": Object.freeze({
+    body: "<path d=\"M6 9l6 6l6 -6\" />",
+    sha: "143d38918613a3e13998713fe7aaa1f246df3e6e"
   })
 })
 
