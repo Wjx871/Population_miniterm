@@ -86,6 +86,6 @@ test.describe('人工验收问题回归', () => {
     const response = page.waitForResponse((item) => item.url().includes('/api/residence-permits/applications/700001'))
     await page.goto('/applications/700001')
     expect([200, 404]).toContain((await response).status())
-    await expect(page.getByText(/居住证申请信息|该申请缺少居住证专业记录/)).toBeVisible()
+    await expect(page.getByText(/居住证专业信息|该申请缺少居住证专业记录/)).toBeVisible()
   })
 })

@@ -45,6 +45,7 @@ test('profile renders responsibilities without exposing permission codes or infr
   assert.match(markup, /可用功能/)
   assert.match(markup, /敏感内容按账号权限隐藏/)
   assert.doesNotMatch(`${markup}\n${script}`, /user\.permissions|数据库|Redis|MySQL|缓存模式|后端健康|loadHealth/)
+  assert.match(script, /version: 'V1\.0\.0'/)
 })
 
 test('profile logout remains a confirmed session-clearing relaunch', () => {

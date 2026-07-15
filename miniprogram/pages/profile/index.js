@@ -4,7 +4,7 @@ const { normalizeProfile } = require('../../adapters/profile')
 const { messageOf } = require('../../utils/error')
 const { syncTabBar, resetTabBar } = require('../../utils/tabBar.js')
 Page({
-  data: { user: { duties: [], features: [] }, appInfo: { name: '人口信息管理系统', version: '1.0.0' }, loggingOut: false },
+  data: { user: { duties: [], features: [] }, appInfo: { name: '人口信息管理系统', version: 'V1.0.0' }, loggingOut: false },
   onShow() { syncTabBar(this, 'profile'); this.setData({ user: normalizeProfile(getApp().globalData.user) }) },
   openFeature(e) { const url = e.currentTarget.dataset.url; if (url) wx.navigateTo({ url }) },
   async logout() {
