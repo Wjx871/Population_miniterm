@@ -72,11 +72,14 @@
           </el-breadcrumb>
         </div>
         <div class="page-wrapper">
-          <router-view />
+          <router-view v-slot="{ Component }">
+            <Transition name="assistant-page" mode="out-in"><component :is="Component" /></Transition>
+          </router-view>
         </div>
       </main>
     </div>
   </div>
+  <AssistantRobot v-if="userStore.isLoggedIn && !isImmersive" />
 </template>
 
 <script setup>
@@ -107,6 +110,7 @@ import { useUserStore } from '../stores/user';
 import { ROLE_BADGE_TYPE } from '../constants/roles';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessageBox, ElMessage } from 'element-plus';
+import AssistantRobot from '../components/assistant/AssistantRobot.vue';
 
 const userStore = useUserStore();
 const router = useRouter();
@@ -405,4 +409,6 @@ export default {
   padding: 0;
   overflow: hidden;
 }
+
+.assistant-page-enter-active,.assistant-page-leave-active{transition:opacity .24s ease,transform .24s cubic-bezier(.2,.8,.2,1)}.assistant-page-enter-from{opacity:0;transform:translateY(14px) scale(.985)}.assistant-page-leave-to{opacity:0;transform:translateY(-8px)}
 </style>

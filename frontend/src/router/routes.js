@@ -24,7 +24,7 @@ export const routes = [
         path: '/assistant/policy',
         name: 'PolicyAssistant',
         component: () => import('../views/assistant/PolicyAssistant.vue'),
-        meta: { title: '政策办理知识助手', minLevel: 1, permission: PERMISSIONS.POPULATION_VIEW, menu: true, group: '智能办理助手', order: 20, icon: 'ChatDotRound' }
+        meta: { title: '政策办理知识助手', minLevel: 1, permission: PERMISSIONS.POPULATION_VIEW, menu: false, group: '智能办理助手', order: 20, icon: 'ChatDotRound' }
       },
       {
         path: '/home',
