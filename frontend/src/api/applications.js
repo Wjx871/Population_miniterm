@@ -5,6 +5,10 @@ export function getApplicationPage(params) {
   return request({ url: '/applications', method: 'get', params: toSpringPageParams(params) })
 }
 
+export function createApplication(payload) {
+  return request({ url: '/applications', method: 'post', data: payload })
+}
+
 export function getApplicationDetail(applicationId) {
   return request({ url: `/applications/${applicationId}`, method: 'get' })
 }

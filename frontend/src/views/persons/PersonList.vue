@@ -98,7 +98,7 @@
 
     <FormDialog
       v-model:visible="dialogVisible"
-      :title="isEdit ? '编辑人口信息' : '新增人口信息'"
+      :title="isEdit ? '编辑人口信息' : formModel.registrationType === 'ID_CARD_ARCHIVE' ? '持身份证建档' : '新增人员登记申请'"
       :loading="submitting"
       @confirm="submitForm"
     >
@@ -118,6 +118,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import SearchPanel from '../../components/common/SearchPanel.vue'
@@ -128,6 +129,8 @@ import SensitiveText from '../../components/common/SensitiveText.vue'
 import PersonForm from './components/PersonForm.vue'
 import PersonDetailDrawer from './components/PersonDetailDrawer.vue'
 import { getPersonPage, getPersonById, createPerson, updatePerson } from '../../api/persons'
+import { createApplication } from '../../api/applications'
+import { uploadMaterial } from '../../api/materials'
 import {
   normalizePerson,
   normalizePersonList,
@@ -138,6 +141,7 @@ import { formatDate } from '../../utils/date'
 import { normalizePageResult } from '../../utils/page'
 
 const loading = ref(false)
+const router = useRouter()
 const tableData = ref([])
 const total = ref(0)
 
@@ -201,6 +205,7 @@ const openCreateDialog = () => {
   editingId.value = null
   latestDetail.value = null
   formModel.value = {
+    registrationType: 'ID_CARD_ARCHIVE',
     name: '',
     gender: '男',
     idCard: '',
@@ -257,7 +262,7 @@ const submitForm = async () => {
   if (!valid) return
 
   const form = personFormRef.value.getForm()
-  if (!isEdit.value && !form.idCardImageId) {
+  if (!isEdit.value && form.registrationType === 'ID_CARD_ARCHIVE' && !form.idCardImageId) {
     ElMessage.error('新增人口必须先上传身份证影印本')
     return
   }
@@ -273,10 +278,29 @@ const submitForm = async () => {
       const payload = toUpdatePersonPayload(form, latestDetail.value)
       await updatePerson(editingId.value, payload)
       ElMessage.success('修改成功')
-    } else {
+    } else if (form.registrationType === 'ID_CARD_ARCHIVE') {
       const payload = toCreatePersonPayload(form)
       await createPerson(payload)
-      ElMessage.success('新增成功')
+      ElMessage.success('身份证建档成功')
+    } else {
+      const registration = personFormRef.value.getRegistrationApplication()
+      const application = await createApplication({
+        businessType: 'GENERAL_SERVICE',
+        title: `${registration.type.label}：${registration.name}`,
+        targetPersonId: null,
+        targetHouseholdId: null,
+        reason: `${registration.type.label}材料预审申请`,
+        remark: `登记类型=${registration.type.value}; 性别=${registration.gender || '待确认'}; 出生日期=${registration.birthDate || '待确认'}; 联系电话=${registration.phone || '未填写'}; 拟落户地址=${registration.currentAddress || '未填写'}`,
+        version: null,
+      })
+      const applicationId = application.applicationId || application.id
+      for (const doc of registration.documents) {
+        await uploadMaterial(applicationId, { materialType: doc.type, materialName: doc.name, requiredFlag: doc.required, file: doc.file })
+      }
+      ElMessage.success('登记申请草稿和材料已创建，请确认后再提交')
+      dialogVisible.value = false
+      await router.push(`/applications/${applicationId}`)
+      return
     }
     dialogVisible.value = false
     fetchList()
