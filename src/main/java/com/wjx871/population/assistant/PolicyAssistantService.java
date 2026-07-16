@@ -81,7 +81,7 @@ public class PolicyAssistantService {
     private String composeFallback(List<Citation> citations){return "根据内置业务指南，建议按以下参考内容核对办理条件和系统入口：\n\n"+citations.stream().map(c->"["+c.index()+"] "+c.summary()).collect(Collectors.joining("\n\n"))+"\n\n"+NOTICE;}
     private static String summary(String s){return s.length()>260?s.substring(0,260)+"…":s;}
     private static List<SuggestedAction> actions(List<Hit> hits){return hits.stream().map(Hit::chunk).map(c->{String p=switch(c.category()){case "迁入","迁出"->"/migrations";case "居住证"->"/residence-permits";case "审批"->"/approvals";case "家庭户"->"/households";default->"/applications";};return new SuggestedAction(c.category()+"相关功能",p);}).distinct().limit(3).toList();}
-    public List<String> suggestions(){return List.of("办理户籍迁入需要什么材料？","户籍迁出的流程是什么？","居住证到期后怎么办？","申请被驳回后怎么办？","审批通过是不是已经办结？");}
+    public List<String> suggestions(){return List.of("办理户籍迁入需要什么材料？","那如果材料不全呢？","户籍迁出的流程是什么？","居住证到期后怎么办？","在哪里提交居住证申请？","家庭户新增成员需要什么条件？","申请被驳回后怎么办？","补正后在哪里重新提交？","审批通过是不是已经办结？","没有权限时该怎么处理？");}
     record Chunk(String title,String section,String category,String sourceType,String version,String logicalPath,String content){} record Hit(Chunk chunk,double score){}
     public record Citation(int index,String title,String section,String category,String sourceType,String version,String logicalPath,String summary){} public record SuggestedAction(String label,String path){} public record QueryResponse(String answer,String mode,double confidence,List<Citation> citations,List<SuggestedAction> suggestedActions,String traceId){}
 }

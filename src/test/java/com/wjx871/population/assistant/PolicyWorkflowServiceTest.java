@@ -12,9 +12,9 @@ class PolicyWorkflowServiceTest {
 
     @Test void producesBoundedChecklistFromPolicyEvidence() {
         var response = workflowService.generateChecklist("\u6211\u8981\u529e\u7406\u6237\u7c4d\u8fc1\u5165", true);
-        assertThat(response.usedTools()).contains("search_policy", "generate_checklist", "extract_document");
+        assertThat(response.usedTools()).contains("classify_intent", "search_policy", "get_process_guide", "check_evidence", "generate_checklist");
         assertThat(response.checklist()).isNotEmpty();
         assertThat(response.policy().citations()).isNotEmpty();
-        assertThat(response.actionPath()).isEqualTo("/migrations");
+        assertThat(response.actionPath()).isEqualTo("/migrations/in/apply");
     }
 }
