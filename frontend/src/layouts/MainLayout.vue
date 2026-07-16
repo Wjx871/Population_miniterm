@@ -57,6 +57,11 @@
           </template>
         </el-menu>
         <div class="sidebar-footer">
+          <button v-if="userStore.canAccess({ minLevel: 1, permission: PERMISSIONS.STATISTICS_VIEW })" class="dashboard-shortcut" type="button" @click="router.push('/statistics/dashboard')">
+            <el-icon><DataAnalysis /></el-icon>
+            <span><b>数据大屏</b><small>演示数据总览</small></span>
+            <span class="shortcut-arrow">→</span>
+          </button>
           <p>系统版本 V1.0</p>
           <p>东软政府事业部</p>
         </div>
@@ -108,6 +113,7 @@ import {
 } from '@element-plus/icons-vue';
 import { useUserStore } from '../stores/user';
 import { ROLE_BADGE_TYPE } from '../constants/roles';
+import { PERMISSIONS } from '../constants/permissions.js';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import AssistantRobot from '../components/assistant/AssistantRobot.vue';
@@ -409,6 +415,14 @@ export default {
   padding: 0;
   overflow: hidden;
 }
+
+.dashboard-shortcut { width: 100%; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 10px; padding: 11px 10px; margin: -5px 0 14px; background: linear-gradient(120deg, #123c70, #286bd4); color: #fff; text-align: left; cursor: pointer; box-shadow: 0 7px 16px rgba(33, 91, 178, .22); transition: transform .2s ease, box-shadow .2s ease; }
+.dashboard-shortcut:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(33, 91, 178, .3); }
+.dashboard-shortcut .el-icon { font-size: 20px; }
+.dashboard-shortcut span:not(.shortcut-arrow) { display: flex; flex: 1; flex-direction: column; gap: 2px; }
+.dashboard-shortcut b { font-size: 14px; }
+.dashboard-shortcut small { font-size: 11px; opacity: .78; }
+.shortcut-arrow { font-size: 18px; opacity: .86; }
 
 .assistant-page-enter-active,.assistant-page-leave-active{transition:opacity .24s ease,transform .24s cubic-bezier(.2,.8,.2,1)}.assistant-page-enter-from{opacity:0;transform:translateY(14px) scale(.985)}.assistant-page-leave-to{opacity:0;transform:translateY(-8px)}
 </style>
