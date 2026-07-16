@@ -3,7 +3,6 @@ const { can } = require('../utils/permission')
 const METRICS = Object.freeze([
   { key: 'pending', field: 'pendingApprovals', label: '待我审批', icon: 'pending-approval', tone: 'warning', permission: 'approval:view', url: '/pages/approvals/list/index' },
   { key: 'processing', field: 'processingApplications', label: '我的处理中申请', icon: 'application', tone: 'primary', permission: 'application:view', url: '/pages/applications/list/index' },
-  { key: 'expiringPermits', field: 'expiringResidencePermits', label: '即将到期居住证', icon: 'residence-permit', tone: 'warning', permission: 'residence-permit:expiry:view', url: '/pages/permits/list/index?expiring=1' },
   { key: 'population', field: 'registeredPopulation', label: '总人口', icon: 'population-count', tone: 'primary', permission: 'population:view', url: '/pages/persons/list/index' },
   { key: 'households', field: 'householdCount', label: '家庭户数量', icon: 'household-count', tone: 'primary', permission: 'household:view', url: '/pages/households/list/index' },
   { key: 'migrationIn', field: 'migrationInPeriod', label: '近30日迁入', icon: 'migration-in', tone: 'primary', permission: 'migration:view', url: '/pages/migrations/list/index?type=MIGRATION_IN' },

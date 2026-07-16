@@ -29,7 +29,6 @@ test('dashboard maps backend and application metrics to their display models', (
   assert.deepEqual(Object.fromEntries(metrics.map((item) => [item.key, item.value])), {
     pending: 2,
     processing: 7,
-    expiringPermits: 5,
     population: 101,
     households: 6,
     migrationIn: 3,
