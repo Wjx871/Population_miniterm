@@ -17,10 +17,11 @@ import java.util.List;
 public class PolicyAssistantController {
     private final PolicyAssistantService service;
     private final PolicyWorkflowService workflowService;
+    private final PolicyTaskAgentService taskAgentService;
 
     @PostMapping("/query")
-    public ApiResponse<PolicyAssistantService.QueryResponse> query(@Valid @RequestBody QueryRequest request) {
-        return ApiResponse.ok(service.query(request.question()));
+    public ApiResponse<PolicyTaskAgentService.AgentResponse> query(@Valid @RequestBody QueryRequest request) {
+        return ApiResponse.ok(taskAgentService.execute(request.question(), request.history()));
     }
 
     @GetMapping("/suggestions")
@@ -31,6 +32,7 @@ public class PolicyAssistantController {
         return ApiResponse.ok(workflowService.generateChecklist(request.question(), request.idCardRecognized()));
     }
 
-    public record QueryRequest(@NotBlank @Size(max = 500) String question) { }
+    public record QueryRequest(@NotBlank @Size(max = 500) String question,
+                               @Size(max = 6) List<PolicyTaskAgentService.ConversationTurn> history) { }
     public record ChecklistRequest(@NotBlank @Size(max = 500) String question, boolean idCardRecognized) { }
 }
