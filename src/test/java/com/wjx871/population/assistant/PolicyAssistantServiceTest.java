@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(properties = "policy.ai.enabled=false")
 class PolicyAssistantServiceTest {
     @Autowired PolicyAssistantService service;
+    @Autowired PolicyWorkflowService workflowService;
 
     @Test void retrievesDifferentGuidesAndNeverExposesPhysicalPaths() {
         var migration = service.query("办理户籍迁入需要什么材料");

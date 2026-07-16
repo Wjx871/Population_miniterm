@@ -18,6 +18,7 @@ import java.util.List;
 public class PolicyAssistantController {
     private final PolicyAssistantService service;
     private final PolicyOcrService ocrService;
+    private final PolicyWorkflowService workflowService;
 
     @PostMapping("/query")
     public ApiResponse<PolicyAssistantService.QueryResponse> query(@Valid @RequestBody QueryRequest request) {
@@ -32,5 +33,11 @@ public class PolicyAssistantController {
         return ApiResponse.ok(ocrService.recognizeIdCard(file));
     }
 
+    @PostMapping("/check-materials")
+    public ApiResponse<PolicyWorkflowService.WorkflowResponse> checkMaterials(@Valid @RequestBody ChecklistRequest request) {
+        return ApiResponse.ok(workflowService.generateChecklist(request.question(), request.idCardRecognized()));
+    }
+
     public record QueryRequest(@NotBlank @Size(max = 500) String question) { }
+    public record ChecklistRequest(@NotBlank @Size(max = 500) String question, boolean idCardRecognized) { }
 }
