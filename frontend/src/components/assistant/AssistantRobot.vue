@@ -11,7 +11,8 @@ import { useRoute, useRouter } from 'vue-router'
 import RobotMascot from './RobotMascot.vue'
 
 const router = useRouter(); const route = useRoute(); const dragging = ref(false); const moved = ref(false)
-const point = ref({ x: 88, y: 84 }); let start = null
+// 默认停靠在侧栏“数据大屏”快捷入口上方，避免遮挡底部操作区。
+const point = ref({ x: 88, y: 188 }); let start = null
 const isAssistant = computed(() => route.path === '/assistant/policy')
 const positionStyle = computed(() => ({ left: `${point.value.x}px`, bottom: `${point.value.y}px` }))
 function startDrag(event) { if (event.button !== 0) return; start = { x: event.clientX, y: event.clientY, left: point.value.x, bottom: point.value.y }; moved.value = false; dragging.value = true; event.currentTarget.setPointerCapture?.(event.pointerId); window.addEventListener('pointermove', move); window.addEventListener('pointerup', endDrag, { once: true }) }
