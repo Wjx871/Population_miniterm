@@ -145,9 +145,14 @@ public class ApplicationService {
         if (user.dataScope() == DataScope.ALL) return;
         if (user.dataScope() == DataScope.DEPARTMENT && value.getApplicantDepartmentId() != null
                 && value.getApplicantDepartmentId().equals(user.departmentId())) return;
-        if (user.dataScope() == DataScope.REGION && value.getApplicantRegionCode() != null
-                && value.getApplicantRegionCode().equals(user.regionCode())) return;
+        if (user.dataScope() == DataScope.REGION && includesRegion(user.regionCode(), value.getApplicantRegionCode())) return;
         forbidden();
+    }
+
+    private boolean includesRegion(String scopeRegionCode, String targetRegionCode) {
+        if (scopeRegionCode == null || targetRegionCode == null) return false;
+        String prefix = scopeRegionCode.replaceFirst("0+$", "");
+        return !prefix.isEmpty() && targetRegionCode.startsWith(prefix);
     }
 
     public void assertOwner(BusinessApplication value, AuthenticatedUser user) {

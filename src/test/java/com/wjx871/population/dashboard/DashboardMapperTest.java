@@ -76,6 +76,23 @@ class DashboardMapperTest {
     }
 
     @Test
+    void regionScopeIncludesBusinessApplicationsInChildRegions() {
+        DataScopeCriteria region = new DataScopeCriteria(DataScope.REGION, 1L, 1L, "110000");
+        Long childRegionApplication = insertApplication("D-APP-CHILD", 2L, 2L, "110105", personActive);
+        jdbc.update("""
+                INSERT INTO sys_approval_request (approval_no, application_id, status, submitted_by, submitted_at, version)
+                VALUES ('APR-CHILD', ?, 'PENDING', 2, CURRENT_TIMESTAMP, 0)
+                """, childRegionApplication);
+
+        assertThat(mapper.countPendingApprovals(region)).isEqualTo(2L);
+        assertThat(mapper.approvalStatusDistribution(region))
+                .filteredOn(row -> "PENDING".equals(row.getCode()))
+                .singleElement()
+                .extracting(NamedCountView::getValue)
+                .isEqualTo(2L);
+    }
+
+    @Test
     void supplementalDashboardPanelsReadTheirSourceTables() {
         DataScopeCriteria all = allScope();
         LocalDate from = LocalDate.of(2025, 1, 1);
