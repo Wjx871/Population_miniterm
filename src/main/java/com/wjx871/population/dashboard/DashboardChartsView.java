@@ -11,4 +11,5 @@ public class DashboardChartsView {
     private List<NamedCountView> businessScale;
     private List<NamedCountView> permitStatusDistribution;
     private List<RegionCountView> registeredPopulationByRegion;
+    private List<PopulationScaleTrendPoint> populationScaleTrend;
 }

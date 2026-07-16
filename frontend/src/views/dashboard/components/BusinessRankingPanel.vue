@@ -39,11 +39,16 @@ const props = defineProps({
 const BUSINESS_LABELS = {
   MIGRATION_IN: '迁入登记',
   MIGRATION_OUT: '迁出登记',
-  RESIDENCE_PERMIT: '居住证业务',
-  CANCELLATION: '注销申请',
-  KEY_POPULATION: '重点人口建档',
-  CERTIFICATE: '证件管理',
-  FLOATING_POPULATION: '流动人口登记'
+  FLOATING_REGISTRATION: '流动人口登记',
+  RESIDENCE_PERMIT_FIRST_ISSUE: '居住证首次申领',
+  RESIDENCE_PERMIT_ENDORSEMENT: '居住证签注',
+  RESIDENCE_PERMIT_CANCELLATION: '居住证注销',
+  PERSON_CANCELLATION: '人员注销',
+  HOUSEHOLD_CANCELLATION: '家庭户注销',
+  KEY_POPULATION_REGISTER: '重点人口登记',
+  KEY_POPULATION_RELEASE: '重点人口解除',
+  SENSITIVE_DATA_EXPORT: '敏感数据导出',
+  GENERAL_SERVICE: '通用业务'
 }
 
 const hasData = computed(() => {

@@ -34,7 +34,7 @@
         </div>
         <div class="column center-column">
           <div class="center-top">
-            <NetworkSvgMapPanel :data="charts.registeredPopulationByRegion" />
+            <NetworkSvgMapPanel />
           </div>
           <div class="center-bottom">
             <PopulationScalePanel :data="charts.populationScaleTrend" />
@@ -49,6 +49,7 @@
 
       <DashboardFooter
         :update-time="overview.generatedAt || charts.generatedAt"
+        :is-demo="isDemo"
         :overview-error="overviewError"
         :charts-error="chartsError"
       />

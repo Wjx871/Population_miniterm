@@ -21,3 +21,23 @@ test('Dashboard charts 对非数组回退为空数组且不改写源数组', () 
   assert.notEqual(charts.migrationTrend, source)
   assert.equal(source[0].inCount, 0)
 })
+
+test('Dashboard adapter 保留真实模式补充面板的接口数据', () => {
+  const overview = normalizeDashboardOverview({
+    populationStructure: {
+      gender: { male: 51.2, female: 48.8 },
+      ageGroups: [{ code: 'AGE_18_29', label: '18-29岁', value: 12 }],
+    },
+    keyBusiness: { activeKeyPopulation: 3, pendingCancellation: 2 },
+  })
+  const charts = normalizeDashboardCharts({
+    populationScaleTrend: [{ date: '2026-07-12', registeredPopulation: 2, floatingPopulation: 3, residencePermits: 4 }],
+  })
+
+  assert.equal(overview.populationStructure.gender.male, 51.2)
+  assert.equal(overview.populationStructure.ageGroups[0].value, 12)
+  assert.equal(overview.keyBusiness.activeKeyPopulation, 3)
+  assert.deepEqual(charts.populationScaleTrend, [
+    { date: '2026-07-12', registeredPopulation: 2, floatingPopulation: 3, residencePermits: 4 },
+  ])
+})

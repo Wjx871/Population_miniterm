@@ -19,4 +19,14 @@ public interface DashboardMapper {
     List<MigrationTrendPoint> migrationOutTrend(@Param("from") LocalDate from, @Param("to") LocalDate to, @Param("scope") DataScopeCriteria scope);
     List<NamedCountView> permitStatusDistribution(@Param("scope") DataScopeCriteria scope);
     List<RegionCountView> registeredPopulationByRegion(@Param("scope") DataScopeCriteria scope, @Param("limit") int limit);
+    List<NamedCountView> registeredPopulationGender(@Param("scope") DataScopeCriteria scope);
+    List<NamedCountView> registeredPopulationAgeGroups(@Param("today") LocalDate today,
+            @Param("scope") DataScopeCriteria scope);
+    long countActiveKeyPopulation(@Param("scope") DataScopeCriteria scope);
+    long countPendingCancellation(@Param("scope") DataScopeCriteria scope);
+    long countPendingSensitiveExport(@Param("scope") DataScopeCriteria scope);
+    List<NamedCountView> businessScale(@Param("from") LocalDate from, @Param("to") LocalDate to,
+            @Param("scope") DataScopeCriteria scope);
+    List<PopulationScaleTrendPoint> populationScaleTrend(@Param("from") LocalDate from,
+            @Param("to") LocalDate to, @Param("scope") DataScopeCriteria scope);
 }

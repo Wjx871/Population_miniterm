@@ -7,7 +7,9 @@ import com.wjx871.population.security.DataScopeCriteria;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +39,8 @@ public class DashboardService {
         view.setExpiringResidencePermits(mapper.countExpiringPermits(today, today.plusDays(expiryDays), scope));
         view.setMigrationInPeriod(mapper.countMigrationsIn(today.minusDays(periodDays - 1L), today, scope));
         view.setMigrationOutPeriod(mapper.countMigrationsOut(today.minusDays(periodDays - 1L), today, scope));
+        view.setPopulationStructure(populationStructure(today, scope));
+        view.setKeyBusiness(keyBusiness(today, expiryDays, scope));
         return view;
     }
 
@@ -55,12 +59,10 @@ public class DashboardService {
         DashboardChartsView view = new DashboardChartsView();
         view.setGeneratedAt(LocalDateTime.now(clock));
         view.setMigrationTrend(trend);
-        view.setBusinessScale(List.of(
-                new NamedCountView("REGISTERED", "当前户籍人口", mapper.countRegisteredPopulation(scope)),
-                new NamedCountView("FLOATING_ACTIVE", "在册流动人口", mapper.countActiveFloating(scope)),
-                new NamedCountView("PERMIT_ACTIVE", "有效居住证", mapper.countActivePermits(scope))));
+        view.setBusinessScale(mapper.businessScale(from, today, scope));
         view.setPermitStatusDistribution(mapper.permitStatusDistribution(scope));
         view.setRegisteredPopulationByRegion(mapper.registeredPopulationByRegion(scope, regionLimit));
+        view.setPopulationScaleTrend(populationScaleTrend(from, today, scope));
         return view;
     }
 
@@ -90,5 +92,72 @@ public class DashboardService {
             result.put(point.getDate(), incoming ? point.getInCount() : point.getOutCount());
         }
         return result;
+    }
+
+    private PopulationStructureView populationStructure(LocalDate today, DataScopeCriteria scope) {
+        Map<String, Long> genderCounts = namedCountMap(mapper.registeredPopulationGender(scope));
+        long male = genderCounts.getOrDefault("M", 0L) + genderCounts.getOrDefault("男", 0L);
+        long female = genderCounts.getOrDefault("F", 0L) + genderCounts.getOrDefault("女", 0L);
+        long total = male + female;
+
+        PopulationStructureView view = new PopulationStructureView();
+        view.setGender(new GenderDistributionView(percent(male, total), percent(female, total)));
+        Map<String, Long> ageCounts = namedCountMap(mapper.registeredPopulationAgeGroups(today, scope));
+        view.setAgeGroups(List.of(
+                new NamedCountView("AGE_0_17", "0-17岁", ageCounts.getOrDefault("AGE_0_17", 0L)),
+                new NamedCountView("AGE_18_29", "18-29岁", ageCounts.getOrDefault("AGE_18_29", 0L)),
+                new NamedCountView("AGE_30_44", "30-44岁", ageCounts.getOrDefault("AGE_30_44", 0L)),
+                new NamedCountView("AGE_45_59", "45-59岁", ageCounts.getOrDefault("AGE_45_59", 0L)),
+                new NamedCountView("AGE_60_PLUS", "60岁及以上", ageCounts.getOrDefault("AGE_60_PLUS", 0L)),
+                new NamedCountView("UNKNOWN", "出生日期缺失", ageCounts.getOrDefault("UNKNOWN", 0L))));
+        return view;
+    }
+
+    private KeyBusinessView keyBusiness(LocalDate today, int expiryDays, DataScopeCriteria scope) {
+        KeyBusinessView view = new KeyBusinessView();
+        view.setActiveKeyPopulation(mapper.countActiveKeyPopulation(scope));
+        view.setPendingCancellation(mapper.countPendingCancellation(scope));
+        view.setExpiringResidencePermits(mapper.countExpiringPermits(today, today.plusDays(expiryDays), scope));
+        view.setPendingSensitiveExport(mapper.countPendingSensitiveExport(scope));
+        return view;
+    }
+
+    private List<PopulationScaleTrendPoint> populationScaleTrend(LocalDate from, LocalDate today,
+            DataScopeCriteria scope) {
+        Map<LocalDate, PopulationScaleTrendPoint> source = new HashMap<>();
+        List<PopulationScaleTrendPoint> rows = mapper.populationScaleTrend(from, today, scope);
+        if (rows != null) {
+            for (PopulationScaleTrendPoint row : rows) {
+                if (row != null && row.getDate() != null) {
+                    source.put(row.getDate(), row);
+                }
+            }
+        }
+        List<PopulationScaleTrendPoint> result = new ArrayList<>();
+        for (LocalDate date = from; !date.isAfter(today); date = date.plusDays(1)) {
+            PopulationScaleTrendPoint row = source.get(date);
+            result.add(row == null ? new PopulationScaleTrendPoint(date, 0L, 0L, 0L) : row);
+        }
+        return result;
+    }
+
+    private Map<String, Long> namedCountMap(List<NamedCountView> rows) {
+        Map<String, Long> result = new LinkedHashMap<>();
+        if (rows == null) {
+            return result;
+        }
+        for (NamedCountView row : rows) {
+            if (row != null && row.getCode() != null) {
+                result.put(row.getCode(), row.getValue());
+            }
+        }
+        return result;
+    }
+
+    private double percent(long value, long total) {
+        if (total == 0L) {
+            return 0D;
+        }
+        return Math.round(value * 1000D / total) / 10D;
     }
 }
