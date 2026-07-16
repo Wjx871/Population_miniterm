@@ -1,6 +1,6 @@
 <template>
-  <div class="assistant-entry" :class="{ dragging, active: isAssistant }" :style="positionStyle" @pointerdown="startDrag">
-    <button type="button" class="entry-button" aria-label="打开政务智能办理助手" @click="toggleAssistant"><RobotMascot compact /></button>
+  <div class="assistant-entry" :class="{ dragging, active: isAssistant }" :style="positionStyle" @pointerdown="startDrag" @pointerup="activate">
+    <button type="button" class="entry-button" aria-label="打开政务智能办理助手"><RobotMascot compact /></button>
     <span class="entry-label">{{ isAssistant ? '政务智能助手' : '点击咨询政策' }}</span>
   </div>
 </template>
@@ -17,7 +17,7 @@ const positionStyle = computed(() => ({ left: `${point.value.x}px`, bottom: `${p
 function startDrag(event) { if (event.button !== 0) return; start = { x: event.clientX, y: event.clientY, left: point.value.x, bottom: point.value.y }; moved.value = false; dragging.value = true; event.currentTarget.setPointerCapture?.(event.pointerId); window.addEventListener('pointermove', move); window.addEventListener('pointerup', endDrag, { once: true }) }
 function move(event) { if (!start) return; const dx = event.clientX - start.x, dy = event.clientY - start.y; if (Math.abs(dx) + Math.abs(dy) > 5) moved.value = true; point.value = { x: Math.max(18, Math.min(158, start.left + dx)), bottom: Math.max(76, Math.min(window.innerHeight - 120, start.bottom - dy)) } }
 function endDrag() { dragging.value = false; start = null; window.removeEventListener('pointermove', move) }
-function toggleAssistant() { if (moved.value) return; if (isAssistant.value) router.push('/home'); else router.push('/assistant/policy') }
+function activate() { if (moved.value) return; if (isAssistant.value) router.push('/home').catch(() => {}); else router.push('/assistant/policy').catch(() => {}) }
 onBeforeUnmount(() => window.removeEventListener('pointermove', move))
 </script>
 
