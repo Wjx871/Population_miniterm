@@ -3,7 +3,7 @@
     <section class="assistant-hero">
       <div class="hero-orb orb-one"></div><div class="hero-orb orb-two"></div><div class="hero-grid"></div>
       <div class="hero-copy"><span class="hero-kicker"><i></i>政务智能办理助手</span><h1>政策问答、材料核验<br /><em>一次办清</em></h1><p>围绕人口户籍业务提供有依据的办理指引，并引导您完成下一步操作。</p><div class="hero-tags"><span>RAG 政策检索</span><span>OCR 材料辅助</span><span>轻量 Agent 引导</span></div></div>
-      <div class="hero-mascot"><RobotMascot /><span class="hero-word">SERVICE</span><div class="hero-hint">眼睛会跟随鼠标移动</div></div>
+      <div class="hero-mascot"><RobotMascot global-tracking /><span class="hero-word">SERVICE</span><div class="hero-hint">眼睛会跟随鼠标移动</div></div>
     </section>
     <el-card class="intro" shadow="never">
       <div><h1>政策办理知识助手</h1><p>为您提供系统内置的业务办理指引和相关功能入口。</p></div>
