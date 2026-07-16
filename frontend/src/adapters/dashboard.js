@@ -85,7 +85,7 @@ export function normalizeDashboardOverview(raw = {}) {
           expiringResidencePermits: finiteNumber(rawKeyBusiness.expiringResidencePermits),
           pendingSensitiveExport: finiteNumber(rawKeyBusiness.pendingSensitiveExport),
         }
-      : emptyKeyBusiness(),
+      : null,
   }
 }
 
