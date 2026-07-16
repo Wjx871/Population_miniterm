@@ -20,7 +20,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 defineProps({ compact: { type: Boolean, default: false } })
 const root = ref(null); const pointer = ref({ x: 0, y: 0 })
 // 视线覆盖整个屏幕；机身以更慢、更小的幅度平行追随光标。
-const motionStyle = computed(() => ({ '--robot-x': `${pointer.value.x * 11}px`, '--robot-tilt': `${pointer.value.x * 2.2}deg` }))
+const motionStyle = computed(() => ({ '--robot-x': `${pointer.value.x * 16}px`, '--robot-tilt': `${pointer.value.x * 3}deg` }))
 const eyeStyle = computed(() => ({ transform: `translate(${pointer.value.x * 28}px, ${pointer.value.y * 18}px)` }))
 function followPointer(event) { pointer.value = { x: Math.max(-1, Math.min(1, event.clientX / window.innerWidth * 2 - 1)), y: Math.max(-1, Math.min(1, event.clientY / window.innerHeight * 2 - 1)) } }
 onMounted(() => window.addEventListener('pointermove', followPointer, { passive: true }))

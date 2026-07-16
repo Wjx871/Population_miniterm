@@ -79,7 +79,7 @@
       </main>
     </div>
   </div>
-  <AssistantRobot v-if="userStore.isLoggedIn && !isImmersive" />
+  <AssistantRobot v-if="userStore.isLoggedIn && !isImmersive && route.path !== '/assistant/policy'" />
 </template>
 
 <script setup>
