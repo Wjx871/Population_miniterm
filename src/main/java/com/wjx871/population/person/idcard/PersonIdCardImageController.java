@@ -23,7 +23,7 @@ public class PersonIdCardImageController {
     private final PersonIdCardImageService service;
 
     @PostMapping(value = "/idcard-image", consumes = "multipart/form-data")
-    @PreAuthorize("hasAuthority('person:create-with-idcard')")
+    @PreAuthorize("hasAuthority('population:edit')")
     public ApiResponse<PersonIdCardImageView> upload(
             @RequestPart("file") MultipartFile file,
             @RequestParam(name = "skipOcr", defaultValue = "false") boolean skipOcr,
