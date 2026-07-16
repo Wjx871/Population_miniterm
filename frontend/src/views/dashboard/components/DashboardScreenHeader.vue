@@ -12,7 +12,6 @@
         <h1 class="header-title">人口数据库管理系统数据统计大屏</h1>
         <div class="header-subtitle">
           <span class="eyebrow">Population Data Visualization Center</span>
-          <span class="demo-tag" v-if="isDemo">演示数据</span>
         </div>
       </div>
       <!-- CSS绘制的机甲底座 -->
@@ -71,7 +70,7 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { Refresh, FullScreen, Close, Back, Clock } from '@element-plus/icons-vue'
 import { formatDateTime } from '../../../utils/date'
 
-defineProps({
+const props = defineProps({
   loading: Boolean,
   isFullscreen: Boolean,
   isDemo: Boolean
