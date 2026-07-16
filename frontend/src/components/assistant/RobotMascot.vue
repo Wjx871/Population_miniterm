@@ -19,8 +19,9 @@ import { computed, ref } from 'vue'
 
 defineProps({ compact: { type: Boolean, default: false } })
 const root = ref(null); const pointer = ref({ x: 0, y: 0 })
-const motionStyle = computed(() => ({ '--robot-x': `${pointer.value.x * 5}px`, '--robot-tilt': `${pointer.value.x * 5}deg` }))
-const eyeStyle = computed(() => ({ transform: `translate(${pointer.value.x * 4}px, ${pointer.value.y * 3}px)` }))
+// 眼睛优先表达“看向光标”，身体只作克制的跟随，避免影响页面阅读。
+const motionStyle = computed(() => ({ '--robot-x': `${pointer.value.x * 3}px`, '--robot-tilt': `${pointer.value.x * 2.5}deg` }))
+const eyeStyle = computed(() => ({ transform: `translate(${pointer.value.x * 10}px, ${pointer.value.y * 7}px)` }))
 function followPointer(event) { const box = root.value?.getBoundingClientRect(); if (!box) return; pointer.value = { x: Math.max(-1, Math.min(1, (event.clientX - box.left) / box.width * 2 - 1)), y: Math.max(-1, Math.min(1, (event.clientY - box.top) / box.height * 2 - 1)) } }
 function resetPointer() { pointer.value = { x: 0, y: 0 } }
 </script>
