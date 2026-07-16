@@ -10,7 +10,7 @@
 <select id="findScoped" resultMap="H">SELECT <include refid="cols"/> FROM household h LEFT JOIN person p ON p.person_id=h.head_person_id WHERE h.household_id=#{id}<include refid="scope"/></select>
 <select id="lock" resultMap="H">SELECT <include refid="cols"/> FROM household h LEFT JOIN person p ON p.person_id=h.head_person_id WHERE h.household_id=#{id} FOR UPDATE</select>
 <select id="lockPerson" resultType="com.wjx871.population.person.Person">SELECT * FROM person WHERE person_id=#{id} FOR UPDATE</select>
-<select id="members" resultMap="M">SELECT m.*,p.name person_name,p.id_card,p.phone FROM household_member m JOIN person p ON p.person_id=m.person_id WHERE m.household_id=#{id} ORDER BY CASE WHEN m.status='ACTIVE' AND m.relationship='HEAD' THEN 0 WHEN m.status='ACTIVE' THEN 1 ELSE 2 END,m.member_id</select>
+<select id="members" resultMap="M">SELECT m.*,p.name person_name,p.id_card,p.phone FROM household_member m JOIN person p ON p.person_id=m.person_id WHERE m.household_id=#{id} AND m.status='ACTIVE' ORDER BY CASE WHEN m.relationship='HEAD' THEN 0 ELSE 1 END,m.member_id</select>
 <select id="lockMember" resultMap="M">SELECT m.*,p.name person_name,p.id_card,p.phone FROM household_member m JOIN person p ON p.person_id=m.person_id WHERE m.member_id=#{id} FOR UPDATE</select>
 <select id="activeMemberByPerson" resultMap="M">SELECT m.*,p.name person_name,p.id_card,p.phone FROM household_member m JOIN person p ON p.person_id=m.person_id WHERE m.person_id=#{id} AND m.status='ACTIVE' FOR UPDATE</select>
 <select id="activeHead" resultMap="M">SELECT m.*,p.name person_name,p.id_card,p.phone FROM household_member m JOIN person p ON p.person_id=m.person_id WHERE m.household_id=#{id} AND m.status='ACTIVE' AND m.relationship='HEAD' FOR UPDATE</select>
