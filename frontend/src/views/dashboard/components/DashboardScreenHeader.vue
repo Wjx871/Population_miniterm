@@ -21,6 +21,15 @@
     
     <div class="header-right">
       <div class="header-actions">
+        <el-switch
+          v-model="internalDemoMode"
+          class="demo-switch"
+          inline-prompt
+          active-text="演示"
+          inactive-text="真实"
+          style="--el-switch-on-color: var(--cyber-yellow); --el-switch-off-color: var(--cyber-accent); margin-right: 12px;"
+          @change="$emit('toggle-demo', $event)"
+        />
         <el-button 
           class="cyber-btn"
           type="primary" 
@@ -58,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { Refresh, FullScreen, Close, Back, Clock } from '@element-plus/icons-vue'
 import { formatDateTime } from '../../../utils/date'
 
@@ -68,7 +77,12 @@ defineProps({
   isDemo: Boolean
 })
 
-defineEmits(['refresh', 'toggle-fullscreen'])
+defineEmits(['refresh', 'toggle-fullscreen', 'toggle-demo'])
+
+const internalDemoMode = ref(props.isDemo)
+watch(() => props.isDemo, (newVal) => {
+  internalDemoMode.value = newVal
+})
 
 const currentTime = ref(formatDateTime(new Date()))
 let timer = null

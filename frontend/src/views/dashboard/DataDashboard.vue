@@ -12,6 +12,7 @@
         :loading="overviewLoading || chartsLoading"
         @refresh="loadAll"
         @toggle-fullscreen="toggleFullscreen"
+        @toggle-demo="toggleDemoMode"
       />
 
       <!-- 顶部 KPI 指标区 -->
@@ -100,7 +101,8 @@ const {
   overviewError,
   chartsError,
   isDemo,
-  loadAll
+  loadAll,
+  toggleDemoMode
 } = useDashboardData();
 </script>
 

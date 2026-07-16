@@ -13,7 +13,7 @@ export function useDashboardData() {
   const charts = reactive({})
   
   // 检查是否开启演示模式（默认开启，除非显式设为 'false'，方便在不重启Vite时直接生效）
-  const isDemo = import.meta.env.VITE_DASHBOARD_DEMO !== 'false'
+  const isDemo = ref(import.meta.env.VITE_DASHBOARD_DEMO !== 'false')
 
   let timer = null
 
@@ -22,7 +22,7 @@ export function useDashboardData() {
     overviewLoading.value = true
     try {
       let data
-      if (isDemo) {
+      if (isDemo.value) {
         data = demoOverview
         // Simulate network delay
         await new Promise(r => setTimeout(r, 500))
@@ -39,7 +39,7 @@ export function useDashboardData() {
       
       // 因为 normalizeAdapter 严格遵循后端真实的 DTO 会剔除前端 mock 的数据，
       // 所以对于演示模式专属的数据，我们需要手动注入。
-      if (isDemo) {
+      if (isDemo.value) {
         overview.populationStructure = data.populationStructure
         overview.keyBusiness = data.keyBusiness
       }
@@ -58,7 +58,7 @@ export function useDashboardData() {
     chartsLoading.value = true
     try {
       let data
-      if (isDemo) {
+      if (isDemo.value) {
         data = demoCharts
         await new Promise(r => setTimeout(r, 600))
       } else {
@@ -71,7 +71,7 @@ export function useDashboardData() {
       })
       
       // 注入被 adapter 剔除的演示数据
-      if (isDemo) {
+      if (isDemo.value) {
         charts.populationScaleTrend = data.populationScaleTrend
       }
 
@@ -87,6 +87,11 @@ export function useDashboardData() {
   const loadAll = async () => {
     // 只有全成功时，外界才知道整体加载完成
     await Promise.allSettled([loadOverview(), loadCharts()])
+  }
+
+  const toggleDemoMode = (val) => {
+    isDemo.value = val
+    loadAll()
   }
 
   const startAutoRefresh = () => {
@@ -129,6 +134,7 @@ export function useDashboardData() {
     isDemo,
     loadOverview,
     loadCharts,
-    loadAll
+    loadAll,
+    toggleDemoMode
   }
 }
