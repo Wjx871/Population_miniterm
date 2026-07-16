@@ -13,12 +13,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
+    private static final Logger log = LoggerFactory.getLogger(DashboardService.class);
     private static final String QUERY_VIEWER_ROLE = "QUERY_VIEWER";
 
     private final DashboardMapper mapper;
@@ -41,6 +44,11 @@ public class DashboardService {
         view.setMigrationOutPeriod(mapper.countMigrationsOut(today.minusDays(periodDays - 1L), today, scope));
         view.setPopulationStructure(populationStructure(today, scope));
         view.setKeyBusiness(keyBusiness(today, expiryDays, scope));
+        log.info("[DASHBOARD DEBUG] overview() returning: populationStructure={}, keyBusiness={}, gender male={}, ageGroups size={}",
+                view.getPopulationStructure() != null ? "EXISTS" : "NULL",
+                view.getKeyBusiness() != null ? "EXISTS" : "NULL",
+                view.getPopulationStructure() != null ? view.getPopulationStructure().getGender() : "N/A",
+                view.getPopulationStructure() != null ? view.getPopulationStructure().getAgeGroups().size() : -1);
         return view;
     }
 

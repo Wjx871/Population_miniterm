@@ -55,7 +55,11 @@ const props = defineProps({
 })
 
 const hasData = computed(() => {
-  return props.data && props.data.gender && props.data.ageGroups && props.data.ageGroups.length > 0
+  // 只要结构存在就视为"有数据"，不再要求 length > 0，避免空 DB 把面板判为空态
+  if (!props.data) return false
+  if (props.data.gender == null) return false
+  if (!Array.isArray(props.data.ageGroups)) return false
+  return true
 })
 
 const maleRatio = computed(() => props.data?.gender?.male || 0)

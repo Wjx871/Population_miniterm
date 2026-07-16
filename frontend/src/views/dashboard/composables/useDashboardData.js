@@ -34,7 +34,22 @@ export function useDashboardData() {
       // 如果真实模式缺失某些必须的字段，不要覆盖已经成功的字段，仅为了防止 undefined 报错
       // 但是在真实的 adapter 里其实已经处理了基础字段。
       Object.keys(normalized).forEach(key => {
-        overview[key] = normalized[key]
+        // 保留已有非空值，避免 catch 后又用空对象覆盖 demo 数据
+        if (overview[key] != null && (Array.isArray(overview[key]) ? overview[key].length > 0 : true)) {
+          // 仅当新值"更具体"时才覆盖（粗略启发式）
+          if (typeof normalized[key] === 'number' && overview[key] === 0) {
+            overview[key] = normalized[key]
+          } else if (Array.isArray(normalized[key]) && normalized[key].length > 0) {
+            overview[key] = normalized[key]
+          } else if (!Array.isArray(normalized[key]) && normalized[key] !== null && normalized[key] !== undefined && typeof normalized[key] !== 'object') {
+            overview[key] = normalized[key]
+          } else if (typeof normalized[key] === 'object' && normalized[key] !== null) {
+            overview[key] = normalized[key]
+          }
+          // 其他情况保留原值
+        } else {
+          overview[key] = normalized[key]
+        }
       })
       
       // 因为 normalizeAdapter 严格遵循后端真实的 DTO 会剔除前端 mock 的数据，
@@ -43,7 +58,15 @@ export function useDashboardData() {
       overviewError.value = false
     } catch (e) {
       console.error('Failed to load dashboard overview', e)
-      Object.assign(overview, normalizeDashboardOverview())
+      // 失败时仅补默认值，但不会再次覆盖已有非空数据，避免把已渲染的数据抹掉
+      const fallback = normalizeDashboardOverview()
+      Object.keys(fallback).forEach(key => {
+        const current = overview[key]
+        const empty = current == null || (Array.isArray(current) && current.length === 0)
+        if (empty) {
+          overview[key] = fallback[key]
+        }
+      })
       overviewError.value = true
     } finally {
       overviewLoading.value = false
@@ -72,7 +95,14 @@ export function useDashboardData() {
       chartsError.value = false
     } catch (e) {
       console.error('Failed to load dashboard charts', e)
-      Object.assign(charts, normalizeDashboardCharts())
+      const fallback = normalizeDashboardCharts()
+      Object.keys(fallback).forEach(key => {
+        const current = charts[key]
+        const empty = current == null || (Array.isArray(current) && current.length === 0)
+        if (empty) {
+          charts[key] = fallback[key]
+        }
+      })
       chartsError.value = true
     } finally {
       chartsLoading.value = false

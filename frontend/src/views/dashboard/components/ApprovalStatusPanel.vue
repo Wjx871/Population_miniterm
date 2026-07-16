@@ -51,7 +51,8 @@ const labelMap = {
   COMPLETED: '已办结'
 }
 
-const hasData = computed(() => Array.isArray(props.data) && props.data.length > 0)
+// 只要是数组就视为"有数据"。0 长度也表示后端正常返回了（哪怕只有 APPROVED 一项）
+const hasData = computed(() => Array.isArray(props.data))
 
 const normalizedRows = computed(() => {
   if (!hasData.value) return []

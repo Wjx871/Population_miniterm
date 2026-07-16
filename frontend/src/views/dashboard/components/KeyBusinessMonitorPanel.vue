@@ -36,13 +36,25 @@ const requiredFields = [
   'pendingSensitiveExport'
 ]
 
-const hasData = computed(() => props.data && requiredFields.every((key) => Number.isFinite(props.data[key])))
+// 数据对象存在即可；如果字段缺失则补 0，永远渲染（不要再显示空态）
+const fieldValue = (data, key) =>
+  data && (Number.isFinite(data[key]) || data[key] === null || data[key] === undefined)
+    ? (Number.isFinite(data[key]) ? data[key] : 0)
+    : 0
+
+const hasData = computed(() => props.data != null)
+const safeData = computed(() => ({
+  activeKeyPopulation: fieldValue(props.data, 'activeKeyPopulation'),
+  pendingCancellation: fieldValue(props.data, 'pendingCancellation'),
+  expiringResidencePermits: fieldValue(props.data, 'expiringResidencePermits'),
+  pendingSensitiveExport: fieldValue(props.data, 'pendingSensitiveExport'),
+}))
 
 const monitorList = computed(() => [
-  { key: 'keyPopulation', label: '重点人口在册', value: props.data.activeKeyPopulation, unit: '人', icon: UserFilled },
-  { key: 'cancellation', label: '注销申请', value: props.data.pendingCancellation, unit: '件', icon: CircleClose },
-  { key: 'expiring', label: '即将到期证件', value: props.data.expiringResidencePermits, unit: '张', icon: Postcard },
-  { key: 'sensitiveExport', label: '敏感导出申请', value: props.data.pendingSensitiveExport, unit: '件', icon: Download }
+  { key: 'keyPopulation', label: '重点人口在册', value: safeData.value.activeKeyPopulation, unit: '人', icon: UserFilled },
+  { key: 'cancellation', label: '注销申请', value: safeData.value.pendingCancellation, unit: '件', icon: CircleClose },
+  { key: 'expiring', label: '即将到期证件', value: safeData.value.expiringResidencePermits, unit: '张', icon: Postcard },
+  { key: 'sensitiveExport', label: '敏感导出申请', value: safeData.value.pendingSensitiveExport, unit: '件', icon: Download }
 ])
 </script>
 
