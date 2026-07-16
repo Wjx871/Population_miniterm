@@ -181,11 +181,16 @@ export function businessTypeShareOption(rows = []) {
   const labelMap = {
     MIGRATION_IN: '迁入登记',
     MIGRATION_OUT: '迁出登记',
-    RESIDENCE_PERMIT: '居住证业务',
-    CANCELLATION: '注销申请',
-    KEY_POPULATION: '重点人口',
-    CERTIFICATE: '证件管理',
-    FLOATING_POPULATION: '流动人口'
+    FLOATING_REGISTRATION: '流动人口登记',
+    RESIDENCE_PERMIT_FIRST_ISSUE: '居住证首次申领',
+    RESIDENCE_PERMIT_ENDORSEMENT: '居住证签注',
+    RESIDENCE_PERMIT_CANCELLATION: '居住证注销',
+    PERSON_CANCELLATION: '人员注销',
+    HOUSEHOLD_CANCELLATION: '家庭户注销',
+    KEY_POPULATION_REGISTER: '重点人口登记',
+    KEY_POPULATION_RELEASE: '重点人口解除',
+    SENSITIVE_DATA_EXPORT: '敏感数据导出',
+    GENERAL_SERVICE: '通用业务'
   }
 
   const palette = theme.dashboardChartColors
@@ -282,7 +287,7 @@ export function populationScaleOption(trendData = []) {
     },
     legend: {
       ...theme.darkLegend,
-      data: ['户籍人口', '流动人口', '有效居住证'],
+      data: ['户籍登记', '流动登记', '居住证签发'],
       top: 4,
       icon: 'circle',
       textStyle: { color: '#e8f6ff', fontSize: 12 }
@@ -328,7 +333,7 @@ export function populationScaleOption(trendData = []) {
     },
     series: [
       {
-        name: '户籍人口',
+        name: '户籍登记',
         type: 'bar',
         barWidth: 12,
         barGap: '30%',
@@ -341,7 +346,7 @@ export function populationScaleOption(trendData = []) {
         data: rows.map((r) => r.registeredPopulation || 0)
       },
       {
-        name: '流动人口',
+        name: '流动登记',
         type: 'bar',
         barWidth: 12,
         itemStyle: {
@@ -353,7 +358,7 @@ export function populationScaleOption(trendData = []) {
         data: rows.map((r) => r.floatingPopulation || 0)
       },
       {
-        name: '有效居住证',
+        name: '居住证签发',
         type: 'bar',
         barWidth: 12,
         itemStyle: {
@@ -377,4 +382,53 @@ export function namedCountOption(rows = [], type = 'bar') {
 export function regionRankingOption(rows = []) {
   const data = Array.isArray(rows) ? rows : []
   return { series: [{ type: 'bar', data: data.map((item) => item.value ?? 0) }] }
+}
+
+export function regionDistributionOption(rows = []) {
+  const data = Array.isArray(rows) ? [...rows] : []
+  data.sort((a, b) => Number(b?.value || 0) - Number(a?.value || 0))
+  data.reverse()
+
+  return {
+    tooltip: {
+      ...theme.darkTooltip,
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params) => {
+        const item = params?.[0]
+        if (!item) return ''
+        return `${item.name}<br/>户籍人口：${Number(item.value || 0).toLocaleString()}`
+      },
+    },
+    grid: { ...theme.darkGrid, top: 12, right: 36, bottom: 8, left: 12, containLabel: true },
+    xAxis: { ...theme.darkValueAxis, minInterval: 1 },
+    yAxis: {
+      ...theme.darkCategoryAxis,
+      type: 'category',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: '#e2f3ff', fontSize: 12, width: 92, overflow: 'truncate' },
+      data: data.map((item) => item?.regionName || item?.regionCode || '未命名区域'),
+    },
+    series: [{
+      type: 'bar',
+      barWidth: 14,
+      data: data.map((item) => ({
+        value: Number(item?.value || 0),
+        itemStyle: {
+          color: theme.horizontalBarGradient(theme.accentCyan, 0.12),
+          borderRadius: [0, 7, 7, 0],
+          shadowBlur: 10,
+          shadowColor: 'rgba(61, 240, 255, 0.45)',
+        },
+      })),
+      label: {
+        show: true,
+        position: 'right',
+        color: '#9ef7ff',
+        fontFamily: 'Courier New',
+        formatter: ({ value }) => Number(value || 0).toLocaleString(),
+      },
+    }],
+  }
 }

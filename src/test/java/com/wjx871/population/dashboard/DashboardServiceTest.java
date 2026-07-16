@@ -46,7 +46,7 @@ class DashboardServiceTest {
         when(mapper.countRegisteredPopulation(any())).thenReturn(10L);
         when(mapper.countActiveFloating(any())).thenReturn(4L);
         when(mapper.countActivePermits(any())).thenReturn(6L);
-        when(mapper.permitStatusDistribution(any())).thenReturn(List.of());
+        when(mapper.approvalStatusDistribution(any())).thenReturn(List.of());
         when(mapper.registeredPopulationByRegion(any(), any(Integer.class))).thenReturn(List.of());
 
         DashboardChartsView result = service.charts(3, 10);

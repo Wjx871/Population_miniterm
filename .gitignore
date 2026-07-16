@@ -59,3 +59,8 @@ miniprogram/project.private.config.json
 miniprogram/config/local.js
 
 # User assets
+/ppt素材/
+/素材/
+
+# Generated Python bytecode for the dashboard demo-data generator
+/scripts/data/__pycache__/

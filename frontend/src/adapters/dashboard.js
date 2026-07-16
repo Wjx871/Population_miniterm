@@ -8,6 +8,14 @@ function array(value) {
   return Array.isArray(value) ? value : []
 }
 
+function namedCounts(value) {
+  return array(value).map((item) => ({
+    code: item?.code ?? '',
+    label: item?.label ?? '',
+    value: finiteNumber(item?.value),
+  }))
+}
+
 export function normalizeDashboardOverview(raw = {}) {
   return {
     generatedAt: raw?.generatedAt ?? null,
@@ -20,6 +28,19 @@ export function normalizeDashboardOverview(raw = {}) {
     expiringResidencePermits: finiteNumber(raw?.expiringResidencePermits),
     migrationInPeriod: finiteNumber(raw?.migrationInPeriod),
     migrationOutPeriod: finiteNumber(raw?.migrationOutPeriod),
+    populationStructure: {
+      gender: {
+        male: finiteNumber(raw?.populationStructure?.gender?.male),
+        female: finiteNumber(raw?.populationStructure?.gender?.female),
+      },
+      ageGroups: namedCounts(raw?.populationStructure?.ageGroups),
+    },
+    keyBusiness: raw?.keyBusiness == null ? null : {
+      activeKeyPopulation: finiteNumber(raw.keyBusiness.activeKeyPopulation),
+      pendingCancellation: finiteNumber(raw.keyBusiness.pendingCancellation),
+      expiringResidencePermits: finiteNumber(raw.keyBusiness.expiringResidencePermits),
+      pendingSensitiveExport: finiteNumber(raw.keyBusiness.pendingSensitiveExport),
+    },
   }
 }
 
@@ -31,10 +52,16 @@ export function normalizeDashboardCharts(raw = {}) {
       inCount: finiteNumber(item?.inCount),
       outCount: finiteNumber(item?.outCount),
     })),
-    businessScale: array(raw?.businessScale).map((item) => ({ code: item?.code ?? '', label: item?.label ?? '', value: finiteNumber(item?.value) })),
-    permitStatusDistribution: array(raw?.permitStatusDistribution).map((item) => ({ code: item?.code ?? '', label: item?.label ?? '', value: finiteNumber(item?.value) })),
+    businessScale: namedCounts(raw?.businessScale),
+    approvalStatusDistribution: namedCounts(raw?.approvalStatusDistribution),
     registeredPopulationByRegion: array(raw?.registeredPopulationByRegion).map((item) => ({
       regionCode: item?.regionCode ?? '', regionName: item?.regionName ?? null, value: finiteNumber(item?.value),
+    })),
+    populationScaleTrend: array(raw?.populationScaleTrend).map((item) => ({
+      date: item?.date ?? null,
+      registeredPopulation: finiteNumber(item?.registeredPopulation),
+      floatingPopulation: finiteNumber(item?.floatingPopulation),
+      residencePermits: finiteNumber(item?.residencePermits),
     })),
   }
 }

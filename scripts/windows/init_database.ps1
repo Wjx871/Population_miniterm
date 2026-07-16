@@ -92,13 +92,16 @@ function Invoke-MySql {
 function Invoke-MySqlFile {
     param([string]$Path, [string]$TargetDatabase)
     $previousPassword = [Environment]::GetEnvironmentVariable('MYSQL_PWD', 'Process')
+    $previousOutputEncoding = $OutputEncoding
     try {
         if (-not [string]::IsNullOrEmpty($Password)) { [Environment]::SetEnvironmentVariable('MYSQL_PWD', $Password, 'Process') }
+        $OutputEncoding = New-Object System.Text.UTF8Encoding($false)
         $args = @('--protocol=TCP', "--host=$HostName", "--port=$Port", "--user=$Username", '--default-character-set=utf8mb4')
         if ($TargetDatabase) { $args += $TargetDatabase }
-        Get-Content -LiteralPath $Path -Raw | & $MySqlClient @args
+        Get-Content -LiteralPath $Path -Raw -Encoding utf8 | & $MySqlClient @args
         if ($LASTEXITCODE -ne 0) { throw "执行 SQL 失败：$([IO.Path]::GetFileName($Path))" }
     } finally {
+        $OutputEncoding = $previousOutputEncoding
         [Environment]::SetEnvironmentVariable('MYSQL_PWD', $previousPassword, 'Process')
     }
 }
@@ -112,7 +115,9 @@ function Write-Utf8NoBom {
 
 function New-RewrittenSqlCopy {
     param([string]$SourcePath, [string]$DestinationName, [switch]$RewriteDatabaseHeader)
-    $source = Get-Content -LiteralPath $SourcePath -Raw
+    # Repository SQL is UTF-8 without a BOM. Windows PowerShell otherwise decodes it
+    # using the active ANSI code page before the rewritten copy is passed to MySQL.
+    $source = Get-Content -LiteralPath $SourcePath -Raw -Encoding utf8
     if ($RewriteDatabaseHeader) {
         $pattern = '(?ms)\ACREATE DATABASE IF NOT EXISTS population_miniterm\s+DEFAULT CHARACTER SET utf8mb4\s+DEFAULT COLLATE utf8mb4_unicode_ci;\s+USE population_miniterm;'
         $replacement = "CREATE DATABASE IF NOT EXISTS $Database`r`n    DEFAULT CHARACTER SET utf8mb4`r`n    DEFAULT COLLATE utf8mb4_unicode_ci;`r`n`r`nUSE $Database;"
@@ -129,12 +134,12 @@ function New-RewrittenSqlCopy {
 
 function Test-DatabaseExists {
     $result = Invoke-MySql -Sql "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name='$Database';" -Batch
-    return ([int]$result[-1] -gt 0)
+    return ([int](@($result)[-1]) -gt 0)
 }
 
 function Get-TableCount {
     $result = Invoke-MySql -Sql "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$Database';" -Batch
-    return [int]$result[-1]
+    return [int](@($result)[-1])
 }
 
 function Assert-MySqlZeroResult {
@@ -146,26 +151,26 @@ function Assert-MySqlZeroResult {
 
 function Invoke-Verify {
     if (-not (Test-DatabaseExists)) { throw "目标数据库不存在：$Database" }
-    $requiredTables = @('person','household','residence','business_application','sys_approval_request','cancellation_record','household_archive','floating_registration_application','residence_permit','data_export_request','data_export_log','admin_region','data_dictionary','key_population','key_population_application','key_population_history','operation_log','login_log')
+    $requiredTables = @('person','household','residence','business_application','sys_approval_request','cancellation_record','household_archive','floating_registration_application','residence_permit','data_export_request','data_export_log','admin_region','data_dictionary','key_population','key_population_application','key_population_history','operation_log')
     $requiredRoles = @('QUERY_VIEWER','POPULATION_MANAGER','HOUSEHOLD_MANAGER','APPROVER','SYSTEM_ADMIN')
     $requiredPermissions = @('application:view','migration:view','cancellation:view','floating:view','residence-permit:view','data:export:normal','data:export:log:view','region:view','dictionary:view','certificate:view','key-population:view','log:view')
     $requiredIndexes = @('idx_key_population_query','idx_household_member_person_status','idx_household_member_household_status','idx_person_query','idx_operation_log_query','idx_migration_in_query','idx_migration_out_query')
 
     foreach ($table in $requiredTables) {
         $count = Invoke-MySql -Sql "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$Database' AND table_name='$table';" -Batch
-        if ([int]$count[-1] -ne 1) { throw "缺少必需表：$table" }
+        if ([int](@($count)[-1]) -ne 1) { throw "缺少必需表：$table" }
     }
     foreach ($role in $requiredRoles) {
         $count = Invoke-MySql -Sql "SELECT COUNT(*) FROM sys_role WHERE role_code='$role' AND status='ENABLED';" -TargetDatabase $Database -Batch
-        if ([int]$count[-1] -ne 1) { throw "缺少启用角色：$role" }
+        if ([int](@($count)[-1]) -ne 1) { throw "缺少启用角色：$role" }
     }
     foreach ($permission in $requiredPermissions) {
         $count = Invoke-MySql -Sql "SELECT COUNT(*) FROM sys_permission WHERE permission_code='$permission' AND status='ENABLED';" -TargetDatabase $Database -Batch
-        if ([int]$count[-1] -ne 1) { throw "缺少启用权限：$permission" }
+        if ([int](@($count)[-1]) -ne 1) { throw "缺少启用权限：$permission" }
     }
     foreach ($index in $requiredIndexes) {
         $count = Invoke-MySql -Sql "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema='$Database' AND index_name='$index';" -Batch
-        if ([int]$count[-1] -lt 1) { throw "缺少必需索引：$index" }
+        if ([int](@($count)[-1]) -lt 1) { throw "缺少必需索引：$index" }
     }
     Assert-MySqlZeroResult -Sql (Get-Content -LiteralPath $checkSql -Raw) -Description '数据库一致性检查'
     Write-Host "[PASS] 数据库 Verify：$Database（结构、角色、权限、V4_010 相关索引和一致性检查均通过）"

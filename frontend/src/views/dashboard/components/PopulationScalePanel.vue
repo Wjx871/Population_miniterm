@@ -1,9 +1,9 @@
 <template>
-  <CyberPanel title="历史规模趋势" class="scale-panel">
+  <CyberPanel title="近 30 日登记与签发趋势" class="scale-panel">
     <BaseEChart 
       :option="populationScaleOption(data)" 
       :empty="!hasData" 
-      label="人口规模趋势图" 
+      label="近 30 日登记与签发趋势图"
     />
   </CyberPanel>
 </template>

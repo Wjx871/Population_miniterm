@@ -15,7 +15,7 @@ UNION ALL SELECT 'required_table_missing',COUNT(*) FROM (
     UNION ALL SELECT 'floating_registration_application' UNION ALL SELECT 'residence_permit' UNION ALL SELECT 'data_export_request'
     UNION ALL SELECT 'data_export_log' UNION ALL SELECT 'admin_region' UNION ALL SELECT 'data_dictionary'
     UNION ALL SELECT 'key_population' UNION ALL SELECT 'key_population_application' UNION ALL SELECT 'key_population_history'
-    UNION ALL SELECT 'operation_log' UNION ALL SELECT 'login_log'
+    UNION ALL SELECT 'operation_log'
 ) required LEFT JOIN information_schema.tables actual ON actual.table_schema=DATABASE() AND actual.table_name=required.object_name WHERE actual.table_name IS NULL
 UNION ALL SELECT 'required_column_missing',COUNT(*) FROM (
     SELECT 'person' table_name,'current_status_code' column_name UNION ALL SELECT 'household','version'

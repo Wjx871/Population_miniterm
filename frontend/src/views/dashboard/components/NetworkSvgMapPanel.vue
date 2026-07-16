@@ -9,7 +9,7 @@
       <div class="glow-ring" aria-hidden="true"></div>
 
       <video
-        :src="'/media/cyber-video-2.mp4'"
+        src="/media/cyber-video-2.mp4"
         autoplay
         loop
         muted
@@ -17,21 +17,11 @@
         disablePictureInPicture
         controlslist="nodownload nofullscreen noremoteplayback"
         class="static-center-video"
-        aria-label="中央态势分布图"
+        aria-label="中央态势展示视频"
       ></video>
     </div>
   </div>
 </template>
-
-<script setup>
-// 声明 props 以防止 Vue 把数组当做普通 HTML 属性渲染到 DOM 上
-defineProps({
-  data: {
-    type: Array,
-    default: () => []
-  }
-})
-</script>
 
 <style scoped>
 .network-map-panel {
@@ -82,9 +72,7 @@ defineProps({
   aspect-ratio: 1;
   border-radius: 50%;
   border: 1px solid rgba(31, 228, 255, 0.18);
-  box-shadow:
-    0 0 30px rgba(31, 228, 255, 0.12),
-    inset 0 0 30px rgba(31, 228, 255, 0.08);
+  box-shadow: 0 0 30px rgba(31, 228, 255, 0.12), inset 0 0 30px rgba(31, 228, 255, 0.08);
   pointer-events: none;
   z-index: 1;
   animation: ring-breathe 4.5s ease-in-out infinite;
@@ -108,13 +96,10 @@ defineProps({
   height: 100%;
   object-fit: contain;
   z-index: 2;
-  pointer-events: none; /* 完全禁用鼠标交互，防止浏览器将其识别为可操作视频 */
-  /* 去掉 screen 混合，避免整块发黑发虚 */
+  pointer-events: none;
   filter: drop-shadow(0 0 20px rgba(61, 240, 255, 0.35)) brightness(1.08) contrast(1.05);
-  mix-blend-mode: normal;
 }
 
-/* Caption removed */
 @keyframes scan-move {
   0% { top: 12%; opacity: 0; }
   10% { opacity: 0.55; }
