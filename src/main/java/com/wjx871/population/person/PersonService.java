@@ -1,5 +1,7 @@
 package com.wjx871.population.person;
 
+import com.wjx871.population.person.idcard.PersonIdCardImage;
+import com.wjx871.population.person.idcard.PersonIdCardImageMapper;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +30,7 @@ public class PersonService {
     private final PersonMapper personMapper;
     private final SensitiveDataMaskingService masking;
     private final IdCardValidator idCards;
+    private final PersonIdCardImageMapper idCardImageMapper;
 
     @Transactional(readOnly = true)
     public Page<Person> search(String name, String idCard, String status, Pageable pageable) {
@@ -72,6 +75,22 @@ public class PersonService {
             throw new DuplicateKeyException("ID card already exists");
         }
 
+        // V4_013 / Phase 14: 身份证影印本必传
+        if (request.idCardImageId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "新增人口必须先上传身份证影印本");
+        }
+        PersonIdCardImage img = idCardImageMapper.selectById(request.idCardImageId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "身份证影印本不存在: " + request.idCardImageId()));
+        if (img.getPersonId() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "该身份证影印本已被使用");
+        }
+        // 图与号一致性：仅 OCR 成功时有 ocrIdcardFull；FAILED/SKIPPED 跳过一致性校验
+        if (img.getOcrIdcardFull() != null
+                && !img.getOcrIdcardFull().equalsIgnoreCase(idCard)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "上传图片识别出的身份证号与填写不一致（识别：" + masking.identity(img.getOcrIdcardFull()) + "）");
+        }
+
         LocalDateTime now = LocalDateTime.now();
         Person person = new Person();
         apply(request, person, identity);
@@ -79,18 +98,33 @@ public class PersonService {
         person.setCreatedAt(now);
         person.setUpdatedAt(now);
         personMapper.insertPerson(person);
-        Person created=personMapper.selectById(person.getPersonId()).orElseThrow();mask(created);return created;
+        Person created = personMapper.selectById(person.getPersonId()).orElseThrow();
+        idCardImageMapper.bindPerson(img.getImageId(), created.getPersonId());
+        mask(created);
+        return created;
     }
 
     @Transactional
     public Person update(Long personId, PersonRequest request) {
-        Person person = personMapper.selectScopedById(personId,DataScopeCriteria.current())
+        Person person = personMapper.selectScopedById(personId, DataScopeCriteria.current())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "No data-scope access to person: " + personId));
         IdCardValidator.Identity identity = idCards.validate(request.idCard(), request.birthDate(), request.gender());
         String idCard = identity.normalized();
         Optional<Person> duplicated = personMapper.selectByIdCard(idCard);
         if (duplicated.isPresent() && !duplicated.get().getPersonId().equals(personId)) {
             throw new DuplicateKeyException("ID card already exists");
+        }
+
+        // V4_013: 编辑时不允许更换身份证影印本；不传图时沿用既有图。
+        if (request.idCardImageId() != null) {
+            idCardImageMapper.selectById(request.idCardImageId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "身份证影印本不存在: " + request.idCardImageId()));
+            idCardImageMapper.selectByPersonId(personId).ifPresent(existing -> {
+                if (!existing.getImageId().equals(request.idCardImageId())) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "编辑时不能更换身份证影印本");
+                }
+            });
         }
 
         apply(request, person, identity);

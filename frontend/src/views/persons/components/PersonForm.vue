@@ -5,6 +5,33 @@
     :rules="rules"
     label-width="100px"
   >
+    <!-- Phase 14 / V4_013 身份证影印本必传 + OCR 识别 -->
+    <el-form-item v-if="!isEdit" label="身份证影印本">
+      <div class="idcard-block">
+        <el-button :icon="Camera" type="primary" plain @click="openScanner">
+          {{ image ? '重新扫描' : '扫描身份证' }}
+        </el-button>
+        <el-tag v-if="image" :type="imageTagType" effect="plain" class="idcard-tag">
+          OCR：{{ ocrStatusText }}
+        </el-tag>
+        <el-button v-if="image" link type="danger" @click="clearImage">清除</el-button>
+        <div v-if="image" class="idcard-meta">
+          <span>影印本：{{ image.fileName }}（{{ formatBytes(image.fileSize) }}）</span>
+          <span v-if="image.maskedIdCard">识别号：{{ image.maskedIdCard }}</span>
+          <span v-if="image.confidence">置信度：{{ (image.confidence * 100).toFixed(1) }}%</span>
+        </div>
+        <div v-if="!image" class="idcard-hint">
+          必须先上传身份证影印本。如需跳过 OCR，请使用「跳过 OCR」按钮。
+        </div>
+      </div>
+    </el-form-item>
+
+    <IdCardScannerDialog
+      v-model:visible="scannerVisible"
+      @recognized="onRecognized"
+      @skipped="onSkipped"
+    />
+
     <el-form-item label="姓名" prop="name">
       <el-input v-model="form.name" placeholder="请输入姓名" maxlength="50" show-word-limit />
     </el-form-item>
@@ -59,10 +86,13 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref, watch, computed } from 'vue'
+import { Camera } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { formatDate } from '../../../utils/date'
 import { validateIdCard, validatePhone, validateBirthDate } from '../../../utils/validators'
 import DictionarySelect from '../../../components/business/DictionarySelect.vue'
+import IdCardScannerDialog from './IdCardScannerDialog.vue'
 
 const props = defineProps({
   modelValue: {
@@ -86,6 +116,26 @@ const form = reactive({
   ethnicity: '汉族',
   phone: '',
   currentAddress: '',
+  idCardImageId: null,
+})
+
+const image = ref(null)
+const scannerVisible = ref(false)
+
+const imageTagType = computed(() => {
+  const status = image.value?.ocrStatus
+  if (status === 'SUCCESS') return 'success'
+  if (status === 'FAILED') return 'warning'
+  if (status === 'SKIPPED') return 'info'
+  return 'info'
+})
+
+const ocrStatusText = computed(() => {
+  const status = image.value?.ocrStatus
+  if (status === 'SUCCESS') return '识别成功'
+  if (status === 'FAILED') return '识别失败'
+  if (status === 'SKIPPED') return '已跳过'
+  return '未知'
 })
 
 const rules = {
@@ -121,7 +171,7 @@ function disableFutureDate(date) {
 }
 
 function syncFromModel(value) {
-  Object.assign(form, {
+  const next = {
     name: value?.name ?? '',
     gender: value?.gender || '男',
     idCard: value?.idCard ?? '',
@@ -129,7 +179,76 @@ function syncFromModel(value) {
     ethnicity: value?.ethnicity ?? '汉族',
     phone: value?.phone ?? '',
     currentAddress: value?.currentAddress ?? '',
-  })
+    idCardImageId: value?.idCardImageId ?? null,
+  }
+  Object.assign(form, next)
+  // 编辑模式不展示新增用的 image id，需要保留编辑前已存在的图；新增模式外层会注入新 imageId
+  if (props.isEdit) {
+    image.value = value?.idCardImage || null
+  }
+}
+
+function openScanner() {
+  scannerVisible.value = true
+}
+
+function onRecognized(result) {
+  if (!result?.imageId) {
+    ElMessage.warning('上传成功但未返回影印本标识')
+    return
+  }
+  image.value = {
+    imageId: result.imageId,
+    fileName: result.originalFilename,
+    fileSize: result.fileSize,
+    ocrStatus: result.ocrStatus,
+    maskedIdCard: result.ocrIdcardMasked,
+    confidence: result.ocrConfidence,
+  }
+  form.idCardImageId = result.imageId
+  applyOcrToForm(result)
+  scannerVisible.value = false
+}
+
+function onSkipped(result) {
+  if (result?.imageId) {
+    onRecognized({ ...result, ocrStatus: 'SKIPPED', ocrIdcardMasked: null, ocrConfidence: null })
+  } else {
+    scannerVisible.value = false
+  }
+}
+
+function applyOcrToForm(result) {
+  if (result.ocrStatus !== 'SUCCESS') return
+  // OCR 成功时回填身份证号、姓名、性别、出生日期、民族、地址，保留用户已手工修改的字段
+  if (!form.idCard && result.ocrIdcardFull) form.idCard = result.ocrIdcardFull
+  if (!form.name && result.ocrName) form.name = result.ocrName
+  if (result.ocrGender === 'M') form.gender = '男'
+  else if (result.ocrGender === 'F') form.gender = '女'
+  if (!form.birthDate && result.ocrBirthDate) {
+    form.birthDate = typeof result.ocrBirthDate === 'string'
+      ? result.ocrBirthDate.substring(0, 10)
+      : result.ocrBirthDate
+  }
+  if (!form.ethnicity && result.ocrEthnicity) form.ethnicity = result.ocrEthnicity
+  if (!form.currentAddress && result.ocrAddress) form.currentAddress = result.ocrAddress
+}
+
+function clearImage() {
+  image.value = null
+  form.idCardImageId = null
+}
+
+function formatBytes(value) {
+  if (!value) return '0 B'
+  const units = ['B', 'KB', 'MB']
+  let bytes = Number(value)
+  let unit = 0
+  while (bytes >= 1024 && unit < units.length - 1) {
+    bytes /= 1024
+    unit += 1
+  }
+  return `${bytes.toFixed(1)} ${units[unit]}`
 }
 
 watch(

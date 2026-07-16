@@ -2,6 +2,7 @@ package com.wjx871.population.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -138,10 +139,11 @@ class AuthRbacIntegrationTest {
     @Test
     void l2CanEdit() throws Exception {
         String token = tokenFor("population");
+        long imageId = uploadIdCardImage(token);
         mockMvc.perform(post("/api/persons")
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(personJson("110101199901018899")))
+                        .content(personJsonWithImage("110101199901018899", imageId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value(201));
     }
@@ -242,5 +244,22 @@ class AuthRbacIntegrationTest {
     private String personJson(String idCard) {
         return "{\"name\":\"测试人员\",\"gender\":\"男\",\"idCard\":\"" + idCard
                 + "\",\"status\":\"正常\"}";
+    }
+
+    private String personJsonWithImage(String idCard, long imageId) {
+        return "{\"name\":\"测试人员\",\"gender\":\"男\",\"idCard\":\"" + idCard
+                + "\",\"idCardImageId\":" + imageId + ",\"status\":\"正常\"}";
+    }
+
+    private long uploadIdCardImage(String token) throws Exception {
+        byte[] body = new byte[64];
+        org.springframework.mock.web.MockMultipartFile file =
+                new org.springframework.mock.web.MockMultipartFile("file", "rbac-l2.jpg", "image/jpeg", body);
+        String resp = mockMvc.perform(multipart("/api/persons/idcard-image").file(file)
+                        .param("skipOcr", "true")
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readTree(resp).path("data").path("imageId").asLong();
     }
 }

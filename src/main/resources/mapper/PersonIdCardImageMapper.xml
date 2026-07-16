@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wjx871.population.person.idcard.PersonIdCardImageMapper">
+
+    <resultMap id="PersonIdCardImageResultMap" type="com.wjx871.population.person.idcard.PersonIdCardImage">
+        <id     column="image_id"           property="imageId"/>
+        <result column="person_id"          property="personId"/>
+        <result column="draft_uuid"         property="draftUuid"/>
+        <result column="user_id"            property="userId"/>
+        <result column="original_filename"  property="originalFilename"/>
+        <result column="stored_filename"    property="storedFilename"/>
+        <result column="storage_path"       property="storagePath"/>
+        <result column="content_type"       property="contentType"/>
+        <result column="file_size"          property="fileSize"/>
+        <result column="file_sha256"        property="fileSha256"/>
+        <result column="ocr_status"         property="ocrStatus"/>
+        <result column="ocr_provider"       property="ocrProvider"/>
+        <result column="ocr_engine_version" property="ocrEngineVersion"/>
+        <result column="ocr_elapsed_ms"     property="ocrElapsedMs"/>
+        <result column="ocr_confidence"     property="ocrConfidence"/>
+        <result column="ocr_idcard_full"    property="ocrIdcardFull"/>
+        <result column="ocr_idcard_masked"  property="ocrIdcardMasked"/>
+        <result column="ocr_name"           property="ocrName"/>
+        <result column="ocr_birth_date"     property="ocrBirthDate"/>
+        <result column="ocr_gender"         property="ocrGender"/>
+        <result column="ocr_ethnicity"      property="ocrEthnicity"/>
+        <result column="ocr_address"        property="ocrAddress"/>
+        <result column="ocr_error"          property="ocrError"/>
+        <result column="ocr_raw_json"       property="ocrRawJson"/>
+        <result column="created_at"         property="createdAt"/>
+    </resultMap>
+
+    <insert id="insertDraft" useGeneratedKeys="true" keyProperty="imageId">
+        INSERT INTO person_idcard_image (
+            draft_uuid, user_id, original_filename, stored_filename, storage_path,
+            content_type, file_size, file_sha256, ocr_status
+        ) VALUES (
+            #{draftUuid}, #{userId}, #{originalFilename}, #{storedFilename}, #{storagePath},
+            #{contentType}, #{fileSize}, #{fileSha256}, 'SKIPPED'
+        )
+    </insert>
+
+    <select id="selectById" resultMap="PersonIdCardImageResultMap">
+        SELECT * FROM person_idcard_image WHERE image_id = #{imageId}
+    </select>
+
+    <select id="selectBySha256" resultMap="PersonIdCardImageResultMap">
+        SELECT * FROM person_idcard_image WHERE file_sha256 = #{fileSha256} LIMIT 1
+    </select>
+
+    <select id="selectByPersonId" resultMap="PersonIdCardImageResultMap">
+        SELECT * FROM person_idcard_image WHERE person_id = #{personId} ORDER BY image_id DESC LIMIT 1
+    </select>
+
+    <update id="markOcrSuccess">
+        UPDATE person_idcard_image SET
+            ocr_status = 'SUCCESS',
+            ocr_provider = #{ocrProvider},
+            ocr_engine_version = #{ocrEngineVersion},
+            ocr_elapsed_ms = #{elapsedMs},
+            ocr_confidence = #{confidence},
+            ocr_idcard_full = #{idCardFull},
+            ocr_idcard_masked = #{idCardMasked},
+            ocr_name = #{name},
+            ocr_birth_date = #{birthDate},
+            ocr_gender = #{gender},
+            ocr_ethnicity = #{ethnicity},
+            ocr_address = #{address},
+            ocr_raw_json = #{rawJson}
+        WHERE image_id = #{imageId}
+    </update>
+
+    <update id="markOcrFailed">
+        UPDATE person_idcard_image SET
+            ocr_status = 'FAILED',
+            ocr_provider = #{ocrProvider},
+            ocr_engine_version = #{ocrEngineVersion},
+            ocr_elapsed_ms = #{elapsedMs},
+            ocr_error = #{error}
+        WHERE image_id = #{imageId}
+    </update>
+
+    <update id="markOcrSkipped">
+        UPDATE person_idcard_image SET ocr_status = 'SKIPPED' WHERE image_id = #{imageId}
+    </update>
+
+    <update id="bindPerson">
+        UPDATE person_idcard_image SET person_id = #{personId}
+        WHERE image_id = #{imageId} AND person_id IS NULL
+    </update>
+</mapper>

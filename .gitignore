@@ -48,6 +48,8 @@ data/exports/
 .env.local
 tmp/
 cache/
+*.log
+login.json
 
 # Browser automation temporary artifacts
 .playwright-cli/

@@ -257,6 +257,10 @@ const submitForm = async () => {
   if (!valid) return
 
   const form = personFormRef.value.getForm()
+  if (!isEdit.value && !form.idCardImageId) {
+    ElMessage.error('新增人口必须先上传身份证影印本')
+    return
+  }
   submitting.value = true
   try {
     if (isEdit.value) {
@@ -313,5 +317,25 @@ onMounted(() => {
 }
 .table-card {
   border-radius: var(--radius-large);
+}
+.idcard-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.idcard-block .idcard-tag {
+  margin-left: 12px;
+}
+.idcard-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+}
+.idcard-hint {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 </style>
