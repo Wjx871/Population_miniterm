@@ -147,6 +147,11 @@ button::after {
   border-bottom: 0;
 }
 
+.field > status-tag,
+.field-row > status-tag {
+  align-self: center;
+}
+
 .label,
 .field-label {
   width: 190rpx;

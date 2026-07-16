@@ -1,3 +1,1 @@
-<text class="tag tag--{{semanticType}} tag--{{displaySize}}">
-  {{displayText}}
-</text>
+<view class="tag tag--{{semanticType}} tag--{{displaySize}}">{{displayText}}</view>
