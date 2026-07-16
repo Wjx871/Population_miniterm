@@ -1,0 +1,11 @@
+<view class="error-state error-state--{{displayType}}">
+  <view class="error-icon" aria-hidden="true">!</view>
+  <view class="error-title">{{title}}</view>
+  <view class="error-description">{{description}}</view>
+  <button
+    wx:if="{{showRetry}}"
+    class="retry-button"
+    size="mini"
+    bindtap="retry"
+  >{{retryText}}</button>
+</view>

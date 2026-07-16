@@ -1,0 +1,3 @@
+<text class="tag tag--{{semanticType}} tag--{{displaySize}}">
+  {{displayText}}
+</text>
