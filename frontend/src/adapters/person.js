@@ -69,8 +69,10 @@ export function normalizePersonList(records) {
 /**
  * 新增人口 payload。
  * status 固定为「正常」，不在基础表单暴露状态选择。
+ * idCardImageId 由上层（ImageScannerDialog）注入，值为 null 时由后端拒绝。
  */
 export function toCreatePersonPayload(form = {}) {
+  const imageId = form.idCardImageId
   return {
     name: trimOrEmpty(form.name),
     gender: trimOrEmpty(form.gender),
@@ -80,6 +82,7 @@ export function toCreatePersonPayload(form = {}) {
     phone: trimOrEmpty(form.phone) || null,
     currentAddress: trimOrNull(form.currentAddress),
     status: '正常',
+    idCardImageId: imageId ?? null,
   }
 }
 

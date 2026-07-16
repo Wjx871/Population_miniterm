@@ -19,6 +19,7 @@ public record PersonRequest(
         @Size(max = 30) String ethnicity,
         @Pattern(regexp = "^$|^1[3-9]\\d{9}$|^[0-9\\-]{7,20}$") String phone,
         @Size(max = 255) String currentAddress,
-        @Size(max = 20) String status
+        @Size(max = 20) String status,
+        Long idCardImageId
 ) {
 }

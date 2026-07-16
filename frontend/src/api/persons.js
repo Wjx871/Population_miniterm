@@ -38,3 +38,26 @@ export function updatePerson(id, data) {
     data,
   })
 }
+
+/**
+ * 上传身份证影印本（用作新增人口前的必传材料）。
+ * @param {FormData} formData formData.append('file', blob, 'idcard.jpg')
+ * @param {object} options { skipOcr?: boolean, silent?: boolean }
+ */
+export function uploadIdCardImage(formData, options = {}) {
+  return request({
+    url: '/persons/idcard-image',
+    method: 'post',
+    data: formData,
+    params: options.skipOcr ? { skipOcr: 'true' } : undefined,
+    silent: options.silent,
+  })
+}
+
+export function getIdCardImage(id, options = {}) {
+  return request({
+    url: `/persons/idcard-image/${id}`,
+    method: 'get',
+    silent: options.silent,
+  })
+}

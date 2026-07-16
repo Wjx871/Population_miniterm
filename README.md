@@ -2,6 +2,8 @@
 
 当前后端发布候选版本为 Backend V1.0.0：课程设计级、可完整演示和原生部署的单体后端。正式 API 总索引见 `doc/api/backend-api-index.md`，部署与运维见 `doc/deployment/backend-v1-deployment.md`。
 
+后端已进入 Phase 14：在新增人员（`POST /api/persons`）前必须先上传身份证影印本接口（`POST /api/persons/idcard-image`），服务端自动调用可选的 PaddleOCR 子服务进行识别，仅将识别结果（姓名、性别、出生日期、民族、地址）与脱敏身份证号回填到前端；使用者可在 OCR 不可达或不可读时点击「跳过 OCR」上传。身份证影印本与人员档案在数据库中通过 `person_idcard_image.person_id` 绑定，编辑时只允许沿用既有图，禁止换图。MySQL 仍是唯一事实来源，OCR 识别失败不影响主流程。详细规范见 `doc/database/migrations/V4_013_person_idcard_image.sql`。
+
 后端已进入 Phase 11：提供综合人口/家庭户/迁移历史查询、统一统计口径、只读日志查询，以及默认关闭、故障可降级的 Redis 缓存与 JWT 注销撤销。MySQL 始终是唯一事实来源；Redis 不保存人口敏感业务数据。详见 `doc/development/phase-11-query-redis-summary.md`。
 
 人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。
@@ -10,7 +12,7 @@
 
 系统现支持申请制迁入/迁出、单级审批后的显式业务执行、当前户籍唯一登记、家庭成员同步、迁出历史快照、户主变更及同市跨区批次关联。操作顺序为：创建迁移草稿 → 上传必需材料 → 提交/审批 → 授权经办人确认执行。审批通过不会自动改变户籍。
 
-增量升级依次执行 `doc/database/migrations` 下的 `V4_001` 至 `V4_012`。数据库通过 `DB_URL/DB_USERNAME/DB_PASSWORD`，JWT 通过 `JWT_SECRET` 配置，上传目录通过 `APP_UPLOAD_DIR` 配置。演示账号仍为 `viewer/population/household/approver/admin`，课程环境初始密码 `123456`。
+增量升级依次执行 `doc/database/migrations` 下的 `V4_001` 至 `V4_013`。数据库通过 `DB_URL/DB_USERNAME/DB_PASSWORD`，JWT 通过 `JWT_SECRET` 配置，上传目录通过 `APP_UPLOAD_DIR` 配置。OCR 子服务通过 `IDCARD_OCR_URL`（默认空，子服务不可达时自动回退为 SKIPPED）配置。演示账号仍为 `viewer/population/household/approver/admin`，课程环境初始密码 `123456`。
 
 ## 第四阶段：注销管理
 
