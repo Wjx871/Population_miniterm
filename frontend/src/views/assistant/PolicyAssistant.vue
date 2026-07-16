@@ -5,10 +5,6 @@
       <div class="hero-copy"><span class="hero-kicker"><i></i>政务智能办理助手</span><h1>政策问答、材料核验<br /><em>一次办清</em></h1><p>围绕人口户籍业务提供有依据的办理指引，并引导您完成下一步操作。</p><div class="hero-tags"><span>RAG 政策检索</span><span>OCR 材料辅助</span><span>轻量 Agent 引导</span></div></div>
       <div class="hero-mascot"><RobotMascot global-tracking /><span class="hero-word">SERVICE</span><div class="hero-hint">眼睛会跟随鼠标移动</div></div>
     </section>
-    <el-card class="intro" shadow="never">
-      <div><h1>政策办理知识助手</h1><p>为您提供系统内置的业务办理指引和相关功能入口。</p></div>
-      <el-alert title="请勿输入身份证号、手机号等敏感信息。回答依据系统内置业务指南，正式办理要求请以主管部门最新规定为准。" type="warning" :closable="false" show-icon />
-    </el-card>
     <el-card shadow="never"><template #header>推荐问题</template><el-space wrap><el-button v-for="item in suggestions" :key="item" plain @click="ask(item)">{{ item }}</el-button></el-space></el-card>
     <el-card shadow="never" class="checklist-card">
       <template #header>办理材料核验建议</template>
