@@ -55,3 +55,8 @@ frontend/playwright-report/
 frontend/test-results/
 
 # User assets
+/ppt素材/
+/素材/
+
+# Generated Python bytecode for the dashboard demo-data generator
+/scripts/data/__pycache__/
