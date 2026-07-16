@@ -30,7 +30,7 @@ public class PolicyTaskAgentService {
                 .map(policyService::query)
                 .toList();
         PolicyAssistantService.QueryResponse primary = responses.get(0);
-        List<PolicyAssistantService.Citation> citations = fuseCitations(responses);
+        List<PolicyAssistantService.Citation> citations = fuseCitations(responses, intent);
         Evidence evidence = checkEvidence(primary, citations);
         List<String> conditions = sectionValues(citations, "\u529e\u7406\u8bf4\u660e", "\u4f7f\u7528\u8303\u56f4", "\u529e\u7406\u8fb9\u754c");
         List<String> materials = sectionValues(citations, "\u6750\u6599", "\u4fe1\u606f");
@@ -40,9 +40,7 @@ public class PolicyTaskAgentService {
             steps = merge(steps, List.of(explainBusinessStatus(raw)));
         }
         List<AllowedAction> nextActions = getAllowedActions(intent, CurrentUserContext.requireUser());
-        String answerSummary = evidence.status.equals("SUFFICIENT") ? primary.answer()
-                : evidence.status.equals("PARTIAL") ? "\u6839\u636e\u5df2\u68c0\u7d22\u5230\u7684\u6307\u5357\uff0c\u53ea\u80fd\u786e\u8ba4\u90e8\u5206\u529e\u7406\u4fe1\u606f\uff1b\u5176\u4f59\u5185\u5bb9\u8bf7\u4ee5\u4e3b\u7ba1\u90e8\u95e8\u8981\u6c42\u4e3a\u51c6\u3002"
-                : "\u5f53\u524d\u77e5\u8bc6\u5e93\u6ca1\u6709\u8db3\u591f\u4f9d\u636e\u786e\u8ba4\u8fd9\u4e2a\u95ee\u9898\uff0c\u8bf7\u8054\u7cfb\u4e1a\u52a1\u4eba\u5458\u6216\u67e5\u9605\u6700\u65b0\u89c4\u5b9a\u3002";
+        String answerSummary = buildSummary(intent, evidence.status, conditions, materials, steps, warnings);
         List<String> trace = new ArrayList<>(List.of(
                 "\u5df2\u8bc6\u522b\u529e\u7406\u4e8b\u9879\uff1a" + intent.label,
                 "\u5df2\u6539\u5199\u4e3a\u72ec\u7acb\u95ee\u9898",
@@ -58,7 +56,12 @@ public class PolicyTaskAgentService {
     }
 
     private Intent classifyIntent(String question, List<ConversationTurn> history) {
-        String text = normalize(question + " " + recentHistory(history));
+        Intent direct = classify(normalize(question));
+        if (direct != Intent.APPLICATION) return direct;
+        return classify(normalize(recentHistory(history)));
+    }
+
+    private Intent classify(String text) {
         if (text.contains("\u8fc1\u5165")) return Intent.MIGRATION_IN;
         if (text.contains("\u8fc1\u51fa")) return Intent.MIGRATION_OUT;
         if (text.contains("\u5c45\u4f4f\u8bc1") || text.contains("\u7b7e\u6ce8")) return Intent.RESIDENCE_PERMIT;
@@ -87,16 +90,21 @@ public class PolicyTaskAgentService {
         return queries.stream().filter(q -> !q.isBlank()).distinct().limit(3).toList();
     }
 
-    private List<PolicyAssistantService.Citation> fuseCitations(List<PolicyAssistantService.QueryResponse> responses) {
+    private List<PolicyAssistantService.Citation> fuseCitations(List<PolicyAssistantService.QueryResponse> responses, Intent intent) {
         Map<String, WeightedCitation> selected = new LinkedHashMap<>();
         for (int queryIndex = 0; queryIndex < responses.size(); queryIndex++) {
             double queryWeight = queryIndex == 0 ? 1.0 : 0.8;
             for (PolicyAssistantService.Citation citation : responses.get(queryIndex).citations()) {
+                if (!matchesIntent(citation, intent)) continue;
                 String key = citation.logicalPath() + "#" + citation.section();
                 double score = queryWeight * (5 - citation.index());
                 WeightedCitation old = selected.get(key);
                 selected.put(key, old == null || score > old.score ? new WeightedCitation(citation, score) : old);
             }
+        }
+        if (selected.isEmpty()) {
+            responses.stream().flatMap(response -> response.citations().stream()).limit(4)
+                    .forEach(citation -> selected.put(citation.logicalPath() + "#" + citation.section(), new WeightedCitation(citation, 0)));
         }
         return selected.values().stream().sorted(Comparator.comparingDouble(WeightedCitation::score).reversed()).limit(4)
                 .map(WeightedCitation::citation).map(c -> new PolicyAssistantService.Citation(0, c.title(), c.section(), c.category(), c.sourceType(), c.version(), c.logicalPath(), c.summary()))
@@ -104,6 +112,30 @@ public class PolicyTaskAgentService {
                     for (int i = 0; i < list.size(); i++) { PolicyAssistantService.Citation c = list.get(i); list.set(i, new PolicyAssistantService.Citation(i + 1, c.title(), c.section(), c.category(), c.sourceType(), c.version(), c.logicalPath(), c.summary())); }
                     return List.copyOf(list);
                 }));
+    }
+
+    private boolean matchesIntent(PolicyAssistantService.Citation citation, Intent intent) {
+        String category = citation.category();
+        return switch (intent) {
+            case MIGRATION_IN -> category.contains("\u8fc1\u5165") || category.contains("\u5e38\u89c1\u95ee\u9898") || category.contains("\u7cfb\u7edf\u64cd\u4f5c");
+            case MIGRATION_OUT -> category.contains("\u8fc1\u51fa") || category.contains("\u5e38\u89c1\u95ee\u9898") || category.contains("\u7cfb\u7edf\u64cd\u4f5c");
+            case RESIDENCE_PERMIT -> category.contains("\u5c45\u4f4f\u8bc1") || category.contains("\u5e38\u89c1\u95ee\u9898") || category.contains("\u7cfb\u7edf\u64cd\u4f5c");
+            case HOUSEHOLD -> category.contains("\u5bb6\u5ead\u6237") || category.contains("\u5e38\u89c1\u95ee\u9898") || category.contains("\u7cfb\u7edf\u64cd\u4f5c");
+            case CANCELLATION -> category.contains("\u6ce8\u9500") || category.contains("\u5e38\u89c1\u95ee\u9898") || category.contains("\u7cfb\u7edf\u64cd\u4f5c");
+            case APPROVAL -> category.contains("\u5ba1\u6279") || category.contains("\u5e38\u89c1\u95ee\u9898") || category.contains("\u7cfb\u7edf\u64cd\u4f5c");
+            case POPULATION -> category.contains("\u4eba\u53e3") || category.contains("\u5e38\u89c1\u95ee\u9898") || category.contains("\u7cfb\u7edf\u64cd\u4f5c");
+            default -> true;
+        };
+    }
+
+    private String buildSummary(Intent intent, String evidenceStatus, List<String> conditions, List<String> materials, List<String> steps, List<String> warnings) {
+        if ("INSUFFICIENT".equals(evidenceStatus)) return "\u5f53\u524d\u77e5\u8bc6\u5e93\u6ca1\u6709\u8db3\u591f\u4f9d\u636e\u786e\u8ba4\u8fd9\u4e2a\u95ee\u9898\uff0c\u8bf7\u8054\u7cfb\u4e1a\u52a1\u4eba\u5458\u6216\u67e5\u9605\u6700\u65b0\u89c4\u5b9a\u3002";
+        String detail = java.util.stream.Stream.of(materials, conditions, steps, warnings).flatMap(Collection::stream).findFirst().orElse("\u8bf7\u53c2\u8003\u4e0b\u65b9\u653f\u7b56\u4f9d\u636e\u3002");
+        int sentenceEnd = detail.indexOf('\u3002');
+        if (sentenceEnd >= 0) detail = detail.substring(0, sentenceEnd + 1);
+        if (detail.length() > 120) detail = detail.substring(0, 120) + "\u2026";
+        String prefix = "\u5df2\u8bc6\u522b\u4e3a\u201c" + intent.label + "\u201d\u4efb\u52a1\u3002";
+        return "PARTIAL".equals(evidenceStatus) ? prefix + detail + "\u5176\u4f59\u5185\u5bb9\u8bf7\u4ee5\u4e3b\u7ba1\u90e8\u95e8\u6700\u65b0\u8981\u6c42\u4e3a\u51c6\u3002" : prefix + detail;
     }
 
     private Evidence checkEvidence(PolicyAssistantService.QueryResponse primary, List<PolicyAssistantService.Citation> citations) {
