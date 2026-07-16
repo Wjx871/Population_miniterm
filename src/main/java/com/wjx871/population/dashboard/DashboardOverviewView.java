@@ -15,4 +15,6 @@ public class DashboardOverviewView {
     private long expiringResidencePermits;
     private long migrationInPeriod;
     private long migrationOutPeriod;
+    private PopulationStructureView populationStructure;
+    private KeyBusinessView keyBusiness;
 }

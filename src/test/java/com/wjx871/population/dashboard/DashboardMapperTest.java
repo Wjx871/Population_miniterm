@@ -75,6 +75,26 @@ class DashboardMapperTest {
         assertThat(rows).noneMatch(row -> row.getRegionCode() != null && row.getRegionCode().startsWith("12"));
     }
 
+    @Test
+    void supplementalDashboardPanelsReadTheirSourceTables() {
+        DataScopeCriteria all = allScope();
+        LocalDate from = LocalDate.of(2025, 1, 1);
+        LocalDate to = LocalDate.of(2026, 12, 31);
+
+        assertThat(mapper.registeredPopulationGender(all))
+                .anyMatch(row -> "男".equals(row.getCode()));
+        assertThat(mapper.registeredPopulationAgeGroups(LocalDate.of(2026, 7, 12), all)).isNotEmpty();
+        assertThat(mapper.businessScale(from, to, all))
+                .anyMatch(row -> "DASH_SEED".equals(row.getCode()));
+        assertThat(mapper.populationScaleTrend(from, to, all)).isNotEmpty();
+        assertThat(mapper.approvalStatusDistribution(all))
+                .extracting(NamedCountView::getCode)
+                .contains("PENDING", "APPROVED");
+        assertThat(mapper.countActiveKeyPopulation(all)).isZero();
+        assertThat(mapper.countPendingCancellation(all)).isZero();
+        assertThat(mapper.countPendingSensitiveExport(all)).isZero();
+    }
+
     private DataScopeCriteria allScope() {
         return new DataScopeCriteria(DataScope.ALL, 3L, 3L, "110000");
     }
