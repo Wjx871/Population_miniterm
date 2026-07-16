@@ -20,8 +20,8 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 const props = defineProps({ compact: { type: Boolean, default: false }, globalTracking: { type: Boolean, default: false } })
 const root = ref(null); const pointer = ref({ x: 0, y: 0 })
 // 视线覆盖整个屏幕；机身以更慢、更小的幅度平行追随光标。
-const motionStyle = computed(() => ({ '--robot-x': `${pointer.value.x * 16}px`, '--robot-tilt': `${pointer.value.x * 3}deg` }))
-const eyeStyle = computed(() => ({ transform: `translate(${pointer.value.x * 28}px, ${pointer.value.y * 18}px)` }))
+const motionStyle = computed(() => ({ '--robot-x': `${pointer.value.x * (props.compact ? 24 : 25)}px`, '--robot-tilt': `${pointer.value.x * (props.compact ? 4.5 : 4)}deg` }))
+const eyeStyle = computed(() => ({ transform: `translate(${pointer.value.x * (props.compact ? 40 : 42)}px, ${pointer.value.y * (props.compact ? 27 : 28)}px)` }))
 function followPointer(event) { const box = root.value?.getBoundingClientRect(); if (!box) return; pointer.value = props.globalTracking ? { x: Math.max(-1, Math.min(1, event.clientX / window.innerWidth * 2 - 1)), y: Math.max(-1, Math.min(1, event.clientY / window.innerHeight * 2 - 1)) } : { x: Math.max(-1, Math.min(1, (event.clientX - box.left) / box.width * 2 - 1)), y: Math.max(-1, Math.min(1, (event.clientY - box.top) / box.height * 2 - 1)) } }
 function resetPointer() { pointer.value = { x: 0, y: 0 } }
 onMounted(() => { if (props.globalTracking) window.addEventListener('pointermove', followPointer, { passive: true }) })
