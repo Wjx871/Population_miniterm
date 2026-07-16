@@ -1,9 +1,0 @@
-{
-  "navigationBarTitleText": "移动工作台",
-  "enablePullDownRefresh": true,
-  "usingComponents": {
-    "loading-state": "/components/loading-state/index",
-    "empty-state": "/components/empty-state/index",
-    "error-state": "/components/error-state/index"
-  }
-}
