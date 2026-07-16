@@ -24,6 +24,7 @@ export const demoOverview = {
   keyBusiness: {
     activeKeyPopulation: 850,
     pendingCancellation: 15,
+    expiringResidencePermits: 12500,
     pendingSensitiveExport: 3
   }
 }

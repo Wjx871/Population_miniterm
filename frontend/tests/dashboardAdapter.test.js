@@ -46,3 +46,15 @@ test('Dashboard adapter 在重点业务字段缺失时保留空状态', () => {
   const overview = normalizeDashboardOverview({})
   assert.equal(overview.keyBusiness, null)
 })
+
+test('Dashboard adapter 保留演示模式的即将到期证件统计', () => {
+  const overview = normalizeDashboardOverview({
+    keyBusiness: {
+      activeKeyPopulation: 1,
+      pendingCancellation: 2,
+      expiringResidencePermits: 3,
+      pendingSensitiveExport: 4,
+    },
+  })
+  assert.equal(overview.keyBusiness.expiringResidencePermits, 3)
+})
