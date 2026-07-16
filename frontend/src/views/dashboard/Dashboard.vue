@@ -41,7 +41,7 @@
       <DashboardStatCard v-if="can('residence-permit:expiry:view')" label="即将到期居住证" :value="overview.expiringResidencePermits" :icon="Warning" colorTheme="red" />
       <DashboardStatCard :label="migrationInLabel" :value="overview.migrationInPeriod" :icon="TrendCharts" colorTheme="blue" />
       <DashboardStatCard :label="migrationOutLabel" :value="overview.migrationOutPeriod" :icon="TrendCharts" colorTheme="green" />
-      <DashboardStatCard :label="netMigrationLabel" :value="overview.migrationInPeriod - overview.migrationOutPeriod" :icon="DataAnalysis" colorTheme="purple" />
+      <DashboardStatCard :label="netMigrationLabel" :value="netMigration" :icon="DataAnalysis" colorTheme="purple" />
     </section>
     <section class="content-grid"><QuickActionPanel :actions="quickActions"/><WorkItemList title="待审批事项" :items="pending.items" :error="pending.error" :retry="can('approval:view')" @retry="loadWorkItems"/><WorkItemList title="我的近期申请" :items="applications.items" :error="applications.error" :retry="can('application:view')" @retry="loadWorkItems"/><WorkItemList title="即将到期居住证" :items="expiring.items" :error="expiring.error" :retry="can('residence-permit:expiry:view')" @retry="loadWorkItems"/></section>
     <section class="chart-card"><div class="section-heading"><div><h2>近 30 日迁移趋势</h2><p>仅统计已完成迁移业务</p></div><el-button link type="primary" @click="$router.push('/statistics/dashboard')">查看数据大屏</el-button></div><MigrationTrendChart :points="charts.migrationTrend"/></section>
@@ -66,6 +66,7 @@ import MigrationTrendChart from './components/MigrationTrendChart.vue'
 
 const userStore=useUserStore(); const refreshing=ref(false); const summaryError=ref(''); const overview=reactive(normalizeDashboardOverview()); const charts=reactive(normalizeDashboardCharts()); const pending=reactive({items:[],error:false});const applications=reactive({items:[],error:false});const expiring=reactive({items:[],error:false})
 const can=(permission)=>userStore.hasPermission(permission)
+const netMigration=computed(()=>Number.isFinite(overview.migrationInPeriod)&&Number.isFinite(overview.migrationOutPeriod)?overview.migrationInPeriod-overview.migrationOutPeriod:null)
 const migrationInLabel=computed(()=>`近${overview.periodDays ?? 30}日迁入`)
 const migrationOutLabel=computed(()=>`近${overview.periodDays ?? 30}日迁出`)
 const netMigrationLabel=computed(()=>`近${overview.periodDays ?? 30}日净流入`)
