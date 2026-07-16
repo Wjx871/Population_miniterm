@@ -1,9 +1,9 @@
 <template>
-  <CyberPanel title="业务类型占比">
+  <CyberPanel title="业务申请类型占比">
     <BaseEChart 
       :option="businessTypeShareOption(data)" 
       :empty="!hasData" 
-      label="业务类型占比图" 
+      label="业务申请类型占比图"
     />
   </CyberPanel>
 </template>

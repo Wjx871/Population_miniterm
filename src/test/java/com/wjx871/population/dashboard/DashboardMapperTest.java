@@ -87,7 +87,7 @@ class DashboardMapperTest {
         assertThat(mapper.businessScale(from, to, all))
                 .anyMatch(row -> "DASH_SEED".equals(row.getCode()));
         assertThat(mapper.populationScaleTrend(from, to, all)).isNotEmpty();
-        assertThat(mapper.permitStatusDistribution(all))
+        assertThat(mapper.approvalStatusDistribution(all))
                 .extracting(NamedCountView::getCode)
                 .contains("PENDING", "APPROVED");
         assertThat(mapper.countActiveKeyPopulation(all)).isZero();

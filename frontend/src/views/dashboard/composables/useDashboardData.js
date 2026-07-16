@@ -43,6 +43,7 @@ export function useDashboardData() {
       overviewError.value = false
     } catch (e) {
       console.error('Failed to load dashboard overview', e)
+      Object.assign(overview, normalizeDashboardOverview())
       overviewError.value = true
     } finally {
       overviewLoading.value = false
@@ -71,6 +72,7 @@ export function useDashboardData() {
       chartsError.value = false
     } catch (e) {
       console.error('Failed to load dashboard charts', e)
+      Object.assign(charts, normalizeDashboardCharts())
       chartsError.value = true
     } finally {
       chartsLoading.value = false

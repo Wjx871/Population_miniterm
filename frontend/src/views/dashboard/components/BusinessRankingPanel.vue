@@ -1,5 +1,5 @@
 <template>
-  <CyberPanel title="业务办理量排行">
+  <CyberPanel title="业务申请量排行">
     <template v-if="hasData">
       <div class="ranking-container">
         <div v-for="(item, index) in rankingList" :key="item.label" class="ranking-item">

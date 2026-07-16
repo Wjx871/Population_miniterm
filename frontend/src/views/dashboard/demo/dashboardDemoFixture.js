@@ -47,7 +47,7 @@ export const demoCharts = {
     { code: 'KEY_POPULATION', label: '重点人口', value: 8500 },
     { code: 'CERTIFICATE', label: '证明开具', value: 26000 }
   ],
-  permitStatusDistribution: [
+  approvalStatusDistribution: [
     { code: 'PENDING', label: '待审批', value: 25000 },
     { code: 'APPROVED', label: '已审批', value: 48000 },
     { code: 'REJECTED', label: '已驳回', value: 12000 },

@@ -60,7 +60,7 @@ public class DashboardService {
         view.setGeneratedAt(LocalDateTime.now(clock));
         view.setMigrationTrend(trend);
         view.setBusinessScale(mapper.businessScale(from, today, scope));
-        view.setPermitStatusDistribution(mapper.permitStatusDistribution(scope));
+        view.setApprovalStatusDistribution(mapper.approvalStatusDistribution(scope));
         view.setRegisteredPopulationByRegion(mapper.registeredPopulationByRegion(scope, regionLimit));
         view.setPopulationScaleTrend(populationScaleTrend(from, today, scope));
         return view;

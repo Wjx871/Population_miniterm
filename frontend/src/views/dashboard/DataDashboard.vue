@@ -22,7 +22,7 @@
         <DashboardKpiCard label="有效居住证" :value="overview.activeResidencePermits" icon="Postcard" unit="张" tone="green" />
         <DashboardKpiCard label="待审批业务" :value="overview.pendingApprovals" icon="Document" unit="件" tone="yellow" />
         <DashboardKpiCard label="证件即将到期" :value="overview.expiringResidencePermits" icon="Warning" unit="张" tone="red" />
-        <DashboardKpiCard label="本期净流入" :value="(overview.migrationInPeriod || 0) - (overview.migrationOutPeriod || 0)" icon="TrendCharts" tone="purple" />
+        <DashboardKpiCard label="本期净流入" :value="netMigration" icon="TrendCharts" tone="purple" />
       </section>
 
       <!-- 主要内容区骨架 -->
@@ -41,7 +41,7 @@
           </div>
         </div>
         <div class="column right-column">
-          <ApprovalStatusPanel class="panel" :data="charts.permitStatusDistribution" />
+          <ApprovalStatusPanel class="panel" :data="charts.approvalStatusDistribution" />
           <KeyBusinessMonitorPanel class="panel" :data="overview.keyBusiness" />
           <BusinessTypeSharePanel class="panel" :data="charts.businessScale" />
         </div>
@@ -58,7 +58,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useDashboardFullscreen } from './composables/useDashboardFullscreen';
 import { useDashboardScale } from './composables/useDashboardScale';
 import { useDashboardData } from './composables/useDashboardData';
@@ -82,6 +82,12 @@ import PopulationScalePanel from './components/PopulationScalePanel.vue';
 
 const wrapperRef = ref(null);
 const canvasRef = ref(null);
+
+const netMigration = computed(() => {
+  const incoming = overview.migrationInPeriod;
+  const outgoing = overview.migrationOutPeriod;
+  return Number.isFinite(incoming) && Number.isFinite(outgoing) ? incoming - outgoing : null;
+});
 
 // 绑定全屏
 const { isFullscreen, toggleFullscreen } = useDashboardFullscreen();

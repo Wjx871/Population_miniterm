@@ -16,8 +16,8 @@ test('Dashboard adapter 保留 null 和 false，不将其转为 0', () => {
 
 test('Dashboard charts 对非数组回退为空数组且不改写源数组', () => {
   const source = [{ date: '2026-07-01', inCount: 0, outCount: 2 }]
-  const charts = normalizeDashboardCharts({ migrationTrend: source, permitStatusDistribution: 'invalid' })
-  assert.deepEqual(charts.permitStatusDistribution, [])
+  const charts = normalizeDashboardCharts({ migrationTrend: source, approvalStatusDistribution: 'invalid' })
+  assert.deepEqual(charts.approvalStatusDistribution, [])
   assert.notEqual(charts.migrationTrend, source)
   assert.equal(source[0].inCount, 0)
 })
@@ -40,4 +40,9 @@ test('Dashboard adapter 保留真实模式补充面板的接口数据', () => {
   assert.deepEqual(charts.populationScaleTrend, [
     { date: '2026-07-12', registeredPopulation: 2, floatingPopulation: 3, residencePermits: 4 },
   ])
+})
+
+test('Dashboard adapter 在重点业务字段缺失时保留空状态', () => {
+  const overview = normalizeDashboardOverview({})
+  assert.equal(overview.keyBusiness, null)
 })

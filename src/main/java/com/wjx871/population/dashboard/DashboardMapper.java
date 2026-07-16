@@ -17,7 +17,7 @@ public interface DashboardMapper {
     long countMigrationsOut(@Param("from") LocalDate from, @Param("to") LocalDate to, @Param("scope") DataScopeCriteria scope);
     List<MigrationTrendPoint> migrationInTrend(@Param("from") LocalDate from, @Param("to") LocalDate to, @Param("scope") DataScopeCriteria scope);
     List<MigrationTrendPoint> migrationOutTrend(@Param("from") LocalDate from, @Param("to") LocalDate to, @Param("scope") DataScopeCriteria scope);
-    List<NamedCountView> permitStatusDistribution(@Param("scope") DataScopeCriteria scope);
+    List<NamedCountView> approvalStatusDistribution(@Param("scope") DataScopeCriteria scope);
     List<RegionCountView> registeredPopulationByRegion(@Param("scope") DataScopeCriteria scope, @Param("limit") int limit);
     List<NamedCountView> registeredPopulationGender(@Param("scope") DataScopeCriteria scope);
     List<NamedCountView> registeredPopulationAgeGroups(@Param("today") LocalDate today,

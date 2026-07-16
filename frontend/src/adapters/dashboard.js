@@ -35,11 +35,11 @@ export function normalizeDashboardOverview(raw = {}) {
       },
       ageGroups: namedCounts(raw?.populationStructure?.ageGroups),
     },
-    keyBusiness: {
-      activeKeyPopulation: finiteNumber(raw?.keyBusiness?.activeKeyPopulation),
-      pendingCancellation: finiteNumber(raw?.keyBusiness?.pendingCancellation),
-      expiringResidencePermits: finiteNumber(raw?.keyBusiness?.expiringResidencePermits),
-      pendingSensitiveExport: finiteNumber(raw?.keyBusiness?.pendingSensitiveExport),
+    keyBusiness: raw?.keyBusiness == null ? null : {
+      activeKeyPopulation: finiteNumber(raw.keyBusiness.activeKeyPopulation),
+      pendingCancellation: finiteNumber(raw.keyBusiness.pendingCancellation),
+      expiringResidencePermits: finiteNumber(raw.keyBusiness.expiringResidencePermits),
+      pendingSensitiveExport: finiteNumber(raw.keyBusiness.pendingSensitiveExport),
     },
   }
 }
@@ -53,7 +53,7 @@ export function normalizeDashboardCharts(raw = {}) {
       outCount: finiteNumber(item?.outCount),
     })),
     businessScale: namedCounts(raw?.businessScale),
-    permitStatusDistribution: namedCounts(raw?.permitStatusDistribution),
+    approvalStatusDistribution: namedCounts(raw?.approvalStatusDistribution),
     registeredPopulationByRegion: array(raw?.registeredPopulationByRegion).map((item) => ({
       regionCode: item?.regionCode ?? '', regionName: item?.regionName ?? null, value: finiteNumber(item?.value),
     })),

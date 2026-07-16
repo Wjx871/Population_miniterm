@@ -9,7 +9,7 @@ public class DashboardChartsView {
     private LocalDateTime generatedAt;
     private List<MigrationTrendPoint> migrationTrend;
     private List<NamedCountView> businessScale;
-    private List<NamedCountView> permitStatusDistribution;
+    private List<NamedCountView> approvalStatusDistribution;
     private List<RegionCountView> registeredPopulationByRegion;
     private List<PopulationScaleTrendPoint> populationScaleTrend;
 }
