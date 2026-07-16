@@ -100,7 +100,8 @@ import {
   TrendCharts,
   Download,
   CircleClose,
-  Location
+  Location,
+  ChatDotRound
 } from '@element-plus/icons-vue';
 import { useUserStore } from '../stores/user';
 import { ROLE_BADGE_TYPE } from '../constants/roles';
@@ -133,7 +134,8 @@ const MENU_ICON_MAP = Object.freeze({
   TrendCharts: markRaw(TrendCharts),
   Download: markRaw(Download),
   CircleClose: markRaw(CircleClose),
-  Location: markRaw(Location)
+  Location: markRaw(Location),
+  ChatDotRound: markRaw(ChatDotRound)
 });
 
 function resolveMenuIcon(name) {
@@ -194,6 +196,7 @@ function getGroupIcon(groupName) {
     '扩展业务': 'StarFilled',
     '查询统计': 'DataAnalysis',
     '系统管理': 'Setting'
+    ,'智能办理助手': 'ChatDotRound'
   };
   return map[groupName] || 'Menu';
 }
