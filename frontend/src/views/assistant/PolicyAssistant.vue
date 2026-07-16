@@ -5,6 +5,13 @@
       <el-alert title="请勿输入身份证号、手机号等敏感信息。回答依据系统内置业务指南，正式办理要求请以主管部门最新规定为准。" type="warning" :closable="false" show-icon />
     </el-card>
     <el-card shadow="never"><template #header>推荐问题</template><el-space wrap><el-button v-for="item in suggestions" :key="item" plain @click="ask(item)">{{ item }}</el-button></el-space></el-card>
+    <el-card shadow="never" class="ocr-card">
+      <template #header>身份证材料识别</template>
+      <el-alert title="仅用于辅助核验，请上传演示或已获授权的身份证正面图片；识别结果不会自动写入人口数据库。" type="info" :closable="false" show-icon />
+      <div class="ocr-upload"><el-upload :auto-upload="false" :show-file-list="false" accept="image/jpeg,image/png" :on-change="selectOcrFile"><el-button :loading="ocrLoading">上传并识别身份证正面</el-button></el-upload></div>
+      <el-descriptions v-if="ocrResult" :column="2" border class="ocr-result"><el-descriptions-item label="证件类型">{{ ocrResult.documentType }}</el-descriptions-item><el-descriptions-item label="置信度">{{ Math.round(ocrResult.confidence * 100) }}%</el-descriptions-item><el-descriptions-item label="姓名">{{ ocrResult.name || '未识别' }}</el-descriptions-item><el-descriptions-item label="身份证号">{{ ocrResult.idCard || '未识别' }}</el-descriptions-item><el-descriptions-item label="出生日期">{{ ocrResult.birthDate || '未识别' }}</el-descriptions-item><el-descriptions-item label="性别">{{ ocrResult.gender || '未识别' }}</el-descriptions-item><el-descriptions-item label="户籍地址" :span="2">{{ ocrResult.address || '未识别' }}</el-descriptions-item></el-descriptions>
+      <p v-if="ocrResult" class="ocr-notice">{{ ocrResult.notice }}</p>
+    </el-card>
     <el-card class="conversation" shadow="never">
       <template #header>咨询记录</template>
       <el-empty v-if="messages.length === 0" description="请输入您的业务办理问题" />
@@ -25,15 +32,17 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getPolicySuggestions, queryPolicyAssistant } from '../../api/policyAssistant.js'
+import { getPolicySuggestions, queryPolicyAssistant, recognizeIdCard } from '../../api/policyAssistant.js'
 
 const router = useRouter(); const suggestions = ref([]); const messages = ref([]); const question = ref(''); const loading = ref(false); const lastFailed = ref('')
+const ocrLoading = ref(false); const ocrResult = ref(null)
 const ACTION_WHITELIST = new Set(['/migrations', '/residence-permits', '/approvals', '/households', '/applications'])
 onMounted(async () => { try { suggestions.value = await getPolicySuggestions() } catch { suggestions.value = [] } })
 async function ask(value) { const text = String(value || '').trim(); if (!text || loading.value || text.length > 500) return; loading.value = true; lastFailed.value = ''; messages.value.push({ role: 'user', content: text }); question.value = ''; try { const response = await queryPolicyAssistant(text); messages.value.push({ role: 'assistant', content: response.answer, response }); if (messages.value.length > 6) messages.value.splice(0, messages.value.length - 6) } catch { lastFailed.value = text; ElMessage.error('咨询请求失败，请检查网络后重试') } finally { loading.value = false } }
 function go(path) { if (!ACTION_WHITELIST.has(path)) return; const target = router.resolve(path); if (target.matched.length && target.meta && target.meta.requiresAuth !== false) router.push(path) }
+async function selectOcrFile(uploadFile) { const file = uploadFile.raw; if (!file) return; if (!['image/jpeg', 'image/png'].includes(file.type) || file.size > 5 * 1024 * 1024) { ElMessage.warning('仅支持 5MB 以内的 JPG、JPEG 或 PNG 图片'); return } ocrLoading.value = true; ocrResult.value = null; try { ocrResult.value = await recognizeIdCard(file) } catch { ElMessage.error('材料识别失败，请确认 OCR 服务已启动后重试') } finally { ocrLoading.value = false } }
 </script>
 
 <style scoped>
-.assistant-page{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}.intro{background:linear-gradient(120deg,#edf5ff,#fff)}.intro h1{margin:0 0 8px;color:#173f73}.intro p{margin:0 0 16px;color:#5f6f82}.conversation{min-height:430px}.message{margin:16px 0;padding:14px 16px;border-radius:8px;max-width:92%}.message.user{margin-left:auto;background:#eaf3ff}.message.assistant{background:#f7f9fc;border:1px solid #e7edf5}.message-label{font-weight:600;color:#285e9d;margin-bottom:8px}.message-text{white-space:pre-wrap;line-height:1.7;color:#273849}.message section{border-top:1px solid #e6edf5;margin-top:14px;padding-top:10px}.message h3{font-size:14px;margin:0 0 8px;color:#34495e}.message li{margin:8px 0;line-height:1.55}.composer{margin-top:20px;border-top:1px solid #edf0f5;padding-top:16px}.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+.assistant-page{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}.intro{background:linear-gradient(120deg,#edf5ff,#fff)}.intro h1{margin:0 0 8px;color:#173f73}.intro p{margin:0 0 16px;color:#5f6f82}.ocr-upload{margin-top:14px}.ocr-result{margin-top:14px}.ocr-notice{color:#8a5a18;font-size:13px}.conversation{min-height:430px}.message{margin:16px 0;padding:14px 16px;border-radius:8px;max-width:92%}.message.user{margin-left:auto;background:#eaf3ff}.message.assistant{background:#f7f9fc;border:1px solid #e7edf5}.message-label{font-weight:600;color:#285e9d;margin-bottom:8px}.message-text{white-space:pre-wrap;line-height:1.7;color:#273849}.message section{border-top:1px solid #e6edf5;margin-top:14px;padding-top:10px}.message h3{font-size:14px;margin:0 0 8px;color:#34495e}.message li{margin:8px 0;line-height:1.55}.composer{margin-top:20px;border-top:1px solid #edf0f5;padding-top:16px}.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
 </style>

@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.List;
 @PreAuthorize("hasAuthority('population:view')")
 public class PolicyAssistantController {
     private final PolicyAssistantService service;
+    private final PolicyOcrService ocrService;
 
     @PostMapping("/query")
     public ApiResponse<PolicyAssistantService.QueryResponse> query(@Valid @RequestBody QueryRequest request) {
@@ -24,6 +26,11 @@ public class PolicyAssistantController {
 
     @GetMapping("/suggestions")
     public ApiResponse<List<String>> suggestions() { return ApiResponse.ok(service.suggestions()); }
+
+    @PostMapping(value = "/ocr/id-card", consumes = "multipart/form-data")
+    public ApiResponse<PolicyOcrService.OcrResponse> recognizeIdCard(@RequestPart("file") MultipartFile file) {
+        return ApiResponse.ok(ocrService.recognizeIdCard(file));
+    }
 
     public record QueryRequest(@NotBlank @Size(max = 500) String question) { }
 }
