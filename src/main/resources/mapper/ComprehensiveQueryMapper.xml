@@ -5,21 +5,23 @@
     <if test="scope.dataScope.name() != 'ALL'">
       <choose>
         <when test="scope.dataScope.name() == 'SELF'">
-          AND EXISTS (
+          AND (p.created_by_user_id = #{scope.userId} OR EXISTS (
             SELECT 1 FROM business_application a
             WHERE a.target_person_id = p.person_id
               AND a.applicant_user_id = #{scope.userId}
-          )
+          ))
         </when>
         <when test="scope.dataScope.name() == 'DEPARTMENT'">
-          AND EXISTS (
+          AND (p.created_department_id = #{scope.departmentId} OR EXISTS (
             SELECT 1 FROM business_application a
             WHERE a.target_person_id = p.person_id
               AND a.applicant_department_id = #{scope.departmentId}
-          )
+          ))
         </when>
         <otherwise>
           AND (
+            SUBSTRING(p.created_region_code, 1, 2) = SUBSTRING(#{scope.regionCode}, 1, 2)
+            OR
             EXISTS (
               SELECT 1 FROM residence rs
               WHERE rs.person_id = p.person_id

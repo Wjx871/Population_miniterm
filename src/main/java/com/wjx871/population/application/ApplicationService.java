@@ -61,9 +61,9 @@ public class ApplicationService {
     public Page<ApplicationView> search(String no, BusinessType type, ApplicationStatus status, String applicantName,
                                         LocalDateTime from, LocalDateTime to, Pageable pageable) {
         AuthenticatedUser user = CurrentUserContext.requireUser();
-        boolean approvalViewer = user.permissions().contains("approval:view");
+        boolean scopedViewer = hasScopedViewPermission(user, type);
         ApplicationQuery query = new ApplicationQuery(trim(no), type, status, trim(applicantName), from, to,
-                DataScopeCriteria.current(), approvalViewer, pageable.getPageSize(), pageable.getOffset());
+                DataScopeCriteria.current(), scopedViewer, pageable.getPageSize(), pageable.getOffset());
         return new PageImpl<>(mapper.selectByQuery(query).stream().map(ApplicationView::from).toList(), pageable,
                 mapper.countByQuery(query));
     }
@@ -141,7 +141,7 @@ public class ApplicationService {
 
     public void assertCanView(BusinessApplication value, AuthenticatedUser user) {
         if (value.getApplicantUserId().equals(user.userId())) return;
-        if (!user.permissions().contains("approval:view")) forbidden();
+        if (!hasScopedViewPermission(user, value.getBusinessType())) forbidden();
         if (user.dataScope() == DataScope.ALL) return;
         if (user.dataScope() == DataScope.DEPARTMENT && value.getApplicantDepartmentId() != null
                 && value.getApplicantDepartmentId().equals(user.departmentId())) return;
@@ -187,6 +187,19 @@ public class ApplicationService {
         if (targetRegionCode == null || scopeRegionCode == null || scopeRegionCode.isBlank()) return false;
         String prefix = scopeRegionCode.replaceFirst("0+$", "");
         return !prefix.isEmpty() && targetRegionCode.startsWith(prefix);
+    }
+
+    /**
+     * 审批查看权限可查看各类申请；迁移查看权限只扩展到迁入、迁出业务。
+     * 不能用 approval:view 作为迁移列表的数据范围开关，否则户籍管理人员会只剩本人申请可见。
+     */
+    private boolean hasScopedViewPermission(AuthenticatedUser user, BusinessType type) {
+        return user.permissions().contains("approval:view")
+                || (isMigration(type) && user.permissions().contains("migration:view"));
+    }
+
+    private boolean isMigration(BusinessType type) {
+        return type == BusinessType.MIGRATION_IN || type == BusinessType.MIGRATION_OUT;
     }
 
     private void forbidden() { throw new BusinessException(HttpStatus.FORBIDDEN, "无权访问该申请"); }

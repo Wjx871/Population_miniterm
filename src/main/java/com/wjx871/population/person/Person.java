@@ -1,5 +1,6 @@
 package com.wjx871.population.person;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -33,6 +34,16 @@ public class Person {
 
     private String status = PersonStatus.NORMAL;
     private String currentStatusCode;
+
+    /** Data-scope ownership captured when a person record is created directly. */
+    @JsonIgnore
+    private Long createdByUserId;
+
+    @JsonIgnore
+    private Long createdDepartmentId;
+
+    @JsonIgnore
+    private String createdRegionCode;
 
     private LocalDateTime createdAt;
 

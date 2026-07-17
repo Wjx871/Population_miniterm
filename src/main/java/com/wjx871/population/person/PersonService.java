@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import com.wjx871.population.security.SensitiveDataMaskingService;
 import com.wjx871.population.security.DataScopeCriteria;
+import com.wjx871.population.security.AuthenticatedUser;
+import com.wjx871.population.security.CurrentUserContext;
 
 /**
  * 人口基础信息业务服务。
@@ -94,7 +96,11 @@ public class PersonService {
         LocalDateTime now = LocalDateTime.now();
         Person person = new Person();
         apply(request, person, identity);
+        AuthenticatedUser operator = CurrentUserContext.requireUser();
         person.setIdCard(idCard);
+        person.setCreatedByUserId(operator.userId());
+        person.setCreatedDepartmentId(operator.departmentId());
+        person.setCreatedRegionCode(operator.regionCode());
         person.setCreatedAt(now);
         person.setUpdatedAt(now);
         personMapper.insertPerson(person);
