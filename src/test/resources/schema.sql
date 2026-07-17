@@ -118,6 +118,9 @@ CREATE TABLE person (
     ethnicity VARCHAR(30),
     phone VARCHAR(20),
     current_address VARCHAR(255),
+    created_by_user_id BIGINT,
+    created_department_id BIGINT,
+    created_region_code VARCHAR(20),
     status VARCHAR(20) NOT NULL DEFAULT '正常',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

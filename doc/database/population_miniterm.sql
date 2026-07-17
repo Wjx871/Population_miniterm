@@ -147,11 +147,17 @@ CREATE TABLE IF NOT EXISTS person (
     ethnicity VARCHAR(30) NULL,
     phone VARCHAR(20) NULL,
     current_address VARCHAR(255) NULL,
+    created_by_user_id BIGINT NULL,
+    created_department_id BIGINT NULL,
+    created_region_code VARCHAR(20) NULL,
     status VARCHAR(20) NOT NULL DEFAULT '正常',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (person_id),
-    UNIQUE KEY uk_person_id_card (id_card)
+    UNIQUE KEY uk_person_id_card (id_card),
+    KEY idx_person_created_by_user (created_by_user_id),
+    KEY idx_person_created_department (created_department_id),
+    KEY idx_person_created_region (created_region_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS household (

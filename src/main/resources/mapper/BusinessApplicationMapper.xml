@@ -20,9 +20,9 @@
     <if test="businessType != null">AND a.business_type=#{businessType}</if><if test="status != null">AND a.status=#{status}</if>
     <if test="applicantName != null">AND u.real_name LIKE CONCAT('%',#{applicantName},'%')</if>
     <if test="createdFrom != null">AND a.created_at &gt;= #{createdFrom}</if><if test="createdTo != null">AND a.created_at &lt;= #{createdTo}</if>
-    <choose><when test="!approvalViewer">AND a.applicant_user_id=#{scope.userId}</when>
+    <choose><when test="!scopedViewer">AND a.applicant_user_id=#{scope.userId}</when>
       <when test="scope.dataScope.name() == 'DEPARTMENT'">AND a.applicant_department_id=#{scope.departmentId}</when>
-      <when test="scope.dataScope.name() == 'REGION'">AND a.applicant_region_code=#{scope.regionCode}</when>
+      <when test="scope.dataScope.name() == 'REGION'">AND a.applicant_region_code LIKE CONCAT(#{scope.regionPrefix},'%')</when>
       <when test="scope.dataScope.name() == 'SELF'">AND a.applicant_user_id=#{scope.userId}</when></choose>
   </where></sql>
   <select id="countByQuery" resultType="long">SELECT COUNT(*) FROM business_application a JOIN sys_user u ON u.user_id=a.applicant_user_id <include refid="filters"/></select>

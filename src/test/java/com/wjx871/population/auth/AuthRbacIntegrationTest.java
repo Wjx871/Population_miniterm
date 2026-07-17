@@ -146,6 +146,59 @@ class AuthRbacIntegrationTest {
                         .content(personJsonWithImage("110101199901018899", imageId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value(201));
+
+        Long populationUserId = jdbcTemplate.queryForObject(
+                "SELECT user_id FROM sys_user WHERE username = 'population'", Long.class);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT created_by_user_id FROM person WHERE id_card = ?", Long.class,
+                "110101199901018899")).isEqualTo(populationUserId);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT created_region_code FROM person WHERE id_card = ?", String.class,
+                "110101199901018899")).isEqualTo("110000");
+
+        mockMvc.perform(get("/api/persons").param("idCard", "110101199901018899")
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements").value(1));
+        mockMvc.perform(get("/api/persons").param("idCard", "110101199901018899")
+                        .header("Authorization", bearer(tokenFor("household"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements").value(1));
+    }
+
+    @Test
+    void householdCanViewRegionalMigrationApplicationsWithoutReceivingApprovalScope() throws Exception {
+        String migrationNo = "APP-MIGRATION-SCOPE-001";
+        String genericNo = "APP-GENERAL-SCOPE-001";
+        jdbcTemplate.update("""
+                INSERT INTO business_application(application_no,business_type,title,applicant_user_id,
+                    applicant_department_id,applicant_region_code,status,reason,version)
+                VALUES(?, 'MIGRATION_IN', 'Regional migration', 2, 2, '110105', 'DRAFT', 'test', 0)
+                """, migrationNo);
+        Long migrationId = jdbcTemplate.queryForObject(
+                "SELECT application_id FROM business_application WHERE application_no=?", Long.class, migrationNo);
+        jdbcTemplate.update("""
+                INSERT INTO business_application(application_no,business_type,title,applicant_user_id,
+                    applicant_department_id,applicant_region_code,status,reason,version)
+                VALUES(?, 'GENERAL_SERVICE', 'Generic application', 2, 2, '110105', 'DRAFT', 'test', 0)
+                """, genericNo);
+        Long genericId = jdbcTemplate.queryForObject(
+                "SELECT application_id FROM business_application WHERE application_no=?", Long.class, genericNo);
+        String household = tokenFor("household");
+
+        mockMvc.perform(get("/api/applications").param("businessType", "MIGRATION_IN")
+                        .param("applicationNo", migrationNo).header("Authorization", bearer(household)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements").value(1));
+        mockMvc.perform(get("/api/applications/" + migrationId).header("Authorization", bearer(household)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/applications").param("businessType", "GENERAL_SERVICE")
+                        .param("applicationNo", genericNo).header("Authorization", bearer(household)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements").value(0));
+        mockMvc.perform(get("/api/applications/" + genericId).header("Authorization", bearer(household)))
+                .andExpect(status().isForbidden());
     }
 
     @Test
