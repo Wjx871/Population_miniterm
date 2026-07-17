@@ -11,7 +11,7 @@
         <el-input v-model="form.materialName" readonly />
       </el-form-item>
       <el-form-item label="业务规则">
-        <el-tag type="primary">{{ form.requiredFlag ? '上传后必须核验' : '非必需材料' }}</el-tag>
+        <el-tag type="primary">{{ form.conditionallyRequired ? '二选一，审批前必须核验' : form.requiredFlag ? '审批前必须核验' : '非必需材料' }}</el-tag>
         <span v-if="materialRuleText" class="rule-text">{{ materialRuleText }}</span>
       </el-form-item>
       <el-form-item label="选择文件" required>
@@ -39,7 +39,7 @@ const props = defineProps({
 const emit = defineEmits(['uploaded'])
 const uploading = ref(false)
 const file = ref(null)
-const form = reactive({ materialType: '', materialName: '', requiredFlag: true })
+const form = reactive({ materialType: '', materialName: '', requiredFlag: true, conditionallyRequired: false })
 const canUpload = computed(() => Boolean(props.applicationId && form.materialType && form.materialName && file.value))
 
 function onFileChange(uploadFile) {
@@ -66,7 +66,8 @@ function onFileRemove() { file.value = null }
 function applyMaterialRule(materialType) {
   const option = props.materialOptions.find((item) => item.value === materialType)
   form.materialName = option?.label || ''
-  form.requiredFlag = Boolean(option?.required)
+  form.conditionallyRequired = Boolean(option?.conditionalRequired)
+  form.requiredFlag = Boolean(option?.required || option?.conditionalRequired)
 }
 
 async function submit() {
@@ -75,7 +76,7 @@ async function submit() {
   try {
     await uploadMaterial(props.applicationId, { ...form, file: file.value })
     ElMessage.success('材料上传成功')
-    Object.assign(form, { materialType: '', materialName: '', requiredFlag: true })
+    Object.assign(form, { materialType: '', materialName: '', requiredFlag: true, conditionallyRequired: false })
     file.value = null
     emit('uploaded')
   } finally {

@@ -26,6 +26,7 @@ public class ApprovalService {
     private final ApplicationMaterialMapper materials;
     private final OperationLogService audit;
     private final List<ApplicationSubmissionValidator> submissionValidators;
+    private final List<ApplicationApprovalValidator> approvalValidators;
     private final List<ApplicationStatusListener> statusListeners;
     private final PersonService persons;
 
@@ -138,7 +139,10 @@ public class ApprovalService {
         BusinessApplication a=applications.require(r.getApplicationId()); stateMachine.requireReview(a.getStatus());
         AuthenticatedUser u=CurrentUserContext.requireUser();
         requireApproverCanDecide(a, u);
-        if(action==ApprovalAction.APPROVE && (materials.countRequired(a.getApplicationId())==0 || materials.countRequiredNotVerified(a.getApplicationId())>0)) throw conflict("必需材料尚未全部核验通过");
+        if(action==ApprovalAction.APPROVE) {
+            approvalValidators.stream().filter(v -> v.supports(a.getBusinessType())).forEach(v -> v.validate(a));
+            if (materials.countRequired(a.getApplicationId())==0 || materials.countRequiredNotVerified(a.getApplicationId())>0) throw conflict("必需材料尚未全部核验通过");
+        }
         if(mapper.decide(id,ApprovalStatus.PENDING,approvalTo,body.version(),u.userId(),body.comment())==0) ApplicationService.conflict();
         if(applicationMapper.updateStatus(a.getApplicationId(),ApplicationStatus.UNDER_REVIEW,appTo,a.getVersion())==0) ApplicationService.conflict();
         notifyStatus(a,appTo);

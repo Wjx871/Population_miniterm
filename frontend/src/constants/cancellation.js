@@ -57,8 +57,8 @@ export function getCancellationMaterialOptions(objectType, reasonCode) {
     return [
       { value: 'CANCELLATION_APPLICATION', label: '注销申请', required: true },
       { value: 'HOUSEHOLD_BOOK', label: '户口簿', required: true },
-      { value: 'HOUSEHOLD_CANCELLATION_PROOF', label: '家庭户销户证明', required: false },
-      { value: 'HOUSEHOLD_MERGE_PROOF', label: '整户合并证明', required: false }
+      { value: 'HOUSEHOLD_CANCELLATION_PROOF', label: '家庭户销户证明', required: false, conditionalRequired: true },
+      { value: 'HOUSEHOLD_MERGE_PROOF', label: '整户合并证明', required: false, conditionalRequired: true }
     ]
   }
 

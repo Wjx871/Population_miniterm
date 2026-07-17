@@ -204,6 +204,13 @@ test('人员死亡材料选项包含死亡证明与户口簿', () => {
   assert.ok(values.includes('HOUSEHOLD_BOOK'))
 })
 
+test('家庭户销户原因证明为二选一，选中后仍须核验', () => {
+  const proofs = getCancellationMaterialOptions(CANCEL_OBJECT_TYPE.HOUSEHOLD)
+    .filter((option) => ['HOUSEHOLD_CANCELLATION_PROOF', 'HOUSEHOLD_MERGE_PROOF'].includes(option.value))
+  assert.equal(proofs.length, 2)
+  assert.ok(proofs.every((option) => option.required === false && option.conditionalRequired === true))
+})
+
 test('专业详情规范化映射 executionRestriction 与 executable', () => {
   const normalized = normalizeCancellationProfessional({
     application: { businessType: 'PERSON_CANCELLATION', status: 'APPROVED' },
