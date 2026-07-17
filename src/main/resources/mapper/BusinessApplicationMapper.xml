@@ -34,6 +34,10 @@
   <update id="updateDraft">UPDATE business_application SET business_type=#{application.businessType},title=#{application.title},target_person_id=#{application.targetPersonId},target_household_id=#{application.targetHouseholdId},reason=#{application.reason},remark=#{application.remark},version=version+1,updated_at=CURRENT_TIMESTAMP WHERE application_id=#{application.applicationId} AND status='DRAFT' AND version=#{expectedVersion}</update>
   <update id="updateStatus">UPDATE business_application SET status=#{toStatus},version=version+1,updated_at=CURRENT_TIMESTAMP,
     submitted_at=CASE WHEN #{toStatus}='UNDER_REVIEW' THEN CURRENT_TIMESTAMP ELSE submitted_at END,
-    completed_at=CASE WHEN #{toStatus} IN ('APPROVED','REJECTED') THEN CURRENT_TIMESTAMP ELSE completed_at END
+    completed_at=CASE WHEN #{toStatus} IN ('APPROVED','REJECTED','COMPLETED') THEN CURRENT_TIMESTAMP ELSE completed_at END
     WHERE application_id=#{applicationId} AND status=#{fromStatus} AND version=#{expectedVersion}</update>
+  <update id="completeWithTargetPerson">UPDATE business_application
+    SET target_person_id=#{targetPersonId},status='COMPLETED',completed_at=CURRENT_TIMESTAMP,
+        version=version+1,updated_at=CURRENT_TIMESTAMP
+    WHERE application_id=#{applicationId} AND status='UNDER_REVIEW' AND version=#{expectedVersion}</update>
 </mapper>

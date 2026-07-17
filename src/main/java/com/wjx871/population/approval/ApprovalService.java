@@ -4,6 +4,8 @@ import com.wjx871.population.application.*;
 import com.wjx871.population.audit.OperationLogService;
 import com.wjx871.population.common.BusinessException;
 import com.wjx871.population.material.*;
+import com.wjx871.population.person.Person;
+import com.wjx871.population.person.PersonService;
 import com.wjx871.population.security.*;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
@@ -25,6 +27,7 @@ public class ApprovalService {
     private final OperationLogService audit;
     private final List<ApplicationSubmissionValidator> submissionValidators;
     private final List<ApplicationStatusListener> statusListeners;
+    private final PersonService persons;
 
     @Transactional
     public void submit(Long applicationId, HttpServletRequest request) {
@@ -100,14 +103,41 @@ public class ApprovalService {
     }
 
     @Transactional public void approve(Long id, ApprovalDecisionRequest b, HttpServletRequest r) { decide(id,b,ApprovalStatus.APPROVED,ApplicationStatus.APPROVED,ApprovalAction.APPROVE,r); }
+    @Transactional
+    public void approveAndCreatePerson(Long id, ApprovalCreatePersonRequest body, HttpServletRequest request) {
+        ApprovalRequest approval = require(id);
+        if (approval.getStatus() != ApprovalStatus.PENDING) throw conflict("审批已被处理");
+        BusinessApplication application = applications.require(approval.getApplicationId());
+        stateMachine.requireReview(application.getStatus());
+        if (!isDocumentBasedPersonRegistration(application)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "该申请不是可在审批中心直接建档的恢复登记业务");
+        }
+        AuthenticatedUser user = CurrentUserContext.requireUser();
+        requireApproverCanDecide(application, user);
+        if (materials.countRequired(application.getApplicationId()) == 0
+                || materials.countRequiredNotVerified(application.getApplicationId()) > 0) {
+            throw conflict("必需材料尚未全部核验通过");
+        }
+
+        Person person = persons.create(body.person());
+        if (mapper.decide(id, ApprovalStatus.PENDING, ApprovalStatus.APPROVED, body.version(), user.userId(), body.comment()) == 0) {
+            ApplicationService.conflict();
+        }
+        if (applicationMapper.completeWithTargetPerson(application.getApplicationId(), application.getVersion(), person.getPersonId()) == 0) {
+            ApplicationService.conflict();
+        }
+        logs.insert(ApprovalLog.of(id, application.getApplicationId(), ApprovalAction.EXECUTE,
+                ApplicationStatus.UNDER_REVIEW.name(), ApplicationStatus.COMPLETED.name(), user.userId(),
+                body.comment(), audit.clientIp(request)));
+        audit.recordTransactional(user.userId(), "APPROVAL_CREATE_PERSON", request);
+    }
     @Transactional public void reject(Long id, ApprovalDecisionRequest b, HttpServletRequest r) { if(b.comment()==null||b.comment().isBlank()) throw new BusinessException(HttpStatus.BAD_REQUEST,"驳回意见不能为空"); decide(id,b,ApprovalStatus.REJECTED,ApplicationStatus.REJECTED,ApprovalAction.REJECT,r); }
 
     private void decide(Long id, ApprovalDecisionRequest body, ApprovalStatus approvalTo, ApplicationStatus appTo, ApprovalAction action, HttpServletRequest request) {
         ApprovalRequest r=require(id); if(r.getStatus()!=ApprovalStatus.PENDING) throw conflict("审批已被处理");
         BusinessApplication a=applications.require(r.getApplicationId()); stateMachine.requireReview(a.getStatus());
         AuthenticatedUser u=CurrentUserContext.requireUser();
-        if(u.roleLevel()!=RoleLevel.L3) throw new BusinessException(HttpStatus.FORBIDDEN,"只有 L3 审批人员可以处理审批");
-        applications.assertCanView(a,u); if(a.getApplicantUserId().equals(u.userId())) throw new BusinessException(HttpStatus.FORBIDDEN,"审批人不能审批本人申请");
+        requireApproverCanDecide(a, u);
         if(action==ApprovalAction.APPROVE && (materials.countRequired(a.getApplicationId())==0 || materials.countRequiredNotVerified(a.getApplicationId())>0)) throw conflict("必需材料尚未全部核验通过");
         if(mapper.decide(id,ApprovalStatus.PENDING,approvalTo,body.version(),u.userId(),body.comment())==0) ApplicationService.conflict();
         if(applicationMapper.updateStatus(a.getApplicationId(),ApplicationStatus.UNDER_REVIEW,appTo,a.getVersion())==0) ApplicationService.conflict();
@@ -121,6 +151,16 @@ public class ApprovalService {
     @Transactional(readOnly=true) public ApprovalDetailView detail(Long id){ApprovalRequest r=require(id);BusinessApplication a=applications.require(r.getApplicationId());applications.assertCanView(a,CurrentUserContext.requireUser());return new ApprovalDetailView(r,ApplicationView.from(a),materials.selectByApplicationId(a.getApplicationId()).stream().map(MaterialView::from).toList(),logs(a.getApplicationId()));}
     @Transactional(readOnly=true) public List<ApprovalLogView> logs(Long applicationId){BusinessApplication a=applications.require(applicationId);applications.assertCanView(a,CurrentUserContext.requireUser());return logs.selectByApplicationId(applicationId).stream().map(ApprovalLogView::from).toList();}
     private void notifyStatus(BusinessApplication a, ApplicationStatus s){statusListeners.stream().filter(l->l.supports(a.getBusinessType())).forEach(l->l.onStatusChanged(a,s));}
+    private void requireApproverCanDecide(BusinessApplication application, AuthenticatedUser user) {
+        if(user.roleLevel()!=RoleLevel.L3) throw new BusinessException(HttpStatus.FORBIDDEN,"只有 L3 审批人员可以处理审批");
+        applications.assertCanView(application,user);
+        if(application.getApplicantUserId().equals(user.userId())) throw new BusinessException(HttpStatus.FORBIDDEN,"审批人不能审批本人申请");
+    }
+    private boolean isDocumentBasedPersonRegistration(BusinessApplication application) {
+        if (application.getBusinessType() != BusinessType.GENERAL_SERVICE || application.getRemark() == null) return false;
+        return application.getRemark().contains("登记类型=RELEASED_RESTORE")
+                || application.getRemark().contains("登记类型=VETERAN_RESTORE");
+    }
     private ApprovalRequest require(Long id){return mapper.selectById(id).orElseThrow(()->notFound("审批请求不存在"));}
     private BusinessException conflict(String m){return new BusinessException(HttpStatus.CONFLICT,m);} private BusinessException notFound(String m){return new BusinessException(HttpStatus.NOT_FOUND,m);}
 }

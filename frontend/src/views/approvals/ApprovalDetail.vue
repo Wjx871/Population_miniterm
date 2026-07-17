@@ -70,17 +70,43 @@
     </el-card>
 
     <div v-if="canHandle && isPending" class="actions">
-      <el-button type="success" :disabled="!allRequiredVerified" :loading="deciding" @click="approve">
+      <el-button v-if="canApproveAndCreatePerson" type="success" :disabled="!allRequiredVerified" :loading="deciding" @click="openCreatePersonDialog">
+        通过并建档
+      </el-button>
+      <el-button v-else type="success" :disabled="!allRequiredVerified" :loading="deciding" @click="approve">
         审批通过
       </el-button>
       <el-button type="danger" plain :loading="deciding" @click="reject">审批驳回</el-button>
       <span v-if="!allRequiredVerified" class="hint">尚未满足该业务类型要求的全部核验材料。</span>
     </div>
+
+    <el-dialog v-model="createPersonVisible" title="通过并建立人口档案" width="680px" destroy-on-close>
+      <el-alert type="info" :closable="false" show-icon title="确认后将同时完成审批并建立人口基础档案，操作不可拆分。" />
+      <el-form class="create-person-form" label-width="112px">
+        <el-form-item label="姓名" required><el-input v-model="personForm.name" maxlength="50" /></el-form-item>
+        <el-form-item label="性别" required><el-radio-group v-model="personForm.gender"><el-radio value="M">男</el-radio><el-radio value="F">女</el-radio></el-radio-group></el-form-item>
+        <el-form-item label="身份证号" required><el-input v-model="personForm.idCard" maxlength="18" /></el-form-item>
+        <el-form-item label="出生日期" required><el-date-picker v-model="personForm.birthDate" value-format="YYYY-MM-DD" type="date" style="width:100%" /></el-form-item>
+        <el-form-item label="民族"><el-input v-model="personForm.ethnicity" maxlength="30" /></el-form-item>
+        <el-form-item label="联系电话"><el-input v-model="personForm.phone" maxlength="20" /></el-form-item>
+        <el-form-item label="现住址"><el-input v-model="personForm.currentAddress" maxlength="255" /></el-form-item>
+        <el-form-item label="身份证影印本" required>
+          <el-button plain @click="scannerVisible = true">上传并识别身份证</el-button>
+          <span v-if="personForm.idCardImageId" class="image-ready">已关联影印本 #{{ personForm.idCardImageId }}</span>
+        </el-form-item>
+        <el-form-item label="审批意见"><el-input v-model="personForm.comment" type="textarea" maxlength="500" show-word-limit /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createPersonVisible = false">取消</el-button>
+        <el-button type="success" :loading="deciding" @click="handleApproveAndCreate">确认通过并建档</el-button>
+      </template>
+    </el-dialog>
+    <IdCardScannerDialog v-model:visible="scannerVisible" @recognized="applyRecognizedIdCard" @skipped="applyRecognizedIdCard" />
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import StatusTag from '../../components/common/StatusTag.vue'
@@ -89,7 +115,8 @@ import ApprovalTimeline from '../../components/business/ApprovalTimeline.vue'
 import ProfessionalFieldsPanel from '../../components/business/ProfessionalFieldsPanel.vue'
 import MigrationDetailPanel from '../migrations/components/MigrationDetailPanel.vue'
 import FloatingResidenceDetailPanel from '../floating/components/FloatingResidenceDetailPanel.vue'
-import { approveApproval, getApprovalDetail, rejectApproval } from '../../api/approvals'
+import IdCardScannerDialog from '../persons/components/IdCardScannerDialog.vue'
+import { approveAndCreatePerson, approveApproval, getApprovalDetail, rejectApproval } from '../../api/approvals'
 import { getPersonById } from '../../api/persons'
 import { normalizePerson } from '../../adapters/person'
 import { getMigrationRecord } from '../../adapters/migration'
@@ -109,6 +136,9 @@ const professionalDetail = ref(null)
 const migrationPerson = ref(null)
 const loading = ref(false)
 const deciding = ref(false)
+const createPersonVisible = ref(false)
+const scannerVisible = ref(false)
+const personForm = reactive({ name: '', gender: 'M', idCard: '', birthDate: '', ethnicity: '汉族', phone: '', currentAddress: '', idCardImageId: null, comment: '' })
 
 const approvalId = computed(() => route.params.approvalId)
 const businessType = computed(() => detail.value?.application?.businessType)
@@ -127,6 +157,12 @@ const subjectDetail = computed(() => {
 
 const isPending = computed(() => detail.value?.approval?.status === 'PENDING')
 const canHandle = computed(() => userStore.hasPermission(PERMISSIONS.APPROVAL_HANDLE))
+const registrationType = computed(() => {
+  const remark = detail.value?.application?.remark || ''
+  const match = remark.match(/登记类型=([A-Z_]+)/)
+  return match?.[1] || ''
+})
+const canApproveAndCreatePerson = computed(() => ['RELEASED_RESTORE', 'VETERAN_RESTORE'].includes(registrationType.value))
 
 const allRequiredVerified = computed(() => {
   const materials = detail.value?.materials || []
@@ -241,6 +277,62 @@ async function decide(action) {
 function approve() { decide('approve') }
 function reject() { decide('reject') }
 
+function openCreatePersonDialog() {
+  const title = detail.value?.application?.title || ''
+  const separator = title.includes('：') ? '：' : ':'
+  Object.assign(personForm, {
+    name: title.includes(separator) ? title.split(separator).slice(1).join(separator).trim() : '',
+    gender: 'M', idCard: '', birthDate: '', ethnicity: '汉族', phone: '', currentAddress: '', idCardImageId: null, comment: ''
+  })
+  createPersonVisible.value = true
+}
+
+function applyRecognizedIdCard(result) {
+  if (!result?.imageId) return
+  personForm.idCardImageId = result.imageId
+  if (result.ocrStatus === 'SUCCESS') {
+    if (result.ocrName) personForm.name = result.ocrName
+    if (result.ocrIdcardFull) personForm.idCard = result.ocrIdcardFull
+    if (result.ocrBirthDate) personForm.birthDate = String(result.ocrBirthDate).slice(0, 10)
+    if (result.ocrGender === 'M' || result.ocrGender === 'F') personForm.gender = result.ocrGender
+    if (result.ocrEthnicity) personForm.ethnicity = result.ocrEthnicity
+    if (result.ocrAddress) personForm.currentAddress = result.ocrAddress
+  }
+}
+
+async function handleApproveAndCreate() {
+  if (!personForm.name || !personForm.idCard || !personForm.birthDate || !personForm.idCardImageId) {
+    ElMessage.error('请完整填写人员信息并上传身份证影印本')
+    return
+  }
+  deciding.value = true
+  try {
+    await approveAndCreatePerson(approvalId.value, {
+      comment: personForm.comment || '',
+      version: detail.value.approval.version,
+      person: {
+        name: personForm.name,
+        gender: personForm.gender,
+        idCard: personForm.idCard,
+        birthDate: personForm.birthDate,
+        ethnicity: personForm.ethnicity,
+        phone: personForm.phone,
+        currentAddress: personForm.currentAddress,
+        status: '正常',
+        idCardImageId: personForm.idCardImageId
+      }
+    })
+    ElMessage.success('审批通过，人口档案已建立')
+    createPersonVisible.value = false
+    await load()
+  } catch (error) {
+    if (isApiConflict(error)) await load()
+    ElMessage.error(getApiErrorMessage(error, '通过并建档失败'))
+  } finally {
+    deciding.value = false
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -250,4 +342,6 @@ onMounted(load)
 .page-header h1 { margin: 0 0 8px; }
 .subtitle, .hint { margin: 0; color: var(--el-text-color-secondary); font-size: 13px; }
 .actions { justify-content: flex-start; flex-wrap: wrap; }
+.create-person-form { margin-top: 18px; }
+.image-ready { margin-left: 10px; color: var(--el-color-success); font-size: 13px; }
 </style>

@@ -16,6 +16,10 @@ export function approveApproval(approvalId, payload) {
   return request({ url: `/approvals/${approvalId}/approve`, method: 'post', data: payload })
 }
 
+export function approveAndCreatePerson(approvalId, payload) {
+  return request({ url: `/approvals/${approvalId}/approve-and-create-person`, method: 'post', data: payload })
+}
+
 export function rejectApproval(approvalId, payload) {
   return request({ url: `/approvals/${approvalId}/reject`, method: 'post', data: payload })
 }

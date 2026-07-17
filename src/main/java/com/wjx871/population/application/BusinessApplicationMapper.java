@@ -14,4 +14,7 @@ public interface BusinessApplicationMapper {
     int updateDraft(@Param("application") BusinessApplication application, @Param("expectedVersion") int expectedVersion);
     int updateStatus(@Param("applicationId") Long applicationId, @Param("fromStatus") ApplicationStatus fromStatus,
                      @Param("toStatus") ApplicationStatus toStatus, @Param("expectedVersion") int expectedVersion);
+    int completeWithTargetPerson(@Param("applicationId") Long applicationId,
+                                 @Param("expectedVersion") int expectedVersion,
+                                 @Param("targetPersonId") Long targetPersonId);
 }
