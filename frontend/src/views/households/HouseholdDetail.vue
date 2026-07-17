@@ -344,7 +344,7 @@ const handleRemove = (row) => {
 
   const householdNo = householdInfo.value.householdNo || householdId
   ElMessageBox.confirm(
-    `确定将成员「${row.personName || '未知'}」从家庭户「${householdNo}」中移出吗？\n此操作不会删除人口档案。`,
+    `确定将成员「${row.personName || '未知'}」从家庭户「${householdNo}」中移出吗？\n此操作仅适用于无当前户籍的家庭关系纠错；有当前有效户籍的人员请通过迁出或人员注销业务办理。`,
     '移出家庭成员',
     {
       confirmButtonText: '确定移出',
