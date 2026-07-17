@@ -129,22 +129,32 @@ echo [信息] SERVER_PORT = !SERVER_PORT!
 echo [信息] JWT 过期    = !JWT_EXPIRE_MINUTES! 分钟
 echo.
 echo [信息] 后端地址: http://127.0.0.1:!SERVER_PORT!
-echo [信息] 按 Ctrl+C 停止后端。
+echo [INFO] Press Ctrl+C to stop the backend.
 echo ============================================================
 echo.
 
-REM ---------- 8. 启动 Spring Boot ----------
+REM ---------- 8. Avoid starting a second backend on an occupied port ----------
+powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%check_backend_health.ps1" -BackendBaseUrl "http://127.0.0.1:!SERVER_PORT!" -TimeoutSeconds 2 -Quiet >nul 2>&1
+if not errorlevel 1 (
+    echo [INFO] Backend is already running at http://127.0.0.1:!SERVER_PORT!
+    exit /b 0
+)
+
+powershell -NoProfile -Command "if (@(Get-NetTCPConnection -LocalPort !SERVER_PORT! -State Listen -ErrorAction SilentlyContinue).Count -gt 0) { exit 0 } else { exit 1 }" >nul 2>&1
+if not errorlevel 1 (
+    echo [ERROR] Port !SERVER_PORT! is occupied by another process.
+    echo         Stop that process or configure a different SERVER_PORT before starting the backend.
+    goto :fail
+)
+
+REM ---------- 9. Start Spring Boot ----------
 call "%ROOT_DIR%\mvnw.cmd" spring-boot:run
 set "EXIT_CODE=%errorlevel%"
 
 if not "%EXIT_CODE%"=="0" (
     echo.
-    echo [错误] 后端退出，代码: %EXIT_CODE%
-    echo        常见原因:
-    echo          1. MySQL 未启动 / 密码错误
-    echo          2. 端口 !SERVER_PORT! 被占用
-    echo          3. 数据库未初始化 ^(执行 doc\database\population_miniterm.sql^)
-    echo          4. JDK 版本不正确 ^(需要 17+^)
+    echo [ERROR] Backend exited with code %EXIT_CODE%.
+    echo        Common causes: MySQL unavailable, incorrect DB password, missing schema, or unsupported JDK.
     goto :fail_with_code
 )
 
