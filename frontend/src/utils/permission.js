@@ -31,6 +31,12 @@ export function normalizeRoleCode(roleCode, roleName) {
  * 解析用户权限列表，遵循硬约束
  */
 export function resolvePermissions(normalizedRoleCode, apiPermissions) {
+  // Keep the frontend contract aligned with the backend: SYSTEM_ADMIN owns every permission.
+  // A wildcard also prevents future permission codes and stale cached arrays from downgrading it.
+  if (normalizedRoleCode === ROLE_CODE.SYSTEM_ADMIN) {
+    return ['*']
+  }
+
   // 如果明确返回了 permissions 数组，这就是权威依据，哪怕是空数组
   if (Array.isArray(apiPermissions)) {
     return [...apiPermissions]

@@ -21,7 +21,7 @@ test('登录和 me 用户信息统一规范化', () => {
   } })
   assert.equal(normalized.accessToken, 'jwt')
   assert.equal(normalized.dataScope, 'ALL')
-  assert.deepEqual(normalized.permissions, ['statistics:view'])
+  assert.deepEqual(normalized.permissions, ['*'])
   assert.equal(normalizeUserInfo({ roleCode: 'QUERY_VIEWER' }).roleCode, 'QUERY_VIEWER')
 })
 

@@ -5,7 +5,7 @@
     <el-button v-if="application?.status === 'DRAFT' && canCancel" type="danger" plain :loading="loading" @click="$emit('cancel')">取消草稿</el-button>
     <el-button v-if="canWithdraw" type="warning" plain :loading="loading" @click="$emit('withdraw')">{{ application?.status === 'RETURNED' ? '放弃并撤回' : '撤回申请' }}</el-button>
     <el-button v-if="canReturn" type="warning" plain :loading="loading" @click="$emit('return-application')">退回申请</el-button>
-    <span v-if="application?.status === 'APPROVED'" class="approved-tip">审批已通过，等待具备执行权限的管理员处理。</span>
+    <span v-if="application?.status === 'APPROVED'" class="approved-tip">{{ approvedHint }}</span>
     <span v-if="application?.status === 'RETURNED'" class="returned-tip">申请已被退回，等待申请人补充后重新提交或直接撤回。</span>
   </div>
 </template>
@@ -23,7 +23,9 @@ const props = defineProps({
   /** 专业业务草稿的编辑路由 */
   specializedEditRoute: { type: Object, default: null },
   /** 是否允许继续编辑专业草稿（须同时检查 DRAFT + application:edit + 对应专业权限） */
-  canContinueSpecialized: { type: Boolean, default: false }
+  canContinueSpecialized: { type: Boolean, default: false },
+  /** 已批准状态的操作提示，由详情页按执行权限和业务可执行状态生成 */
+  approvedHint: { type: String, default: '审批已通过，等待具备执行权限的管理员处理。' }
 })
 
 defineEmits(['submit', 'withdraw', 'cancel', 'continue-specialized', 'return-application'])
