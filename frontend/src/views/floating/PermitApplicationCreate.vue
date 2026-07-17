@@ -196,6 +196,7 @@ async function loadMaterials() {
 }
 
 async function loadApplicationForEdit() {
+  if (!applicationId.value) return false
   loading.value = true
   try {
     const detail = normalizePermitProfessional(await getPermitApplicationDetail(applicationId.value))
@@ -251,13 +252,19 @@ async function saveApplication() {
       if (applyType.value === 'FIRST_ISSUE') result = await createPermitFirstIssueApplication(payload)
       else if (applyType.value === 'ENDORSEMENT') result = await createPermitEndorsementApplication(route.params.permitId, payload)
       else result = await createPermitCancellationApplication(route.params.permitId, payload)
-      markCreated(result?.applicationId || result?.id)
+      const createdApplicationId = result?.applicationId ?? result?.id
+      if (!createdApplicationId) throw new Error('创建申请成功，但响应中缺少申请编号，请刷新列表确认')
+      markCreated(createdApplicationId)
       ElMessage.success('草稿已创建')
       await loadApplicationForEdit()
     }
   } catch (error) {
-    if (isApiConflict(error)) { await loadApplicationForEdit(); ElMessage.warning('版本冲突，数据已刷新。') }
-    else ElMessage.error(getApiErrorMessage(error, '保存失败'))
+    if (isApiConflict(error) && applicationId.value) {
+      await loadApplicationForEdit()
+      ElMessage.warning('版本冲突，数据已刷新。')
+    } else {
+      ElMessage.error(getApiErrorMessage(error, '保存失败'))
+    }
   } finally { saving.value = false }
 }
 

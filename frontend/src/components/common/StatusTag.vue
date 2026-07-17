@@ -13,7 +13,7 @@ import { FLOATING_STATUS, RESIDENCE_PERMIT_STATUS } from '../../constants/floati
 const props = defineProps({
   value: {
     type: String,
-    required: true
+    default: ''
   },
   kind: {
     type: String,
