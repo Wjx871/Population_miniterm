@@ -25,7 +25,7 @@ public interface DashboardMapper {
     long countActiveKeyPopulation(@Param("scope") DataScopeCriteria scope);
     long countPendingCancellation(@Param("scope") DataScopeCriteria scope);
     long countPendingSensitiveExport(@Param("scope") DataScopeCriteria scope);
-    List<NamedCountView> businessScale(@Param("from") LocalDate from, @Param("to") LocalDate to,
+    List<NamedCountView> businessScale(@Param("from") LocalDate from, @Param("toExclusive") LocalDate toExclusive,
             @Param("scope") DataScopeCriteria scope);
     List<PopulationScaleTrendPoint> populationScaleTrend(@Param("from") LocalDate from,
             @Param("to") LocalDate to, @Param("scope") DataScopeCriteria scope);

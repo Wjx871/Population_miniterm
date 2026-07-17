@@ -67,7 +67,7 @@ public class DashboardService {
         DashboardChartsView view = new DashboardChartsView();
         view.setGeneratedAt(LocalDateTime.now(clock));
         view.setMigrationTrend(trend);
-        view.setBusinessScale(mapper.businessScale(from, today, scope));
+        view.setBusinessScale(mapper.businessScale(from, today.plusDays(1), scope));
         view.setApprovalStatusDistribution(mapper.approvalStatusDistribution(scope));
         view.setRegisteredPopulationByRegion(mapper.registeredPopulationByRegion(scope, regionLimit));
         view.setPopulationScaleTrend(populationScaleTrend(from, today, scope));

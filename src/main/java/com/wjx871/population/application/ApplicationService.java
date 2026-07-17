@@ -145,8 +145,7 @@ public class ApplicationService {
         if (user.dataScope() == DataScope.ALL) return;
         if (user.dataScope() == DataScope.DEPARTMENT && value.getApplicantDepartmentId() != null
                 && value.getApplicantDepartmentId().equals(user.departmentId())) return;
-        if (user.dataScope() == DataScope.REGION && value.getApplicantRegionCode() != null
-                && value.getApplicantRegionCode().equals(user.regionCode())) return;
+        if (user.dataScope() == DataScope.REGION && isRegionInScope(value.getApplicantRegionCode(), user.regionCode())) return;
         forbidden();
     }
 
@@ -181,6 +180,13 @@ public class ApplicationService {
         if (specializedTypes.requiresDedicatedEntry(type)) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "该业务必须通过对应的专业业务入口创建");
         }
+    }
+
+    /** Keeps approval detail authorization consistent with hierarchical region list filtering. */
+    private boolean isRegionInScope(String targetRegionCode, String scopeRegionCode) {
+        if (targetRegionCode == null || scopeRegionCode == null || scopeRegionCode.isBlank()) return false;
+        String prefix = scopeRegionCode.replaceFirst("0+$", "");
+        return !prefix.isEmpty() && targetRegionCode.startsWith(prefix);
     }
 
     private void forbidden() { throw new BusinessException(HttpStatus.FORBIDDEN, "无权访问该申请"); }

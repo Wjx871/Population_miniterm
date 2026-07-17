@@ -48,6 +48,8 @@ class DashboardServiceTest {
         when(mapper.countActivePermits(any())).thenReturn(6L);
         when(mapper.approvalStatusDistribution(any())).thenReturn(List.of());
         when(mapper.registeredPopulationByRegion(any(), any(Integer.class))).thenReturn(List.of());
+        when(mapper.businessScale(any(LocalDate.class), any(LocalDate.class), any()))
+                .thenReturn(List.of(new NamedCountView("MIGRATION_IN", "迁入", 3L)));
 
         DashboardChartsView result = service.charts(3, 10);
 
@@ -56,7 +58,7 @@ class DashboardServiceTest {
         assertThat(result.getMigrationTrend()).extracting(MigrationTrendPoint::getInCount).containsExactly(0L, 3L, 0L);
         assertThat(result.getMigrationTrend()).extracting(MigrationTrendPoint::getOutCount).containsExactly(0L, 0L, 2L);
         assertThat(result.getBusinessScale()).extracting(NamedCountView::getCode)
-                .containsExactly("REGISTERED", "FLOATING_ACTIVE", "PERMIT_ACTIVE");
+                .containsExactly("MIGRATION_IN");
     }
 
     @Test

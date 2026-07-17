@@ -10,7 +10,8 @@ let restorePromise = null
 
 function loadStoredSession() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    // sessionStorage 按浏览器标签页隔离，允许同一浏览器中不同标签使用不同账号。
+    const raw = sessionStorage.getItem(STORAGE_KEY)
     return raw ? normalizeStoredSession(JSON.parse(raw)) : {}
   } catch {
     return {}
@@ -56,7 +57,7 @@ export const useUserStore = defineStore('user', {
       return restorePromise
     },
     persistSession() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
         accessToken: this.accessToken, tokenType: this.tokenType, userId: this.userId,
         username: this.username, realName: this.realName, roleName: this.roleName,
         roleCode: this.roleCode, roleLevel: this.roleLevel, permissions: this.permissions,
@@ -70,8 +71,8 @@ export const useUserStore = defineStore('user', {
         roleCode: ROLE_CODE.QUERY_VIEWER, roleLevel: '', permissionLevel: 1, permissions: [],
         dataScope: null, departmentId: null, departmentName: '', regionCode: '', sessionChecked: true,
       })
-      localStorage.removeItem(STORAGE_KEY)
-      localStorage.removeItem('population_user')
+      sessionStorage.removeItem(STORAGE_KEY)
+      sessionStorage.removeItem('population_user')
       clearAllReferenceCache()
     },
     async logout() {
