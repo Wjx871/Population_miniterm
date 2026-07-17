@@ -53,3 +53,20 @@ test('家庭户状态统一映射为中文', () => {
   assert.match(tag, /PENDING_CANCELLATION: '待注销'/)
   assert.match(tag, /ARCHIVED: '已归档'/)
 })
+
+test('StatusTag value 不再声明 required，避免加载前 undefined 触发告警', () => {
+  const tag = source('components/common/StatusTag.vue')
+  // value 应有默认值兜底，而不是 required: true（父组件数据加载前会传 undefined）
+  assert.doesNotMatch(tag, /value:\s*\{\s*type:\s*String,\s*required:\s*true/)
+  assert.match(tag, /value:\s*\{\s*type:\s*String,\s*default:\s*''/)
+})
+
+test('居住证首次申领：新建冲突不请求空 applicationId 详情', () => {
+  const view = source('views/floating/PermitApplicationCreate.vue')
+  // 创建响应缺少 applicationId 时应抛错，禁止把 null/undefined 传给 markCreated
+  assert.match(view, /if \(!createdApplicationId\) throw/)
+  // 409 分支必须要求 applicationId.value 存在才刷新，否则仅提示后端错误
+  assert.match(view, /isApiConflict\(error\) && applicationId\.value/)
+  // loadApplicationForEdit 必须在无 applicationId 时短路返回
+  assert.match(view, /if \(!applicationId\.value\) return false/)
+})
