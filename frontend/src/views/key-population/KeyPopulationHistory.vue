@@ -5,7 +5,7 @@
         <h1>重点人口历史</h1>
         <p class="subtitle">历史只读追加；快照仅展示后端返回字段。</p>
       </div>
-      <el-button @click="router.back()">返回</el-button>
+      <el-button @click="goBackOrFallback(router, '/key-population')">返回</el-button>
     </div>
 
     <el-card shadow="never">
@@ -44,6 +44,7 @@ import { normalizeHistoryList } from '../../adapters/keyPopulation'
 import { KEY_HISTORY_EVENT } from '../../constants/keyPopulation'
 import { formatDateTime } from '../../utils/date'
 import { getApiErrorMessage } from '../../utils/apiError'
+import { goBackOrFallback } from '../../utils/navigation'
 
 const route = useRoute()
 const router = useRouter()

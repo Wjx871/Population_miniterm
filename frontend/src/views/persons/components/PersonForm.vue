@@ -20,6 +20,11 @@
           <div v-else class="idcard-hint">持居民身份证建档必须上传身份证影印本；OCR 仅辅助回填，提交前请人工核对。</div>
         </div>
       </el-form-item>
+      <el-alert v-if="idCardOcrMismatch" class="idcard-mismatch" type="error" :closable="false" show-icon title="身份证号与 OCR 识别结果不一致">
+        <template #default>
+          当前影印本不能用于该身份证号建档。请核对后重新扫描；若 OCR 识别有误，可重新上传后选择“跳过 OCR”，再人工录入并核对证件信息。
+        </template>
+      </el-alert>
       <IdCardScannerDialog v-model:visible="scannerVisible" @recognized="onRecognized" @skipped="onSkipped" />
 
       <el-form-item label="姓名" prop="name"><el-input v-model="form.name" placeholder="请输入姓名" maxlength="50" show-word-limit /></el-form-item>
@@ -69,23 +74,30 @@ const baseRules = { registrationType: [{ required: true, message: '请选择登�
 const activeRules = computed(() => isDirectArchive.value || props.isEdit ? { ...baseRules, idCard: [{ required: true, message: '请输入身份证号', trigger: 'blur' }, { validator: validateIdCard, trigger: 'blur' }], birthDate: [{ required: true, message: '请选择出生日期', trigger: 'change' }, { validator: validateBirthDate, trigger: 'change' }] } : baseRules)
 const imageTagType = computed(() => image.value?.ocrStatus === 'SUCCESS' ? 'success' : image.value?.ocrStatus === 'FAILED' ? 'warning' : 'info')
 const ocrStatusText = computed(() => ({ SUCCESS: '识别成功', FAILED: '识别失败', SKIPPED: '已跳过' })[image.value?.ocrStatus] || '未识别')
+const idCardOcrMismatch = computed(() => {
+  if (image.value?.ocrStatus !== 'SUCCESS') return false
+  const ocrIdCard = normalizeIdCard(image.value?.ocrIdCard)
+  const filledIdCard = normalizeIdCard(form.idCard)
+  return Boolean(ocrIdCard && filledIdCard && ocrIdCard !== filledIdCard)
+})
 
 function changeRegistrationType() { Object.keys(documentFiles).forEach(key => delete documentFiles[key]); form.idCardImageId = null; image.value = null; formRef.value?.clearValidate() }
 function selectDocument(type, file) { if (file?.raw) documentFiles[type] = { name: file.name, raw: file.raw } }
 function disableFutureDate(date) { const today = new Date(); today.setHours(23, 59, 59, 999); return date.getTime() > today.getTime() }
 function syncFromModel(value) { Object.assign(form, { registrationType: value?.registrationType || 'ID_CARD_ARCHIVE', name: value?.name ?? '', gender: value?.gender || '男', idCard: value?.idCard ?? '', birthDate: value?.birthDate ? formatDate(value.birthDate) : '', ethnicity: value?.ethnicity ?? '汉族', phone: value?.phone ?? '', currentAddress: value?.currentAddress ?? '', idCardImageId: value?.idCardImageId ?? null }); if (props.isEdit) image.value = value?.idCardImage || null }
-function onRecognized(result) { if (!result?.imageId) return ElMessage.warning('上传成功但未返回影印本标识'); image.value = { imageId: result.imageId, fileName: result.originalFilename, fileSize: result.fileSize, ocrStatus: result.ocrStatus, maskedIdCard: result.ocrIdcardMasked }; form.idCardImageId = result.imageId; applyOcrToForm(result); scannerVisible.value = false }
+function onRecognized(result) { if (!result?.imageId) return ElMessage.warning('上传成功但未返回影印本标识'); image.value = { imageId: result.imageId, fileName: result.originalFilename, fileSize: result.fileSize, ocrStatus: result.ocrStatus, maskedIdCard: result.ocrIdcardMasked, ocrIdCard: result.ocrIdcardFull || null }; form.idCardImageId = result.imageId; applyOcrToForm(result); scannerVisible.value = false }
 function onSkipped(result) { if (result?.imageId) onRecognized({ ...result, ocrStatus: 'SKIPPED', ocrIdcardMasked: null }); else scannerVisible.value = false }
 function applyOcrToForm(result) { if (result.ocrStatus !== 'SUCCESS') return; if (!form.idCard && result.ocrIdcardFull) form.idCard = result.ocrIdcardFull; if (!form.name && result.ocrName) form.name = result.ocrName; if (result.ocrGender === 'M') form.gender = '男'; else if (result.ocrGender === 'F') form.gender = '女'; if (!form.birthDate && result.ocrBirthDate) form.birthDate = String(result.ocrBirthDate).substring(0, 10); if (!form.ethnicity && result.ocrEthnicity) form.ethnicity = result.ocrEthnicity; if (!form.currentAddress && result.ocrAddress) form.currentAddress = result.ocrAddress }
 function clearImage() { image.value = null; form.idCardImageId = null }
+function normalizeIdCard(value) { return String(value || '').trim().toUpperCase() }
 function formatBytes(value) { if (!value) return '0 B'; return `${(Number(value) / 1024 / 1024).toFixed(2)} MB` }
 watch(() => props.modelValue, value => syncFromModel(value || {}), { immediate: true, deep: true }); watch(form, () => emit('update:modelValue', { ...form }), { deep: true })
-async function validate() { try { await formRef.value?.validate() } catch { return false } if (!isDirectArchive.value && !props.isEdit) { const missing = registrationType.value.documents.filter(doc => doc.required && !documentFiles[doc.type]); if (missing.length) { ElMessage.error(`请上传必传材料：${missing.map(doc => doc.name).join('、')}`); return false } } return true }
+async function validate() { try { await formRef.value?.validate() } catch { return false } if (!props.isEdit && idCardOcrMismatch.value) { ElMessage.error('身份证号与已上传影印本的 OCR 识别结果不一致，请重新扫描或跳过 OCR 后人工核对') ; return false } if (!isDirectArchive.value && !props.isEdit) { const missing = registrationType.value.documents.filter(doc => doc.required && !documentFiles[doc.type]); if (missing.length) { ElMessage.error(`请上传必传材料：${missing.map(doc => doc.name).join('、')}`); return false } } return true }
 function clearValidate() { formRef.value?.clearValidate() }
 function getRegistrationApplication() { return { type: registrationType.value, name: form.name, gender: form.gender, birthDate: form.birthDate, phone: form.phone, currentAddress: form.currentAddress, documents: registrationType.value.documents.filter(doc => documentFiles[doc.type]).map(doc => ({ ...doc, file: documentFiles[doc.type].raw })) } }
 defineExpose({ validate, clearValidate, getForm: () => ({ ...form }), getRegistrationApplication })
 </script>
 
 <style scoped>
-.registration-alert{margin-bottom:18px}.idcard-block{display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%}.idcard-meta{display:flex;flex-wrap:wrap;gap:10px;width:100%;color:var(--el-text-color-regular);font-size:13px}.idcard-hint,.material-tip{margin:0;color:var(--el-text-color-secondary);font-size:13px;line-height:1.6}.registration-materials{border:1px solid var(--el-border-color-lighter);border-radius:8px;overflow:hidden}.material-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:12px 14px;border-bottom:1px solid var(--el-border-color-lighter)}.material-row:last-child{border-bottom:0}.material-row b{margin-right:7px;font-size:13px}.optional,.file-empty{color:var(--el-text-color-secondary);font-size:12px}.material-upload{display:flex;align-items:center;gap:8px}.file-name{max-width:180px;overflow:hidden;color:#3972c6;font-size:12px;text-overflow:ellipsis;white-space:nowrap}@media(max-width:640px){.material-row{align-items:flex-start;flex-direction:column;gap:8px}}
+.registration-alert{margin-bottom:18px}.idcard-block{display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%}.idcard-meta{display:flex;flex-wrap:wrap;gap:10px;width:100%;color:var(--el-text-color-regular);font-size:13px}.idcard-hint,.material-tip{margin:0;color:var(--el-text-color-secondary);font-size:13px;line-height:1.6}.idcard-mismatch{margin:-4px 0 16px}.registration-materials{border:1px solid var(--el-border-color-lighter);border-radius:8px;overflow:hidden}.material-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:12px 14px;border-bottom:1px solid var(--el-border-color-lighter)}.material-row:last-child{border-bottom:0}.material-row b{margin-right:7px;font-size:13px}.optional,.file-empty{color:var(--el-text-color-secondary);font-size:12px}.material-upload{display:flex;align-items:center;gap:8px}.file-name{max-width:180px;overflow:hidden;color:#3972c6;font-size:12px;text-overflow:ellipsis;white-space:nowrap}@media(max-width:640px){.material-row{align-items:flex-start;flex-direction:column;gap:8px}}
 </style>

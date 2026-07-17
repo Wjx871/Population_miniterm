@@ -59,7 +59,7 @@
         <el-form-item>
           <el-button v-if="!applicationId" type="primary" :loading="saving" @click="createDraft">创建草稿</el-button>
           <el-button v-if="applicationId" type="primary" @click="goApplication">前往申请详情</el-button>
-          <el-button @click="router.back()">返回</el-button>
+          <el-button @click="goBackOrFallback(router, '/exports')">返回</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -74,6 +74,7 @@ import { createSensitiveExportApplication } from '../../api/exports'
 import { toSensitiveExportPayload } from '../../adapters/export'
 import { getFieldOptions, getModuleOptions } from '../../constants/export'
 import { getApiErrorMessage } from '../../utils/apiError'
+import { goBackOrFallback } from '../../utils/navigation'
 
 const router = useRouter()
 const formRef = ref()

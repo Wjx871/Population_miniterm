@@ -47,7 +47,7 @@
 
         <el-form-item>
           <el-button type="primary" :loading="submitting" @click="submitAndDownload">生成并下载</el-button>
-          <el-button @click="router.back()">取消</el-button>
+          <el-button @click="goBackOrFallback(router, '/exports')">取消</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -63,6 +63,7 @@ import { toNormalExportPayload } from '../../adapters/export'
 import { getFieldOptions, getModuleOptions } from '../../constants/export'
 import { downloadExportById } from '../../services/fileDownload'
 import { getApiErrorMessage } from '../../utils/apiError'
+import { goBackOrFallback } from '../../utils/navigation'
 
 const router = useRouter()
 const formRef = ref()

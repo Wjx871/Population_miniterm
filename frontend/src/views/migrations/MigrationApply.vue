@@ -27,7 +27,7 @@
         <el-form-item label="迁移原因" prop="reason"><el-input v-model.trim="form.reason" type="textarea" :rows="3" :disabled="isReadonly" /></el-form-item>
         <el-form-item label="备注"><el-input v-model.trim="form.remark" type="textarea" :rows="2" :disabled="isReadonly" maxlength="500" show-word-limit /></el-form-item>
         <el-form-item v-if="isIn" label="迁移批次号" prop="transferBatchNo" :required="requiresTransferBatch"><el-input v-model.trim="form.transferBatchNo" :disabled="isReadonly" maxlength="40" /></el-form-item>
-        <el-form-item><el-button v-if="!isReadonly" type="primary" :loading="saving" :disabled="!isIn && form.personId && !hasActiveResidence" @click="saveDraft">保存草稿</el-button><el-button @click="router.back()">返回</el-button></el-form-item>
+        <el-form-item><el-button v-if="!isReadonly" type="primary" :loading="saving" :disabled="!isIn && form.personId && !hasActiveResidence" @click="saveDraft">保存草稿</el-button><el-button @click="goBackOrFallback(router, isIn ? '/migrations/in' : '/migrations/out')">返回</el-button></el-form-item>
       </el-form>
     </el-card>
     <template v-if="applicationId">
@@ -60,6 +60,7 @@ import { getPersonById } from '../../api/persons'
 import { normalizePerson } from '../../adapters/person'
 import { getComprehensivePersonProfile } from '../../api/query'
 import { normalizeComprehensiveProfile } from '../../adapters/comprehensiveQuery'
+import { goBackOrFallback } from '../../utils/navigation'
 
 const route = useRoute(); const router = useRouter(); const userStore = useUserStore()
 const isIn = computed(() => route.meta.type === 'in')

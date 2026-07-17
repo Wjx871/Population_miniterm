@@ -14,7 +14,7 @@
         >
           解除申请
         </el-button>
-        <el-button @click="router.back()">返回</el-button>
+        <el-button @click="goBackOrFallback(router, '/key-population')">返回</el-button>
       </div>
     </div>
 
@@ -72,6 +72,7 @@ import { formatAttentionLevel, normalizeKeyPopulationRecord } from '../../adapte
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { getApiErrorMessage } from '../../utils/apiError'
+import { goBackOrFallback } from '../../utils/navigation'
 
 const route = useRoute()
 const router = useRouter()

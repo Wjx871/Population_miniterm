@@ -5,7 +5,7 @@
         <h1>重点人口建档申请</h1>
         <p class="subtitle">创建草稿后专业字段只读；上传材料后提交须走专业 submit 接口。</p>
       </div>
-      <el-button @click="router.back()">返回</el-button>
+      <el-button @click="goBackOrFallback(router, '/key-population')">返回</el-button>
     </div>
 
     <el-alert
@@ -77,6 +77,7 @@ import { createRegisterApplication } from '../../api/keyPopulation'
 import { toCreateRegisterPayload } from '../../adapters/keyPopulation'
 import { ATTENTION_LEVEL } from '../../constants/keyPopulation'
 import { getApiErrorMessage } from '../../utils/apiError'
+import { goBackOrFallback } from '../../utils/navigation'
 
 const router = useRouter()
 const formRef = ref()

@@ -37,4 +37,13 @@ router.beforeEach(async (to, from, next) => {
   next()
 })
 
+// 懒加载模块失败时保留当前可用页面，避免路由切换后出现无内容的白屏。
+router.onError((error, to, from) => {
+  console.error('[路由页面加载失败]', { error, to: to?.fullPath, from: from?.fullPath })
+  const fallback = from?.matched?.length ? from.fullPath : '/home'
+  if (fallback !== to?.fullPath && router.currentRoute.value.fullPath !== fallback) {
+    router.replace(fallback).catch(() => {})
+  }
+})
+
 export default router

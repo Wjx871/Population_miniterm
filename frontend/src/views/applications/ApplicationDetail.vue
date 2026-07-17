@@ -5,7 +5,7 @@
         <h1>申请详情</h1>
         <p class="subtitle">审批通过不等于业务已办结，办结状态只能由后端执行结果确认。</p>
       </div>
-      <el-button @click="router.back()">返回</el-button>
+      <el-button @click="goBackOrFallback(router, '/applications')">返回</el-button>
     </div>
 
     <el-card v-if="application" shadow="never">
@@ -135,6 +135,7 @@ import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { formatDateTime } from '../../utils/date'
 import { getApiErrorCode, getApiErrorMessage, isApiConflict } from '../../utils/apiError'
+import { goBackOrFallback } from '../../utils/navigation'
 import { getApplicationBusinessHandler } from '../../features/applications/handlers'
 
 const route = useRoute()

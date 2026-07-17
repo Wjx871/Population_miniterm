@@ -5,7 +5,7 @@
         <h1>{{ pageTitle }}</h1>
         <p class="subtitle">先保存草稿，再上传材料并提交审批；提交后仅可查看或撤回。</p>
       </div>
-      <el-button @click="router.back()">返回</el-button>
+      <el-button @click="goBackOrFallback(router, '/cancellations')">返回</el-button>
     </div>
 
     <el-steps :active="step" finish-status="success" simple>
@@ -180,6 +180,7 @@ import {
 import { PERMISSIONS } from '../../constants/permissions'
 import { useUserStore } from '../../stores/user'
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
+import { goBackOrFallback } from '../../utils/navigation'
 
 const route = useRoute()
 const router = useRouter()

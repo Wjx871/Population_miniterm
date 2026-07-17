@@ -5,7 +5,7 @@
         <h1>重点人口解除申请</h1>
         <p class="subtitle">仅可对 ACTIVE 记录发起；创建后专业字段只读，提交走专业接口。</p>
       </div>
-      <el-button @click="router.back()">返回</el-button>
+      <el-button @click="goBackOrFallback(router, '/key-population')">返回</el-button>
     </div>
 
     <el-card v-if="record" shadow="never">
@@ -70,6 +70,7 @@ import { ElMessage } from 'element-plus'
 import { createReleaseApplication, getKeyPopulationDetail } from '../../api/keyPopulation'
 import { normalizeKeyPopulationRecord, toCreateReleasePayload } from '../../adapters/keyPopulation'
 import { getApiErrorMessage } from '../../utils/apiError'
+import { goBackOrFallback } from '../../utils/navigation'
 
 const route = useRoute()
 const router = useRouter()

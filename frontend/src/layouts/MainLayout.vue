@@ -78,7 +78,15 @@
         </div>
         <div class="page-wrapper">
           <router-view v-slot="{ Component }">
-            <Transition name="assistant-page" mode="out-in"><component :is="Component" /></Transition>
+            <section v-if="pageRenderError" class="page-render-error" role="alert">
+              <el-result icon="error" title="页面加载异常" sub-title="页面未能正常渲染，请重试或返回工作台继续操作。">
+                <template #extra>
+                  <el-button type="primary" @click="retryCurrentPage">重新加载当前页</el-button>
+                  <el-button @click="goHome">返回工作台</el-button>
+                </template>
+              </el-result>
+            </section>
+            <Transition v-else name="assistant-page"><component :is="Component" :key="pageRenderKey" /></Transition>
           </router-view>
         </div>
       </main>
@@ -88,7 +96,7 @@
 </template>
 
 <script setup>
-import { computed, markRaw } from 'vue';
+import { computed, markRaw, onErrorCaptured, ref, watch } from 'vue';
 import {
   Platform,
   User,
@@ -121,6 +129,30 @@ import AssistantRobot from '../components/assistant/AssistantRobot.vue';
 const userStore = useUserStore();
 const router = useRouter();
 const route = useRoute();
+const pageRenderError = ref(null)
+const pageReloadToken = ref(0)
+const pageRenderKey = computed(() => `${route.fullPath}:${pageReloadToken.value}`)
+
+// 子页面运行时异常不再直接留下空白内容区，而是提供就地恢复入口。
+onErrorCaptured((error, _instance, info) => {
+  console.error('[页面渲染失败]', { error, info, route: route.fullPath })
+  pageRenderError.value = error
+  return false
+})
+
+watch(() => route.fullPath, () => {
+  pageRenderError.value = null
+})
+
+function retryCurrentPage() {
+  pageRenderError.value = null
+  pageReloadToken.value += 1
+}
+
+function goHome() {
+  pageRenderError.value = null
+  router.replace(resolveLandingPath(userStore.permissions, userStore.permissionLevel, router.getRoutes()))
+}
 
 const isImmersive = computed(() => route.meta.immersive === true);
 
@@ -404,6 +436,15 @@ export default {
 
 .page-wrapper::-webkit-scrollbar-thumb {
   background: transparent;
+}
+
+.page-render-error {
+  display: grid;
+  min-height: 360px;
+  place-items: center;
+  background: #fff;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
 }
 
 /* 沉浸式大屏模式样式 */

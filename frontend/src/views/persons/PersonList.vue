@@ -139,6 +139,7 @@ import {
 } from '../../adapters/person'
 import { formatDate } from '../../utils/date'
 import { normalizePageResult } from '../../utils/page'
+import { getApiErrorMessage } from '../../utils/apiError'
 
 const loading = ref(false)
 const router = useRouter()
@@ -307,6 +308,8 @@ const submitForm = async () => {
   } catch (error) {
     if (error?.message && String(error.message).includes('最新详情缺少')) {
       ElMessage.error(error.message)
+    } else {
+      ElMessage.error(getApiErrorMessage(error, '人口建档失败，请检查填写信息后重试'))
     }
     console.error(error)
   } finally {

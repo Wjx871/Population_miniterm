@@ -5,7 +5,7 @@
         <h1>审批详情</h1>
         <p class="subtitle">审批人须先核验材料并核对专业信息；审批通过后仍需显式执行。</p>
       </div>
-      <el-button @click="router.back()">返回</el-button>
+      <el-button @click="goBackOrFallback(router, '/approvals')">返回</el-button>
     </div>
 
     <el-card v-if="detail" shadow="never">
@@ -125,6 +125,7 @@ import { PERMISSIONS } from '../../constants/permissions'
 import { getApplicationBusinessHandler } from '../../features/applications/handlers'
 import { useUserStore } from '../../stores/user'
 import { getApiErrorMessage, isApiConflict } from '../../utils/apiError'
+import { goBackOrFallback } from '../../utils/navigation'
 
 const route = useRoute()
 const router = useRouter()
