@@ -49,3 +49,54 @@ test('application list provides filtered and unfiltered empty guidance', () => {
   assert.match(markup, /清除筛选条件/)
   assert.match(markup, /当前账号还没有提交过业务申请/)
 })
+
+test('application list refreshes once after a detail action changes state', async () => {
+  const service = require('../services/application')
+  const originalList = service.list
+  let definition
+  let requests = 0
+  global.Page = (value) => { definition = value }
+  global.getApp = () => ({ globalData: { user: { permissions: ['application:view'] } } })
+  global.wx = { stopPullDownRefresh() {}, navigateTo() {} }
+  service.list = async () => { requests += 1; return { content: [], totalElements: 0, number: 0, last: true } }
+  const target = require.resolve('../pages/applications/list/index')
+  delete require.cache[target]
+  require(target)
+  const page = Object.assign({}, definition, {
+    data: Object.assign({}, definition.data),
+    setData(update) { Object.assign(this.data, update) }
+  })
+
+  await page.onLoad()
+  await page.onShow()
+  page._needsRefresh = true
+  await Promise.all([page.onShow(), page.onShow()])
+
+  assert.equal(requests, 2)
+  service.list = originalList
+})
+
+test('withdrawing an application marks its list for refresh', async () => {
+  const service = require('../services/application')
+  const originalWithdraw = service.withdraw
+  let definition
+  const list = { route: 'pages/applications/list/index' }
+  global.Page = (value) => { definition = value }
+  global.getCurrentPages = () => [list, { route: 'pages/applications/detail/index' }]
+  global.wx = { showModal: ({ success }) => success({ confirm: true }), showToast() {} }
+  service.withdraw = async () => {}
+  const target = require.resolve('../pages/applications/detail/index')
+  delete require.cache[target]
+  require(target)
+  const page = Object.assign({}, definition, {
+    data: Object.assign({}, definition.data, { id: 1, canWithdraw: true }),
+    setData(update) { Object.assign(this.data, update) },
+    load: async () => {}
+  })
+
+  await page.withdraw()
+
+  assert.equal(list._needsRefresh, true)
+  service.withdraw = originalWithdraw
+  delete global.getCurrentPages
+})

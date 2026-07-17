@@ -9,6 +9,11 @@ Page({
     this._initialLoadStarted = true
     if (guard('approval:view')) return this.load()
   },
+  onShow() {
+    if (!this._needsRefresh) return
+    this._needsRefresh = false
+    return this.load()
+  },
   switchTab(e) {
     const tab = e.currentTarget.dataset.tab
     if (tab === this.data.tab || this.data.loading) return

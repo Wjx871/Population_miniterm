@@ -21,6 +21,10 @@ Page({
   onShow() {
     syncTabBar(this, 'handling')
     this.refreshEntries()
+    if (this._needsSummaryRefresh) {
+      this._needsSummaryRefresh = false
+      return this.loadSummary()
+    }
   },
 
   refreshEntries() {

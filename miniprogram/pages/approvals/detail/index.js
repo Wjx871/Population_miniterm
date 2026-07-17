@@ -3,6 +3,7 @@ const applicationService = require('../../../services/application')
 const adapter = require('../../../adapters/application')
 const { can, permissionsOf } = require('../../../utils/permission')
 const { messageOf } = require('../../../utils/error')
+const { markForRefresh } = require('../../../utils/page-refresh')
 Page({
   data: { id: null, detail: null, application: null, materials: [], logs: [], professionalFields: [], professionalMessage: '', canHandle: false, comment: '', loading: true, error: '', submitting: false },
   onLoad(options) { this.setData({ id: options.id, canHandle: can(getApp().globalData.user, 'approval:handle') }); this.load() },
@@ -26,7 +27,11 @@ Page({
     const confirmed = await new Promise((resolve) => wx.showModal({ title: `确认${label}`, content: action === 'approve' ? '审批通过后，相关业务仍需继续办理。确定通过吗？' : '驳回后申请人将看到审批意见。确定驳回吗？', success: (r) => resolve(r.confirm) }))
     if (!confirmed) return
     this.setData({ submitting: true })
-    try { await approvalService[action](this.data.id, this.data.detail.version, this.data.comment.trim()); wx.showToast({ title: action === 'approve' ? '审批已通过，等待业务办理' : '申请已驳回', icon: 'none', duration: 2500 }); await this.load() } catch (error) { wx.showToast({ title: error.statusCode === 409 ? '事项状态已更新，已为你刷新' : messageOf(error), icon: 'none', duration: 2600 }); if (error.statusCode === 409) await this.load() } finally { this.setData({ submitting: false }) }
+    try { await approvalService[action](this.data.id, this.data.detail.version, this.data.comment.trim()); this.notifyListChanged(); wx.showToast({ title: action === 'approve' ? '审批已通过，等待业务办理' : '申请已驳回', icon: 'none', duration: 2500 }); await this.load() } catch (error) { wx.showToast({ title: error.statusCode === 409 ? '事项状态已更新，已为你刷新' : messageOf(error), icon: 'none', duration: 2600 }); if (error.statusCode === 409) await this.load() } finally { this.setData({ submitting: false }) }
+  },
+  notifyListChanged() {
+    markForRefresh('pages/approvals/list/index')
+    markForRefresh('pages/handling/index', '_needsSummaryRefresh')
   },
   async openMaterial(e) { try { const path = await applicationService.materialFile(e.currentTarget.dataset.id); const type = e.currentTarget.dataset.type || ''; if (type.startsWith('image/')) wx.previewImage({ urls: [path] }); else wx.openDocument({ filePath: path, showMenu: true }) } catch (error) { wx.showToast({ title: messageOf(error), icon: 'none' }) } }
 })

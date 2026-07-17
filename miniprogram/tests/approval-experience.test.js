@@ -18,7 +18,7 @@ test('approval cards use task-specific actions and localized states', () => {
   assert.equal(processed.statusDisplay, '已通过')
 })
 
-test('approval list initial lifecycle sends one request and has no automatic onShow reload', async () => {
+test('approval list initial lifecycle sends one request and refreshes only after a completed action', async () => {
   let definition
   let requests = 0
   const originalPending = approvalService.pending
@@ -35,10 +35,40 @@ test('approval list initial lifecycle sends one request and has no automatic onS
   })
 
   await Promise.all([page.onLoad(), page.onLoad()])
+  await page.onShow()
 
   assert.equal(requests, 1)
-  assert.equal(page.onShow, undefined)
+  page._needsRefresh = true
+  await Promise.all([page.onShow(), page.onShow()])
+  assert.equal(requests, 2)
   approvalService.pending = originalPending
+})
+
+test('successful approval marks the list and handling summary for one refresh', async () => {
+  let definition
+  const originalApprove = approvalService.approve
+  const previous = { route: 'pages/approvals/list/index' }
+  const handling = { route: 'pages/handling/index' }
+  global.Page = (value) => { definition = value }
+  global.getApp = () => ({ globalData: { user: { permissions: ['approval:view', 'approval:handle'] } } })
+  global.getCurrentPages = () => [handling, previous, { route: 'pages/approvals/detail/index' }]
+  global.wx = { showModal: ({ success }) => success({ confirm: true }), showToast() {} }
+  approvalService.approve = async () => {}
+  const target = require.resolve('../pages/approvals/detail/index')
+  delete require.cache[target]
+  require(target)
+  const page = Object.assign({}, definition, {
+    data: Object.assign({}, definition.data, { id: 1, canHandle: true, detail: { status: 'PENDING', version: 0 }, comment: '' }),
+    setData(update) { Object.assign(this.data, update) },
+    load: async () => {}
+  })
+
+  await page.decide({ currentTarget: { dataset: { action: 'approve' } } })
+
+  assert.equal(previous._needsRefresh, true)
+  assert.equal(handling._needsSummaryRefresh, true)
+  approvalService.approve = originalApprove
+  delete global.getCurrentPages
 })
 
 test('approval rejection requires a reason before submission', async () => {

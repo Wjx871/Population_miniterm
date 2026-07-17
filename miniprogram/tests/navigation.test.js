@@ -225,7 +225,7 @@ test('business center has no request on first load and shows only real entries',
   assert.deepEqual(page.data.entries.map((item) => item.key), ['population', 'household'])
 })
 
-test('handling page first load makes one summary request and onShow does not repeat it', async () => {
+test('handling page refreshes summary only after an approval action', async () => {
   const dashboard = require('../services/dashboard')
   const originalOverview = dashboard.overview
   let definition
@@ -251,6 +251,9 @@ test('handling page first load makes one summary request and onShow does not rep
   page.onShow()
 
   assert.equal(requests, 1)
+  page._needsSummaryRefresh = true
+  await Promise.all([page.onShow(), page.onShow()])
+  assert.equal(requests, 2)
   assert.equal(page.data.pendingSummary.valueText, '0')
   dashboard.overview = originalOverview
 })
