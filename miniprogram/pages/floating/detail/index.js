@@ -1,0 +1,5 @@
+const service = require('../../../services/floating')
+const adapter = require('../../../adapters/mobile-business')
+const { guard } = require('../../../utils/permission')
+const { messageOf } = require('../../../utils/error')
+Page({ data: { id: '', record: null, loading: true, error: '' }, onLoad(options) { this.setData({ id: options.id }); if (!guard('floating:view')) return this.setData({ loading: false, error: '当前账号无权查看流动人口信息' }); this._authorized = true; return this.load() }, async load() { if (!this._authorized || this._loading) return; this._loading = true; this.setData({ loading: true, error: '' }); try { this.setData({ record: adapter.floating(await service.detail(this.data.id)) }) } catch (error) { this.setData({ error: messageOf(error) }) } finally { this._loading = false; this.setData({ loading: false }) } } })
