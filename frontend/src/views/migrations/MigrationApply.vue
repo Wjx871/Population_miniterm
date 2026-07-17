@@ -18,7 +18,7 @@
           <template #title>{{ hasActiveResidence ? '当前有效户籍' : '该人员没有当前有效户籍，无法办理迁出' }}</template>
           <template v-if="hasActiveResidence" #default>家庭户：{{ selectedProfile.currentHousehold?.householdNo || '-' }}；户籍编号：{{ selectedProfile.currentResidence?.residenceId || '-' }}；当前地址：{{ selectedProfile.currentResidence?.registeredAddress || '-' }}；状态：{{ selectedProfile.currentResidence?.status || '-' }}</template>
         </el-alert>
-        <template v-else>
+        <template v-if="!isIn">
           <el-form-item label="迁往地行政区划" prop="toRegionCode"><el-input v-model.trim="form.toRegionCode" :disabled="isReadonly" maxlength="20" /></el-form-item>
           <el-form-item label="迁往地地址" prop="toAddress"><el-input v-model.trim="form.toAddress" :disabled="isReadonly" maxlength="255" /></el-form-item>
           <el-form-item label="迁出日期" prop="outDate"><el-date-picker v-model="form.outDate" type="date" value-format="YYYY-MM-DD" :disabled="isReadonly" /></el-form-item>

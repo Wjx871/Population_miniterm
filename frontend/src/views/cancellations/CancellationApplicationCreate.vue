@@ -42,7 +42,7 @@
         </el-form-item>
 
         <el-form-item v-else label="目标家庭户" prop="householdId">
-          <HouseholdSelect v-model="form.householdId" :disabled="isReadonly" />
+          <HouseholdSelect v-model="form.householdId" status="PENDING_CANCELLATION" :disabled="isReadonly" />
         </el-form-item>
 
         <el-form-item label="注销原因" prop="cancelReasonCode">

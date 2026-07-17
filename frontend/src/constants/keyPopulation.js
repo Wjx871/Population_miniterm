@@ -22,7 +22,7 @@ export function getKeyPopulationMaterialOptions() {
 }
 
 export function getKeyPopulationMaterialRuleText() {
-  return '重点人口申请须核验：建档依据、情况说明。'
+  return '提交前须上传：建档依据、情况说明。材料将在审批阶段由审批人员核验。'
 }
 
 export function hasVerifiedKeyPopulationMaterials(materials = []) {

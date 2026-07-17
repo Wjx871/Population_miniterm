@@ -290,8 +290,11 @@ function goBack() {
 onMounted(async () => {
   const appId = route.query.applicationId
   // 从查询参数获取浮动ID（首次申领的快捷入口）
-  if (route.query.floatingId) {
-    selectedFloatingId.value = route.query.floatingId
+  const routeFloatingId = Array.isArray(route.query.floatingId) ? route.query.floatingId[0] : route.query.floatingId
+  if (typeof routeFloatingId === 'string' && /^\d+$/.test(routeFloatingId)) {
+    selectedFloatingId.value = routeFloatingId
+  } else if (routeFloatingId != null && routeFloatingId !== '') {
+    ElMessage.warning('流动登记编号无效，请返回列表重新选择')
   }
   // 从路由参数获取permitId（签注/注销）
   if (route.params.permitId && (applyType.value === 'ENDORSEMENT' || applyType.value === 'CANCELLATION')) {

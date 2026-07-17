@@ -103,6 +103,12 @@ test('材料核验要求 KEY_POPULATION_BASIS + SITUATION_DESCRIPTION', () => {
   )
 })
 
+test('重点人口材料规则说明核验发生在审批阶段', async () => {
+  const { getKeyPopulationMaterialRuleText } = await import('../src/constants/keyPopulation.js')
+  assert.match(getKeyPopulationMaterialRuleText(), /提交前须上传/)
+  assert.match(getKeyPopulationMaterialRuleText(), /审批阶段/)
+})
+
 test('Handler 使用专业 submit，无编辑路由，execute 仅 version', async () => {
   let submitType = null
   let executeArgs = null

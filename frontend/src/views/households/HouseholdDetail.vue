@@ -92,20 +92,6 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" align="center" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              size="small"
-              type="danger"
-              link
-              :disabled="row.isHead"
-              v-permission="'household:edit'"
-              @click="handleRemove(row)"
-            >
-              移出
-            </el-button>
-          </template>
-        </el-table-column>
       </el-table>
     </el-card>
 
@@ -168,7 +154,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Plus } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
 import FormDialog from '../../components/common/FormDialog.vue'
 import StatusTag from '../../components/common/StatusTag.vue'
@@ -178,7 +164,6 @@ import {
   getHouseholdById,
   getHouseholdMembers,
   addHouseholdMember,
-  leaveHouseholdMember,
   changeHouseholdHead,
 } from '../../api/households'
 import {
@@ -329,41 +314,6 @@ const submitForm = () => {
       submitting.value = false
     }
   })
-}
-
-const handleRemove = (row) => {
-  if (row.isHead) {
-    ElMessage.warning('户主不能通过移出成员操作移除')
-    return
-  }
-  const memberId = row.memberId
-  if (!memberId) {
-    ElMessage.warning('无法识别成员标识')
-    return
-  }
-
-  const householdNo = householdInfo.value.householdNo || householdId
-  ElMessageBox.confirm(
-    `确定将成员「${row.personName || '未知'}」从家庭户「${householdNo}」中移出吗？\n此操作仅适用于无当前户籍的家庭关系纠错；有当前有效户籍的人员请通过迁出或人员注销业务办理。`,
-    '移出家庭成员',
-    {
-      confirmButtonText: '确定移出',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  ).then(async () => {
-    try {
-      await leaveHouseholdMember(householdId, memberId, {
-        leaveDate: dayjs().format('YYYY-MM-DD'),
-        version: row.version,
-      })
-      ElMessage.success('移出成功')
-      await fetchMembers()
-      fetchHouseholdInfo()
-    } catch (error) {
-      console.error(error)
-    }
-  }).catch(() => {})
 }
 
 onMounted(() => {

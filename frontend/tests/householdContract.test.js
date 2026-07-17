@@ -39,6 +39,6 @@ test('成员离户与户主变更使用正式 POST 接口和 household:edit', as
   assert.match(api, /members\/\$\{memberId\}\/leave`[^]*method:\s*'post'/)
   assert.match(api, /change-head`[^]*method:\s*'post'/)
   assert.match(detail, /newHeadPersonId/)
-  assert.match(detail, /有当前有效户籍的人员请通过迁出或人员注销业务办理/)
+  assert.doesNotMatch(detail, /handleRemove|leaveHouseholdMember|移出家庭成员/)
   assert.doesNotMatch(detail + list, /household:(create|update|member:manage|delete)/)
 })
