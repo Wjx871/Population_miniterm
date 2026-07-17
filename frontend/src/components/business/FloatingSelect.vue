@@ -47,6 +47,10 @@ const props = defineProps({
     type: String,
     default: 'ACTIVE'
   },
+  availableForFirstIssue: {
+    type: Boolean,
+    default: false
+  },
   clearable: {
     type: Boolean,
     default: true
@@ -97,6 +101,7 @@ async function fetchList(keyword = '') {
   try {
     const query = { current: 1, size: MAX_SIZE }
     if (props.status) query.status = props.status
+    if (props.availableForFirstIssue) query.availableForFirstIssue = true
 
     const text = String(keyword || '').trim()
     if (text) {

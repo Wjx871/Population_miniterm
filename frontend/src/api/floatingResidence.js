@@ -1,6 +1,15 @@
 import request from './request'
 import { toSpringPageParams } from '../utils/page'
 
+function validPathId(value) {
+  const id = typeof value === 'number' || typeof value === 'string' ? String(value).trim() : ''
+  return /^\d+$/.test(id) ? id : null
+}
+
+function invalidPathId(label) {
+  return Promise.reject(new Error(`${label}无效`))
+}
+
 // ==================== 流动登记专业申请 (7) ====================
 
 export function createFloatingApplication(payload) {
@@ -29,6 +38,7 @@ export function getFloatingPopulationPage(params) {
     identityNo: raw.identityNo,
     currentRegionCode: raw.currentRegionCode,
     status: raw.status,
+    availableForFirstIssue: raw.availableForFirstIssue === true,
     includeHistory: raw.includeHistory === true
   }
   // 仅保留有意义的查询条件（去除空串/null/undefined），避免向 URL 中追加无意义参数
@@ -40,7 +50,8 @@ export function getFloatingPopulationPage(params) {
 }
 
 export function getFloatingPopulationById(floatingId) {
-  return request({ url: `/floating-populations/${floatingId}`, method: 'get' })
+  const id = validPathId(floatingId)
+  return id ? request({ url: `/floating-populations/${id}`, method: 'get' }) : invalidPathId('流动登记编号')
 }
 
 export function closeFloatingPopulation(floatingId, payload) {
@@ -107,7 +118,8 @@ export function getResidencePermitPage(params) {
 }
 
 export function getResidencePermitById(permitId) {
-  return request({ url: `/residence-permits/${permitId}`, method: 'get' })
+  const id = validPathId(permitId)
+  return id ? request({ url: `/residence-permits/${id}`, method: 'get' }) : invalidPathId('居住证编号')
 }
 
 export function getResidencePermitLogs(permitId) {

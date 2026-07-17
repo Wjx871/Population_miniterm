@@ -14,7 +14,7 @@
 
     <el-form label-width="100px">
       <el-form-item label="选择流动登记" required>
-        <FloatingSelect v-model="selectedFloatingId" :status="'ACTIVE'" @select="onFloatingSelect" />
+        <FloatingSelect v-model="selectedFloatingId" :status="'ACTIVE'" :available-for-first-issue="true" @select="onFloatingSelect" />
       </el-form-item>
       <el-form-item v-if="floatingInfo" label="持证人预览">
         <el-descriptions :column="2" border size="small">
