@@ -36,6 +36,8 @@ REM ---------- 默认端口（仅设置未定义的变量） ----------
 if not defined SERVER_PORT set "SERVER_PORT=8080"
 if not defined FRONTEND_PORT set "FRONTEND_PORT=5180"
 if not defined OCR_PORT set "OCR_PORT=8866"
+if not defined OCR_STUB_DIR set "OCR_STUB_DIR=D:\ocr-stub"
+if not defined OCR_START_BAT set "OCR_START_BAT=%OCR_STUB_DIR%\start.bat"
 
 REM env 加载完成后再开启延迟展开，避免配置值中的 ! 被错误解析
 setlocal EnableDelayedExpansion
@@ -101,6 +103,17 @@ if not exist "%ROOT_DIR%\start.local.env" (
 )
 
 REM ---------- 2. 启动 OCR 子服务（独立窗口） ----------
+if not exist "!OCR_STUB_DIR!\." (
+    echo [警告] 未找到 OCR 工作目录: !OCR_STUB_DIR!
+    echo        OCR 是可选子服务，本次跳过并继续启动后端与前端。
+    goto :skip_ocr
+)
+if not exist "!OCR_START_BAT!" (
+    echo [警告] 未找到 OCR 启动脚本: !OCR_START_BAT!
+    echo        OCR 是可选子服务，本次跳过并继续启动后端与前端。
+    goto :skip_ocr
+)
+
 echo [1/4] 正在新窗口启动 OCR 子服务...
 start "PDMS-OCR" /D "%ROOT_DIR%" cmd /k call "%SCRIPT_DIR%start_ocr.bat"
 if errorlevel 1 (

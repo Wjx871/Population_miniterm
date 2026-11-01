@@ -108,7 +108,7 @@ copy config\start.local.env.example start.local.env
 | 脚本 | 作用 |
 |------|------|
 | `start.bat` | 根目录统一入口，调用一键启动流程（推荐） |
-| `scripts/windows/start_all.bat` | 独立窗口启动后端，验证 `/api/health` 的数据库状态后启动前端 |
+| `scripts/windows/start_all.bat` | OCR 子服务启动脚本缺失时跳过 OCR；启动后端并验证 `/api/health` 后启动前端 |
 | `scripts/windows/start_backend.bat` | 仅启动后端 |
 | `scripts/windows/start_frontend.bat` | 仅启动前端（验证 `/api/health`；失败时需明确确认才继续） |
 
