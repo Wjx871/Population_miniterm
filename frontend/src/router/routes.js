@@ -27,6 +27,7 @@ export const routes = [
         meta: { title: '政策办理知识助手', minLevel: 1, permission: PERMISSIONS.POPULATION_VIEW, menu: false, group: '智能办理助手', order: 20, icon: 'ChatDotRound' }
       },
       {
+        // 工作台（非沉浸式数据大屏）：/home → Dashboard.vue，侧边栏菜单入口
         path: '/home',
         name: 'Dashboard',
         component: () => import('../views/dashboard/Dashboard.vue'),
@@ -65,6 +66,10 @@ export const routes = [
         meta: { title: '系统日志', minLevel: 1, permission: PERMISSIONS.LOG_VIEW, menu: true, group: '查询统计', order: 37, icon: 'Document' }
       },
       {
+        // 【数据大屏链路 · 路由入口】
+        // path → 懒加载 DataDashboard.vue；权限 STATISTICS_VIEW（与后端 statistics:view 对应）
+        // immersive: true → 布局隐藏侧栏/顶栏，全屏沉浸展示
+        // menu: false → 一般从工作台快捷入口进入，不单独占侧边菜单
         path: '/statistics/dashboard',
         name: 'DataDashboard',
         component: () => import('../views/dashboard/DataDashboard.vue'),

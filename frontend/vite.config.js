@@ -10,6 +10,10 @@ export default defineConfig({
     // strictPort: true —— 端口被占用时直接退出，不自动切换到其他端口
     // 确保启动脚本显示的地址与实际监听端口始终一致
     strictPort: true,
+    // === 开发环境 API 代理（数据大屏链路）===
+    // 浏览器请求：http://localhost:5180/api/dashboard/overview
+    // Vite 转发为：http://127.0.0.1:8080/api/dashboard/overview
+    // 前端只调 /api/*，不直连 MySQL；生产环境由 Nginx 等完成同类转发
     proxy: {
       '/api': {
         // 代理目标由启动脚本通过 VITE_BACKEND_TARGET 传入，默认 8080

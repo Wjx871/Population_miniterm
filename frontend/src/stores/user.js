@@ -18,10 +18,16 @@ function loadStoredSession() {
   }
 }
 
+/**
+ * 【数据大屏链路 · 用户状态 / JWT 来源】
+ * accessToken、tokenType 由登录写入；api/request.js 请求拦截器从此读取并拼 Authorization。
+ * canAccess(meta) 供路由守卫判断能否进入 /statistics/dashboard（STATISTICS_VIEW）。
+ */
 export const useUserStore = defineStore('user', {
   state: () => {
     const saved = loadStoredSession()
     return {
+      // JWT：request 拦截器 → `Authorization: ${tokenType} ${accessToken}`
       accessToken: saved.accessToken || '', tokenType: saved.tokenType || 'Bearer',
       userId: null, username: '', realName: '', roleName: '', roleCode: ROLE_CODE.QUERY_VIEWER,
       roleLevel: '', permissionLevel: 1, permissions: [], dataScope: null,
@@ -56,6 +62,7 @@ export const useUserStore = defineStore('user', {
       }
       return restorePromise
     },
+    // 持久化白名单字段（含 Token）；刷新标签页后 request 仍可从 store 读到 JWT
     persistSession() {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
         accessToken: this.accessToken, tokenType: this.tokenType, userId: this.userId,
@@ -65,6 +72,7 @@ export const useUserStore = defineStore('user', {
         departmentName: this.departmentName, regionCode: this.regionCode,
       }))
     },
+    // 401 或主动退出时清空；之后大屏等接口请求不再带 Token
     clearSession() {
       Object.assign(this, {
         accessToken: '', tokenType: 'Bearer', userId: null, username: '', realName: '', roleName: '',
@@ -82,6 +90,7 @@ export const useUserStore = defineStore('user', {
     hasLevel(minLevel) { return this.permissionLevel >= minLevel },
     hasPermission(permission) { return !permission || checkPermission(this.permissions, permission) },
     hasAnyPermission(permissions) { return !permissions?.length || checkAnyPermission(this.permissions, permissions) },
+    // 路由 meta 权限：大屏 meta.permission = STATISTICS_VIEW，与 beforeEach 配合
     canAccess(meta) {
       if (!meta) return true
       if (meta.minLevel && !this.hasLevel(meta.minLevel)) return false

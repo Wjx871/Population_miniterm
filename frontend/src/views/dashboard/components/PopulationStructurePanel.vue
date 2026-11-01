@@ -1,3 +1,8 @@
+<!--
+  【数据大屏 · 人口结构分析】
+  数据：overview.populationStructure（adapter 保证 gender + 6 段 ageGroups）
+  绘制：纯 CSS/DOM，不走 ECharts —— 性别用 conic-gradient，年龄用进度条宽度
+-->
 <template>
   <CyberPanel title="人口结构分析">
     <template v-if="hasData">
@@ -36,7 +41,7 @@
         </div>
       </div>
     </template>
-    
+
     <DashboardEmptyState v-else text="暂无人口结构统计" />
   </CyberPanel>
 </template>
@@ -65,6 +70,7 @@ const hasData = computed(() => {
 const maleRatio = computed(() => props.data?.gender?.male || 0)
 const femaleRatio = computed(() => props.data?.gender?.female || 0)
 
+// 圆锥渐变：0%→male% 为男性色，其余为女性色
 const genderRingStyle = computed(() => {
   // 男性亮蓝，女性亮紫 — 提高对比度
   return {
@@ -72,6 +78,7 @@ const genderRingStyle = computed(() => {
   }
 })
 
+// truePercent：占总人口比例；barPercent：相对最大值的条宽（视觉对比）
 const ageGroups = computed(() => {
   if (!hasData.value) return []
   const max = Math.max(...props.data.ageGroups.map(g => g.value || 0))

@@ -1,3 +1,8 @@
+<!--
+  【数据大屏 · 业务申请量排行】
+  数据：charts.businessScale（与 BusinessTypeSharePanel 同源）
+  绘制：纯 DOM 排序取 Top5 + CSS 条宽，不走 ECharts
+-->
 <template>
   <CyberPanel title="业务申请量排行">
     <template v-if="hasData">
@@ -10,6 +15,7 @@
               <span class="rank-value">{{ item.value }}<span class="unit">件</span></span>
             </div>
             <div class="rank-bar-wrapper">
+              <!-- percent 相对第一名；最小 6% 保证极小值仍可见 -->
               <div
                 class="rank-bar"
                 :class="'bar-' + (index + 1)"
@@ -36,6 +42,7 @@ const props = defineProps({
   }
 })
 
+// 业务类型码 → 中文名（与后端字典/申请类型一致）
 const BUSINESS_LABELS = {
   MIGRATION_IN: '迁入登记',
   MIGRATION_OUT: '迁出登记',
@@ -55,6 +62,7 @@ const hasData = computed(() => {
   return props.data && props.data.length > 0
 })
 
+// 按 value/count 降序取前 5，条宽 = 相对最大值百分比
 const rankingList = computed(() => {
   if (!hasData.value) return []
 

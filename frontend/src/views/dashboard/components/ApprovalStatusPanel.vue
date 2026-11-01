@@ -1,3 +1,8 @@
+<!--
+  【数据大屏 · 审批状态总览】
+  数据：charts.approvalStatusDistribution
+  绘制：左环图 approvalStatusOption + 右 DOM 图例（禁用 ECharts legend，避免重叠）
+-->
 <template>
   <CyberPanel title="审批状态总览" class="approval-panel">
     <template v-if="hasData">
@@ -9,6 +14,7 @@
             label="审批状态环形图"
           />
         </div>
+        <!-- 自定义图例：数量 + 占比，与 colorMap 对齐 -->
         <ul class="approval-legend">
           <li v-for="item in legendItems" :key="item.name" class="legend-row">
             <span class="legend-dot" :style="{ background: item.color, boxShadow: `0 0 8px ${item.color}` }"></span>

@@ -1,9 +1,15 @@
+/**
+ * 【数据大屏链路 · 全站 Axios 封装】（人口列表等业务页共用）
+ * 职责：baseURL=/api、请求头挂 JWT、解包后端 ApiResponse 的 data、统一 401/403
+ * 答辩要点：业务代码 await getDashboardOverview() 拿到的已是内层 data，不是 { code, message, data }
+ */
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../stores/user.js'
 
 let handlingUnauthorized = false
 
+// 登录失效：清 session 并跳登录（带 redirect 便于回到大屏）
 async function handleUnauthorized(message) {
   const userStore = useUserStore()
   userStore.clearSession()
@@ -20,6 +26,7 @@ async function handleUnauthorized(message) {
   }
 }
 
+// === 创建实例：开发环境 /api 走 Vite 代理到 8080 ===
 const request = axios.create({
   baseURL: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api',
   timeout: 10000,
@@ -40,6 +47,7 @@ function handleForbidden(message, config) {
   }
 }
 
+// === 请求拦截：从 user store 注入 Authorization（大屏 overview/charts 同样依赖）===
 request.interceptors.request.use((config) => {
   const userStore = useUserStore()
   if (userStore.accessToken) {
@@ -49,10 +57,12 @@ request.interceptors.request.use((config) => {
   return config
 }, (error) => Promise.reject(error))
 
+// === 响应拦截：成功则 return result.data；业务层无需再解包 ===
 request.interceptors.response.use((response) => {
   if (response.config.rawResponse) return response
   const result = response.data
   if (!result || typeof result.code === 'undefined') return result
+  // 对应后端 ApiResponse.ok(data) → { code: 2xx, data }
   if (result.code >= 200 && result.code < 300) return result.data
   if (result.code === 401) {
     void handleUnauthorized(result.message)

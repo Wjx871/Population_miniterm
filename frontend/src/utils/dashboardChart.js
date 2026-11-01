@@ -1,6 +1,12 @@
+/**
+ * 【数据大屏链路 · ECharts option 工厂】
+ * 职责：把 adapter 规范化后的数组 → ECharts setOption 所需配置；本文件不发 HTTP。
+ * 调用方：各 *Panel.vue 传入 props.data，再交给 BaseEChart :option
+ * 当前大屏主用：migrationTrend / approvalStatus / businessTypeShare / populationScale
+ */
 import * as theme from '../views/dashboard/options/chartTheme.js'
 
-// 近30日迁入迁出趋势
+// === 近30日迁入迁出双折线：date → X；inCount / outCount → 两条 series ===
 export function migrationTrendOption(points = []) {
   const rows = Array.isArray(points) ? points : []
   const inColor = theme.accentCyan
@@ -41,6 +47,7 @@ export function migrationTrendOption(points = []) {
           shadowBlur: 10,
           shadowColor: 'rgba(31, 228, 255, 0.75)'
         },
+        // 数据字段来自 charts.migrationTrend（adapter 已 finiteNumber）
         data: rows.map((item) => item.inCount ?? 0),
         areaStyle: {
           color: theme.areaGradient(inColor, 0.4)
@@ -67,7 +74,7 @@ export function migrationTrendOption(points = []) {
   }
 }
 
-// 审批状态环形图
+// === 审批状态环形图：code/count → pie；legend 关闭，由 ApprovalStatusPanel DOM 画 ===
 export function approvalStatusOption(rows = []) {
   const data = Array.isArray(rows) ? rows : []
   const total = data.reduce((sum, item) => sum + (item.count || item.value || 0), 0)
@@ -169,14 +176,14 @@ export function approvalStatusOption(rows = []) {
   }
 }
 
-// 业务类型占比条形图
+// === 业务类型横向柱：businessScale 前 6 名；value/count → bar 长度 ===
 export function businessTypeShareOption(rows = []) {
   const data = Array.isArray(rows) ? rows : []
   // 取前 6 个
   const sorted = [...data]
     .sort((a, b) => (b.count || b.value || 0) - (a.count || a.value || 0))
     .slice(0, 6)
-  sorted.reverse() // ECharts horizontal bar renders bottom to top
+  sorted.reverse() // ECharts 横向柱自下而上，reverse 后视觉上大值在上
 
   const labelMap = {
     MIGRATION_IN: '迁入登记',
@@ -252,7 +259,7 @@ export function businessTypeShareOption(rows = []) {
   }
 }
 
-// 底部规模对比图
+// === 登记与签发分组柱：populationScaleTrend 的 registered / floating / residencePermits ===
 export function populationScaleOption(trendData = []) {
   const rows = Array.isArray(trendData) ? trendData : []
   const colors = [
@@ -373,7 +380,7 @@ export function populationScaleOption(trendData = []) {
   }
 }
 
-// Legacy options for old components (kept to prevent breakages)
+// === Legacy：旧组件兼容，当前 DataDashboard 主链路不使用，答辩勿当主图讲解 ===
 export function namedCountOption(rows = [], type = 'bar') {
   const data = Array.isArray(rows) ? rows : []
   return { series: [{ type: type === 'line' ? 'line' : 'bar', data: data.map((item) => item.value ?? 0) }] }

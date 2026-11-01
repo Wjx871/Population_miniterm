@@ -1,13 +1,23 @@
+/**
+ * 【数据大屏链路 · 数据适配层】
+ * 上游：接口返回的原始 JSON（或 demo 固件）
+ * 下游：useDashboardData 写入 overview/charts 响应式对象 → 各 Panel / KPI
+ * 为何需要：后端字段可能缺失/非数字；面板要求稳定结构（空也要能渲染 0，避免白屏或崩溃）
+ */
+
+// 安全转有限数字；非法则 null，避免 NaN 进图表
 function finiteNumber(value) {
   if (value === null || value === undefined || value === false) return value ?? null
   const number = Number(value)
   return Number.isFinite(number) ? number : null
 }
 
+// 非数组统一成 []，图表 option 可安全 map
 function array(value) {
   return Array.isArray(value) ? value : []
 }
 
+// 统一 code/label/value 命名统计项（业务量、审批状态等）
 function namedCounts(value) {
   return array(value).map((item) => ({
     code: item?.code ?? '',
@@ -47,6 +57,7 @@ function emptyPopulationStructure() {
   }
 }
 
+/** 规范化概览 DTO → KPI 与结构类面板可用的扁平/嵌套对象 */
 export function normalizeDashboardOverview(raw = {}) {
   // 注意：catch 路径不再返回 null，让三个面板永远能渲染（哪怕 0）
   const rawKeyBusiness = raw?.keyBusiness && typeof raw.keyBusiness === 'object'
@@ -89,6 +100,12 @@ export function normalizeDashboardOverview(raw = {}) {
   }
 }
 
+/**
+ * 规范化图表 DTO → 各 ECharts option / 排行 DOM 所需数组字段
+ * migrationTrend: { date, inCount, outCount }
+ * businessScale / approvalStatusDistribution: namedCounts
+ * populationScaleTrend: 登记与签发三序列
+ */
 export function normalizeDashboardCharts(raw = {}) {
   return {
     generatedAt: raw?.generatedAt ?? null,

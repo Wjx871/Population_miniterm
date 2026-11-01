@@ -1,8 +1,13 @@
+<!--
+  【数据大屏 · 登记与签发趋势】
+  数据：charts.populationScaleTrend
+  绘制：populationScaleOption → 分组柱状图（户籍/流动/居住证）
+-->
 <template>
   <CyberPanel title="近 30 日登记与签发趋势" class="scale-panel">
-    <BaseEChart 
-      :option="populationScaleOption(data)" 
-      :empty="!hasData" 
+    <BaseEChart
+      :option="populationScaleOption(data)"
+      :empty="!hasData"
       label="近 30 日登记与签发趋势图"
     />
   </CyberPanel>

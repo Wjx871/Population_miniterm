@@ -1,3 +1,8 @@
+<!--
+  【数据大屏链路 · ECharts 公共容器】
+  上游：各 *Panel 传入 option（来自 dashboardChart.js）+ empty/loading
+  答辩要点：initEChart(root) 初始化；chart.setOption(option) 是真正画图的一行；卸载时 dispose
+-->
 <template>
   <div class="base-echart-wrapper">
     <div v-show="!empty" ref="root" class="chart-root" role="img" :aria-label="label"></div>
@@ -38,6 +43,7 @@ let chart = null
 let observer = null
 let resizeTimer = null
 
+// 将 option 应用到实例（答辩「真正画图」）
 const render = () => {
   if (!chart || props.empty) return
   chart.setOption(props.option, {
@@ -46,6 +52,7 @@ const render = () => {
   })
 }
 
+// 容器尺寸变化时 resize，避免大屏 scale/全屏后坐标系错位
 const resize = () => {
   if (resizeTimer) cancelAnimationFrame(resizeTimer)
   resizeTimer = requestAnimationFrame(() => {
@@ -55,6 +62,7 @@ const resize = () => {
   })
 }
 
+// 深度监听 option：adapter 刷新数据后自动重绘
 watch(() => props.option, render, { deep: true })
 
 watch(() => props.empty, (isEmpty) => {
@@ -81,11 +89,12 @@ watch(() => props.loading, (isLoading) => {
 })
 
 onMounted(() => {
+  // 在 DOM 节点上创建 ECharts 实例（按需注册见 charts/echarts.js）
   chart = initEChart(root.value)
   if (!props.empty) {
     render()
   }
-  
+
   observer = new ResizeObserver(() => {
     resize()
   })
@@ -94,6 +103,7 @@ onMounted(() => {
   }
 })
 
+// 销毁：取消动画帧、断开观察、dispose 释放 WebGL/Canvas 资源
 onBeforeUnmount(() => {
   if (resizeTimer) cancelAnimationFrame(resizeTimer)
   if (observer) {
@@ -109,24 +119,23 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .base-echart-wrapper {
-  position: relative;
   width: 100%;
   height: 100%;
+  min-height: 0;
+  position: relative;
 }
 
+/* 不设 min-height，避免在固定高度面板内撑破导致坐标轴文字被裁切 */
 .chart-root {
   width: 100%;
   height: 100%;
-  /* 不设 min-height，避免在固定高度面板内撑破导致坐标轴文字被裁切 */
   min-height: 0;
 }
 
 .chart-empty {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;

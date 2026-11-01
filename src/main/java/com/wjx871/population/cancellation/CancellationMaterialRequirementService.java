@@ -43,14 +43,21 @@ public class CancellationMaterialRequirementService {
         }
 
         require(types, "APPLICANT_IDENTITY_PROOF", verifiedOnly);
-        switch (record.getCancelReasonCode()) {
-            case DEATH -> require(types, "DEATH_CERTIFICATE", verifiedOnly);
-            case DECLARED_DEAD -> require(types, "DECLARED_DEAD_JUDGMENT", verifiedOnly);
-            case SETTLED_ABROAD -> require(types, "SETTLEMENT_ABROAD_PROOF", verifiedOnly);
-            case DUPLICATE_REGISTRATION -> require(types, "DUPLICATE_REGISTRATION_PROOF", verifiedOnly);
-            default -> require(types, "CANCELLATION_APPLICATION", verifiedOnly);
+        // 使用 if-else 而非 switch：避免编译器生成 CancellationMaterialRequirementService$1
+        // 合成类；热更新/增量编译丢失该类时会 NoClassDefFoundError → 前端显示「服务器处理请求失败」
+        CancelReasonCode reason = record.getCancelReasonCode();
+        if (reason == CancelReasonCode.DEATH) {
+            require(types, "DEATH_CERTIFICATE", verifiedOnly);
+        } else if (reason == CancelReasonCode.DECLARED_DEAD) {
+            require(types, "DECLARED_DEAD_JUDGMENT", verifiedOnly);
+        } else if (reason == CancelReasonCode.SETTLED_ABROAD) {
+            require(types, "SETTLEMENT_ABROAD_PROOF", verifiedOnly);
+        } else if (reason == CancelReasonCode.DUPLICATE_REGISTRATION) {
+            require(types, "DUPLICATE_REGISTRATION_PROOF", verifiedOnly);
+        } else {
+            require(types, "CANCELLATION_APPLICATION", verifiedOnly);
         }
-        if (record.getCancelReasonCode() != CancelReasonCode.DUPLICATE_REGISTRATION) {
+        if (reason != CancelReasonCode.DUPLICATE_REGISTRATION) {
             require(types, "HOUSEHOLD_BOOK", verifiedOnly);
         }
     }

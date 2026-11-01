@@ -1,3 +1,9 @@
+<!--
+  【数据大屏链路 · 页面入口】DataDashboard.vue
+  职责：布局 + 把 useDashboardData 的响应式数据传给 KPI/各面板；不直接发 HTTP、不查库。
+  路由：/statistics/dashboard（见 router/routes.js）
+  下游：useDashboardData → api/dashboard → request → 后端；图表侧走 adapter + dashboardChart + BaseEChart
+-->
 <template>
   <div
     ref="wrapperRef"
@@ -5,7 +11,7 @@
     :class="mode === 'scale' ? 'is-scale-mode' : 'is-scroll-mode'"
   >
     <div ref="canvasRef" class="dashboard-canvas" :class="{ 'design-canvas': mode === 'scale' }">
-      <!-- 顶部 Header -->
+      <!-- 顶部：刷新 / 全屏 / 演示模式切换（事件落到 loadAll、toggleDemoMode） -->
       <DashboardScreenHeader
         :is-fullscreen="isFullscreen"
         :is-demo="isDemo"
@@ -15,7 +21,7 @@
         @toggle-demo="toggleDemoMode"
       />
 
-      <!-- 顶部 KPI 指标区 -->
+      <!-- KPI：数据来自 overview（getDashboardOverview）；净流入为前端计算字段 -->
       <section class="kpi-grid">
         <DashboardKpiCard label="当前户籍人口" :value="overview.registeredPopulation" icon="UserFilled" tone="cyan" />
         <DashboardKpiCard label="在册流动人口" :value="overview.activeFloatingPopulation" icon="User" tone="blue" />
@@ -25,9 +31,10 @@
         <DashboardKpiCard label="本期净流入" :value="netMigration" icon="TrendCharts" tone="purple" />
       </section>
 
-      <!-- 主要内容区骨架 -->
+      <!-- 三列主内容：overview 驱动结构/重点业务；charts 驱动趋势与分布图 -->
       <main class="dashboard-content-skeleton">
         <div class="column left-column">
+          <!-- populationStructure：CSS 图；migrationTrend / businessScale：ECharts 或 DOM 排行 -->
           <PopulationStructurePanel class="panel" :data="overview.populationStructure" />
           <MigrationTrendPanel class="panel" :data="charts.migrationTrend" />
           <BusinessRankingPanel class="panel" :data="charts.businessScale" />
@@ -58,6 +65,11 @@
 </template>
 
 <script setup>
+/**
+ * 页面只组合三个 composable：
+ * - useDashboardData：请求与响应式数据（答辩核心）
+ * - useDashboardFullscreen / useDashboardScale：展示交互，与业务数据无关
+ */
 import { computed, ref } from 'vue';
 import { useDashboardFullscreen } from './composables/useDashboardFullscreen';
 import { useDashboardScale } from './composables/useDashboardScale';
@@ -66,40 +78,41 @@ import DashboardScreenHeader from './components/DashboardScreenHeader.vue';
 import DashboardFooter from './components/DashboardFooter.vue';
 import DashboardKpiCard from './components/DashboardKpiCard.vue';
 
-// Left panels
+// 左列面板
 import PopulationStructurePanel from './components/PopulationStructurePanel.vue';
 import MigrationTrendPanel from './components/MigrationTrendPanel.vue';
 import BusinessRankingPanel from './components/BusinessRankingPanel.vue';
 
-// Right panels
+// 右列面板
 import ApprovalStatusPanel from './components/ApprovalStatusPanel.vue';
 import KeyBusinessMonitorPanel from './components/KeyBusinessMonitorPanel.vue';
 import BusinessTypeSharePanel from './components/BusinessTypeSharePanel.vue';
 
-// Center panels
+// 中列面板
 import NetworkSvgMapPanel from './components/NetworkSvgMapPanel.vue';
 import PopulationScalePanel from './components/PopulationScalePanel.vue';
 
 const wrapperRef = ref(null);
 const canvasRef = ref(null);
 
+// 本期净流入 = 迁入量 - 迁出量（字段来自 overview，非后端单独接口）
 const netMigration = computed(() => {
   const incoming = overview.migrationInPeriod;
   const outgoing = overview.migrationOutPeriod;
   return Number.isFinite(incoming) && Number.isFinite(outgoing) ? incoming - outgoing : null;
 });
 
-// 绑定全屏
+// 全屏切换
 const { isFullscreen, toggleFullscreen } = useDashboardFullscreen();
 
-// 混合缩放：全屏/大窗 scale，小窗 scroll
+// 混合缩放：全屏/大窗 scale 适配 1920×1080 设计稿，小窗 scroll
 const { mode } = useDashboardScale(wrapperRef, canvasRef, {
   designWidth: 1920,
   designHeight: 1080,
   isFullscreen
 });
 
-// 绑定数据层
+// === 数据层：onMounted 内 loadAll；模板直接绑定 overview / charts ===
 const {
   overview,
   charts,

@@ -27,6 +27,11 @@
 </template>
 
 <script setup>
+/**
+ * 【数据大屏 · 顶部 KPI 数字卡片】
+ * 数据：DataDashboard 绑定 overview 各字段（及前端计算的 netMigration）
+ * 展示：useNumberAnimation 做数字滚动；null/空显示 "—"
+ */
 import { computed, toRefs } from 'vue'
 import { User, UserFilled, Postcard, Document, Warning, TrendCharts } from '@element-plus/icons-vue'
 import { useNumberAnimation } from '../composables/useNumberAnimation'
@@ -55,6 +60,7 @@ const props = defineProps({
 })
 
 const { value } = toRefs(props)
+// 数值变化时平滑过渡，增强大屏动效
 const animatedValue = useNumberAnimation(value)
 
 const displayValue = computed(() => {
