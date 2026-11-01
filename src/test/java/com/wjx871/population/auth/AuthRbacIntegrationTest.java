@@ -28,6 +28,9 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 class AuthRbacIntegrationTest {
 
+    private static final long DEPARTMENT_LOG_ROLE_ID = 9901L;
+    private static final long DEPARTMENT_LOG_USER_ID = 9901L;
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -43,6 +46,9 @@ class AuthRbacIntegrationTest {
     @BeforeEach
     void resetAuditState() {
         jdbcTemplate.update("DELETE FROM operation_log");
+        jdbcTemplate.update("DELETE FROM sys_user WHERE user_id = ?", DEPARTMENT_LOG_USER_ID);
+        jdbcTemplate.update("DELETE FROM sys_role_permission WHERE role_id = ?", DEPARTMENT_LOG_ROLE_ID);
+        jdbcTemplate.update("DELETE FROM sys_role WHERE role_id = ?", DEPARTMENT_LOG_ROLE_ID);
         jdbcTemplate.update("UPDATE sys_user SET last_login_time = NULL, last_login_ip = NULL");
     }
 
@@ -149,7 +155,7 @@ class AuthRbacIntegrationTest {
     }
 
     @Test
-    void viewerIdentityReflectsDocumentedAllDataScope() throws Exception {
+    void meReturnsRoleScopeDepartmentAndPermissions() throws Exception {
         mockMvc.perform(get("/api/auth/me").header("Authorization", bearer(tokenFor("viewer"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.roleCode").value("QUERY_VIEWER"))
@@ -207,7 +213,7 @@ class AuthRbacIntegrationTest {
     }
 
     @Test
-    void allScopedViewerCanSeeLogsAcrossDepartments() throws Exception {
+    void queryViewerAllScopeCanReadLogsFromOtherDepartments() throws Exception {
         jdbcTemplate.update("""
                 INSERT INTO operation_log (user_id, operation_type, operation_result, detail)
                 VALUES (1, 'VIEWER_ACTION', 'SUCCESS', 'viewer only'),
@@ -218,7 +224,37 @@ class AuthRbacIntegrationTest {
                         .header("Authorization", bearer(tokenFor("viewer"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[*].operator").value(
-                        org.hamcrest.Matchers.hasItem("population")));
+                        org.hamcrest.Matchers.hasItems("viewer", "population")));
+    }
+
+    @Test
+    void departmentScopedLogQueryDoesNotExposeOtherDepartmentLogs() throws Exception {
+        createDepartmentLogViewer();
+        jdbcTemplate.update("""
+                INSERT INTO operation_log (user_id, operation_type, operation_result, detail)
+                VALUES (?, 'DEPARTMENT_ACTION', 'SUCCESS', 'department only'),
+                       (2, 'POPULATION_ACTION', 'SUCCESS', 'other department')
+                """, DEPARTMENT_LOG_USER_ID);
+
+        mockMvc.perform(get("/api/statistics/logs")
+                        .header("Authorization", bearer(tokenFor("rbac-department-viewer"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].operator").value(
+                        org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is("rbac-department-viewer"))))
+                .andExpect(jsonPath("$.data[*].detail",
+                        org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("other department"))));
+    }
+
+    private void createDepartmentLogViewer() {
+        jdbcTemplate.update("INSERT INTO sys_role(role_id,role_code,role_name,role_level,data_scope,status) " +
+                        "VALUES(?, 'RBAC_DEPARTMENT_LOG_VIEWER', '部门日志测试角色', 'L1', 'DEPARTMENT', 'ENABLED')",
+                DEPARTMENT_LOG_ROLE_ID);
+        jdbcTemplate.update("INSERT INTO sys_role_permission(role_id,permission_id) " +
+                        "SELECT ?, permission_id FROM sys_permission WHERE permission_code='log:view'",
+                DEPARTMENT_LOG_ROLE_ID);
+        jdbcTemplate.update("INSERT INTO sys_user(user_id,username,password_hash,role_id,department_id,real_name,status) " +
+                        "VALUES(?, 'rbac-department-viewer', ?, ?, 1, '部门日志测试用户', 'ENABLED')",
+                DEPARTMENT_LOG_USER_ID, passwordEncoder.encode("123456"), DEPARTMENT_LOG_ROLE_ID);
     }
 
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder login(
