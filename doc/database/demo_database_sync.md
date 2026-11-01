@@ -62,8 +62,10 @@ Remove-Item Env:MYSQL_PWD
 
 ```powershell
 python scripts/data/generate_dashboard_demo_data.py --database population_miniterm_demo --output tmp/dashboard_demo_data.sql --repair-output tmp/dashboard_demo_repair.sql --people 1200
-Get-Content -Raw -Encoding utf8 tmp/dashboard_demo_repair.sql | mysql --protocol=TCP --host=localhost --port=3306 --user=root --default-character-set=utf8mb4 population_miniterm_demo
+mysql --protocol=TCP --host=localhost --port=3306 --user=root --default-character-set=utf8mb4 population_miniterm_demo --execute="source tmp/dashboard_demo_repair.sql"
 ```
+
+Windows PowerShell 5 不要使用 `Get-Content | mysql` 导入含中文的 SQL；原生管道编码可能把 UTF-8 中文替换为 `?`。让 MySQL 通过 `source` 直接读取文件可保留 UTF-8 内容。
 
 ## 5. 应用 OCR 数据库迁移
 

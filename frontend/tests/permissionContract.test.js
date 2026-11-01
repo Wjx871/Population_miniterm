@@ -2,6 +2,13 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { resolvePermissions, checkAnyPermission } from '../src/utils/permission.js'
 import { PERMISSIONS } from '../src/constants/permissions.js'
+import { ROLE_CODE } from '../src/constants/roles.js'
+
+test('permissionContract: SYSTEM_ADMIN always receives wildcard permission', () => {
+  assert.deepEqual(resolvePermissions(ROLE_CODE.SYSTEM_ADMIN, []), ['*'])
+  assert.deepEqual(resolvePermissions(ROLE_CODE.SYSTEM_ADMIN, ['population:view']), ['*'])
+  assert.equal(checkAnyPermission(resolvePermissions(ROLE_CODE.SYSTEM_ADMIN), ['new:future:permission']), true)
+})
 
 test('permissionContract: should treat empty permissions array as no permissions, no default fallback', () => {
   const perms = resolvePermissions('admin', []) 

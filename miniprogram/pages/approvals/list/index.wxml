@@ -1,0 +1,58 @@
+<view class="page approval-list-page">
+  <view class="page-intro">
+    <view class="page-title">审批办理</view>
+    <view class="page-description">优先处理待审批事项，已处理记录可随时回看</view>
+  </view>
+
+  <view class="tabs card" role="tablist">
+    <view
+      class="tab {{tab==='pending'?'active':''}}"
+      data-tab="pending"
+      bindtap="switchTab"
+    >待我审批</view>
+    <view
+      class="tab {{tab==='processed'?'active':''}}"
+      data-tab="processed"
+      bindtap="switchTab"
+    >已处理</view>
+  </view>
+
+  <view wx:if="{{!loading && !error && tab==='pending'}}" class="pending-summary notice-card">
+    <view><view class="pending-label">当前待办</view><view class="pending-hint">请按提交顺序及时处理</view></view>
+    <view class="pending-count">{{records.length}}</view>
+  </view>
+
+  <loading-state wx:if="{{loading}}" text="正在加载审批事项…" />
+  <error-state
+    wx:elif="{{error}}"
+    message="{{error}}"
+    bindretry="load"
+  />
+  <empty-state
+    wx:elif="{{!records.length}}"
+    title="{{tab==='pending'?'暂无待审批事项':'暂无已处理记录'}}"
+    description="{{tab==='pending'?'当前没有需要你处理的申请':'处理完成的审批将在这里显示'}}"
+  />
+  <block wx:else>
+    <view
+      class="approval-card list-card"
+      wx:for="{{records}}"
+      wx:key="approvalId"
+      data-id="{{item.approvalId}}"
+      bindtap="open"
+    >
+      <view class="row-between">
+        <view class="business-name">{{item.businessTypeDisplay}}</view>
+        <status-tag text="{{item.statusDisplay}}" type="{{item.statusTone}}" size="small" />
+      </view>
+      <view class="approval-title">{{item.title}}</view>
+      <view class="approval-meta">
+        <text>申请人 {{item.applicantName || '暂未登记'}}</text>
+        <text>申请编号 {{item.applicationNo || '—'}}</text>
+        <text>提交时间 {{item.submittedAtDisplay}}</text>
+      </view>
+      <view wx:if="{{item.waitingDisplay}}" class="waiting-hint">{{item.waitingDisplay}}</view>
+      <view class="link open"><text>{{item.actionDisplay}}</text><app-icon name="chevron-right" size="24" tone="primary" /></view>
+    </view>
+  </block>
+</view>

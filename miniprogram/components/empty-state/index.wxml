@@ -1,0 +1,14 @@
+<view class="empty-state">
+  <view class="empty-icon" aria-hidden="true">
+    <view class="empty-icon__tray"></view>
+    <view class="empty-icon__line"></view>
+  </view>
+  <view class="empty-title">{{title || text || '暂无数据'}}</view>
+  <view wx:if="{{description}}" class="empty-description">{{description}}</view>
+  <button
+    wx:if="{{actionText}}"
+    class="empty-action"
+    size="mini"
+    bindtap="action"
+  >{{actionText}}</button>
+</view>

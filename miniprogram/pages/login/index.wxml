@@ -1,0 +1,91 @@
+<view class="login-page">
+  <view class="brand-section">
+    <view class="brand-mark" aria-hidden="true">
+      <image
+        class="brand-logo"
+        src="/assets/images/system-logo.png"
+        mode="aspectFit"
+      />
+    </view>
+    <view class="brand-title">人口信息管理系统</view>
+    <view class="brand-subtitle">微信小程序移动管理端</view>
+    <view class="brand-values">规范管理 · 精准服务 · 数据安全</view>
+  </view>
+
+  <view class="login-card form-card">
+    <view class="form-heading">账号登录</view>
+    <view class="form-description">请输入系统分配的管理账号</view>
+
+    <view class="input-row">
+      <view class="input-symbol" aria-hidden="true">
+        <app-icon name="account" size="32" tone="primary" />
+      </view>
+      <input
+        class="login-input"
+        placeholder="请输入用户名"
+        value="{{username}}"
+        maxlength="64"
+        confirm-type="next"
+        bindinput="inputUsername"
+      />
+    </view>
+
+    <view class="input-row password-row">
+      <view class="input-symbol" aria-hidden="true">
+        <app-icon name="lock" size="32" tone="primary" />
+      </view>
+      <input
+        class="login-input password-input"
+        placeholder="请输入密码"
+        password="{{!showPassword}}"
+        value="{{password}}"
+        maxlength="128"
+        confirm-type="done"
+        bindinput="inputPassword"
+        bindconfirm="submit"
+      />
+      <view
+        class="password-toggle"
+        role="button"
+        aria-label="{{showPassword ? '隐藏密码' : '显示密码'}}"
+        bindtap="togglePassword"
+      >
+        <app-icon name="{{showPassword ? 'eye-off' : 'eye'}}" size="32" tone="primary" />
+      </view>
+    </view>
+
+    <view class="form-options" bindtap="toggleRemember">
+      <view class="checkbox">
+        <app-icon
+          name="{{remember ? 'checkbox-checked' : 'checkbox'}}"
+          size="28"
+          tone="{{remember ? 'primary' : 'muted'}}"
+        />
+      </view>
+      <text>记住账号</text>
+      <text class="option-note">不会保存密码</text>
+    </view>
+
+    <view wx:if="{{error}}" class="login-error" role="alert">
+      <app-icon name="error-circle" size="28" tone="danger" />
+      <text>{{error}}</text>
+    </view>
+
+    <button
+      class="primary-button login-button"
+      loading="{{loading}}"
+      disabled="{{loading}}"
+      bindtap="submit"
+    >{{loading ? '正在登录' : '登录'}}</button>
+  </view>
+
+  <view class="security-note">
+    <view class="security-icon">
+      <app-icon name="shield-check" size="32" tone="primary" />
+    </view>
+    <view>
+      <view>请使用系统分配的管理账号登录</view>
+      <view class="security-subtext">账号权限由系统管理员统一配置</view>
+    </view>
+  </view>
+</view>

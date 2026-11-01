@@ -88,6 +88,7 @@
       :can-submit="canSubmitSpecialized"
       :specialized-edit-route="specializedEditRoute"
       :can-continue-specialized="canContinueSpecialized"
+      :approved-hint="approvedActionHint"
       @continue-specialized="continueSpecialized"
       @submit="submit"
       @withdraw="withdraw"
@@ -253,6 +254,20 @@ const executeHintText = computed(() => {
 })
 
 const executeLabelShort = computed(() => executionMeta.value?.type || '业务')
+
+const approvedActionHint = computed(() => {
+  if (application.value?.status !== 'APPROVED') return ''
+  if (canExecute.value) {
+    return `审批已通过，当前账号具备执行权限，请点击上方“执行${executeLabelShort.value}”完成业务。`
+  }
+  if (!executionMeta.value) {
+    return '审批已通过，该业务无需在此页面执行或尚未配置执行流程。'
+  }
+  if (!hasExecutableVersion.value || !isExecutableByBackend.value) {
+    return '审批已通过，当前业务尚未满足执行条件，请核对专业业务状态。'
+  }
+  return '审批已通过，等待具备执行权限的管理员处理。'
+})
 
 const genericDetailFields = computed(() => {
   if (!handler.value || !professionalDetail.value) return []

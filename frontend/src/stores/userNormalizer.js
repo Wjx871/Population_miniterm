@@ -28,7 +28,7 @@ export function normalizeUserInfo(user = {}) {
     roleCode: roleCode || ROLE_CODE.QUERY_VIEWER,
     roleLevel: user.roleLevel || '',
     permissionLevel: resolvePermissionLevel(user.roleLevel || '', roleCode),
-    permissions: Array.isArray(user.permissions) ? [...user.permissions] : [],
+    permissions: resolvePermissions(roleCode, user.permissions),
     dataScope: user.dataScope || null,
     departmentId: user.departmentId ?? null,
     departmentName: user.departmentName || '',

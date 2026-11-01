@@ -74,3 +74,15 @@ test('userStoreContract: empty permissions are not expanded', () => {
   const normalized = normalizeLoginUser(loginVO)
   assert.deepEqual(normalized.permissions, [])
 })
+
+test('userStoreContract: SYSTEM_ADMIN remains fully authorized when API permissions are empty', () => {
+  const normalized = normalizeLoginUser({
+    token: 't',
+    user: {
+      roleCode: 'SYSTEM_ADMIN',
+      permissions: []
+    }
+  })
+
+  assert.deepEqual(normalized.permissions, ['*'])
+})
