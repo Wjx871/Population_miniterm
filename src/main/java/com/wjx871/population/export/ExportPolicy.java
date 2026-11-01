@@ -1,2 +1,77 @@
-package com.wjx871.population.export;import com.wjx871.population.common.BusinessException;import java.util.*;import org.springframework.http.HttpStatus;import org.springframework.stereotype.Component;
-@Component class ExportPolicy {private static final Set<String> MODULES=Set.of("PERSON","HOUSEHOLD","MIGRATION","RESIDENCE_ARCHIVE","CANCELLATION","FLOATING_POPULATION","RESIDENCE_PERMIT","OPERATION_LOG");private static final Map<String,Set<String>> FIELDS=Map.of("PERSON",Set.of("name","identityNo","maskedIdentityNo","phone","maskedPhone","gender","status","registeredAddress","regionCode"),"HOUSEHOLD",Set.of("householdNo","address","regionCode","status"),"MIGRATION",Set.of("applicationNo","businessType","status","regionCode","createdAt"),"RESIDENCE_ARCHIVE",Set.of("name","identityNo","maskedIdentityNo","registeredAddress","regionCode","archiveType","archivedAt"),"CANCELLATION",Set.of("cancellationNo","name","identityNo","maskedIdentityNo","registeredAddress","regionCode","status"),"FLOATING_POPULATION",Set.of("registrationNo","name","identityNo","maskedIdentityNo","phone","maskedPhone","registeredAddress","regionCode","status"),"RESIDENCE_PERMIT",Set.of("permitNo","maskedPermitNo","name","identityNo","maskedIdentityNo","phone","maskedPhone","registeredAddress","regionCode","status","validUntil"),"OPERATION_LOG",Set.of("operationType","moduleName","operationTime","operationResult"));private static final Set<String> SENSITIVE=Set.of("identityNo","phone","permitNo","registeredAddress","address");void validate(String module,Map<String,Object> filters,List<String> fields,boolean sensitive){if(!MODULES.contains(module))bad("不支持的导出模块");if(fields==null||fields.isEmpty()||!FIELDS.get(module).containsAll(fields))bad("包含未授权导出字段");if(!sensitive&&fields.stream().anyMatch(SENSITIVE::contains))bad("普通导出不能请求完整敏感字段");if(filters!=null)for(var e:filters.entrySet()){if(!Set.of("name","regionCode","status","createdFrom","createdTo").contains(e.getKey()))bad("包含非法查询条件");String v=String.valueOf(e.getValue());if(v.matches("(?is).*(select|insert|update|delete|drop|union|--|;).*"))bad("禁止提交 SQL 或表达式");}}private void bad(String m){throw new BusinessException(HttpStatus.BAD_REQUEST,m);}}
+package com.wjx871.population.export;
+
+import com.wjx871.population.common.BusinessException;
+import com.wjx871.population.security.AuthenticatedUser;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+
+@Component
+public class ExportPolicy {
+    private static final Set<String> MODULES = Set.of(
+            "PERSON", "HOUSEHOLD", "MIGRATION", "RESIDENCE_ARCHIVE", "CANCELLATION",
+            "FLOATING_POPULATION", "RESIDENCE_PERMIT", "OPERATION_LOG");
+    private static final Map<String, Set<String>> FIELDS = Map.of(
+            "PERSON", Set.of("name", "identityNo", "maskedIdentityNo", "phone", "maskedPhone", "gender", "status", "registeredAddress", "regionCode"),
+            "HOUSEHOLD", Set.of("householdNo", "address", "regionCode", "status"),
+            "MIGRATION", Set.of("applicationNo", "businessType", "status", "regionCode", "createdAt"),
+            "RESIDENCE_ARCHIVE", Set.of("name", "identityNo", "maskedIdentityNo", "registeredAddress", "regionCode", "archiveType", "archivedAt"),
+            "CANCELLATION", Set.of("cancellationNo", "name", "identityNo", "maskedIdentityNo", "registeredAddress", "regionCode", "status"),
+            "FLOATING_POPULATION", Set.of("registrationNo", "name", "identityNo", "maskedIdentityNo", "phone", "maskedPhone", "registeredAddress", "regionCode", "status"),
+            "RESIDENCE_PERMIT", Set.of("permitNo", "maskedPermitNo", "name", "identityNo", "maskedIdentityNo", "phone", "maskedPhone", "registeredAddress", "regionCode", "status", "validUntil"),
+            "OPERATION_LOG", Set.of("operationType", "moduleName", "operationTime", "operationResult"));
+    private static final Set<String> SENSITIVE = Set.of(
+            "identityNo", "phone", "permitNo", "registeredAddress", "address");
+
+    void validate(String module, Map<String, Object> filters, List<String> fields, boolean sensitive) {
+        if (!MODULES.contains(module)) bad("不支持的导出模块");
+        if (fields == null || fields.isEmpty() || !FIELDS.get(module).containsAll(fields)) {
+            bad("包含未授权导出字段");
+        }
+        if (!sensitive && fields.stream().anyMatch(SENSITIVE::contains)) {
+            bad("普通导出不能请求完整敏感字段");
+        }
+        if (filters != null) {
+            for (var entry : filters.entrySet()) {
+                if (!Set.of("name", "regionCode", "status", "createdFrom", "createdTo").contains(entry.getKey())) {
+                    bad("包含非法查询条件");
+                }
+                String value = String.valueOf(entry.getValue());
+                if (value.matches("(?is).*(select|insert|update|delete|drop|union|--|;).*")) {
+                    bad("禁止提交 SQL 或表达式");
+                }
+            }
+        }
+    }
+
+    /** Shared by controller authorization, service download, and downloadable flags. */
+    public boolean mayDownload(DataExportLog log, AuthenticatedUser user) {
+        boolean systemAdmin = "SYSTEM_ADMIN".equals(user.roleCode());
+        boolean owner = Objects.equals(log.getRequestedBy(), user.userId())
+                || Objects.equals(log.getExecutedBy(), user.userId());
+        boolean normalPermission = user.permissions().contains("data:export:normal");
+        boolean sensitiveDownloadPermission = user.permissions().contains("data:export:sensitive:download");
+
+        return switch (log.getExportType()) {
+            case "NORMAL_MASKED" -> systemAdmin || (owner && normalPermission);
+            case "SENSITIVE_APPROVED" -> systemAdmin
+                    || (owner && (normalPermission || sensitiveDownloadPermission))
+                    || (sensitiveDownloadPermission
+                    && user.permissions().contains("approval:view")
+                    && inSameRegion(log.getRegionCode(), user.regionCode()));
+            default -> false;
+        };
+    }
+
+    boolean inSameRegion(String left, String right) {
+        return left != null && right != null && left.length() >= 2 && right.length() >= 2
+                && left.substring(0, 2).equals(right.substring(0, 2));
+    }
+
+    private void bad(String message) {
+        throw new BusinessException(HttpStatus.BAD_REQUEST, message);
+    }
+}

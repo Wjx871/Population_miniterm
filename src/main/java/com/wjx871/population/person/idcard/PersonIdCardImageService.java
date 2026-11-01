@@ -4,9 +4,14 @@ import com.wjx871.population.audit.OperationLogMapper;
 import com.wjx871.population.audit.OperationLog;
 import com.wjx871.population.common.BusinessException;
 import com.wjx871.population.material.LocalFileStorageService;
+import com.wjx871.population.person.PersonMapper;
+import com.wjx871.population.security.AuthenticatedUser;
+import com.wjx871.population.security.CurrentUserContext;
+import com.wjx871.population.security.DataScopeCriteria;
 import com.wjx871.population.security.SensitiveDataMaskingService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.log4j.Log4j2;
@@ -22,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class PersonIdCardImageService {
 
     private final PersonIdCardImageMapper mapper;
+    private final PersonMapper personMapper;
     private final LocalFileStorageService storage;
     private final PaddleOcrHttpClient ocrClient;
     private final IdCardOcrProperties ocrProperties;
@@ -30,6 +36,7 @@ public class PersonIdCardImageService {
     private final OperationLogMapper operationLogMapper;
 
     public PersonIdCardImageService(PersonIdCardImageMapper mapper,
+                                    PersonMapper personMapper,
                                     LocalFileStorageService storage,
                                     PaddleOcrHttpClient ocrClient,
                                     IdCardOcrProperties ocrProperties,
@@ -37,6 +44,7 @@ public class PersonIdCardImageService {
                                     SensitiveDataMaskingService masking,
                                     OperationLogMapper operationLogMapper) {
         this.mapper = mapper;
+        this.personMapper = personMapper;
         this.storage = storage;
         this.ocrClient = ocrClient;
         this.ocrProperties = ocrProperties;
@@ -53,13 +61,17 @@ public class PersonIdCardImageService {
                                                     boolean skipOcr,
                                                     Long userId,
                                                     HttpServletRequest http) {
-        // 1) 落盘 + 算 SHA
+        // 1) 落盘 + 算 SHA。去重只复用同一上传者的未绑定草稿。
         LocalFileStorageService.StoredFile stored = storage.store(file);
         PersonIdCardImage row;
 
         Optional<PersonIdCardImage> existing = mapper.selectBySha256(stored.sha256());
         if (existing.isPresent()) {
             row = existing.get();
+            storage.delete(stored.stored());
+            if (!Objects.equals(row.getUserId(), userId) || row.getPersonId() != null) {
+                throw conflict("该身份证影印本不可重复使用");
+            }
         } else {
             row = new PersonIdCardImage();
             row.setDraftUuid(UUID.randomUUID().toString());
@@ -73,6 +85,9 @@ public class PersonIdCardImageService {
             row.setCreatedAt(LocalDateTime.now());
             try {
                 mapper.insertDraft(row);
+            } catch (org.springframework.dao.DuplicateKeyException e) {
+                storage.delete(stored.stored());
+                throw conflict("该身份证影印本已存在，请重新上传");
             } catch (RuntimeException e) {
                 // 落库失败时回滚物理文件
                 storage.delete(stored.stored());
@@ -82,55 +97,95 @@ public class PersonIdCardImageService {
 
         // 2) OCR 调度
         if (skipOcr) {
-            mapper.markOcrSkipped(row.getImageId());
+            if (mapper.markOcrSkipped(row.getImageId(), userId) != 1) {
+                throw conflict("身份证影印本状态已变化，请重新上传");
+            }
             row.setOcrStatus(OcrStatus.SKIPPED);
             recordAudit(userId, "PERSON_IDCARD_IMAGE_UPLOAD", "SKIPPED", null, http);
         } else {
             long t0 = System.currentTimeMillis();
+            IdCardOcrProperties.OcrResult result = null;
+            Exception ocrFailure = null;
             try {
-                IdCardOcrProperties.OcrResult r = ocrClient.recognize(file.getBytes(), file.getContentType());
-                long elapsed = System.currentTimeMillis() - t0;
-                String masked = masking.identity(r.idCard());
-                String redactedRaw = ocrLogRedactor.redact(r.rawJson());
-                mapper.markOcrSuccess(row.getImageId(),
-                        ocrProperties.getProvider(),
-                        ocrProperties.getEngineVersion(),
-                        (int) elapsed,
-                        r.confidence(),
-                        r.idCard(),
-                        masked,
-                        r.name(),
-                        r.birthDate(),
-                        r.gender(),
-                        r.ethnicity(),
-                        r.address(),
-                        redactedRaw);
-                row.setOcrStatus(OcrStatus.SUCCESS);
-                row.setOcrIdcardFull(r.idCard());
-                row.setOcrIdcardMasked(masked);
-                recordAudit(userId, "PERSON_IDCARD_IMAGE_RECOGNIZED", "SUCCESS", null, http);
+                result = ocrClient.recognize(file.getBytes(), file.getContentType());
             } catch (Exception e) {
-                long elapsed = System.currentTimeMillis() - t0;
-                String msg = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
-                if (msg.length() > 240) msg = msg.substring(0, 240);
-                mapper.markOcrFailed(row.getImageId(),
+                ocrFailure = e;
+            }
+            long elapsed = System.currentTimeMillis() - t0;
+            if (ocrFailure == null) {
+                String masked = masking.identity(result.idCard());
+                String redactedRaw = ocrLogRedactor.redact(result.rawJson());
+                if (mapper.markOcrSuccess(row.getImageId(),
                         ocrProperties.getProvider(),
                         ocrProperties.getEngineVersion(),
                         (int) elapsed,
-                        msg);
+                        result.confidence(),
+                        result.idCard(),
+                        masked,
+                        result.name(),
+                        result.birthDate(),
+                        result.gender(),
+                        result.ethnicity(),
+                        result.address(),
+                        redactedRaw,
+                        userId) != 1) {
+                    throw conflict("身份证影印本状态已变化，请重新上传");
+                }
+                row.setOcrStatus(OcrStatus.SUCCESS);
+                row.setOcrProvider(ocrProperties.getProvider());
+                row.setOcrEngineVersion(ocrProperties.getEngineVersion());
+                row.setOcrElapsedMs((int) elapsed);
+                row.setOcrConfidence(result.confidence());
+                row.setOcrIdcardFull(result.idCard());
+                row.setOcrIdcardMasked(masked);
+                row.setOcrName(result.name());
+                row.setOcrBirthDate(result.birthDate());
+                row.setOcrGender(result.gender());
+                row.setOcrEthnicity(result.ethnicity());
+                row.setOcrAddress(result.address());
+                row.setOcrRawJson(redactedRaw);
+                recordAudit(userId, "PERSON_IDCARD_IMAGE_RECOGNIZED", "SUCCESS", null, http);
+            } else {
+                String msg = ocrFailure.getMessage() == null
+                        ? ocrFailure.getClass().getSimpleName() : ocrFailure.getMessage();
+                if (msg.length() > 240) msg = msg.substring(0, 240);
+                if (mapper.markOcrFailed(row.getImageId(),
+                        ocrProperties.getProvider(),
+                        ocrProperties.getEngineVersion(),
+                        (int) elapsed,
+                        msg,
+                        userId) != 1) {
+                    throw conflict("身份证影印本状态已变化，请重新上传");
+                }
                 row.setOcrStatus(OcrStatus.FAILED);
                 row.setOcrError(msg);
                 recordAudit(userId, "PERSON_IDCARD_IMAGE_RECOGNIZED", "FAILED", msg, http);
             }
         }
-        return PersonIdCardImageView.from(row);
+        return PersonIdCardImageView.fromUpload(row);
     }
 
     @Transactional(readOnly = true)
     public PersonIdCardImageView getById(Long imageId) {
-        return mapper.selectById(imageId)
-                .map(PersonIdCardImageView::from)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "身份证影印本不存在: " + imageId));
+        AuthenticatedUser user = CurrentUserContext.requireUser();
+        PersonIdCardImage row = mapper.selectById(imageId)
+                .orElseThrow(() -> notFound());
+
+        boolean canAccess = row.getPersonId() == null
+                ? Objects.equals(row.getUserId(), user.userId()) || "SYSTEM_ADMIN".equals(user.roleCode())
+                : personMapper.selectScopedById(row.getPersonId(), DataScopeCriteria.current()).isPresent();
+        if (!canAccess) throw notFound();
+
+        return PersonIdCardImageView.fromDetail(
+                row, user.permissions().contains("sensitive-data:view-full"), masking);
+    }
+
+    private BusinessException conflict(String message) {
+        return new BusinessException(HttpStatus.CONFLICT, message);
+    }
+
+    private BusinessException notFound() {
+        return new BusinessException(HttpStatus.NOT_FOUND, "身份证影印本不存在或不可访问");
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
