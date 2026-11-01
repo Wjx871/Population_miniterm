@@ -94,7 +94,6 @@ public class PersonService {
         LocalDateTime now = LocalDateTime.now();
         Person person = new Person();
         apply(request, person, identity);
-        person.setStatus(PersonStatus.NORMAL);
         person.setIdCard(idCard);
         person.setCreatedAt(now);
         person.setUpdatedAt(now);
@@ -142,6 +141,9 @@ public class PersonService {
         person.setEthnicity(trimToNull(request.ethnicity()));
         person.setPhone(trimToNull(request.phone()));
         person.setCurrentAddress(trimToNull(request.currentAddress()));
+        person.setStatus(request.status() == null || request.status().isBlank()
+                ? PersonStatus.NORMAL
+                : request.status().trim());
     }
 
     private String normalizeIdCard(String idCard) {

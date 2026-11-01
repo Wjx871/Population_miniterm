@@ -105,6 +105,7 @@
             ethnicity = #{ethnicity},
             phone = #{phone},
             current_address = #{currentAddress},
+            status = #{status},
             updated_at = #{updatedAt}
         WHERE person_id = #{personId}
     </update>

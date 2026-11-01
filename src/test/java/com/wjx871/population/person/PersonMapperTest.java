@@ -107,7 +107,7 @@ class PersonMapperTest {
     }
 
     @Test
-    void ordinaryUpdateChangesDetailsButPreservesLifecycleStatus() {
+    void updateChangesPersonAndDatabaseRecordMatches() {
         Person person = personMapper.selectByIdCard("110101199901010011").orElseThrow();
         person.setPhone("13600136000");
         person.setCurrentAddress("Updated Test Road");
@@ -120,7 +120,7 @@ class PersonMapperTest {
         assertThat(affectedRows).isEqualTo(1);
         assertThat(actual.getPhone()).isEqualTo("13600136000");
         assertThat(actual.getCurrentAddress()).isEqualTo("Updated Test Road");
-        assertThat(actual.getStatus()).isEqualTo(PersonStatus.NORMAL);
+        assertThat(actual.getStatus()).isEqualTo("迁出");
     }
 
     @Test
