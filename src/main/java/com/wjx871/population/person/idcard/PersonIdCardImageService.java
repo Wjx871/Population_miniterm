@@ -146,9 +146,7 @@ public class PersonIdCardImageService {
                 row.setOcrRawJson(redactedRaw);
                 recordAudit(userId, "PERSON_IDCARD_IMAGE_RECOGNIZED", "SUCCESS", null, http);
             } else {
-                String msg = ocrFailure.getMessage() == null
-                        ? ocrFailure.getClass().getSimpleName() : ocrFailure.getMessage();
-                if (msg.length() > 240) msg = msg.substring(0, 240);
+                String msg = safeOcrError(ocrFailure);
                 if (mapper.markOcrFailed(row.getImageId(),
                         ocrProperties.getProvider(),
                         ocrProperties.getEngineVersion(),
@@ -186,6 +184,24 @@ public class PersonIdCardImageService {
 
     private BusinessException notFound() {
         return new BusinessException(HttpStatus.NOT_FOUND, "身份证影印本不存在或不可访问");
+    }
+
+    private String safeOcrError(Exception failure) {
+        if (failure instanceof PaddleOcrHttpClient.OcrRequestException requestFailure) {
+            return requestFailure.errorCode();
+        }
+        if (failure instanceof IllegalStateException) {
+            String message = failure.getMessage();
+            if ("OCR endpoint is not configured (population.person.idcard.ocr.url is empty)".equals(message)) {
+                return "OCR_NOT_CONFIGURED";
+            }
+            if ("OCR response body is null".equals(message)
+                    || (message != null && message.startsWith("OCR response missing"))) {
+                return "OCR_INVALID_RESPONSE";
+            }
+        }
+        if (failure instanceof java.io.IOException) return "OCR_INPUT_READ_FAILED";
+        return "OCR_FAILED";
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

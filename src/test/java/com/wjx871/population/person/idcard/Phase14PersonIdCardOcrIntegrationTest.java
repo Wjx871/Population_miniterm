@@ -5,6 +5,7 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withException;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -31,9 +32,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
+import org.assertj.core.api.SoftAssertions;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
@@ -72,6 +75,7 @@ class Phase14PersonIdCardOcrIntegrationTest {
         jdbc.update("DELETE FROM person_idcard_image WHERE original_filename LIKE 'phase14-ocr-security-%'");
         jdbc.update("DELETE FROM business_application WHERE application_no LIKE 'IDCARD-SEC-%'");
         jdbc.update("DELETE FROM person WHERE id_card=?", SYNTHETIC_ID_CARD);
+        jdbc.update("DELETE FROM operation_log WHERE operation_type='PERSON_IDCARD_IMAGE_RECOGNIZED'");
     }
 
     @AfterEach
@@ -219,6 +223,60 @@ class Phase14PersonIdCardOcrIntegrationTest {
     }
 
     @Test
+    void httpErrorBodyDoesNotLeakIntoUploadDatabaseDetailOrAudit() throws Exception {
+        String syntheticId = "SYNTHETIC_IDCARD_TEST_0001";
+        String syntheticAddress = "SYNTHETIC_ADDRESS_TEST_ONLY";
+        String syntheticKey = "TEST_ONLY_SECRET_KEY_DO_NOT_LEAK";
+        String errorBody = "{\"debug\":\"" + syntheticId + " " + syntheticAddress + " " + syntheticKey + "\"}";
+        ocrStub.expect(requestTo(OCR_URL))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withStatus(HttpStatus.BAD_GATEWAY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(errorBody));
+
+        String filename = "phase14-ocr-security-http-error.jpg";
+        var uploadResponse = uploadImage(filename,
+                "synthetic HTTP error sample".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                "population", false);
+        assertThat(uploadResponse.getResponse().getStatus()).isEqualTo(200);
+        JsonNode uploadData = json.readTree(uploadResponse.getResponse().getContentAsString()).path("data");
+        long imageId = uploadData.path("imageId").asLong();
+        String databaseError = jdbc.queryForObject(
+                "SELECT ocr_error FROM person_idcard_image WHERE image_id=?", String.class, imageId);
+        String detailBody = mvc.perform(get("/api/persons/idcard-image/" + imageId)
+                        .header("Authorization", "Bearer " + loginBearer("population")))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String auditError = jdbc.queryForObject("""
+                SELECT error_message FROM operation_log
+                WHERE operation_type='PERSON_IDCARD_IMAGE_RECOGNIZED'
+                ORDER BY log_id DESC LIMIT 1
+                """, String.class);
+
+        SoftAssertions softly = new SoftAssertions();
+        softly.assertThat(uploadData.path("ocrStatus").asText()).isEqualTo("FAILED");
+        softly.assertThat(uploadData.path("ocrError").asText())
+                .as("upload response")
+                .isEqualTo("OCR_HTTP_502")
+                .doesNotContain(syntheticId, syntheticAddress, syntheticKey);
+        softly.assertThat(databaseError)
+                .as("ocr_error database field")
+                .isEqualTo("OCR_HTTP_502")
+                .doesNotContain(syntheticId, syntheticAddress, syntheticKey);
+        softly.assertThat(detailBody)
+                .as("image detail response")
+                .doesNotContain(syntheticId, syntheticAddress, syntheticKey);
+        softly.assertThat(json.readTree(detailBody).path("data").path("ocrError").asText())
+                .as("detail error category")
+                .isEqualTo("OCR_HTTP_502");
+        softly.assertThat(auditError)
+                .as("operation audit error_message")
+                .isEqualTo("OCR_HTTP_502")
+                .doesNotContain(syntheticId, syntheticAddress, syntheticKey);
+        softly.assertAll();
+    }
+
+    @Test
     void unavailableOcrKeepsUploadedImageAndMarksRecognitionFailed() throws Exception {
         ocrStub.expect(requestTo(OCR_URL))
                 .andExpect(method(HttpMethod.POST))
@@ -237,6 +295,7 @@ class Phase14PersonIdCardOcrIntegrationTest {
         assertThat(row.get("sha256")).isNotNull();
         assertThat(upload.path("ocrStatus").asText()).isEqualTo("FAILED");
         assertThat(upload.path("ocrIdcardFull").isNull()).isTrue();
+        assertThat(upload.path("ocrError").asText()).isEqualTo("OCR_UNAVAILABLE");
     }
 
     @Test
@@ -258,6 +317,7 @@ class Phase14PersonIdCardOcrIntegrationTest {
         assertThat(row.get("sha256")).isNotNull();
         assertThat(upload.path("ocrStatus").asText()).isEqualTo("FAILED");
         assertThat(upload.path("ocrIdcardFull").isNull()).isTrue();
+        assertThat(upload.path("ocrError").asText()).isEqualTo("OCR_INVALID_RESPONSE");
     }
 
     private JsonNode uploadWithoutSkippingOcr() throws Exception {
