@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -67,7 +69,13 @@ public class PaddleOcrHttpClient {
         try {
             response = restTemplate.postForEntity(url, new HttpEntity<>(body, headers), Map.class);
         } catch (RestClientException e) {
-            throw new IllegalStateException("OCR request failed: " + e.getMessage(), e);
+            if (e instanceof RestClientResponseException responseFailure) {
+                throw new OcrRequestException("OCR_HTTP_" + responseFailure.getStatusCode().value());
+            }
+            if (e instanceof ResourceAccessException) {
+                throw new OcrRequestException("OCR_UNAVAILABLE");
+            }
+            throw new OcrRequestException("OCR_REQUEST_FAILED");
         }
         Map<?, ?> root = response.getBody();
         if (root == null) throw new IllegalStateException("OCR response body is null");
@@ -94,5 +102,18 @@ public class PaddleOcrHttpClient {
 
     private static String asString(Object o) {
         return o == null ? null : String.valueOf(o);
+    }
+
+    public static final class OcrRequestException extends RuntimeException {
+        private final String errorCode;
+
+        private OcrRequestException(String errorCode) {
+            super(errorCode);
+            this.errorCode = errorCode;
+        }
+
+        public String errorCode() {
+            return errorCode;
+        }
     }
 }
