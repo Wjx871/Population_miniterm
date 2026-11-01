@@ -30,16 +30,20 @@ public interface PersonIdCardImageMapper {
                        @Param("gender") String gender,
                        @Param("ethnicity") String ethnicity,
                        @Param("address") String address,
-                       @Param("rawJson") String rawJson);
+                       @Param("rawJson") String rawJson,
+                       @Param("userId") Long userId);
 
     int markOcrFailed(@Param("imageId") Long imageId,
                       @Param("ocrProvider") String provider,
                       @Param("ocrEngineVersion") String engineVersion,
                       @Param("elapsedMs") Integer elapsedMs,
-                      @Param("error") String error);
+                      @Param("error") String error,
+                      @Param("userId") Long userId);
 
-    int markOcrSkipped(@Param("imageId") Long imageId);
+    int markOcrSkipped(@Param("imageId") Long imageId, @Param("userId") Long userId);
 
     /** 仅在 image 尚未绑定 person 时绑定。 */
-    int bindPerson(@Param("imageId") Long imageId, @Param("personId") Long personId);
+    int bindPerson(@Param("imageId") Long imageId,
+                   @Param("personId") Long personId,
+                   @Param("userId") Long userId);
 }

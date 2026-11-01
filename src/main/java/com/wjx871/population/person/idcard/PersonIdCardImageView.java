@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/** Controller 返回的影印本视图：OCR 成功时返回 18 位明文身份证号供前端回填表单，其它场景为 null。 */
+/** Controller 返回的影印本视图。上传回填和只读详情采用不同的敏感字段策略。 */
 public record PersonIdCardImageView(
         Long imageId,
         Long personId,
@@ -17,7 +17,7 @@ public record PersonIdCardImageView(
         String ocrEngineVersion,
         Integer ocrElapsedMs,
         Double ocrConfidence,
-        /** 18 位明文身份证号；仅 OCR 成功时回填前端，未识别/失败/跳过时为 null。 */
+        /** 上传回填或获授权详情中的明文身份证号；其余情况为 null。 */
         String ocrIdcardFull,
         String ocrIdcardMasked,
         String ocrName,
@@ -28,8 +28,28 @@ public record PersonIdCardImageView(
         String ocrError,
         LocalDateTime createdAt
 ) {
-    public static PersonIdCardImageView from(PersonIdCardImage row) {
+    public static PersonIdCardImageView fromUpload(PersonIdCardImage row) {
         String full = row.getOcrStatus() == OcrStatus.SUCCESS ? row.getOcrIdcardFull() : null;
+        return build(row, full, row.getOcrAddress());
+    }
+
+    public static PersonIdCardImageView fromDetail(PersonIdCardImage row,
+                                                   boolean canViewFull,
+                                                   com.wjx871.population.security.SensitiveDataMaskingService masking) {
+        String full = canViewFull && row.getOcrStatus() == OcrStatus.SUCCESS ? row.getOcrIdcardFull() : null;
+        String address = canViewFull ? row.getOcrAddress() : masking.address(row.getOcrAddress());
+        String masked = row.getOcrIdcardMasked();
+        if (masked == null && row.getOcrIdcardFull() != null) {
+            masked = masking.identityAlways(row.getOcrIdcardFull());
+        }
+        return build(row, full, address, masked);
+    }
+
+    private static PersonIdCardImageView build(PersonIdCardImage row, String full, String address) {
+        return build(row, full, address, row.getOcrIdcardMasked());
+    }
+
+    private static PersonIdCardImageView build(PersonIdCardImage row, String full, String address, String masked) {
         return new PersonIdCardImageView(
                 row.getImageId(),
                 row.getPersonId(),
@@ -43,12 +63,12 @@ public record PersonIdCardImageView(
                 row.getOcrElapsedMs(),
                 row.getOcrConfidence(),
                 full,
-                row.getOcrIdcardMasked(),
+                masked,
                 row.getOcrName(),
                 row.getOcrBirthDate(),
                 row.getOcrGender(),
                 row.getOcrEthnicity(),
-                row.getOcrAddress(),
+                address,
                 row.getOcrError(),
                 row.getCreatedAt()
         );

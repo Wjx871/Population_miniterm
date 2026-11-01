@@ -67,7 +67,7 @@
             ocr_ethnicity = #{ethnicity},
             ocr_address = #{address},
             ocr_raw_json = #{rawJson}
-        WHERE image_id = #{imageId}
+        WHERE image_id = #{imageId} AND user_id = #{userId} AND person_id IS NULL
     </update>
 
     <update id="markOcrFailed">
@@ -77,15 +77,15 @@
             ocr_engine_version = #{ocrEngineVersion},
             ocr_elapsed_ms = #{elapsedMs},
             ocr_error = #{error}
-        WHERE image_id = #{imageId}
+        WHERE image_id = #{imageId} AND user_id = #{userId} AND person_id IS NULL
     </update>
 
     <update id="markOcrSkipped">
-        UPDATE person_idcard_image SET ocr_status = 'SKIPPED' WHERE image_id = #{imageId}
+        UPDATE person_idcard_image SET ocr_status = 'SKIPPED' WHERE image_id = #{imageId} AND user_id = #{userId} AND person_id IS NULL
     </update>
 
     <update id="bindPerson">
         UPDATE person_idcard_image SET person_id = #{personId}
-        WHERE image_id = #{imageId} AND person_id IS NULL
+        WHERE image_id = #{imageId} AND user_id = #{userId} AND person_id IS NULL
     </update>
 </mapper>

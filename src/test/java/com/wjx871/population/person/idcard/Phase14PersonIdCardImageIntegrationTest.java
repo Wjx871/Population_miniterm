@@ -13,7 +13,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 /** Phase 14 / V4_013 身份证影印本 + 新增人口门控集成测试。 */
-@SpringBootTest
+@SpringBootTest(properties = "application.upload.dir=./target/test-idcard-images")
 @AutoConfigureMockMvc
 class Phase14PersonIdCardImageIntegrationTest {
 
@@ -94,6 +94,36 @@ class Phase14PersonIdCardImageIntegrationTest {
     }
 
     @Test
+    void guessedForeignDraftCannotBeReadOrBoundButOwnerCanBindIt() throws Exception {
+        long imageId = upload("phase14-owner-only", "population");
+        int personCount = jdbc.queryForObject("SELECT COUNT(*) FROM person", Integer.class);
+
+        var read = mvc.perform(get("/api/persons/idcard-image/" + imageId)
+                        .header("Authorization", viewerBearer()))
+                .andReturn();
+        Assertions.assertTrue(read.getResponse().getStatus() == 403 || read.getResponse().getStatus() == 404);
+
+        mvc.perform(post("/api/persons").header("Authorization", bearer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(personPayload(ID_CARD_FEMALE, "F", imageId)))
+                .andExpect(status().isNotFound());
+        mvc.perform(post("/api/persons").header("Authorization", loginBearer("approver"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(personPayload(ID_CARD_FEMALE, "F", imageId)))
+                .andExpect(status().isNotFound());
+        Assertions.assertEquals(personCount, jdbc.queryForObject("SELECT COUNT(*) FROM person", Integer.class));
+        Assertions.assertNull(jdbc.queryForObject(
+                "SELECT person_id FROM person_idcard_image WHERE image_id=?", Long.class, imageId));
+
+        mvc.perform(post("/api/persons").header("Authorization", populationBearer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(personPayload(ID_CARD_FEMALE, "F", imageId)))
+                .andExpect(status().isCreated());
+        Assertions.assertNotNull(jdbc.queryForObject(
+                "SELECT person_id FROM person_idcard_image WHERE image_id=?", Long.class, imageId));
+    }
+
+    @Test
     void updateWithoutImageIdLeavesOriginalBound() throws Exception {
         long imageId = upload("phase14-update");
         String b = mvc.perform(post("/api/persons").header("Authorization", bearer())
@@ -161,10 +191,14 @@ class Phase14PersonIdCardImageIntegrationTest {
     }
 
     private long upload(String tag) throws Exception {
+        return upload(tag, "admin");
+    }
+
+    private long upload(String tag, String username) throws Exception {
         byte[] body = sampleJpg(tag);
         MockMultipartFile file = new MockMultipartFile("file", tag + ".jpg", "image/jpeg", body);
         String b = mvc.perform(multipart("/api/persons/idcard-image").file(file).param("skipOcr", "true")
-                        .header("Authorization", bearer()))
+                        .header("Authorization", loginBearer(username)))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         return json.readTree(b).path("data").path("imageId").asLong();
@@ -185,6 +219,10 @@ class Phase14PersonIdCardImageIntegrationTest {
 
     private String viewerBearer() throws Exception {
         return loginBearer("viewer");
+    }
+
+    private String populationBearer() throws Exception {
+        return loginBearer("population");
     }
 
     private String householdBearer() throws Exception {

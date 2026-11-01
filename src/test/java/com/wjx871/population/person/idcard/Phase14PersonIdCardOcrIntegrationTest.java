@@ -13,9 +13,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -64,6 +69,9 @@ class Phase14PersonIdCardOcrIntegrationTest {
     @BeforeEach
     void resetOcrStub() {
         ocrStub.reset();
+        jdbc.update("DELETE FROM person_idcard_image WHERE original_filename LIKE 'phase14-ocr-security-%'");
+        jdbc.update("DELETE FROM business_application WHERE application_no LIKE 'IDCARD-SEC-%'");
+        jdbc.update("DELETE FROM person WHERE id_card=?", SYNTHETIC_ID_CARD);
     }
 
     @AfterEach
@@ -130,13 +138,84 @@ class Phase14PersonIdCardOcrIntegrationTest {
                         """, MediaType.APPLICATION_JSON));
 
         long imageId = uploadWithoutSkippingOcr().path("imageId").asLong();
-        String body = mvc.perform(get("/api/persons/idcard-image/" + imageId)
+        var response = mvc.perform(get("/api/persons/idcard-image/" + imageId)
                         .header("Authorization", "Bearer " + loginBearer("viewer")))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
+                .andReturn();
+        assertThat(response.getResponse().getStatus()).isIn(403, 404);
+        assertThat(response.getResponse().getContentAsString()).doesNotContain(SYNTHETIC_ID_CARD, "测试地址");
+    }
 
-        assertThat(body).doesNotContain(SYNTHETIC_ID_CARD, "测试地址");
-        assertThat(body).contains(MASKED_ID_CARD);
+    @Test
+    void boundImageUsesPersonScopeAndIndependentSensitivePermission() throws Exception {
+        ocrStub.expect(requestTo(OCR_URL))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess(syntheticOcrResponse(), MediaType.APPLICATION_JSON));
+
+        JsonNode upload = uploadWithoutSkippingOcr();
+        long imageId = upload.path("imageId").asLong();
+        assertThat(upload.path("ocrIdcardFull").asText()).isEqualTo(SYNTHETIC_ID_CARD);
+        assertThat(upload.path("ocrAddress").asText()).isEqualTo("测试地址");
+        createScopedPerson(imageId);
+
+        for (String username : new String[] {"population", "viewer", "approver"}) {
+            JsonNode detail = detail(imageId, username);
+            assertThat(detail.path("ocrIdcardFull").isNull()).isTrue();
+            assertThat(detail.path("ocrIdcardMasked").asText()).isEqualTo(MASKED_ID_CARD);
+            assertThat(detail.path("ocrAddress").asText()).isEqualTo("详细地址已隐藏");
+        }
+
+        for (String username : new String[] {"household", "admin"}) {
+            JsonNode detail = detail(imageId, username);
+            assertThat(detail.path("ocrIdcardFull").asText()).isEqualTo(SYNTHETIC_ID_CARD);
+            assertThat(detail.path("ocrAddress").asText()).isEqualTo("测试地址");
+        }
+
+        var outsideScope = mvc.perform(get("/api/persons/idcard-image/" + imageId)
+                        .header("Authorization", "Bearer " + loginBearer("approver-other")))
+                .andReturn();
+        assertThat(outsideScope.getResponse().getStatus()).isIn(403, 404);
+        assertThat(outsideScope.getResponse().getContentAsString()).doesNotContain(SYNTHETIC_ID_CARD, "测试地址");
+    }
+
+    @Test
+    void duplicateFromAnotherUploaderCannotReadOrChangeOriginalDraftOrFileReference() throws Exception {
+        byte[] content = "phase14-ocr-security-cross-owner".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        String filename = "phase14-ocr-security-cross-owner.jpg";
+        long imageId = uploadedImageId(filename, content, "population", true);
+        Map<String, Object> before = imageState(imageId);
+        Set<String> filesBefore = uploadFiles();
+
+        var duplicate = uploadImage(filename, content, "approver", false);
+        assertThat(duplicate.getResponse().getStatus()).isEqualTo(409);
+        assertThat(imageState(imageId)).isEqualTo(before);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM person_idcard_image WHERE file_sha256=?", Integer.class,
+                before.get("file_sha256"))).isOne();
+        assertThat(Files.isRegularFile(Path.of(String.valueOf(before.get("storage_path"))))).isTrue();
+        assertThat(uploadFiles()).isEqualTo(filesBefore);
+    }
+
+    @Test
+    void sameUploaderDuplicateOfBoundImageCannotChangeOcrStateOrFileReference() throws Exception {
+        ocrStub.expect(requestTo(OCR_URL))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess(syntheticOcrResponse(), MediaType.APPLICATION_JSON));
+
+        byte[] content = "phase14-ocr-security-bound-image".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        String filename = "phase14-ocr-security-bound.jpg";
+        long imageId = uploadedImageId(filename, content, "population", false);
+        createScopedPerson(imageId);
+        Map<String, Object> before = imageState(imageId);
+        Set<String> filesBefore = uploadFiles();
+
+        var skippedDuplicate = uploadImage(filename, content, "population", true);
+        var retriedDuplicate = uploadImage(filename, content, "population", false);
+        assertThat(skippedDuplicate.getResponse().getStatus()).isEqualTo(409);
+        assertThat(retriedDuplicate.getResponse().getStatus()).isEqualTo(409);
+        assertThat(imageState(imageId)).isEqualTo(before);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM person_idcard_image WHERE file_sha256=?", Integer.class,
+                before.get("file_sha256"))).isOne();
+        assertThat(Files.isRegularFile(Path.of(String.valueOf(before.get("storage_path"))))).isTrue();
+        assertThat(uploadFiles()).isEqualTo(filesBefore);
     }
 
     @Test
@@ -183,21 +262,88 @@ class Phase14PersonIdCardOcrIntegrationTest {
 
     private JsonNode uploadWithoutSkippingOcr() throws Exception {
         String fileName = "phase14-ocr-" + UUID.randomUUID() + ".jpg";
-        MockMultipartFile file = new MockMultipartFile(
-                "file", fileName, "image/jpeg",
-                ("synthetic image " + fileName).getBytes(java.nio.charset.StandardCharsets.UTF_8));
-
-        String token = loginBearer("population");
-        String body = mvc.perform(multipart("/api/persons/idcard-image")
-                        .file(file)
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-
-        JsonNode data = json.readTree(body).path("data");
+        byte[] content = ("synthetic image " + fileName).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        var response = uploadImage(fileName, content, "population", false);
+        assertThat(response.getResponse().getStatus()).isEqualTo(200);
+        JsonNode data = json.readTree(response.getResponse().getContentAsString()).path("data");
         JsonNode imageId = data.path("imageId");
         assertThat(imageId.isNumber()).isTrue();
         return data;
+    }
+
+    private org.springframework.test.web.servlet.MvcResult uploadImage(
+            String filename, byte[] content, String username, boolean skipOcr) throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", filename, "image/jpeg", content);
+        var request = multipart("/api/persons/idcard-image")
+                .file(file)
+                .header("Authorization", "Bearer " + loginBearer(username));
+        if (skipOcr) request.param("skipOcr", "true");
+        return mvc.perform(request).andReturn();
+    }
+
+    private long uploadedImageId(String filename, byte[] content, String username, boolean skipOcr) throws Exception {
+        var response = uploadImage(filename, content, username, skipOcr);
+        assertThat(response.getResponse().getStatus()).isEqualTo(200);
+        return json.readTree(response.getResponse().getContentAsString()).path("data").path("imageId").asLong();
+    }
+
+    private JsonNode detail(long imageId, String username) throws Exception {
+        String body = mvc.perform(get("/api/persons/idcard-image/" + imageId)
+                        .header("Authorization", "Bearer " + loginBearer(username)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        return json.readTree(body).path("data");
+    }
+
+    private void createScopedPerson(long imageId) throws Exception {
+        String request = "{\"name\":\"合成样例\",\"gender\":\"M\",\"idCard\":\""
+                + SYNTHETIC_ID_CARD + "\",\"birthDate\":\"1990-01-01\",\"idCardImageId\":"
+                + imageId + ",\"status\":\"正常\"}";
+        String body = mvc.perform(post("/api/persons")
+                        .header("Authorization", "Bearer " + loginBearer("population"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        long personId = json.readTree(body).path("data").path("personId").asLong();
+        jdbc.update("""
+                INSERT INTO business_application(
+                    application_no,business_type,title,applicant_user_id,applicant_department_id,
+                    applicant_region_code,target_person_id,status,reason,version)
+                VALUES(?, 'KEY_POPULATION_RELEASE', '影印本范围测试', 2, 2, '110000', ?, 'COMPLETED', '测试', 0)
+                """, "IDCARD-SEC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 20), personId);
+    }
+
+    private Map<String, Object> imageState(long imageId) {
+        return jdbc.queryForMap("""
+                SELECT user_id, person_id, ocr_status, ocr_idcard_full, ocr_idcard_masked,
+                       ocr_name, ocr_birth_date, ocr_address, ocr_error, file_sha256,
+                       stored_filename, storage_path
+                FROM person_idcard_image WHERE image_id=?
+                """, imageId);
+    }
+
+    private Set<String> uploadFiles() throws IOException {
+        Path directory = Path.of("target/test-uploads").toAbsolutePath();
+        try (Stream<Path> paths = Files.list(directory)) {
+            return paths.map(path -> path.getFileName().toString()).collect(Collectors.toSet());
+        }
+    }
+
+    private String syntheticOcrResponse() {
+        return """
+                {
+                  "result": {
+                    "idCard": "%s",
+                    "name": "合成样例",
+                    "birthDate": "1990-01-01",
+                    "gender": "M",
+                    "ethnicity": "测试",
+                    "address": "测试地址",
+                    "confidence": 0.99
+                  }
+                }
+                """.formatted(SYNTHETIC_ID_CARD);
     }
 
     private String loginBearer(String username) throws Exception {

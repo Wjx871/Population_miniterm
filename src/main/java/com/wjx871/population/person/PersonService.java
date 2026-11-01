@@ -4,6 +4,7 @@ import com.wjx871.population.person.idcard.PersonIdCardImage;
 import com.wjx871.population.person.idcard.PersonIdCardImageMapper;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import com.wjx871.population.security.SensitiveDataMaskingService;
 import com.wjx871.population.security.DataScopeCriteria;
+import com.wjx871.population.security.CurrentUserContext;
 
 /**
  * 人口基础信息业务服务。
@@ -69,6 +71,19 @@ public class PersonService {
 
     @Transactional
     public Person create(PersonRequest request) {
+        return createInternal(request, null);
+    }
+
+    /** Called only after the approval service has validated an eligible, in-scope approval. */
+    @Transactional
+    public Person createForApproval(PersonRequest request, Long applicantUserId) {
+        if (!CurrentUserContext.requireUser().permissions().contains("approval:handle")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "缺少审批处理权限");
+        }
+        return createInternal(request, applicantUserId);
+    }
+
+    private Person createInternal(PersonRequest request, Long approvedImageOwnerId) {
         IdCardValidator.Identity identity = idCards.validate(request.idCard(), request.birthDate(), request.gender());
         String idCard = identity.normalized();
         if (personMapper.countByIdCard(idCard) > 0) {
@@ -81,6 +96,13 @@ public class PersonService {
         }
         PersonIdCardImage img = idCardImageMapper.selectById(request.idCardImageId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "身份证影印本不存在: " + request.idCardImageId()));
+        Long userId = CurrentUserContext.requireUser().userId();
+        boolean sameUploader = Objects.equals(img.getUserId(), userId);
+        boolean approvedApplicantImage = approvedImageOwnerId != null
+                && Objects.equals(img.getUserId(), approvedImageOwnerId);
+        if (!sameUploader && !approvedApplicantImage) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "身份证影印本不存在或不可访问");
+        }
         if (img.getPersonId() != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "该身份证影印本已被使用");
         }
@@ -99,7 +121,9 @@ public class PersonService {
         person.setUpdatedAt(now);
         personMapper.insertPerson(person);
         Person created = personMapper.selectById(person.getPersonId()).orElseThrow();
-        idCardImageMapper.bindPerson(img.getImageId(), created.getPersonId());
+        if (idCardImageMapper.bindPerson(img.getImageId(), created.getPersonId(), img.getUserId()) != 1) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "身份证影印本状态已变化，请刷新后重试");
+        }
         mask(created);
         return created;
     }

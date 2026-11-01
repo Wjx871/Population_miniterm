@@ -20,7 +20,8 @@
 
 - `GET /api/exports`：`data:export:log:view`，按 SELF/DEPARTMENT/REGION/ALL 查询。
 - `GET /api/exports/{id}`：记录详情，不返回 `storage_path`、原始 SQL或导出结果。
-- `GET /api/exports/{id}/download`：普通导出需要 `data:export:normal`；敏感导出需要申请人/执行人身份或范围管理员及相应权限。
+- `GET /api/exports/{id}/download`：普通脱敏文件要求 `data:export:normal` 且为申请人/执行人，或为 `SYSTEM_ADMIN`。敏感文件要求申请人/执行人身份，并具有 `data:export:normal` 或 `data:export:sensitive:download`；仅有这些权限但不是申请人/执行人仍不能下载。跨用户下载仅限同区域且同时具备 `approval:view` 与 `data:export:sensitive:download` 的授权人员，或 `SYSTEM_ADMIN`。`DataScope.ALL` 和 `data:export:normal` 单独都不授予他人的敏感文件下载权。
+- 下载路由与服务层共用同一授权策略；列表和详情中的 `downloadable` 只在该授权通过且文件状态为 `COMPLETED` 时为 `true`。
 
 每次下载增加计数、更新时间并写操作日志。状态不是 COMPLETED、物理文件不存在或已清理时返回 410。
 
