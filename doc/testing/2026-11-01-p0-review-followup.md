@@ -14,6 +14,12 @@
 
 申请人不存在通过直接调用范围校验的失败关闭测试覆盖。测试 Schema 对申请人有外键，因此没有构造违反外键的 HTTP 申请记录。
 
+## 范围包含关系复核
+
+原 `scopeRank()` 将 SELF、DEPARTMENT、REGION、ALL 排成单一等级。新增合成数据证明数据集合并非严格嵌套：SELF 申请人的历史业务落在其他部门/区划；DEPARTMENT 申请人的部门记录也有落在当前 REGION 之外的历史业务。旧实现对这三种降权转换都返回 200 并生成导出。
+
+现改为仅在当前范围与申请时范围相同，或当前范围为 ALL 时执行；其余跨类别变化无法证明包含时拒绝。REGION 扩至 ALL 的测试仍通过，并核对 Excel 行数与原 REGION 范围完全一致。
+
 ## SELF 对象归属
 
 源码没有单句定义办结记录的 SELF 归属。现有契约以 `business_application.applicant_user_id` 标识申请所有人；`floating_population.operator_id` 和 `residence_permit_application.operator_id` 则在执行时由执行用户写入，用于记录实际经办人。注销、归档等导出 SELF 条件也关联申请人。按此契约，浮动登记和居住证办结记录的 SELF 归属取原申请人，执行人保留为经办审计信息。
@@ -31,7 +37,7 @@
 ## 测试
 
 - 原 d1 基线 `AuthRbacIntegrationTest`：16 项中 2 项失败，viewer 登录断言期待 DEPARTMENT、日志隔离也错误使用 viewer；响应实际是 ALL，且日志包含其他操作者。
-- 修复后定向测试：`AuthRbacIntegrationTest` 17/17、`ExportDataScopeAuditIntegrationTest` 14/14、`FloatingSelfScopeAuditIntegrationTest` 7/7。
+- 修复后定向测试：`AuthRbacIntegrationTest` 17/17、`ExportDataScopeAuditIntegrationTest` 18/18、`FloatingSelfScopeAuditIntegrationTest` 7/7。
 - P0 回归定向测试：`Phase04CancellationIntegrationTest` 26/26、`Phase08PersonIdentityIntegrationTest` 6/6、`Phase06ExportAuditIntegrationTest` 26/26。
-- 全量 `.\mvnw.cmd clean test`：397 项通过，0 失败、0 错误、0 跳过。
+- 全量 `.\mvnw.cmd clean test`：401 项通过，0 失败、0 错误、0 跳过。
 - 环境限制：仅在隔离 H2 测试库验证；未连接真实人口数据库，也未执行生产 MySQL。
