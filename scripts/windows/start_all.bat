@@ -40,6 +40,19 @@ if not defined OCR_PORT set "OCR_PORT=8866"
 REM env 加载完成后再开启延迟展开，避免配置值中的 ! 被错误解析
 setlocal EnableDelayedExpansion
 
+REM ---------- 选择后端端口，并将同一端口传给后端和前端 ----------
+set "SERVER_PORT_BASE=!SERVER_PORT!"
+set "SERVER_PORT_SELECTED="
+for /f "usebackq delims=" %%P in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%resolve_backend_port.ps1" -BasePort !SERVER_PORT_BASE! -Mode SelectAvailable`) do set "SERVER_PORT_SELECTED=%%P"
+if not defined SERVER_PORT_SELECTED (
+    echo [错误] 从端口 !SERVER_PORT_BASE! 开始的 5 个候选端口都不可用。
+    echo        请释放端口，或在 start.local.env 中修改 SERVER_PORT 起始端口。
+    goto :fail
+)
+set "SERVER_PORT=!SERVER_PORT_SELECTED!"
+set "PDMS_BACKEND_PORT_PRESELECTED=1"
+if not "!SERVER_PORT!"=="!SERVER_PORT_BASE!" echo [信息] 起始端口被占用，已自动切换到 !SERVER_PORT!。
+
 set "BACKEND_URL=http://127.0.0.1:!SERVER_PORT!"
 set "FRONTEND_URL=http://localhost:!FRONTEND_PORT!"
 set "OCR_HEALTH_URL=http://127.0.0.1:!OCR_PORT!/health"
@@ -124,6 +137,19 @@ goto :ocr_wait_loop
 
 :skip_ocr
 echo.
+
+REM OCR 启动可能等待较久，启动后端前重新选一次，缩短端口被抢占的窗口。
+set "SERVER_PORT_SELECTED="
+for /f "usebackq delims=" %%P in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%resolve_backend_port.ps1" -BasePort !SERVER_PORT_BASE! -Mode SelectAvailable`) do set "SERVER_PORT_SELECTED=%%P"
+if not defined SERVER_PORT_SELECTED (
+    echo [错误] 从端口 !SERVER_PORT_BASE! 开始的 5 个候选端口都不可用。
+    echo        请释放端口，或在 start.local.env 中修改 SERVER_PORT 起始端口。
+    goto :fail
+)
+set "SERVER_PORT=!SERVER_PORT_SELECTED!"
+set "BACKEND_URL=http://127.0.0.1:!SERVER_PORT!"
+set "PDMS_BACKEND_PORT_PRESELECTED=1"
+if not "!SERVER_PORT!"=="!SERVER_PORT_BASE!" echo [信息] 起始端口被占用，已自动切换到 !SERVER_PORT!。
 
 REM ---------- 3. 启动后端（新窗口） ----------
 echo [2/4] 正在新窗口启动后端...

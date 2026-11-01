@@ -8,7 +8,7 @@ REM  人口数据库管理系统（Population Miniterm）后端一键启动
 REM  - 检查 Java 17+ / Maven Wrapper
 REM  - 加载项目根目录 start.local.env（不覆盖外部已设环境变量）
 REM  - 默认 MySQL: localhost:3306/population_miniterm
-REM  - 默认端口: 8080（可通过 SERVER_PORT 修改）
+REM  - 默认从 SERVER_PORT 开始依次探测 5 个端口，直到找到可用端口
 REM ============================================================
 
 set "SCRIPT_DIR=%~dp0"
@@ -84,6 +84,20 @@ if not defined JWT_EXPIRE_MINUTES set "JWT_EXPIRE_MINUTES=120"
 
 REM env 加载完成后再开启延迟展开，避免配置值中的 ! 被错误解析
 setlocal EnableDelayedExpansion
+
+REM ---------- 4.1 选择可用后端端口 ----------
+set "SERVER_PORT_BASE=!SERVER_PORT!"
+if /I not "!PDMS_BACKEND_PORT_PRESELECTED!"=="1" (
+    set "SERVER_PORT_SELECTED="
+    for /f "usebackq delims=" %%P in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%resolve_backend_port.ps1" -BasePort !SERVER_PORT_BASE! -Mode SelectAvailable`) do set "SERVER_PORT_SELECTED=%%P"
+    if not defined SERVER_PORT_SELECTED (
+        echo [错误] 从端口 !SERVER_PORT_BASE! 开始的 5 个候选端口都不可用。
+        echo        请释放端口，或在 start.local.env 中修改 SERVER_PORT 起始端口。
+        goto :fail
+    )
+    set "SERVER_PORT=!SERVER_PORT_SELECTED!"
+    if not "!SERVER_PORT!"=="!SERVER_PORT_BASE!" echo [信息] 起始端口被占用，已自动切换到 !SERVER_PORT!。
+)
 
 REM ---------- 5. 校验 JDK 版本 >= 17 ----------
 set "JAVA_MAJOR="

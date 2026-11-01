@@ -61,6 +61,12 @@ if not defined FRONTEND_PORT set "FRONTEND_PORT=5180"
 REM env 加载完成后再开启延迟展开，避免配置值中的 ! 被错误解析
 setlocal EnableDelayedExpansion
 
+REM 独立启动前端时，在后端候选端口中查找运行中的实例。
+set "SERVER_PORT_BASE=!SERVER_PORT!"
+set "SERVER_PORT_RUNNING="
+for /f "usebackq delims=" %%P in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%resolve_backend_port.ps1" -BasePort !SERVER_PORT_BASE! -Mode FindRunning`) do set "SERVER_PORT_RUNNING=%%P"
+if defined SERVER_PORT_RUNNING set "SERVER_PORT=!SERVER_PORT_RUNNING!"
+
 REM ---------- 3. 检查 Node / npm ----------
 where node >nul 2>&1
 if errorlevel 1 (

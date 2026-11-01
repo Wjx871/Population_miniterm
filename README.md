@@ -114,7 +114,7 @@ copy config\start.local.env.example start.local.env
 
 ### 端口配置
 
-默认端口：后端 `http://127.0.0.1:8080`，前端 `http://localhost:5180`。
+默认端口：后端从 `8080` 开始依次尝试 `8080`–`8084`，前端 `http://localhost:5180`。如果起始端口已被占用，启动脚本会选择下一个可用端口，并同步更新后端健康检查和 Vite 代理目标。独立启动前端时，也会在这组端口中查找运行中的后端。
 
 如需自定义端口，修改项目根目录的 `start.local.env`：
 
@@ -123,7 +123,7 @@ SERVER_PORT=18080
 FRONTEND_PORT=15180
 ```
 
-修改 `SERVER_PORT` 后，一键启动脚本的后端探测和 Vite 代理目标都会自动同步，无需手动修改 `vite.config.js`。
+`SERVER_PORT` 指定后端候选端口的起点；脚本会依次检查该端口及后续 4 个端口。一键启动脚本会将最终选择同步到后端、健康检查和 Vite 代理目标，无需手动修改 `vite.config.js`。
 
 前端 API 基址默认是 `/api`。启动脚本会显示 API 基址和代理目标；检测到非 `/api` 配置时只提示风险，不会覆盖本地 `.env`。
 
