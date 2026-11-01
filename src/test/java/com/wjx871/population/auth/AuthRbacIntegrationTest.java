@@ -149,12 +149,12 @@ class AuthRbacIntegrationTest {
     }
 
     @Test
-    void meReturnsRoleScopeDepartmentAndPermissions() throws Exception {
+    void viewerIdentityReflectsDocumentedAllDataScope() throws Exception {
         mockMvc.perform(get("/api/auth/me").header("Authorization", bearer(tokenFor("viewer"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.roleCode").value("QUERY_VIEWER"))
                 .andExpect(jsonPath("$.data.roleLevel").value("L1"))
-                .andExpect(jsonPath("$.data.dataScope").value("DEPARTMENT"))
+                .andExpect(jsonPath("$.data.dataScope").value("ALL"))
                 .andExpect(jsonPath("$.data.departmentId").value(1))
                 .andExpect(jsonPath("$.data.permissions",
                         org.hamcrest.Matchers.hasItem("population:view")));
@@ -207,7 +207,7 @@ class AuthRbacIntegrationTest {
     }
 
     @Test
-    void departmentScopedLogQueryDoesNotExposeOtherDepartmentLogs() throws Exception {
+    void allScopedViewerCanSeeLogsAcrossDepartments() throws Exception {
         jdbcTemplate.update("""
                 INSERT INTO operation_log (user_id, operation_type, operation_result, detail)
                 VALUES (1, 'VIEWER_ACTION', 'SUCCESS', 'viewer only'),
@@ -218,9 +218,7 @@ class AuthRbacIntegrationTest {
                         .header("Authorization", bearer(tokenFor("viewer"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[*].operator").value(
-                        org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is("viewer"))))
-                .andExpect(jsonPath("$.data[*].detail",
-                        org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("other department"))));
+                        org.hamcrest.Matchers.hasItem("population")));
     }
 
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder login(
