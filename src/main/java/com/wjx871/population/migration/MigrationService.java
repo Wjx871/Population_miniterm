@@ -15,9 +15,41 @@ public class MigrationService {
  @Transactional(readOnly=true) public MigrationDetailView detail(Long id){BusinessApplication a=applications.require(id);assertMigrationScope(a,CurrentUserContext.requireUser());MigrationIn in=mapper.findIn(id).orElse(null);MigrationOut out=mapper.findOut(id).orElse(null);if(in==null&&out==null)throw notFound("迁移详情不存在");Long personId=in!=null?in.getPersonId():out.getPersonId();Residence res=mapper.findResidence(personId).orElse(null);Long householdId=res!=null?res.getHouseholdId():(in!=null?in.getToHouseholdId():out.getFromHouseholdId());HouseholdSnapshot h=mapper.findHousehold(householdId).orElse(null);boolean executable=a.getStatus()==ApplicationStatus.APPROVED&&((in!=null&&in.getBusinessStatus()==MigrationBusinessStatus.APPROVED)||(out!=null&&out.getBusinessStatus()==MigrationBusinessStatus.APPROVED));return new MigrationDetailView(ApplicationView.from(a),in,out,res,h,h==null?List.of():mapper.activeMembers(h.getHouseholdId()),materialMapper.selectByApplicationId(id).stream().map(MaterialView::from).toList(),approvalRequests.selectByApplicationId(id).orElse(null),logs.selectByApplicationId(id).stream().map(ApprovalLogView::from).toList(),executable,executable?null:"申请尚未批准或已执行");}
 
  @Transactional public void executeIn(Long id,ExecuteRequest request,HttpServletRequest http){AuthenticatedUser u=CurrentUserContext.requireUser();BusinessApplication a=applications.require(id);assertExecution(a,u);MigrationIn v=mapper.lockIn(id).orElseThrow(()->notFound("迁入详情不存在"));requireApproved(a,v.getBusinessStatus(),v.getVersion(),request.version());requirePerson(v.getPersonId());if(mapper.lockResidence(v.getPersonId()).isPresent())throw conflict("该人员已存在当前户籍");if(mapper.countActiveMembership(v.getPersonId())>0)throw conflict("该人员已是其他家庭户有效成员");HouseholdSnapshot h=requireActiveHousehold(v.getToHouseholdId());materials.validateVerified(id);validateBatch(v);Residence r=new Residence();r.setPersonId(v.getPersonId());r.setHouseholdId(h.getHouseholdId());r.setRegisteredAddress(h.getAddress());r.setRegionCode(v.getToRegionCode());r.setRegisterTypeCode(v.getMigrationType().name());r.setRegisterDate(v.getInDate());r.setStartDate(v.getInDate());r.setCreatedBy(u.userId());mapper.insertResidence(r);hook.afterResidenceInserted();if(mapper.reactivateMember(h.getHouseholdId(),v.getPersonId(),v.getInDate())==0)mapper.insertMember(h.getHouseholdId(),v.getPersonId(),v.getInDate());mapper.updatePersonResidence(v.getPersonId(),"REGISTERED",h.getAddress());completeIn(a,v,u.userId());executionLog(a,u,http,"MIGRATION_IN_EXECUTE");}
- @Transactional public void executeOut(Long id,ExecuteRequest request,HttpServletRequest http){AuthenticatedUser u=CurrentUserContext.requireUser();BusinessApplication a=applications.require(id);assertExecution(a,u);MigrationOut v=mapper.lockOut(id).orElseThrow(()->notFound("迁出详情不存在"));requireApproved(a,v.getBusinessStatus(),v.getVersion(),request.version());Residence r=mapper.lockResidence(v.getPersonId()).orElseThrow(()->conflict("该人员没有当前有效户籍"));if(!r.getHouseholdId().equals(v.getFromHouseholdId()))throw conflict("当前户籍与迁出申请不一致");HouseholdSnapshot h=mapper.lockHousehold(r.getHouseholdId()).orElseThrow(()->notFound("家庭户不存在"));if(mapper.countActiveMembership(v.getPersonId())!=1)throw conflict("当前家庭成员关系无效");validateHeadExecution(v,h);materials.validateVerified(id);ResidenceArchive arc=archive(a,v,r,h,u.userId());mapper.insertArchive(arc);hook.afterArchiveInserted();if(mapper.deleteResidence(r.getResidenceId(),r.getVersion())==0)ApplicationService.conflict();hook.afterResidenceDeleted();if(mapper.leaveMember(h.getHouseholdId(),v.getPersonId(),v.getOutDate())==0)throw conflict("当前家庭成员关系无效");if(v.getPersonId().equals(h.getHeadPersonId())){if(h.getActiveMemberCount()>1){if(mapper.changeHead(h.getHouseholdId(),v.getPersonId(),v.getNewHeadPersonId())==0)ApplicationService.conflict();}else if(mapper.markHouseholdPending(h.getHouseholdId(),v.getPersonId())==0)ApplicationService.conflict();}mapper.updatePersonResidence(v.getPersonId(),"MIGRATED_OUT",null);String batch=v.getMigrationType()==MigrationType.IN_CITY_CROSS_DISTRICT?batchNo():null;completeOut(a,v,u.userId(),batch);executionLog(a,u,http,"MIGRATION_OUT_EXECUTE");}
-
- private void completeIn(BusinessApplication a,MigrationIn v,Long user){if(mapper.updateInStatus(a.getApplicationId(),MigrationBusinessStatus.APPROVED,MigrationBusinessStatus.COMPLETED,v.getVersion(),user)==0)ApplicationService.conflict();completeApplication(a);}
+ @Transactional
+ public void executeOut(Long id,ExecuteRequest request,HttpServletRequest http) {
+  AuthenticatedUser user=CurrentUserContext.requireUser();
+  BusinessApplication application=applications.require(id);
+  assertExecution(application,user);
+  MigrationOut migration=mapper.lockOut(id).orElseThrow(()->notFound("迁出详情不存在"));
+  requireApproved(application,migration.getBusinessStatus(),migration.getVersion(),request.version());
+  Residence residence=mapper.lockResidence(migration.getPersonId()).orElseThrow(()->conflict("该人员没有当前有效户籍"));
+  if(!residence.getHouseholdId().equals(migration.getFromHouseholdId()))throw conflict("当前户籍与迁出申请不一致");
+  HouseholdSnapshot household=mapper.lockHousehold(residence.getHouseholdId()).orElseThrow(()->notFound("家庭户不存在"));
+  if(mapper.countActiveMembership(migration.getPersonId())!=1)throw conflict("当前家庭成员关系无效");
+  validateHeadExecution(migration,household);
+  boolean headWithOtherMembers=migration.getPersonId().equals(household.getHeadPersonId())&&household.getActiveMemberCount()>1;
+  if(headWithOtherMembers&&(mapper.countActiveHeads(household.getHouseholdId())!=1||mapper.countActiveHead(household.getHouseholdId(),migration.getPersonId())!=1))throw conflict("家庭户主指针与有效成员关系不一致");
+  materials.validateVerified(id);
+  ResidenceArchive archive=archive(application,migration,residence,household,user.userId());
+  mapper.insertArchive(archive);
+  hook.afterArchiveInserted();
+  if(mapper.deleteResidence(residence.getResidenceId(),residence.getVersion())==0)ApplicationService.conflict();
+  hook.afterResidenceDeleted();
+  if(mapper.leaveMember(household.getHouseholdId(),migration.getPersonId(),migration.getOutDate())==0)throw conflict("当前家庭成员关系无效");
+  if(migration.getPersonId().equals(household.getHeadPersonId())) {
+   if(household.getActiveMemberCount()>1) {
+    if(mapper.promoteMemberToHead(household.getHouseholdId(),migration.getNewHeadPersonId())==0)throw conflict("新户主必须是本户其他有效成员");
+    hook.afterNewHeadMemberPromoted();
+    if(mapper.countActiveHeads(household.getHouseholdId())!=1||mapper.countActiveHead(household.getHouseholdId(),migration.getNewHeadPersonId())!=1)throw conflict("户主交接后成员关系不一致");
+    if(mapper.changeHead(household.getHouseholdId(),migration.getPersonId(),migration.getNewHeadPersonId(),household.getVersion())==0)ApplicationService.conflict();
+   } else if(mapper.markHouseholdPending(household.getHouseholdId(),migration.getPersonId(),household.getVersion())==0)ApplicationService.conflict();
+  }
+  if(mapper.updatePersonResidence(migration.getPersonId(),"MIGRATED_OUT",null)==0)ApplicationService.conflict();
+  String batch=migration.getMigrationType()==MigrationType.IN_CITY_CROSS_DISTRICT?batchNo():null;
+  completeOut(application,migration,user.userId(),batch);
+  executionLog(application,user,http,"MIGRATION_OUT_EXECUTE");
+ }
+private void completeIn(BusinessApplication a,MigrationIn v,Long user){if(mapper.updateInStatus(a.getApplicationId(),MigrationBusinessStatus.APPROVED,MigrationBusinessStatus.COMPLETED,v.getVersion(),user)==0)ApplicationService.conflict();completeApplication(a);}
  private void completeOut(BusinessApplication a,MigrationOut v,Long user,String batch){if(mapper.updateOutStatus(a.getApplicationId(),MigrationBusinessStatus.APPROVED,MigrationBusinessStatus.COMPLETED,v.getVersion(),user,batch)==0)ApplicationService.conflict();completeApplication(a);}
  private void completeApplication(BusinessApplication a){if(applicationMapper.updateStatus(a.getApplicationId(),ApplicationStatus.APPROVED,ApplicationStatus.COMPLETED,a.getVersion())==0)ApplicationService.conflict();}
  private void executionLog(BusinessApplication a,AuthenticatedUser u,HttpServletRequest http,String type){logs.insert(ApprovalLog.of(null,a.getApplicationId(),ApprovalAction.EXECUTE,ApplicationStatus.APPROVED.name(),ApplicationStatus.COMPLETED.name(),u.userId(),"业务执行完成",audit.clientIp(http)));audit.recordTransactional(u.userId(),type,http);}
