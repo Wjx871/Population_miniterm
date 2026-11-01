@@ -58,6 +58,7 @@ if not "!SERVER_PORT!"=="!SERVER_PORT_BASE!" echo [信息] 起始端口被占用
 set "BACKEND_URL=http://127.0.0.1:!SERVER_PORT!"
 set "FRONTEND_URL=http://localhost:!FRONTEND_PORT!"
 set "OCR_HEALTH_URL=http://127.0.0.1:!OCR_PORT!/health"
+set "FRONTEND_PORT_BASE=!FRONTEND_PORT!"
 
 echo.
 echo ============================================================
@@ -65,7 +66,7 @@ echo   人口数据库管理系统 - 一键启动前后端 + OCR
 echo ============================================================
 echo   项目根目录 : %ROOT_DIR%
 echo   后端       : !BACKEND_URL!
-echo   前端       : !FRONTEND_URL!
+echo   前端候选起点: !FRONTEND_URL!（最多轮询 5 个端口）
 echo   OCR 健康检查: !OCR_HEALTH_URL!
 echo   等待超时   : %MAX_WAIT_SECONDS% 秒
 echo ============================================================
@@ -215,6 +216,19 @@ goto :start_frontend
 
 :backend_ready
 echo [信息] 后端已就绪: !BACKEND_URL! （约 !waited! 秒）
+
+REM 后端等待期间前端端口可能发生变化，启动前再选一次并传给 Vite。
+set "FRONTEND_PORT_SELECTED="
+for /f "usebackq delims=" %%P in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%resolve_frontend_port.ps1" -BasePort !FRONTEND_PORT_BASE!`) do set "FRONTEND_PORT_SELECTED=%%P"
+if not defined FRONTEND_PORT_SELECTED (
+    echo [错误] 从端口 !FRONTEND_PORT_BASE! 开始的 5 个候选前端端口都不可用。
+    echo        请释放端口，或在 start.local.env 中修改 FRONTEND_PORT 起始端口。
+    goto :fail
+)
+set "FRONTEND_PORT=!FRONTEND_PORT_SELECTED!"
+set "FRONTEND_URL=http://localhost:!FRONTEND_PORT!"
+set "PDMS_FRONTEND_PORT_PRESELECTED=1"
+if not "!FRONTEND_PORT!"=="!FRONTEND_PORT_BASE!" echo [信息] 前端起始端口被占用，已自动切换到 !FRONTEND_PORT!。
 
 REM ---------- 5. 启动前端（当前窗口） ----------
 :start_frontend

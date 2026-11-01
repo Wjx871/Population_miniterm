@@ -67,6 +67,20 @@ set "SERVER_PORT_RUNNING="
 for /f "usebackq delims=" %%P in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%resolve_backend_port.ps1" -BasePort !SERVER_PORT_BASE! -Mode FindRunning`) do set "SERVER_PORT_RUNNING=%%P"
 if defined SERVER_PORT_RUNNING set "SERVER_PORT=!SERVER_PORT_RUNNING!"
 
+REM 独立启动前端时，从 FRONTEND_PORT 起依次选择 5 个候选端口中的空闲端口。
+set "FRONTEND_PORT_BASE=!FRONTEND_PORT!"
+if /I not "!PDMS_FRONTEND_PORT_PRESELECTED!"=="1" (
+    set "FRONTEND_PORT_SELECTED="
+    for /f "usebackq delims=" %%P in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%resolve_frontend_port.ps1" -BasePort !FRONTEND_PORT_BASE!`) do set "FRONTEND_PORT_SELECTED=%%P"
+    if not defined FRONTEND_PORT_SELECTED (
+        echo [错误] 从端口 !FRONTEND_PORT_BASE! 开始的 5 个候选前端端口都不可用。
+        echo        请释放端口，或在 start.local.env 中修改 FRONTEND_PORT 起始端口。
+        goto :fail
+    )
+    set "FRONTEND_PORT=!FRONTEND_PORT_SELECTED!"
+    if not "!FRONTEND_PORT!"=="!FRONTEND_PORT_BASE!" echo [信息] 前端起始端口被占用，已自动切换到 !FRONTEND_PORT!。
+)
+
 REM ---------- 3. 检查 Node / npm ----------
 where node >nul 2>&1
 if errorlevel 1 (
@@ -210,17 +224,18 @@ REM 明确指定前端目录，避免调用方的当前目录异常时在仓库�
 call npm --prefix "%FRONTEND_DIR%" run dev
 set "EXIT_CODE=%errorlevel%"
 
-if not "%EXIT_CODE%"=="0" (
-    echo.
-    echo [错误] 前端进程退出，代码: %EXIT_CODE%
-    echo        常见原因:
-    echo          1. 端口 !FRONTEND_PORT! 被占用
-    echo          2. 依赖损坏，可执行: npm ci
-    echo          3. Node 版本过低
-    goto :fail_with_code
-)
+if not "!EXIT_CODE!"=="0" goto :frontend_failed
 
 exit /b 0
+
+:frontend_failed
+echo.
+echo [错误] 前端进程退出，代码: !EXIT_CODE!
+echo        常见原因:
+echo          1. 端口 !FRONTEND_PORT! 被其他进程抢占
+echo          2. 依赖损坏，可执行: npm ci
+echo          3. Node 版本过低
+goto :fail_with_code
 
 :fail
 echo.

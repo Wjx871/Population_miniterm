@@ -36,6 +36,11 @@ function Test-BackendResponding {
 function Test-PortAvailable {
     param([int]$Port)
 
+    $connections = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue
+    if ($connections) {
+        return $false
+    }
+
     $listener = $null
     try {
         $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Any, $Port)
