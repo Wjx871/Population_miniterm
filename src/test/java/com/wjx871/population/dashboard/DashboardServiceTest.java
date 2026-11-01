@@ -19,6 +19,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+@org.junit.jupiter.api.Tag("unit")
 class DashboardServiceTest {
     private final DashboardMapper mapper = mock(DashboardMapper.class);
     private final DashboardService service = new DashboardService(mapper,

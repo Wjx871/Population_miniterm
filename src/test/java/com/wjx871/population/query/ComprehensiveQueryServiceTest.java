@@ -24,6 +24,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.server.ResponseStatusException;
 
+@org.junit.jupiter.api.Tag("unit")
 class ComprehensiveQueryServiceTest {
     private final ComprehensiveQueryMapper mapper = mock(ComprehensiveQueryMapper.class);
     private final ComprehensiveQueryService service = new ComprehensiveQueryService(mapper, new SensitiveDataMaskingService());

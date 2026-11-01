@@ -7,6 +7,7 @@ import java.time.Clock;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
 
+@org.junit.jupiter.api.Tag("unit")
 class Phase11QueryValidationTest {
  private final Phase11QueryService service=new Phase11QueryService(mock(Phase11QueryMapper.class),mock(SensitiveDataMaskingService.class),Clock.systemUTC());
  @Test void personPageSizeIsBounded(){assertThatThrownBy(()->service.persons(emptyPerson(),0,101,"personId,DESC")).isInstanceOf(ResponseStatusException.class);}

@@ -1,5 +1,15 @@
 # Population Miniterm
 
+## 单元测试
+
+在 IDEA 中重新加载 Maven 项目后，可以直接运行 `src/test/java` 下的测试。只运行 JUnit 5 + Mockito 纯单元测试并生成 JaCoCo 覆盖率报告：
+
+```powershell
+.\mvnw.cmd -Punit-tests clean test
+```
+
+报告入口：`target/site/jacoco/index.html`。详细步骤与测试编写说明见 [单元测试指南](doc/testing/unit-testing-guide.md)。
+
 当前后端发布候选版本为 Backend V1.0.0：课程设计级、可完整演示和原生部署的单体后端。正式 API 总索引见 `doc/api/backend-api-index.md`，部署与运维见 `doc/deployment/backend-v1-deployment.md`。
 
 后端已进入 Phase 14：在新增人员（`POST /api/persons`）前必须先上传身份证影印本接口（`POST /api/persons/idcard-image`），服务端自动调用可选的 PaddleOCR 子服务进行识别，仅将识别结果（姓名、性别、出生日期、民族、地址）与脱敏身份证号回填到前端；使用者可在 OCR 不可达或不可读时点击「跳过 OCR」上传。身份证影印本与人员档案在数据库中通过 `person_idcard_image.person_id` 绑定，编辑时只允许沿用既有图，禁止换图。MySQL 仍是唯一事实来源，OCR 识别失败不影响主流程。详细规范见 `doc/database/migrations/V4_013_person_idcard_image.sql`。

@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
+@org.junit.jupiter.api.Tag("unit")
 class Phase11TokenRevocationTest {
  private final String secret="phase11-test-secret-must-have-at-least-thirty-two-bytes";
  @Test void jwtContainsUniqueJti(){JwtService jwt=new JwtService(secret,10);AuthenticatedUser u=user();Claims a=jwt.parseClaims(jwt.createToken(u));Claims b=jwt.parseClaims(jwt.createToken(u));assertThat(a.getId()).isNotBlank().isNotEqualTo(b.getId());}

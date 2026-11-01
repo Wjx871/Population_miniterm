@@ -76,15 +76,19 @@ if (-not (Get-Command $MySqlClient -ErrorAction SilentlyContinue)) { throw "未�
 function Invoke-MySql {
     param([string]$Sql, [string]$TargetDatabase, [switch]$Batch)
     $previousPassword = [Environment]::GetEnvironmentVariable('MYSQL_PWD', 'Process')
+    $prevOut = [Console]::OutputEncoding
     try {
         if (-not [string]::IsNullOrEmpty($Password)) { [Environment]::SetEnvironmentVariable('MYSQL_PWD', $Password, 'Process') }
         $args = @('--protocol=TCP', "--host=$HostName", "--port=$Port", "--user=$Username", '--default-character-set=utf8mb4')
         if ($Batch) { $args += @('--batch', '--skip-column-names') }
         if ($TargetDatabase) { $args += $TargetDatabase }
+        # Force UTF-8 on the pipeline so Chinese characters are not mangled by the OEM code page.
+        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
         $output = $Sql | & $MySqlClient @args 2>&1
         if ($LASTEXITCODE -ne 0) { throw "MySQL 命令失败：$($output | Select-Object -Last 1)" }
         return @($output)
     } finally {
+        [Console]::OutputEncoding = $prevOut
         [Environment]::SetEnvironmentVariable('MYSQL_PWD', $previousPassword, 'Process')
     }
 }
@@ -92,13 +96,18 @@ function Invoke-MySql {
 function Invoke-MySqlFile {
     param([string]$Path, [string]$TargetDatabase)
     $previousPassword = [Environment]::GetEnvironmentVariable('MYSQL_PWD', 'Process')
+    $prevOut = [Console]::OutputEncoding
     try {
         if (-not [string]::IsNullOrEmpty($Password)) { [Environment]::SetEnvironmentVariable('MYSQL_PWD', $Password, 'Process') }
         $args = @('--protocol=TCP', "--host=$HostName", "--port=$Port", "--user=$Username", '--default-character-set=utf8mb4')
         if ($TargetDatabase) { $args += $TargetDatabase }
-        Get-Content -LiteralPath $Path -Raw | & $MySqlClient @args
+        # Force UTF-8 on the pipeline; Windows PowerShell 5.1 defaults to OEM code page (CP936 on Chinese Windows)
+        # which corrupts Chinese characters before mysql even sees them.
+        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+        Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | & $MySqlClient @args
         if ($LASTEXITCODE -ne 0) { throw "执行 SQL 失败：$([IO.Path]::GetFileName($Path))" }
     } finally {
+        [Console]::OutputEncoding = $prevOut
         [Environment]::SetEnvironmentVariable('MYSQL_PWD', $previousPassword, 'Process')
     }
 }

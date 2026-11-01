@@ -1,5 +1,6 @@
 package com.wjx871.population.person;
 import static org.assertj.core.api.Assertions.*; import com.wjx871.population.common.BusinessException; import java.time.LocalDate; import org.junit.jupiter.api.*;
+@Tag("unit")
 class IdCardValidatorTest {IdCardValidator v=new IdCardValidator();
 @Test void validMale(){assertThat(v.validate("110105194912310011",LocalDate.of(1949,12,31),"M").gender()).isEqualTo("M");}
 @Test void validFemale(){assertThat(v.validate("11010519491231002X",LocalDate.of(1949,12,31),"F").gender()).isEqualTo("F");}
