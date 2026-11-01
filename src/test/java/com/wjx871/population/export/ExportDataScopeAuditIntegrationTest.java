@@ -1,17 +1,30 @@
 package com.wjx871.population.export;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wjx871.population.application.BusinessApplication;
+import com.wjx871.population.common.BusinessException;
 import com.wjx871.population.security.DataScope;
 import com.wjx871.population.security.DataScopeCriteria;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +35,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.util.AopTestUtils;
 
 @SpringBootTest(properties = {
         "export.dir=./target/test-exports-audit",
@@ -51,6 +65,7 @@ class ExportDataScopeAuditIntegrationTest {
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
     @Autowired ExportMapper mapper;
+    @Autowired ExportService exportService;
     @Autowired PasswordEncoder passwordEncoder;
 
     @BeforeEach
@@ -81,6 +96,11 @@ class ExportDataScopeAuditIntegrationTest {
 
         createScopedUsers();
         createScopedRows();
+    }
+
+    @AfterEach
+    void restoreSyntheticDepartmentRegion() {
+        jdbc.update("UPDATE sys_department SET region_code='110000' WHERE department_id=2");
     }
 
     @Test
@@ -145,6 +165,127 @@ class ExportDataScopeAuditIntegrationTest {
     }
 
     @Test
+    void applicantScopeDowngradeAfterApprovalRejectsAdministratorExecution() throws Exception {
+        long applicationId = approvedSensitiveAsAll();
+        jdbc.update("UPDATE sys_role SET data_scope='SELF' WHERE role_id=?", SELF_ROLE);
+
+        assertSensitiveExecutionRejectedWithoutSideEffects(applicationId);
+    }
+
+    @Test
+    void disabledApplicantAccountCannotExecuteApprovedExport() throws Exception {
+        long applicationId = approvedSensitiveAsAll();
+        jdbc.update("UPDATE sys_user SET status='DISABLED' WHERE user_id=?", SELF_USER);
+
+        assertSensitiveExecutionRejectedWithoutSideEffects(applicationId);
+    }
+
+    @Test
+    void disabledApplicantRoleCannotExecuteApprovedExport() throws Exception {
+        long applicationId = approvedSensitiveAsAll();
+        jdbc.update("UPDATE sys_role SET status='DISABLED' WHERE role_id=?", SELF_ROLE);
+
+        assertSensitiveExecutionRejectedWithoutSideEffects(applicationId);
+    }
+
+    @Test
+    void revokedSensitiveApplyPermissionCannotExecuteApprovedExport() throws Exception {
+        long applicationId = approvedSensitiveAsAll();
+        jdbc.update("DELETE FROM sys_role_permission WHERE role_id=? AND permission_id=" +
+                "(SELECT permission_id FROM sys_permission WHERE permission_code='data:export:sensitive:apply')", SELF_ROLE);
+
+        assertSensitiveExecutionRejectedWithoutSideEffects(applicationId);
+    }
+
+    @Test
+    void changedApplicantDepartmentCannotExecuteApprovedExport() throws Exception {
+        long applicationId = approvedSensitiveAsSelf();
+        jdbc.update("UPDATE sys_user SET department_id=3 WHERE user_id=?", SELF_USER);
+
+        assertSensitiveExecutionRejectedWithoutSideEffects(applicationId);
+    }
+
+    @Test
+    void changedApplicantRegionCannotExecuteApprovedExport() throws Exception {
+        long applicationId = approvedSensitiveAsSelf();
+        jdbc.update("UPDATE sys_department SET region_code='120000' WHERE department_id=2");
+
+        assertSensitiveExecutionRejectedWithoutSideEffects(applicationId);
+    }
+
+    @Test
+    void applicantCannotBeResolvedForSensitiveExecution() throws Exception {
+        BusinessApplication application = new BusinessApplication();
+        application.setApplicantUserId(96999L);
+        application.setApplicantDepartmentId(2L);
+        application.setApplicantRegionCode("110000");
+        DataExportRequest request = new DataExportRequest();
+        request.setExportScope("ALL");
+        Method requesterScope = ExportService.class.getDeclaredMethod(
+                "requesterScope", BusinessApplication.class, DataExportRequest.class);
+        requesterScope.setAccessible(true);
+
+        ExportService target = AopTestUtils.getTargetObject(exportService);
+        assertThatThrownBy(() -> requesterScope.invoke(target, application, request))
+                .isInstanceOf(InvocationTargetException.class)
+                .hasCauseInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void applicantScopeExpansionStillUsesApprovedSelfBoundary() throws Exception {
+        long applicationId = approvedSensitiveAsSelf();
+        jdbc.update("UPDATE sys_role SET data_scope='ALL' WHERE role_id=?", SELF_ROLE);
+
+        String body = mvc.perform(post("/api/exports/sensitive/applications/" + applicationId + "/execute")
+                        .header("Authorization", bearer(token("admin")))
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"version\":2}"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        long logId = json.readTree(body).path("data").path("exportLogId").asLong();
+
+        assertThat(jdbc.queryForObject("SELECT row_count FROM data_export_log WHERE export_log_id=?", Integer.class, logId))
+                .isEqualTo(1);
+        String storedFilename = jdbc.queryForObject("SELECT stored_filename FROM data_export_log WHERE export_log_id=?",
+                String.class, logId);
+        try (var input = Files.newInputStream(Path.of("target/test-exports-audit").resolve(storedFilename));
+             Workbook workbook = new XSSFWorkbook(input)) {
+            assertThat(workbook.getSheetAt(0).getRow(1).getCell(0).getStringCellValue()).isEqualTo("本人范围人口");
+        }
+    }
+
+    @Test
+    void departmentScopedViewerCannotReadForeignExportLogDetail() throws Exception {
+        long logId = insertCompletedLog(8L, 8L, 6L, "120000", "{\"name\":\"其他部门\"}", "name,identityNo");
+
+        mvc.perform(get("/api/exports/" + logId).header("Authorization", bearer(token("audit-export-department"))))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/exports").param("exportNo", "AUDIT-LOG-")
+                        .header("Authorization", bearer(token("audit-export-department"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements").value(0));
+    }
+
+    @Test
+    void queryViewerCanReadAllScopedExportLogMetadataButCannotDownloadTheFile() throws Exception {
+        long logId = insertCompletedLog(SELF_USER, DEPARTMENT_USER, 2L, "110000",
+                "{\"name\":\"合成姓名\"}", "name,identityNo,phone");
+
+        mvc.perform(get("/api/exports/" + logId).header("Authorization", bearer(token("viewer"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.filterSnapshot").value("{\"name\":\"合成姓名\"}"))
+                .andExpect(jsonPath("$.data.exportedFields").value("name,identityNo,phone"));
+        mvc.perform(get("/api/exports").param("exportNo", "AUDIT-LOG-")
+                        .header("Authorization", bearer(token("viewer"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.content[0].filterSnapshot").value("{\"name\":\"合成姓名\"}"));
+        mvc.perform(get("/api/exports/" + logId + "/download")
+                        .header("Authorization", bearer(token("viewer"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void invalidApplicantScopeSnapshotIsRejectedBeforeSensitiveExport() throws Exception {
         long applicationId = createSensitive("audit-export-self");
         addExportMaterial(applicationId);
@@ -170,7 +311,8 @@ class ExportDataScopeAuditIntegrationTest {
                 "SELECT ?, permission_id FROM sys_permission WHERE permission_code IN " +
                 "('data:export:normal','data:export:sensitive:apply','application:submit')", SELF_ROLE);
         jdbc.update("INSERT INTO sys_role_permission(role_id,permission_id) " +
-                "SELECT ?, permission_id FROM sys_permission WHERE permission_code='data:export:normal'", DEPARTMENT_ROLE);
+                "SELECT ?, permission_id FROM sys_permission WHERE permission_code IN " +
+                "('data:export:normal','data:export:log:view')", DEPARTMENT_ROLE);
         String passwordHash = passwordEncoder.encode("123456");
         jdbc.update("INSERT INTO sys_user(user_id,username,password_hash,role_id,department_id,real_name,status) " +
                 "VALUES(?, 'audit-export-self', ?, ?, 2, '审计导出本人', 'ENABLED')," +
@@ -238,11 +380,12 @@ class ExportDataScopeAuditIntegrationTest {
     private void insertFloatingRows() {
         long[] apps = {FLOAT_APP_SELF, FLOAT_APP_DEPARTMENT, FLOAT_APP_REGION};
         long[] people = {PERSON_SELF, PERSON_DEPARTMENT, PERSON_REGION};
-        long[] operators = {SELF_USER, 2, 8};
+        long[] applicants = {SELF_USER, 2, 8};
+        long[] operators = {2, SELF_USER, 8};
         long[] departments = {2, 2, 6};
         String[] regions = {"110000", "110000", "120000"};
         for (int i = 0; i < apps.length; i++) {
-            insertApplication(apps[i], "AUDIT-FLOAT-" + i, "FLOATING_REGISTRATION", operators[i], departments[i],
+            insertApplication(apps[i], "AUDIT-FLOAT-" + i, "FLOATING_REGISTRATION", applicants[i], departments[i],
                     regions[i], people[i], null);
             jdbc.update("INSERT INTO floating_population(floating_id,registration_no,source_application_id,person_id," +
                     "source_region_code,current_region_code,current_address,residence_reason_code,residence_proof_type," +
@@ -258,11 +401,12 @@ class ExportDataScopeAuditIntegrationTest {
         long[] apps = {PERMIT_APP_SELF, PERMIT_APP_DEPARTMENT, PERMIT_APP_REGION};
         long[] floatings = {FLOAT_APP_SELF, FLOAT_APP_DEPARTMENT, FLOAT_APP_REGION};
         long[] people = {PERSON_SELF, PERSON_DEPARTMENT, PERSON_REGION};
-        long[] operators = {SELF_USER, 2, 8};
+        long[] applicants = {SELF_USER, 2, 8};
+        long[] operators = {2, SELF_USER, 8};
         long[] departments = {2, 2, 6};
         String[] regions = {"110000", "110000", "120000"};
         for (int i = 0; i < apps.length; i++) {
-            insertApplication(apps[i], "AUDIT-PERMIT-APP-" + i, "RESIDENCE_PERMIT_FIRST_ISSUE", operators[i],
+            insertApplication(apps[i], "AUDIT-PERMIT-APP-" + i, "RESIDENCE_PERMIT_FIRST_ISSUE", applicants[i],
                     departments[i], regions[i], people[i], null);
             jdbc.update("INSERT INTO residence_permit(permit_id,permit_no,person_id,floating_id,source_application_id," +
                     "issue_region_code,issuing_department_id,issuing_authority,issue_date,valid_from,valid_until,status,current_flag,version) " +
@@ -310,6 +454,66 @@ class ExportDataScopeAuditIntegrationTest {
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         return json.readTree(body).path("data").asLong();
+    }
+
+    private long approvedSensitiveAsAll() throws Exception {
+        jdbc.update("UPDATE sys_role SET data_scope='ALL' WHERE role_id=?", SELF_ROLE);
+        return approvedSensitiveAsSelf();
+    }
+
+    private long approvedSensitiveAsSelf() throws Exception {
+        long applicationId = createSensitive("audit-export-self");
+        addExportMaterial(applicationId);
+        submit(applicationId, "audit-export-self");
+        approve(applicationId);
+        return applicationId;
+    }
+
+    private void assertSensitiveExecutionRejectedWithoutSideEffects(long applicationId) throws Exception {
+        Set<String> filesBefore = exportFiles();
+        mvc.perform(post("/api/exports/sensitive/applications/" + applicationId + "/execute")
+                        .header("Authorization", bearer(token("admin")))
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"version\":2}"))
+                .andExpect(status().isConflict());
+        assertThat(jdbc.queryForObject("SELECT status FROM business_application WHERE application_id=?",
+                String.class, applicationId)).isEqualTo("APPROVED");
+        assertThat(jdbc.queryForObject("SELECT business_status FROM data_export_request WHERE application_id=?",
+                String.class, applicationId)).isEqualTo("APPROVED");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM data_export_log WHERE application_id=?",
+                Integer.class, applicationId)).isZero();
+        assertThat(exportFiles()).isEqualTo(filesBefore);
+    }
+
+    private Set<String> exportFiles() throws IOException {
+        Path directory = Path.of("target/test-exports-audit");
+        if (!Files.isDirectory(directory)) return Set.of();
+        try (Stream<Path> files = Files.list(directory)) {
+            return files.map(path -> path.getFileName().toString()).collect(Collectors.toCollection(HashSet::new));
+        }
+    }
+
+    private long insertCompletedLog(Long requestedBy, Long executedBy, Long departmentId,
+                                    String regionCode, String filters, String fields) {
+        DataExportLog log = new DataExportLog();
+        log.setExportNo("AUDIT-LOG-" + UUID.randomUUID());
+        log.setExportModule("PERSON");
+        log.setExportType("SENSITIVE_APPROVED");
+        log.setRequestedBy(requestedBy);
+        log.setExecutedBy(executedBy);
+        log.setDepartmentId(departmentId);
+        log.setRegionCode(regionCode);
+        log.setFilterSnapshot(filters);
+        log.setExportedFields(fields);
+        log.setFileName("合成审计.xlsx");
+        log.setStoredFilename(UUID.randomUUID() + ".xlsx");
+        log.setStoragePath("test-only");
+        mapper.insertLog(log);
+        log.setRowCount(1);
+        log.setFileSha256("a".repeat(64));
+        log.setFileSize(1L);
+        mapper.completeLog(log);
+        return log.getExportLogId();
     }
 
     private void addExportMaterial(long applicationId) {

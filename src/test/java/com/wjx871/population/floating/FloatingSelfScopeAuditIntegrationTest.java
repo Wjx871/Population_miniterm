@@ -44,7 +44,7 @@ class FloatingSelfScopeAuditIntegrationTest {
                 "VALUES(?, 'AUDIT_SELF_SCOPE', '审计模拟本人', 'L2', 'SELF', 'ENABLED')", ROLE_ID);
         jdbc.update("INSERT INTO sys_role_permission(role_id,permission_id) " +
                 "SELECT ?, permission_id FROM sys_permission WHERE permission_code IN " +
-                "('floating:view','floating:close','residence-permit:view','residence-permit:apply')", ROLE_ID);
+                "('floating:view','floating:close','residence-permit:view','residence-permit:apply','residence-permit:log:view')", ROLE_ID);
         String passwordHash = passwordEncoder.encode("123456");
         jdbc.update("INSERT INTO sys_user(user_id,username,password_hash,role_id,department_id,real_name,status) " +
                 "VALUES(?, 'audit-self-a', ?, ?, 2, '模拟本人甲', 'ENABLED')," +
@@ -63,8 +63,8 @@ class FloatingSelfScopeAuditIntegrationTest {
                 "DATE '2026-01-01', DATE '2026-07-11', DATE '2026-06-30', 2, ?, 'ACTIVE', 1, 0)," +
                 "(?, 'FR-SELF-B', ?, ?, '370100', '110000', '测试地址乙', 'EMPLOYMENT', 'RENTAL_CONTRACT'," +
                 "DATE '2026-01-01', DATE '2026-07-11', DATE '2026-06-30', 2, ?, 'ACTIVE', 1, 0)",
-                FLOATING_A, FLOAT_APP_A, USER_A, USER_A,
-                FLOATING_B, FLOAT_APP_B, USER_B, USER_B);
+                FLOATING_A, FLOAT_APP_A, USER_A, USER_B,
+                FLOATING_B, FLOAT_APP_B, USER_B, USER_A);
 
         insertApplication(PERMIT_A, "AUDIT-PERMIT-A", "RESIDENCE_PERMIT_FIRST_ISSUE", USER_A, USER_A);
         insertApplication(PERMIT_B, "AUDIT-PERMIT-B", "RESIDENCE_PERMIT_FIRST_ISSUE", USER_B, USER_B);
@@ -80,8 +80,8 @@ class FloatingSelfScopeAuditIntegrationTest {
                 "current_region_code,residence_basis_code,business_status,operator_id,version) " +
                 "VALUES(?, 'FIRST_ISSUE', ?, ?, ?, '110000', 'EMPLOYMENT', 'COMPLETED', ?, 0)," +
                 "(?, 'FIRST_ISSUE', ?, ?, ?, '110000', 'EMPLOYMENT', 'COMPLETED', ?, 0)",
-                PERMIT_A, FLOATING_A, PERMIT_A, USER_A, USER_A,
-                PERMIT_B, FLOATING_B, PERMIT_B, USER_B, USER_B);
+                PERMIT_A, FLOATING_A, PERMIT_A, USER_A, USER_B,
+                PERMIT_B, FLOATING_B, PERMIT_B, USER_B, USER_A);
     }
 
     @AfterEach
@@ -157,6 +157,25 @@ class FloatingSelfScopeAuditIntegrationTest {
     }
 
     @Test
+    void originalApplicantKeepsPermitAndHistoryWhenAnotherUserExecutedIt() throws Exception {
+        jdbc.update("INSERT INTO residence_permit_log(permit_id,application_id,action,from_status,to_status," +
+                        "new_valid_until,operator_id,reason,operation_time) " +
+                        "VALUES(?,?,'ISSUE',NULL,'ACTIVE',DATE '2027-07-11',?,'synthetic',CURRENT_TIMESTAMP)",
+                PERMIT_A, PERMIT_A, USER_B);
+        String applicant = bearer(token("audit-self-a"));
+        String executor = bearer(token("audit-self-b"));
+
+        mvc.perform(get("/api/residence-permits/" + PERMIT_A).header("Authorization", applicant))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/residence-permits/" + PERMIT_A).header("Authorization", executor))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/residence-permits/" + PERMIT_A + "/logs").header("Authorization", applicant))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/residence-permits/" + PERMIT_A + "/logs").header("Authorization", executor))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void selfUserCannotCloseAnotherUsersFloatingRegistration() throws Exception {
         mvc.perform(post("/api/floating-populations/" + FLOATING_B + "/close")
                         .header("Authorization", bearer(token("audit-self-a")))
@@ -165,6 +184,28 @@ class FloatingSelfScopeAuditIntegrationTest {
                 .andExpect(status().isForbidden());
         assertThat(jdbc.queryForObject("SELECT status FROM floating_population WHERE floating_id=?", String.class, FLOATING_B))
                 .isEqualTo("ACTIVE");
+    }
+
+    @Test
+    void originalApplicantCanCloseOwnFloatingRecordAfterAnotherUserExecutedIt() throws Exception {
+        mvc.perform(post("/api/floating-populations/" + FLOATING_A + "/close")
+                        .header("Authorization", bearer(token("audit-self-a")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reasonCode\":\"LEFT_REGION\",\"comment\":\"synthetic\",\"version\":0}"))
+                .andExpect(status().isOk());
+        assertThat(jdbc.queryForObject("SELECT status FROM floating_population WHERE floating_id=?", String.class, FLOATING_A))
+                .isEqualTo("LEFT");
+    }
+
+    @Test
+    void executionOperatorCannotStartPermitActionForAnotherApplicantsRecord() throws Exception {
+        mvc.perform(post("/api/residence-permits/applications/" + PERMIT_A + "/endorsement")
+                        .header("Authorization", bearer(token("audit-self-b")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"测试\",\"reason\":\"synthetic\"}"))
+                .andExpect(status().isForbidden());
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM business_application WHERE applicant_user_id=? " +
+                "AND business_type='RESIDENCE_PERMIT_ENDORSEMENT'", Integer.class, USER_B)).isZero();
     }
 
     @Test

@@ -9,6 +9,8 @@ import org.apache.ibatis.annotations.Param;
 public interface AuthMapper {
     Optional<SystemUser> selectByUsername(String username);
 
+    Optional<SystemUser> selectByUserId(Long userId);
+
     List<String> selectPermissionCodesByRoleId(Long roleId);
 
     /** 系统管理员始终加载全部启用权限，避免角色授权遗漏导致降权。 */

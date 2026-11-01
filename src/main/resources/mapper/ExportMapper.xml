@@ -83,7 +83,7 @@
       <choose>
         <when test="scope == null or scope.dataScope == null">AND 1=0</when>
         <when test="scope.dataScope.name() == 'ALL'"></when>
-        <when test="scope.dataScope.name() == 'SELF'">AND f.operator_id=#{scope.userId}</when>
+        <when test="scope.dataScope.name() == 'SELF'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.application_id=f.source_application_id AND a.applicant_user_id=#{scope.userId})</when>
         <when test="scope.dataScope.name() == 'DEPARTMENT'">AND f.department_id=#{scope.departmentId}</when>
         <when test="scope.dataScope.name() == 'REGION'">AND SUBSTRING(f.current_region_code,1,2)=SUBSTRING(#{scope.regionCode},1,2)</when>
         <otherwise>AND 1=0</otherwise>
@@ -95,7 +95,7 @@
       <choose>
         <when test="scope == null or scope.dataScope == null">AND 1=0</when>
         <when test="scope.dataScope.name() == 'ALL'"></when>
-        <when test="scope.dataScope.name() == 'SELF'">AND EXISTS(SELECT 1 FROM residence_permit_application pa WHERE pa.application_id=rp.source_application_id AND pa.operator_id=#{scope.userId})</when>
+        <when test="scope.dataScope.name() == 'SELF'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.application_id=rp.source_application_id AND a.applicant_user_id=#{scope.userId})</when>
         <when test="scope.dataScope.name() == 'DEPARTMENT'">AND rp.issuing_department_id=#{scope.departmentId}</when>
         <when test="scope.dataScope.name() == 'REGION'">AND SUBSTRING(rp.issue_region_code,1,2)=SUBSTRING(#{scope.regionCode},1,2)</when>
         <otherwise>AND 1=0</otherwise>

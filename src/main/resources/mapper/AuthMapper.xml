@@ -32,6 +32,17 @@
         WHERE u.username = #{username}
     </select>
 
+    <select id="selectByUserId" resultMap="SystemUserMap">
+        SELECT u.user_id, u.username, u.password_hash, u.role_id, u.department_id,
+               u.real_name, u.phone, u.status AS user_status, u.last_login_time, u.last_login_ip,
+               r.role_code, r.role_name, r.role_level, r.data_scope, r.status AS role_status,
+               d.department_name, d.region_code
+        FROM sys_user u
+        JOIN sys_role r ON r.role_id = u.role_id
+        LEFT JOIN sys_department d ON d.department_id = u.department_id
+        WHERE u.user_id = #{userId}
+    </select>
+
     <select id="selectPermissionCodesByRoleId" resultType="string">
         SELECT p.permission_code
         FROM sys_permission p

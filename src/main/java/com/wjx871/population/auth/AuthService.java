@@ -59,6 +59,16 @@ public class AuthService implements UserDetailsService {
         return toAuthenticatedUser(user);
     }
 
+    @Transactional(readOnly = true)
+    public AuthenticatedUser loadUserById(Long userId) {
+        SystemUser user = authMapper.selectByUserId(userId)
+                .orElseThrow(() -> new BusinessException(HttpStatus.FORBIDDEN, "申请人当前授权无法验证"));
+        if (!"ENABLED".equals(user.getStatus()) || !"ENABLED".equals(user.getRoleStatus())) {
+            throw new BusinessException(HttpStatus.FORBIDDEN, "申请人账号或角色已停用");
+        }
+        return toAuthenticatedUser(user);
+    }
+
     @Override
     public UserDetails loadUserByUsername(String username) {
         return loadUser(username);
