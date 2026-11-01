@@ -7,7 +7,7 @@
 | 仓库 | `Wjx871/Population_miniterm` |
 | 基线提交 | `caf3f9aabd89467df78bf3dbb0eb1ad6f5b0ddbc` (`origin/main`) |
 | 测试分支 | `test/20261101-backend-deep-regression` |
-| 工作区 | 独立 worktree；原 `main` 工作区未修改 |
+| 工作区 | 独立 worktree；原 `main` 的已跟踪文件未修改 |
 | Java | 项目编译目标 Java 17；本机运行时 Java 21.0.7 |
 | Maven | Wrapper 3.9.16 |
 | Spring Boot | 3.5.3 |
@@ -16,6 +16,8 @@
 | OCR | 本地 Mock HTTP stub；未访问外部 OCR 服务 |
 
 本次仅修改 `src/test/java/` 和 `doc/testing/`。未修改 `src/main/`、正式 SQL、前端或运维文件。测试数据使用合成值。
+
+原 `main` 工作区最初发现的未跟踪素材（含 `素材/`、`小学期/`、`ocr识别/`、`convert_*.py`、`temp_table.txt` 和 civicpulse 图片）均已逐项确认仍在磁盘。当前本地 `.git/info/exclude` 含有这些路径的忽略规则，因此它们不再显示在 `git status`；该本地排除文件未纳入本次提交，素材没有被删除、移动或提交。
 
 ## B. 四轮测试结果
 
