@@ -255,6 +255,84 @@ class ExportDataScopeAuditIntegrationTest {
     }
 
     @Test
+    void selfHistoryOutsideCurrentDepartmentIsNotAuthorizedByScopeRank() throws Exception {
+        jdbc.update("UPDATE business_application SET applicant_user_id=?,applicant_region_code='120000' " +
+                "WHERE application_id=?", SELF_USER, BASE_APP_REGION);
+        long applicationId = approvedSensitive("audit-export-self", Map.of());
+        Set<String> approvedRows = namesFor(new DataScopeCriteria(DataScope.SELF, SELF_USER, 2L, "110000"));
+        Set<String> currentDepartmentRows = namesFor(
+                new DataScopeCriteria(DataScope.DEPARTMENT, SELF_USER, 2L, "110000"));
+        assertThat(approvedRows).contains("外区人口");
+        assertThat(currentDepartmentRows).doesNotContain("外区人口");
+        jdbc.update("UPDATE sys_role SET data_scope='DEPARTMENT' WHERE role_id=?", SELF_ROLE);
+
+        assertSensitiveExecutionRejectedWithoutSideEffects(applicationId);
+    }
+
+    @Test
+    void selfHistoryOutsideCurrentRegionIsNotAuthorizedByScopeRank() throws Exception {
+        jdbc.update("UPDATE business_application SET applicant_user_id=?,applicant_region_code='120000' " +
+                "WHERE application_id=?", SELF_USER, BASE_APP_REGION);
+        long applicationId = approvedSensitive("audit-export-self", Map.of());
+        Set<String> approvedRows = namesFor(new DataScopeCriteria(DataScope.SELF, SELF_USER, 2L, "110000"));
+        Set<String> currentRegionRows = namesFor(
+                new DataScopeCriteria(DataScope.REGION, SELF_USER, 2L, "110000"));
+        assertThat(approvedRows).contains("外区人口");
+        assertThat(currentRegionRows).doesNotContain("外区人口");
+        jdbc.update("UPDATE sys_role SET data_scope='REGION' WHERE role_id=?", SELF_ROLE);
+
+        assertSensitiveExecutionRejectedWithoutSideEffects(applicationId);
+    }
+
+    @Test
+    void departmentHistoryOutsideCurrentRegionIsNotAuthorizedByScopeRank() throws Exception {
+        jdbc.update("INSERT INTO sys_role_permission(role_id,permission_id) " +
+                "SELECT ?, permission_id FROM sys_permission WHERE permission_code IN " +
+                "('data:export:sensitive:apply','application:submit')", DEPARTMENT_ROLE);
+        jdbc.update("UPDATE business_application SET applicant_region_code='120000' " +
+                "WHERE target_person_id=? AND applicant_department_id=2", PERSON_DEPARTMENT);
+        jdbc.update("UPDATE residence SET region_code='120000' WHERE person_id=?", PERSON_DEPARTMENT);
+        long applicationId = approvedSensitive("audit-export-department", Map.of());
+        Set<String> approvedRows = namesFor(new DataScopeCriteria(DataScope.DEPARTMENT, DEPARTMENT_USER, 2L, "110000"));
+        Set<String> currentRegionRows = namesFor(
+                new DataScopeCriteria(DataScope.REGION, DEPARTMENT_USER, 2L, "110000"));
+        assertThat(approvedRows).contains("同部门人口");
+        assertThat(currentRegionRows).doesNotContain("同部门人口");
+        jdbc.update("UPDATE sys_role SET data_scope='REGION' WHERE role_id=?", DEPARTMENT_ROLE);
+
+        assertSensitiveExecutionRejectedWithoutSideEffects(applicationId);
+    }
+
+    @Test
+    void regionToAllExpansionKeepsTheOriginalRegionBoundary() throws Exception {
+        jdbc.update("UPDATE sys_role SET data_scope='REGION' WHERE role_id=?", SELF_ROLE);
+        long applicationId = approvedSensitive("audit-export-self", Map.of());
+        Set<String> approvedRows = namesFor(new DataScopeCriteria(DataScope.REGION, SELF_USER, 2L, "110000"));
+        assertThat(approvedRows).contains("本人范围人口", "同部门人口").doesNotContain("外区人口");
+        jdbc.update("UPDATE sys_role SET data_scope='ALL' WHERE role_id=?", SELF_ROLE);
+
+        String body = mvc.perform(post("/api/exports/sensitive/applications/" + applicationId + "/execute")
+                        .header("Authorization", bearer(token("admin")))
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"version\":2}"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        long logId = json.readTree(body).path("data").path("exportLogId").asLong();
+        assertThat(jdbc.queryForObject("SELECT row_count FROM data_export_log WHERE export_log_id=?",
+                Integer.class, logId)).isEqualTo(approvedRows.size());
+        String storedFilename = jdbc.queryForObject("SELECT stored_filename FROM data_export_log WHERE export_log_id=?",
+                String.class, logId);
+        try (var input = Files.newInputStream(Path.of("target/test-exports-audit").resolve(storedFilename));
+             Workbook workbook = new XSSFWorkbook(input)) {
+            Set<String> exportedNames = new HashSet<>();
+            for (int row = 1; row <= workbook.getSheetAt(0).getLastRowNum(); row++) {
+                exportedNames.add(workbook.getSheetAt(0).getRow(row).getCell(0).getStringCellValue());
+            }
+            assertThat(exportedNames).isEqualTo(approvedRows);
+        }
+    }
+
+    @Test
     void departmentScopedViewerCannotReadForeignExportLogDetail() throws Exception {
         long logId = insertCompletedLog(8L, 8L, 6L, "120000", "{\"name\":\"其他部门\"}", "name,identityNo");
 
@@ -445,12 +523,16 @@ class ExportDataScopeAuditIntegrationTest {
     }
 
     private long createSensitive(String username) throws Exception {
+        return createSensitive(username, Map.of("regionCode", "110000"));
+    }
+
+    private long createSensitive(String username, Map<String, Object> filters) throws Exception {
         String body = mvc.perform(post("/api/exports/sensitive/applications")
                         .header("Authorization", bearer(token(username)))
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-                        .content("{\"module\":\"PERSON\",\"filters\":{\"regionCode\":\"110000\"}," +
-                                "\"fields\":[\"name\",\"identityNo\",\"phone\",\"registeredAddress\"]," +
-                                "\"reason\":\"synthetic audit\",\"expectedRowLimit\":10,\"title\":\"审计敏感导出\"}"))
+                        .content(json.writeValueAsString(Map.of("module", "PERSON", "filters", filters,
+                                "fields", List.of("name", "identityNo", "phone", "registeredAddress"),
+                                "reason", "synthetic audit", "expectedRowLimit", 10, "title", "审计敏感导出"))))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         return json.readTree(body).path("data").asLong();
@@ -462,11 +544,23 @@ class ExportDataScopeAuditIntegrationTest {
     }
 
     private long approvedSensitiveAsSelf() throws Exception {
-        long applicationId = createSensitive("audit-export-self");
+        return approvedSensitive("audit-export-self", Map.of("regionCode", "110000"));
+    }
+
+    private long approvedSensitive(String username, Map<String, Object> filters) throws Exception {
+        long applicationId = createSensitive(username, filters);
         addExportMaterial(applicationId);
-        submit(applicationId, "audit-export-self");
+        submit(applicationId, username);
         approve(applicationId);
         return applicationId;
+    }
+
+    private Set<String> namesFor(DataScopeCriteria scope) {
+        return mapper.selectRows("PERSON", Map.of(), scope, 20).stream()
+                .map(row -> row.entrySet().stream()
+                        .filter(entry -> "name".equalsIgnoreCase(entry.getKey()))
+                        .map(Map.Entry::getValue).findFirst().map(String::valueOf).orElse(""))
+                .collect(Collectors.toSet());
     }
 
     private void assertSensitiveExecutionRejectedWithoutSideEffects(long applicationId) throws Exception {
