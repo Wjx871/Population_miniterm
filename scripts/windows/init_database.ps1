@@ -156,7 +156,7 @@ function Assert-MySqlZeroResult {
 
 function Invoke-Verify {
     if (-not (Test-DatabaseExists)) { throw "目标数据库不存在：$Database" }
-    $requiredTables = @('person','household','residence','business_application','sys_approval_request','cancellation_record','household_archive','floating_registration_application','residence_permit','data_export_request','data_export_log','admin_region','data_dictionary','key_population','key_population_application','key_population_history','operation_log','login_log')
+    $requiredTables = @('person','household','residence','business_application','sys_approval_request','cancellation_record','household_archive','floating_registration_application','residence_permit','data_export_request','data_export_log','admin_region','data_dictionary','key_population','key_population_application','key_population_history','operation_log')
     $requiredRoles = @('QUERY_VIEWER','POPULATION_MANAGER','HOUSEHOLD_MANAGER','APPROVER','SYSTEM_ADMIN')
     $requiredPermissions = @('application:view','migration:view','cancellation:view','floating:view','residence-permit:view','data:export:normal','data:export:log:view','region:view','dictionary:view','certificate:view','key-population:view','log:view')
     $requiredIndexes = @('idx_key_population_query','idx_household_member_person_status','idx_household_member_household_status','idx_person_query','idx_operation_log_query','idx_migration_in_query','idx_migration_out_query')

@@ -20,7 +20,7 @@ class BackendV1ReleaseAuditTest {
                 .doesNotContain("@DeleteMapping");
     }
     @Test void requiredMigrationsArePresent() {
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= 13; i++) {
             String prefix = "V4_%03d_".formatted(i);
             assertThat(files(ROOT.resolve("doc/database/migrations")).stream()
                     .anyMatch(path -> path.getFileName().toString().startsWith(prefix))).isTrue();
@@ -60,6 +60,22 @@ class BackendV1ReleaseAuditTest {
         String demo = Files.readString(ROOT.resolve("doc/database/demo_data.sql"));
         assertThat(demo).contains("'RESIDENCE_PERMIT_FIRST_ISSUE'", "'ACTIVE',1")
                 .doesNotContain("'RESIDENCE_PERMIT_APPLICATION'", "'VALID',1");
+    }
+    @Test void mysqlVerifierMatchesCurrentSchemaAndKeepsCoreConsistencyChecks() throws Exception {
+        String verifyScript = Files.readString(ROOT.resolve("scripts/windows/init_database.ps1"));
+        String consistencySql = Files.readString(ROOT.resolve("doc/database/check_backend_v1.sql"));
+        String schema = Files.readString(ROOT.resolve("doc/database/population_miniterm.sql"));
+        String migrations = text(ROOT.resolve("doc/database/migrations"));
+        String production = text(ROOT.resolve("src/main/java"));
+
+        assertThat(verifyScript).contains("'operation_log'").doesNotContain("'login_log'");
+        assertThat(consistencySql).contains("'required_table_missing'", "'required_column_missing'",
+                "'required_index_missing'", "'orphan_residence_person'", "'orphan_member_household'",
+                "'multiple_active_residence'", "'completed_migration_without_application'")
+                .doesNotContain("'login_log'");
+        assertThat(schema + migrations + production).doesNotContain("CREATE TABLE login_log", "login_log");
+        assertThat(consistencySql).contains("'invalid_household_head'", "h.head_person_id IS NULL AND EXISTS",
+                "h.head_person_id IS NOT NULL", "m.relationship='HEAD'");
     }
     private static String text(Path root) throws IOException {
         StringBuilder result = new StringBuilder();
