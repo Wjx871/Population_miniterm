@@ -71,13 +71,15 @@ public class OptionalRedisService {
     }
     public boolean ping() {
         if (!enabled()) return false;
-        try { return "PONG".equalsIgnoreCase(redis.getConnectionFactory().getConnection().ping()); }
+        try (var connection = redis.getConnectionFactory().getConnection()) {
+            return connection != null && "PONG".equalsIgnoreCase(connection.ping());
+        }
         catch (RuntimeException ex) { warn(ex); return false; }
     }
     private void warn(Exception ex) {
         long now = System.currentTimeMillis(), previous = lastWarning.get();
         if (now - previous >= WARNING_INTERVAL_MS && lastWarning.compareAndSet(previous, now)) {
-            log.warn("Redis unavailable; falling back to MySQL/local mode: {}", ex.getMessage());
+            log.warn("Redis unavailable; falling back to MySQL/local mode");
         }
     }
 }
