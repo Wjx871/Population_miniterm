@@ -6,6 +6,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -17,6 +19,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
@@ -227,8 +232,16 @@ class MySql84CriticalAcceptanceIT {
             long deadlocksBefore = mysqlErrorCount(settings(), 1213);
             CountDownLatch ready = new CountDownLatch(2);
             CountDownLatch start = new CountDownLatch(1);
+            CountDownLatch observerReady = new CountDownLatch(1);
+            AtomicBoolean observeLocks = new AtomicBoolean(true);
+            ConcurrentLinkedQueue<String> lockWaitSamples = new ConcurrentLinkedQueue<>();
+            AtomicReference<String> observerFailure = new AtomicReference<>();
             ExecutorService executor = Executors.newFixedThreadPool(2);
+            ExecutorService observerExecutor = Executors.newSingleThreadExecutor();
+            Future<?> observer = observerExecutor.submit(() -> captureLockWaits(
+                    settings(), settings().database(), observeLocks, observerReady, lockWaitSamples, observerFailure));
             try {
+                assertThat(observerReady.await(10, TimeUnit.SECONDS)).isTrue();
                 String householdToken = token("household");
                 int outVersion = migrationVersion(out, "migration_out");
                 int inVersion = migrationVersion(inbound, "migration_in");
@@ -242,53 +255,230 @@ class MySql84CriticalAcceptanceIT {
                 start.countDown();
                 Execution outResult = outFuture.get(30, TimeUnit.SECONDS);
                 Execution inResult = inFuture.get(30, TimeUnit.SECONDS);
+                observeLocks.set(false);
+                observer.get(10, TimeUnit.SECONDS);
                 assertThat(outResult.threadId()).isNotEqualTo(inResult.threadId());
-                String outcome = assertRaceInvariant(household, head, inboundPerson, out, inbound);
-                System.out.printf("ATOMICITY_PASS run=%d outcome=%s household=%d%n", run, outcome, household);
+                String outcome;
+                try {
+                    outcome = assertRaceInvariant(household, head, inboundPerson, out, inbound);
+                    System.out.printf("ATOMICITY_PASS run=%d outcome=%s household=%d%n", run, outcome, household);
+                } catch (AssertionError failure) {
+                    System.out.printf("ATOMICITY_FAIL run=%d household=%d%n", run, household);
+                    System.out.printf("RELIABILITY_FAIL run=%d reason=database_invariant%n", run);
+                    throw failure;
+                }
+                if (observerFailure.get() != null) {
+                    System.out.printf("PFS_LOCK_WAIT_SAMPLER_UNAVAILABLE type=%s%n", observerFailure.get());
+                } else if (lockWaitSamples.isEmpty()) {
+                    System.out.printf("PFS_LOCK_WAIT_SAMPLES run=%d count=0%n", run);
+                } else {
+                    for (String sample : lockWaitSamples.stream().distinct().limit(24).toList()) {
+                        System.out.printf("PFS_LOCK_WAIT_SAMPLE run=%d %s%n", run, sample);
+                    }
+                }
+                if (observerFailure.get() != null) {
+                    System.out.printf("RELIABILITY_FAIL run=%d reason=performance_schema_lock_wait_observer_unavailable type=%s%n",
+                            run, observerFailure.get());
+                    assertThat(observerFailure.get()).as("performance_schema lock-wait observer must run").isNull();
+                }
 
                 boolean hasHttp500 = outResult.httpStatus() == 500 || inResult.httpStatus() == 500;
+                boolean reliabilityFailAlreadyPrinted = hasHttp500;
                 if (hasHttp500) {
                     long deadlocksAfter = mysqlErrorCount(settings(), 1213);
                     ErrorStatement deadlock = deadlocksAfter > deadlocksBefore
                             ? mysqlErrorStatement(settings(), 1213, "40001") : null;
-                    System.out.printf("RELIABILITY_FAIL run=%d http=[%d,%d] mysql1213=%s mysqlState=%s mysqlThread=%s%n",
+                    System.out.printf("RELIABILITY_FAIL run=%d http=[%d,%d] mysql1213=%s mysqlState=%s mysqlThread=%s mysqlConnection=%s sql=%s%n",
                             run, outResult.httpStatus(), inResult.httpStatus(), deadlocksAfter > deadlocksBefore,
                             deadlock == null ? "unknown" : deadlock.sqlState(),
-                            deadlock == null ? "unknown" : deadlock.threadId());
+                            deadlock == null ? "unknown" : deadlock.threadId(),
+                            deadlock == null ? "unknown" : deadlock.processlistId(),
+                            deadlock == null ? "unknown" : redactSql(deadlock.sqlText()));
+                    if (deadlock != null) logLatestDeadlock(settings(), run);
                 }
-                assertThat(List.of(outResult.httpStatus(), inResult.httpStatus()))
-                        .as("HTTP 500 is not a successful business outcome; response bodies: [%s] [%s]",
-                                outResult.responseBody(), inResult.responseBody())
-                        .allMatch(status -> status == 200 || status == 409);
-                assertThat(outResult.httpStatus() == 200 && inResult.httpStatus() == 200)
-                        .as("both competing transactions must not commit")
-                        .isFalse();
-                assertThat(outResult.httpStatus() == 200 || inResult.httpStatus() == 200)
-                        .as("at least one legal execution or explicit retry must make progress")
-                        .isTrue();
-                assertExecutionAudit(out, outResult.httpStatus() == 200);
-                assertExecutionAudit(inbound, inResult.httpStatus() == 200);
+                try {
+                    assertThat(List.of(outResult.httpStatus(), inResult.httpStatus()))
+                            .as("HTTP 500 is not a successful business outcome; response bodies: [%s] [%s]",
+                                    outResult.responseBody(), inResult.responseBody())
+                            .allMatch(status -> status == 200 || status == 409);
+                    assertThat(outResult.httpStatus() == 200 && inResult.httpStatus() == 200)
+                            .as("both competing transactions must not commit")
+                            .isFalse();
+                    assertThat(outResult.httpStatus() == 200).isEqualTo("OUT_COMMITTED".equals(outcome));
+                    assertThat(inResult.httpStatus() == 200).isEqualTo("IN_COMMITTED".equals(outcome));
+                    assertExecutionAudit(out, outResult.httpStatus() == 200);
+                    assertExecutionAudit(inbound, inResult.httpStatus() == 200);
 
-                if (outResult.httpStatus() == 409 && inResult.httpStatus() == 409
-                        && "ACTIVE".equals(jdbc.queryForObject("SELECT status FROM household WHERE household_id=?", String.class, household))) {
-                    int retryVersion = migrationVersion(inbound, "migration_in");
-                    execute("/api/migrations/in/applications/" + inbound + "/execute", 200,
-                            householdToken, retryVersion);
-                    assertRaceInvariant(household, head, inboundPerson, out, inbound);
-                    assertExecutionAudit(inbound, true);
-                }
+                    boolean explicitRetrySucceeded = false;
+                    if (outResult.httpStatus() == 409 && inResult.httpStatus() == 409
+                            && "ACTIVE".equals(jdbc.queryForObject("SELECT status FROM household WHERE household_id=?", String.class, household))) {
+                        int retryVersion = migrationVersion(inbound, "migration_in");
+                        execute("/api/migrations/in/applications/" + inbound + "/execute", 200,
+                                householdToken, retryVersion);
+                        assertRaceInvariant(household, head, inboundPerson, out, inbound);
+                        assertExecutionAudit(inbound, true);
+                        explicitRetrySucceeded = true;
+                    }
+                    assertThat(outResult.httpStatus() == 200 || inResult.httpStatus() == 200 || explicitRetrySucceeded)
+                            .as("at least one legal execution or explicit retry must make progress")
+                            .isTrue();
+                    long deadlocksAfterForResponse = mysqlErrorCount(settings(), 1213);
+                    if (deadlocksAfterForResponse > deadlocksBefore) {
+                        String safeDeadlockMessage = "业务数据正在被并发修改，请刷新后重试";
+                        assertThat(List.of(outResult, inResult).stream()
+                                .filter(result -> result.httpStatus() == 409)
+                                .anyMatch(result -> result.responseBody().contains(safeDeadlockMessage)))
+                                .as("a confirmed MySQL 1213/40001 response must be a safe business conflict")
+                                .isTrue();
+                    }
 
-                String failureEvidence = "none";
-                long deadlocksAfter = mysqlErrorCount(settings(), 1213);
-                if (deadlocksAfter > deadlocksBefore) {
-                    ErrorStatement deadlock = mysqlErrorStatement(settings(), 1213, "40001");
-                    failureEvidence = "MYSQL_DEADLOCK_SQLSTATE=" + deadlock.sqlState() + "_ERRNO=" + deadlock.mysqlErrno() + "_THREAD=" + deadlock.threadId();
+                    String failureEvidence = "none";
+                    long deadlocksAfter = mysqlErrorCount(settings(), 1213);
+                    if (deadlocksAfter > deadlocksBefore) {
+                        ErrorStatement deadlock = mysqlErrorStatement(settings(), 1213, "40001");
+                        failureEvidence = "MYSQL_DEADLOCK_SQLSTATE=" + deadlock.sqlState() + "_ERRNO=" + deadlock.mysqlErrno() + "_THREAD=" + deadlock.threadId();
+                    }
+                    System.out.printf("RELIABILITY_PASS run=%d isolation=%s workerThreads=[%d,%d] http=[%d,%d] rejected=%s%n",
+                            run, isolation, outResult.threadId(), inResult.threadId(), outResult.httpStatus(),
+                            inResult.httpStatus(), failureEvidence);
+                } catch (AssertionError failure) {
+                    if (!reliabilityFailAlreadyPrinted) {
+                        System.out.printf("RELIABILITY_FAIL run=%d reason=reliability_assertion%n", run);
+                    }
+                    throw failure;
                 }
-                System.out.printf("RELIABILITY_PASS run=%d isolation=%s workerThreads=[%d,%d] http=[%d,%d] rejected=%s%n",
-                        run, isolation, outResult.threadId(), inResult.threadId(), outResult.httpStatus(),
-                        inResult.httpStatus(), failureEvidence);
             } finally {
+                observeLocks.set(false);
+                observerExecutor.shutdownNow();
                 executor.shutdownNow();
+            }
+        }
+    }
+
+    @Test
+    void duplicateOutExecutionIsIdempotentAcrossConcurrentAndExplicitRetry() throws Exception {
+        long head = createPerson("REGISTERED");
+        long household = createHousehold(head);
+        addMember(household, head, "HEAD");
+        addResidence(household, head);
+        long out = createApprovedOut(head, null);
+        String householdToken = token("household");
+        int version = migrationVersion(out, "migration_out");
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            String path = "/api/migrations/out/applications/" + out + "/execute";
+            Future<Execution> first = executor.submit(() -> raceExecute(ready, start, path, householdToken, version));
+            Future<Execution> second = executor.submit(() -> raceExecute(ready, start, path, householdToken, version));
+            assertThat(ready.await(10, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+            Execution firstResult = first.get(30, TimeUnit.SECONDS);
+            Execution secondResult = second.get(30, TimeUnit.SECONDS);
+            assertThat(firstResult.threadId()).isNotEqualTo(secondResult.threadId());
+            assertThat(List.of(firstResult.httpStatus(), secondResult.httpStatus())).containsExactlyInAnyOrder(200, 409);
+            assertThat(List.of(firstResult, secondResult).stream().filter(x -> x.httpStatus() == 409)
+                    .allMatch(x -> !x.responseBody().contains("SQLSTATE") && !x.responseBody().contains("SQL syntax"))).isTrue();
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertThat(jdbc.queryForObject("SELECT status FROM business_application WHERE application_id=?", String.class, out)).isEqualTo("COMPLETED");
+        assertThat(jdbc.queryForObject("SELECT business_status FROM migration_out WHERE application_id=?", String.class, out)).isEqualTo("COMPLETED");
+        assertThat(jdbc.queryForObject("SELECT status FROM household WHERE household_id=?", String.class, household)).isEqualTo("PENDING_CANCELLATION");
+        assertThat(jdbc.queryForObject("SELECT head_person_id FROM household WHERE household_id=?", Long.class, household)).isNull();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=? AND status='ACTIVE'", Integer.class, household)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence WHERE household_id=? AND status='ACTIVE'", Integer.class, household)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence_archive WHERE application_id=?", Integer.class, out)).isOne();
+        assertExecutionAudit(out, true);
+
+        MvcResult retry = mvc.perform(post("/api/migrations/out/applications/" + out + "/execute")
+                .header("Authorization", "Bearer " + householdToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":" + version + "}")).andReturn();
+        assertThat(retry.getResponse().getStatus()).isEqualTo(409);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence_archive WHERE application_id=?", Integer.class, out)).isOne();
+        assertExecutionAudit(out, true);
+        System.out.println("RELIABILITY_PASS duplicate migration-out execution: concurrent [200,409], explicit retry=409, archive/audit=1.");
+    }
+
+    @Test
+    void correctExplicitRetryAfterVersionConflictCompletesMigrationIn() throws Exception {
+        long head = createPerson("REGISTERED");
+        long inboundPerson = createPerson("MIGRATED_OUT");
+        long household = createHousehold(head);
+        addMember(household, head, "HEAD");
+        addResidence(household, head);
+        long inbound = createApprovedIn(inboundPerson, household);
+        String householdToken = token("household");
+        int version = migrationVersion(inbound, "migration_in");
+
+        execute("/api/migrations/in/applications/" + inbound + "/execute", 409, householdToken, version + 1);
+        assertThat(jdbc.queryForObject("SELECT status FROM business_application WHERE application_id=?", String.class, inbound)).isEqualTo("APPROVED");
+        assertThat(jdbc.queryForObject("SELECT business_status FROM migration_in WHERE application_id=?", String.class, inbound)).isEqualTo("APPROVED");
+        assertThat(jdbc.queryForObject("SELECT status FROM household WHERE household_id=?", String.class, household)).isEqualTo("ACTIVE");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=? AND status='ACTIVE'", Integer.class, household)).isOne();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence WHERE household_id=? AND status='ACTIVE'", Integer.class, household)).isOne();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=? AND person_id=? AND status='ACTIVE'", Integer.class, household, inboundPerson)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence WHERE person_id=? AND status='ACTIVE'", Integer.class, inboundPerson)).isZero();
+        assertExecutionAudit(inbound, false);
+
+        execute("/api/migrations/in/applications/" + inbound + "/execute", 200, householdToken, version);
+        assertApplicationCompleted(inbound);
+        assertThat(jdbc.queryForObject("SELECT business_status FROM migration_in WHERE application_id=?", String.class, inbound)).isEqualTo("COMPLETED");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=? AND status='ACTIVE'", Integer.class, household)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence WHERE household_id=? AND status='ACTIVE'", Integer.class, household)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT status FROM household WHERE household_id=?", String.class, household)).isEqualTo("ACTIVE");
+        assertHeadInvariant(household, head, 1);
+        assertExecutionAudit(inbound, true);
+        System.out.println("RELIABILITY_PASS migration-in retry after stale-version HTTP 409: retry HTTP 200; no first-attempt writes/audit.");
+    }
+
+    @Test
+    void migrationOutInjectedSqlFailureRollsBackEveryBusinessWrite() throws Exception {
+        long head = createPerson("REGISTERED");
+        long household = createHousehold(head);
+        addMember(household, head, "HEAD");
+        addResidence(household, head);
+        long out = createApprovedOut(head, null);
+        GateSettings gate = settings();
+        String trigger = "gate_fail_migration_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        enableStatementErrorHistory(gate);
+        long errorsBefore = mysqlErrorCount(gate, 1644);
+        try (Connection admin = DriverManager.getConnection(gate.url(), gate.adminUser(), gate.adminPassword());
+             Statement statement = admin.createStatement()) {
+            statement.execute("CREATE TRIGGER " + trigger + " BEFORE UPDATE ON person FOR EACH ROW " +
+                    "BEGIN IF NEW.person_id=" + head + " AND NEW.current_status_code='MIGRATED_OUT' THEN " +
+                    "SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO=1644, MESSAGE_TEXT='synthetic migration failure'; " +
+                    "END IF; END");
+        }
+
+        try {
+            MvcResult result = mvc.perform(post("/api/migrations/out/applications/" + out + "/execute")
+                    .header("Authorization", "Bearer " + token("household")).contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"version\":" + migrationVersion(out, "migration_out") + "}")).andReturn();
+            assertThat(result.getResponse().getStatus()).isEqualTo(500);
+            assertThat(result.getResponse().getContentAsString()).contains("服务器处理请求失败")
+                    .doesNotContain("synthetic migration failure", "45000", "1644", "UPDATE person");
+            assertThat(jdbc.queryForObject("SELECT status FROM business_application WHERE application_id=?", String.class, out)).isEqualTo("APPROVED");
+            assertThat(jdbc.queryForObject("SELECT business_status FROM migration_out WHERE application_id=?", String.class, out)).isEqualTo("APPROVED");
+            assertThat(jdbc.queryForObject("SELECT status FROM household WHERE household_id=?", String.class, household)).isEqualTo("ACTIVE");
+            assertThat(jdbc.queryForObject("SELECT head_person_id FROM household WHERE household_id=?", Long.class, household)).isEqualTo(head);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=? AND person_id=? AND status='ACTIVE' AND relationship='HEAD'", Integer.class, household, head)).isOne();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence WHERE household_id=? AND person_id=? AND status='ACTIVE'", Integer.class, household, head)).isOne();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence_archive WHERE application_id=?", Integer.class, out)).isZero();
+            assertThat(jdbc.queryForObject("SELECT current_status_code FROM person WHERE person_id=?", String.class, head)).isEqualTo("REGISTERED");
+            assertExecutionAudit(out, false);
+            long errorsAfter = mysqlErrorCount(gate, 1644);
+            assertThat(errorsAfter).isGreaterThan(errorsBefore);
+            ErrorStatement error = mysqlErrorStatement(gate, 1644, "45000");
+            assertThat(error.mysqlErrno()).isEqualTo(1644);
+            assertThat(error.sqlState()).isEqualTo("45000");
+            System.out.printf("ATOMICITY_PASS migration fault-injection http=%d SQLSTATE=%s MYSQL_ERRNO=%d mysqlThread=%d mysqlConnection=%d archive=0 app=APPROVED household=ACTIVE%n",
+                    result.getResponse().getStatus(), error.sqlState(), error.mysqlErrno(), error.threadId(), error.processlistId());
+        } finally {
+            try (Connection admin = DriverManager.getConnection(gate.url(), gate.adminUser(), gate.adminPassword());
+                 Statement statement = admin.createStatement()) {
+                statement.execute("DROP TRIGGER IF EXISTS " + trigger);
             }
         }
     }
@@ -357,6 +547,63 @@ class MySql84CriticalAcceptanceIT {
         return new Execution(threadId, result.getResponse().getStatus(), result.getResponse().getContentAsString());
     }
 
+    private void captureLockWaits(GateSettings gate, String schema, AtomicBoolean active, CountDownLatch ready,
+                                  ConcurrentLinkedQueue<String> samples, AtomicReference<String> failure) {
+        String sql = "SELECT req_thread.PROCESSLIST_ID,req.OBJECT_NAME,req.INDEX_NAME,req.LOCK_TYPE,req.LOCK_MODE," +
+                "block_thread.PROCESSLIST_ID,block.OBJECT_NAME,block.INDEX_NAME,block.LOCK_TYPE,block.LOCK_MODE " +
+                "FROM performance_schema.data_lock_waits w " +
+                "JOIN performance_schema.data_locks req ON req.ENGINE=w.ENGINE AND req.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID " +
+                "JOIN performance_schema.data_locks block ON block.ENGINE=w.ENGINE AND block.ENGINE_LOCK_ID=w.BLOCKING_ENGINE_LOCK_ID " +
+                "LEFT JOIN performance_schema.threads req_thread ON req_thread.THREAD_ID=req.THREAD_ID " +
+                "LEFT JOIN performance_schema.threads block_thread ON block_thread.THREAD_ID=block.THREAD_ID " +
+                "WHERE req.OBJECT_SCHEMA=?";
+        try (Connection connection = DriverManager.getConnection(gate.url(), gate.adminUser(), gate.adminPassword());
+             PreparedStatement query = connection.prepareStatement(sql)) {
+            query.setString(1, schema);
+            ready.countDown();
+            while (active.get()) {
+                try (ResultSet rows = query.executeQuery()) {
+                    while (rows.next() && samples.size() < 64) {
+                        samples.add("waitConnection=" + rows.getString(1) + " wait=" + rows.getString(2) + "/" +
+                                rows.getString(3) + "/" + rows.getString(4) + "/" + rows.getString(5) +
+                                " blockedByConnection=" + rows.getString(6) + " blocker=" + rows.getString(7) +
+                                "/" + rows.getString(8) + "/" + rows.getString(9) + "/" + rows.getString(10));
+                    }
+                }
+                Thread.sleep(2);
+            }
+        } catch (Exception exception) {
+            failure.compareAndSet(null, exception.getClass().getSimpleName());
+            ready.countDown();
+        }
+    }
+
+    private void logLatestDeadlock(GateSettings gate, int run) {
+        String sql = "SHOW ENGINE INNODB STATUS";
+        try (Connection connection = DriverManager.getConnection(gate.url(), gate.adminUser(), gate.adminPassword());
+             Statement statement = connection.createStatement(); ResultSet row = statement.executeQuery(sql)) {
+            if (!row.next()) return;
+            String status = row.getString("Status");
+            Matcher section = Pattern.compile("LATEST DETECTED DEADLOCK\\R([\\s\\S]*?)(?:\\R------------|\\z)")
+                    .matcher(status == null ? "" : status);
+            if (!section.find()) return;
+            Pattern relevant = Pattern.compile("^\\s*(?:\\*\\*\\* \\([12]\\) TRANSACTION:|\\*\\*\\* \\([12]\\) (?:HOLDS|WAITING)|\\*\\*\\* WE ROLL BACK|MySQL thread id |RECORD LOCKS |TABLE LOCK |SELECT |UPDATE |DELETE )");
+            for (String line : section.group(1).split("\\R")) {
+                if (!relevant.matcher(line).find()) continue;
+                System.out.printf("MYSQL_INNODB_DEADLOCK run=%d %s%n", run, redactSql(line.trim()));
+            }
+        } catch (Exception exception) {
+            System.out.printf("MYSQL_INNODB_DEADLOCK_CAPTURE_UNAVAILABLE type=%s%n", exception.getClass().getSimpleName());
+        }
+    }
+
+    private String redactSql(String value) {
+        if (value == null) return "";
+        return value.replaceAll("`[A-Za-z0-9_]+`\\.", "")
+                .replaceAll("(?i)(household_id|person_id|application_id|residence_id)=\\d+", "$1=?")
+                .replaceAll("(?i)(VALUES\\s*\\()([^)]{0,300})(\\))", "$1?…$3");
+    }
+
     private String assertRaceInvariant(long household, long head, long inboundPerson, long out, long inbound) {
         String householdStatus = jdbc.queryForObject("SELECT status FROM household WHERE household_id=?", String.class, household);
         String outStatus = jdbc.queryForObject("SELECT status FROM business_application WHERE application_id=?", String.class, out);
@@ -377,6 +624,8 @@ class MySql84CriticalAcceptanceIT {
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence_archive WHERE application_id=?", Integer.class, inbound)).isZero();
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=? AND person_id=? AND status='ACTIVE'", Integer.class, household, inboundPerson)).isZero();
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence WHERE person_id=? AND status='ACTIVE'", Integer.class, inboundPerson)).isZero();
+            assertThat(jdbc.queryForObject("SELECT current_status_code FROM person WHERE person_id=?", String.class, head)).isEqualTo("MIGRATED_OUT");
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=? AND person_id=? AND status='LEFT' AND relationship='HEAD'", Integer.class, household, head)).isOne();
             return "OUT_COMMITTED";
         } else if ("COMPLETED".equals(inStatus)) {
             assertThat(outStatus).isEqualTo("APPROVED");
@@ -389,6 +638,8 @@ class MySql84CriticalAcceptanceIT {
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence WHERE person_id=? AND status='ACTIVE'", Integer.class, inboundPerson)).isOne();
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=? AND person_id=? AND status='ACTIVE'", Integer.class, household, inboundPerson)).isOne();
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence_archive WHERE application_id=?", Integer.class, out)).isZero();
+            assertThat(jdbc.queryForObject("SELECT current_status_code FROM person WHERE person_id=?", String.class, head)).isEqualTo("REGISTERED");
+            assertThat(jdbc.queryForObject("SELECT current_status_code FROM person WHERE person_id=?", String.class, inboundPerson)).isEqualTo("REGISTERED");
             return "IN_COMMITTED";
         } else {
             assertThat(outStatus).isEqualTo("APPROVED");
@@ -402,6 +653,8 @@ class MySql84CriticalAcceptanceIT {
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence_archive WHERE application_id=?", Integer.class, out)).isZero();
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence WHERE person_id=? AND status='ACTIVE'", Integer.class, inboundPerson)).isZero();
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=? AND person_id=? AND status='ACTIVE'", Integer.class, household, inboundPerson)).isZero();
+            assertThat(jdbc.queryForObject("SELECT current_status_code FROM person WHERE person_id=?", String.class, head)).isEqualTo("REGISTERED");
+            assertThat(jdbc.queryForObject("SELECT current_status_code FROM person WHERE person_id=?", String.class, inboundPerson)).isEqualTo("MIGRATED_OUT");
             return "BOTH_ROLLED_BACK";
         }
     }
@@ -595,15 +848,18 @@ class MySql84CriticalAcceptanceIT {
 
     private ErrorStatement mysqlErrorStatement(GateSettings gate, int errorNumber, String sqlState) throws Exception {
         try (Connection admin = DriverManager.getConnection(gate.url(), gate.adminUser(), gate.adminPassword());
-             var statement = admin.prepareStatement("SELECT MYSQL_ERRNO,RETURNED_SQLSTATE,THREAD_ID FROM " +
-                     "performance_schema.events_statements_history_long WHERE CURRENT_SCHEMA=? AND MYSQL_ERRNO=? " +
-                     "AND RETURNED_SQLSTATE=? ORDER BY TIMER_END DESC LIMIT 1")) {
+             var statement = admin.prepareStatement("SELECT e.MYSQL_ERRNO,e.RETURNED_SQLSTATE,e.THREAD_ID," +
+                     "COALESCE(t.PROCESSLIST_ID,0),e.SQL_TEXT FROM performance_schema.events_statements_history_long e " +
+                     "LEFT JOIN performance_schema.threads t ON t.THREAD_ID=e.THREAD_ID " +
+                     "WHERE e.CURRENT_SCHEMA=? AND e.MYSQL_ERRNO=? AND e.RETURNED_SQLSTATE=? " +
+                     "ORDER BY e.TIMER_END DESC LIMIT 1")) {
             statement.setString(1, gate.database());
             statement.setInt(2, errorNumber);
             statement.setString(3, sqlState);
             try (var result = statement.executeQuery()) {
                 if (!result.next()) throw new IllegalStateException("MySQL statement history did not retain the injected SQLSTATE/errno.");
-                return new ErrorStatement(result.getInt(1), result.getString(2), result.getLong(3));
+                return new ErrorStatement(result.getInt(1), result.getString(2), result.getLong(3),
+                        result.getLong(4), result.getString(5));
             }
         }
     }
@@ -615,7 +871,7 @@ class MySql84CriticalAcceptanceIT {
     }
 
     private record Execution(long threadId, int httpStatus, String responseBody) {}
-    private record ErrorStatement(int mysqlErrno, String sqlState, long threadId) {}
+    private record ErrorStatement(int mysqlErrno, String sqlState, long threadId, long processlistId, String sqlText) {}
     private record GateSettings(String url, String appUser, String appPassword, String adminUser,
                                 String adminPassword, String apiTestPassword, int port, String database) {}
 }
