@@ -86,7 +86,8 @@ function Invoke-MySql {
         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
         $output = $Sql | & $MySqlClient @args 2>&1
         if ($LASTEXITCODE -ne 0) { throw "MySQL 命令失败：$($output | Select-Object -Last 1)" }
-        return @($output)
+        # Preserve the one-row array so callers parse "0" numerically, not as char code 48.
+        return ,@($output)
     } finally {
         [Console]::OutputEncoding = $prevOut
         [Environment]::SetEnvironmentVariable('MYSQL_PWD', $previousPassword, 'Process')
