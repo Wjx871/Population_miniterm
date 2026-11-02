@@ -110,7 +110,7 @@ class ExportDataScopeAuditIntegrationTest {
         List<ScopeExpectation> scopes = List.of(
                 new ScopeExpectation("SELF", new DataScopeCriteria(DataScope.SELF, SELF_USER, 2L, "110000"), 1),
                 new ScopeExpectation("DEPARTMENT", new DataScopeCriteria(DataScope.DEPARTMENT, DEPARTMENT_USER, 2L, "110000"), 2),
-                new ScopeExpectation("REGION", new DataScopeCriteria(DataScope.REGION, 2L, 2L, "110000"), 2),
+                new ScopeExpectation("REGION", regionScope(2L, 2L), 2),
                 new ScopeExpectation("ALL", new DataScopeCriteria(DataScope.ALL, 3L, 3L, "110000"), 3));
 
         for (String module : modules) {
@@ -275,8 +275,7 @@ class ExportDataScopeAuditIntegrationTest {
                 "WHERE application_id=?", SELF_USER, BASE_APP_REGION);
         long applicationId = approvedSensitive("audit-export-self", Map.of());
         Set<String> approvedRows = namesFor(new DataScopeCriteria(DataScope.SELF, SELF_USER, 2L, "110000"));
-        Set<String> currentRegionRows = namesFor(
-                new DataScopeCriteria(DataScope.REGION, SELF_USER, 2L, "110000"));
+        Set<String> currentRegionRows = namesFor(regionScope(SELF_USER, 2L));
         assertThat(approvedRows).contains("外区人口");
         assertThat(currentRegionRows).doesNotContain("外区人口");
         jdbc.update("UPDATE sys_role SET data_scope='REGION' WHERE role_id=?", SELF_ROLE);
@@ -294,8 +293,7 @@ class ExportDataScopeAuditIntegrationTest {
         jdbc.update("UPDATE residence SET region_code='120000' WHERE person_id=?", PERSON_DEPARTMENT);
         long applicationId = approvedSensitive("audit-export-department", Map.of());
         Set<String> approvedRows = namesFor(new DataScopeCriteria(DataScope.DEPARTMENT, DEPARTMENT_USER, 2L, "110000"));
-        Set<String> currentRegionRows = namesFor(
-                new DataScopeCriteria(DataScope.REGION, DEPARTMENT_USER, 2L, "110000"));
+        Set<String> currentRegionRows = namesFor(regionScope(DEPARTMENT_USER, 2L));
         assertThat(approvedRows).contains("同部门人口");
         assertThat(currentRegionRows).doesNotContain("同部门人口");
         jdbc.update("UPDATE sys_role SET data_scope='REGION' WHERE role_id=?", DEPARTMENT_ROLE);
@@ -307,7 +305,7 @@ class ExportDataScopeAuditIntegrationTest {
     void regionToAllExpansionKeepsTheOriginalRegionBoundary() throws Exception {
         jdbc.update("UPDATE sys_role SET data_scope='REGION' WHERE role_id=?", SELF_ROLE);
         long applicationId = approvedSensitive("audit-export-self", Map.of());
-        Set<String> approvedRows = namesFor(new DataScopeCriteria(DataScope.REGION, SELF_USER, 2L, "110000"));
+        Set<String> approvedRows = namesFor(regionScope(SELF_USER, 2L));
         assertThat(approvedRows).contains("本人范围人口", "同部门人口").doesNotContain("外区人口");
         jdbc.update("UPDATE sys_role SET data_scope='ALL' WHERE role_id=?", SELF_ROLE);
 
@@ -646,6 +644,11 @@ class ExportDataScopeAuditIntegrationTest {
 
     private String bearer(String token) {
         return "Bearer " + token;
+    }
+
+    private DataScopeCriteria regionScope(long userId, long departmentId) {
+        return new DataScopeCriteria(DataScope.REGION, userId, departmentId, "110000",
+                List.of("110000", "110100", "110101", "110105", "110105001", "110105001001"));
     }
 
     private record ScopeExpectation(String name, DataScopeCriteria criteria, long rows) {}

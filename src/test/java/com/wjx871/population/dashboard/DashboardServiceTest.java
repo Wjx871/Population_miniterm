@@ -1,12 +1,15 @@
 package com.wjx871.population.dashboard;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.wjx871.population.security.AuthenticatedUser;
 import com.wjx871.population.security.DataScope;
+import com.wjx871.population.security.DataScopeCriteria;
+import com.wjx871.population.common.BusinessException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -86,5 +89,16 @@ class DashboardServiceTest {
                 .countRegisteredPopulation(captor.capture());
         assertThat(captor.getAllValues())
                 .allSatisfy(c -> assertThat(c.dataScope()).isEqualTo(DataScope.ALL));
+    }
+
+    @Test
+    void regionScopeWithoutResolvedTreeCodesIsRejected() {
+        AuthenticatedUser invalid = new AuthenticatedUser(9L, "invalid-region", "", "Invalid region", "ENABLED",
+                2L, "REGIONAL", "Regional", null, DataScope.REGION, "ENABLED", 2L, "Dept", "999999",
+                List.of("statistics:view"));
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(invalid, null, invalid.getAuthorities()));
+
+        assertThatThrownBy(DataScopeCriteria::current).isInstanceOf(BusinessException.class);
     }
 }

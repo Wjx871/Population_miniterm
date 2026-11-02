@@ -43,6 +43,9 @@ class AuthRbacIntegrationTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private AuthService authService;
+
     @BeforeEach
     void resetAuditState() {
         jdbcTemplate.update("DELETE FROM operation_log");
@@ -72,6 +75,15 @@ class AuthRbacIntegrationTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data.token").isNotEmpty());
         }
+    }
+
+    @Test
+    void regionalAuthorizationUsesEnabledAdministrativeTreeDescendants() {
+        var population = authService.loadUser("population");
+
+        assertThat(population.regionCodes())
+                .contains("110000", "110100", "110101", "110105", "110105001", "110105001001")
+                .doesNotContain("120000");
     }
 
     @Test

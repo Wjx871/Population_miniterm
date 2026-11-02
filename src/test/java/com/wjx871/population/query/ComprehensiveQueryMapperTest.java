@@ -70,7 +70,8 @@ class ComprehensiveQueryMapperTest {
 
     @Test
     void regionScopeLimitsByRegionPrefix() {
-        DataScopeCriteria scope = new DataScopeCriteria(DataScope.REGION, 1L, 1L, "110000");
+        DataScopeCriteria scope = new DataScopeCriteria(DataScope.REGION, 1L, 1L, "110000",
+                List.of("110000", "110100", "110101", "110105", "110105001", "110105001001"));
         List<ComprehensivePersonSummaryView> rows = mapper.selectSummaries(
                 null, null, null, null, null, null, scope, "p.person_id", "ASC", 50, 0L);
         assertThat(rows).extracting(ComprehensivePersonSummaryView::getPersonId)

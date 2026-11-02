@@ -15,7 +15,7 @@
     <when test="scope.dataScope.name() == 'ALL'"></when>
     <when test="scope.dataScope.name() == 'SELF'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.application_id=f.source_application_id AND a.applicant_user_id=#{scope.userId})</when>
     <when test="scope.dataScope.name() == 'DEPARTMENT'">AND f.department_id=#{scope.departmentId}</when>
-    <when test="scope.dataScope.name() == 'REGION'">AND SUBSTRING(f.current_region_code,1,2)=SUBSTRING(#{scope.regionCode},1,2)</when>
+    <when test="scope.dataScope.name() == 'REGION'">AND f.current_region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach></when>
     <otherwise>AND 1=0</otherwise>
   </choose>
 </sql>
@@ -32,7 +32,7 @@
     <when test="scope.dataScope.name() == 'ALL'"></when>
     <when test="scope.dataScope.name() == 'SELF'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.application_id=r.source_application_id AND a.applicant_user_id=#{scope.userId})</when>
     <when test="scope.dataScope.name() == 'DEPARTMENT'">AND r.issuing_department_id=#{scope.departmentId}</when>
-    <when test="scope.dataScope.name() == 'REGION'">AND SUBSTRING(r.issue_region_code,1,2)=SUBSTRING(#{scope.regionCode},1,2)</when>
+    <when test="scope.dataScope.name() == 'REGION'">AND r.issue_region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach></when>
     <otherwise>AND 1=0</otherwise>
   </choose>
 </sql><sql id="permitFilter"><where><if test="permitNo!=null">AND r.permit_no LIKE CONCAT('%',#{permitNo},'%')</if><if test="personName!=null">AND p.name LIKE CONCAT('%',#{personName},'%')</if><if test="identityNo!=null">AND p.id_card LIKE CONCAT('%',#{identityNo},'%')</if><if test="region!=null">AND r.issue_region_code=#{region}</if><if test="status!=null">AND r.status=#{status}</if><if test="from!=null">AND r.valid_until&gt;=#{from}</if><if test="to!=null">AND r.valid_until&lt;=#{to}</if><include refid="permitScope"/></where></sql><select id="searchPermits" resultType="com.wjx871.population.floating.ResidencePermit">SELECT <include refid="permitCols"/> FROM residence_permit r JOIN person p ON p.person_id=r.person_id JOIN floating_population f ON f.floating_id=r.floating_id <include refid="permitFilter"/> ORDER BY r.created_at DESC LIMIT #{limit} OFFSET #{offset}</select><select id="countPermits" resultType="long">SELECT COUNT(*) FROM residence_permit r JOIN person p ON p.person_id=r.person_id JOIN floating_population f ON f.floating_id=r.floating_id <include refid="permitFilter"/></select>

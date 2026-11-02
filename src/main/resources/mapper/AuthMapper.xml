@@ -58,6 +58,22 @@
         ORDER BY p.permission_code
     </select>
 
+    <select id="selectEnabledRegionCodes" resultType="string">
+        WITH RECURSIVE allowed_regions(region_id, region_code, region_level) AS (
+            SELECT region_id, region_code, region_level
+            FROM admin_region
+            WHERE region_code = #{regionCode} AND status = 'ENABLED' AND region_level BETWEEN 1 AND 5
+            UNION ALL
+            SELECT child.region_id, child.region_code, child.region_level
+            FROM admin_region child
+            JOIN allowed_regions parent ON child.parent_id = parent.region_id
+            WHERE child.status = 'ENABLED'
+              AND child.region_level = parent.region_level + 1
+              AND child.region_level BETWEEN 1 AND 5
+        )
+        SELECT region_code FROM allowed_regions ORDER BY region_code
+    </select>
+
     <update id="updateLastLogin">
         UPDATE sys_user
         SET last_login_time = CURRENT_TIMESTAMP,

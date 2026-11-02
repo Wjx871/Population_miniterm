@@ -3,6 +3,7 @@ package com.wjx871.population.auth;
 import com.wjx871.population.audit.OperationLogService;
 import com.wjx871.population.common.BusinessException;
 import com.wjx871.population.security.AuthenticatedUser;
+import com.wjx871.population.security.DataScope;
 import com.wjx871.population.security.JwtService;
 import com.wjx871.population.security.TokenRevocationService;
 import io.jsonwebtoken.Claims;
@@ -85,10 +86,19 @@ public class AuthService implements UserDetailsService {
 
     private AuthenticatedUser toAuthenticatedUser(SystemUser user) {
         List<String> permissions = resolvePermissions(user);
+        List<String> regionCodes = user.getDataScope() == DataScope.REGION
+                ? regionCodesFor(user.getRegionCode())
+                : List.of();
         return new AuthenticatedUser(user.getUserId(), user.getUsername(), user.getPasswordHash(),
                 user.getRealName(), user.getStatus(), user.getRoleId(), user.getRoleCode(), user.getRoleName(),
                 user.getRoleLevel(), user.getDataScope(), user.getRoleStatus(), user.getDepartmentId(),
-                user.getDepartmentName(), user.getRegionCode(), List.copyOf(permissions));
+                user.getDepartmentName(), user.getRegionCode(), List.copyOf(permissions), regionCodes);
+    }
+
+    public List<String> regionCodesFor(String regionCode) {
+        if (regionCode == null || regionCode.isBlank()) return List.of();
+        List<String> regionCodes = authMapper.selectEnabledRegionCodes(regionCode);
+        return regionCodes == null ? List.of() : List.copyOf(regionCodes);
     }
 
     private List<String> resolvePermissions(SystemUser user) {

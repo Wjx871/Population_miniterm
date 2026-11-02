@@ -68,7 +68,7 @@ class DashboardMapperTest {
 
     @Test
     void regionRankingRespectsDataScope() {
-        DataScopeCriteria region = new DataScopeCriteria(DataScope.REGION, 1L, 1L, "110000");
+        DataScopeCriteria region = new DataScopeCriteria(DataScope.REGION, 1L, 1L, "110000", regionCodes());
         List<RegionCountView> rows = mapper.registeredPopulationByRegion(region, 8);
         assertThat(rows).isNotEmpty();
         assertThat(rows).allSatisfy(row -> assertThat(row.getRegionCode()).startsWith("11"));
@@ -76,8 +76,21 @@ class DashboardMapperTest {
     }
 
     @Test
+    void countyRegionScopeDoesNotIncludeSiblingDistricts() {
+        Long ownCountyPerson = insertPerson("本区县", "AUDIT-REGION-OWN");
+        Long ownCountyHousehold = insertHousehold("HH-COUNTY-OWN", ownCountyPerson, "110105");
+        insertResidence(ownCountyPerson, ownCountyHousehold, "110105", "ACTIVE");
+
+        DataScopeCriteria county = new DataScopeCriteria(DataScope.REGION, 1L, 1L, "110105",
+                List.of("110105", "110105001", "110105001001"));
+        List<RegionCountView> rows = mapper.registeredPopulationByRegion(county, 20);
+
+        assertThat(rows).extracting(RegionCountView::getRegionCode).containsExactly("110105");
+    }
+
+    @Test
     void regionScopeIncludesBusinessApplicationsInChildRegions() {
-        DataScopeCriteria region = new DataScopeCriteria(DataScope.REGION, 1L, 1L, "110000");
+        DataScopeCriteria region = new DataScopeCriteria(DataScope.REGION, 1L, 1L, "110000", regionCodes());
         Long childRegionApplication = insertApplication("D-APP-CHILD", 2L, 2L, "110105", personActive);
         jdbc.update("""
                 INSERT INTO sys_approval_request (approval_no, application_id, status, submitted_by, submitted_at, version)
@@ -114,6 +127,10 @@ class DashboardMapperTest {
 
     private DataScopeCriteria allScope() {
         return new DataScopeCriteria(DataScope.ALL, 3L, 3L, "110000");
+    }
+
+    private List<String> regionCodes() {
+        return List.of("110000", "110100", "110101", "110105", "110105001", "110105001001");
     }
 
     private void cleanBusinessData() {

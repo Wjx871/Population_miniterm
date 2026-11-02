@@ -23,12 +23,12 @@
             EXISTS (
               SELECT 1 FROM residence rs
               WHERE rs.person_id = p.person_id
-                AND SUBSTRING(rs.region_code, 1, 2) = SUBSTRING(#{scope.regionCode}, 1, 2)
+                AND rs.region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach>
             )
             OR EXISTS (
               SELECT 1 FROM business_application a
               WHERE a.target_person_id = p.person_id
-                AND SUBSTRING(a.applicant_region_code, 1, 2) = SUBSTRING(#{scope.regionCode}, 1, 2)
+                AND a.applicant_region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach>
             )
           )
         </otherwise>

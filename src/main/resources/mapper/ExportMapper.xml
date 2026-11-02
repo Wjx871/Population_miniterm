@@ -7,7 +7,7 @@
     <when test="scope.dataScope.name() == 'ALL'"></when>
     <when test="scope.dataScope.name() == 'SELF'">AND requested_by=#{scope.userId}</when>
     <when test="scope.dataScope.name() == 'DEPARTMENT'">AND department_id=#{scope.departmentId}</when>
-    <when test="scope.dataScope.name() == 'REGION'">AND SUBSTRING(region_code,1,2)=SUBSTRING(#{scope.regionCode},1,2)</when>
+    <when test="scope.dataScope.name() == 'REGION'">AND region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach></when>
     <otherwise>AND 1=0</otherwise>
   </choose>
 </sql><sql id="logFilter"><where><if test="no!=null">AND export_no LIKE CONCAT('%',#{no},'%')</if><if test="module!=null">AND export_module=#{module}</if><if test="type!=null">AND export_type=#{type}</if><if test="status!=null">AND status=#{status}</if><include refid="logScope"/></where></sql><select id="searchLogs" resultType="com.wjx871.population.export.DataExportLog">SELECT * FROM data_export_log <include refid="logFilter"/> ORDER BY created_at DESC LIMIT #{limit} OFFSET #{offset}</select><select id="countLogs" resultType="long">SELECT COUNT(*) FROM data_export_log <include refid="logFilter"/></select>
@@ -17,7 +17,7 @@
     <when test="scope.dataScope.name() == 'ALL'"></when>
     <when test="scope.dataScope.name() == 'SELF'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.target_person_id=p.person_id AND a.applicant_user_id=#{scope.userId})</when>
     <when test="scope.dataScope.name() == 'DEPARTMENT'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.target_person_id=p.person_id AND a.applicant_department_id=#{scope.departmentId})</when>
-    <when test="scope.dataScope.name() == 'REGION'">AND (SUBSTRING(r.region_code,1,2)=SUBSTRING(#{scope.regionCode},1,2) OR EXISTS(SELECT 1 FROM business_application a WHERE a.target_person_id=p.person_id AND SUBSTRING(a.applicant_region_code,1,2)=SUBSTRING(#{scope.regionCode},1,2)))</when>
+    <when test="scope.dataScope.name() == 'REGION'">AND (r.region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach> OR EXISTS(SELECT 1 FROM business_application a WHERE a.target_person_id=p.person_id AND a.applicant_region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach>))</when>
     <otherwise>AND 1=0</otherwise>
   </choose>
 </sql>
@@ -37,7 +37,7 @@
         <when test="scope.dataScope.name() == 'ALL'"></when>
         <when test="scope.dataScope.name() == 'SELF'">AND 1=0</when>
         <when test="scope.dataScope.name() == 'DEPARTMENT'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.target_household_id=h.household_id AND a.applicant_department_id=#{scope.departmentId})</when>
-        <when test="scope.dataScope.name() == 'REGION'">AND SUBSTRING(h.region_code,1,2)=SUBSTRING(#{scope.regionCode},1,2)</when>
+        <when test="scope.dataScope.name() == 'REGION'">AND h.region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach></when>
         <otherwise>AND 1=0</otherwise>
       </choose>
     </when>
@@ -49,7 +49,7 @@
         <when test="scope.dataScope.name() == 'ALL'"></when>
         <when test="scope.dataScope.name() == 'SELF'">AND a.applicant_user_id=#{scope.userId}</when>
         <when test="scope.dataScope.name() == 'DEPARTMENT'">AND a.applicant_department_id=#{scope.departmentId}</when>
-        <when test="scope.dataScope.name() == 'REGION'">AND SUBSTRING(a.applicant_region_code,1,2)=SUBSTRING(#{scope.regionCode},1,2)</when>
+        <when test="scope.dataScope.name() == 'REGION'">AND a.applicant_region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach></when>
         <otherwise>AND 1=0</otherwise>
       </choose>
     </when>
@@ -61,7 +61,7 @@
         <when test="scope.dataScope.name() == 'ALL'"></when>
         <when test="scope.dataScope.name() == 'SELF'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.application_id=ra.application_id AND a.applicant_user_id=#{scope.userId})</when>
         <when test="scope.dataScope.name() == 'DEPARTMENT'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.application_id=ra.application_id AND a.applicant_department_id=#{scope.departmentId})</when>
-        <when test="scope.dataScope.name() == 'REGION'">AND SUBSTRING(ra.region_code_snapshot,1,2)=SUBSTRING(#{scope.regionCode},1,2)</when>
+        <when test="scope.dataScope.name() == 'REGION'">AND ra.region_code_snapshot IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach></when>
         <otherwise>AND 1=0</otherwise>
       </choose>
     </when>
@@ -73,7 +73,7 @@
         <when test="scope.dataScope.name() == 'ALL'"></when>
         <when test="scope.dataScope.name() == 'SELF'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.application_id=c.application_id AND a.applicant_user_id=#{scope.userId})</when>
         <when test="scope.dataScope.name() == 'DEPARTMENT'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.application_id=c.application_id AND a.applicant_department_id=#{scope.departmentId})</when>
-        <when test="scope.dataScope.name() == 'REGION'">AND SUBSTRING(c.region_code_snapshot,1,2)=SUBSTRING(#{scope.regionCode},1,2)</when>
+        <when test="scope.dataScope.name() == 'REGION'">AND c.region_code_snapshot IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach></when>
         <otherwise>AND 1=0</otherwise>
       </choose>
     </when>
@@ -85,7 +85,7 @@
         <when test="scope.dataScope.name() == 'ALL'"></when>
         <when test="scope.dataScope.name() == 'SELF'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.application_id=f.source_application_id AND a.applicant_user_id=#{scope.userId})</when>
         <when test="scope.dataScope.name() == 'DEPARTMENT'">AND f.department_id=#{scope.departmentId}</when>
-        <when test="scope.dataScope.name() == 'REGION'">AND SUBSTRING(f.current_region_code,1,2)=SUBSTRING(#{scope.regionCode},1,2)</when>
+        <when test="scope.dataScope.name() == 'REGION'">AND f.current_region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach></when>
         <otherwise>AND 1=0</otherwise>
       </choose>
     </when>
@@ -97,7 +97,7 @@
         <when test="scope.dataScope.name() == 'ALL'"></when>
         <when test="scope.dataScope.name() == 'SELF'">AND EXISTS(SELECT 1 FROM business_application a WHERE a.application_id=rp.source_application_id AND a.applicant_user_id=#{scope.userId})</when>
         <when test="scope.dataScope.name() == 'DEPARTMENT'">AND rp.issuing_department_id=#{scope.departmentId}</when>
-        <when test="scope.dataScope.name() == 'REGION'">AND SUBSTRING(rp.issue_region_code,1,2)=SUBSTRING(#{scope.regionCode},1,2)</when>
+        <when test="scope.dataScope.name() == 'REGION'">AND rp.issue_region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach></when>
         <otherwise>AND 1=0</otherwise>
       </choose>
     </when>
@@ -109,7 +109,7 @@
         <when test="scope.dataScope.name() == 'ALL'"></when>
         <when test="scope.dataScope.name() == 'SELF'">AND o.user_id=#{scope.userId}</when>
         <when test="scope.dataScope.name() == 'DEPARTMENT'">AND EXISTS(SELECT 1 FROM sys_user u WHERE u.user_id=o.user_id AND u.department_id=#{scope.departmentId})</when>
-        <when test="scope.dataScope.name() == 'REGION'">AND EXISTS(SELECT 1 FROM sys_user u JOIN sys_department d ON d.department_id=u.department_id WHERE u.user_id=o.user_id AND SUBSTRING(d.region_code,1,2)=SUBSTRING(#{scope.regionCode},1,2))</when>
+        <when test="scope.dataScope.name() == 'REGION'">AND EXISTS(SELECT 1 FROM sys_user u JOIN sys_department d ON d.department_id=u.department_id WHERE u.user_id=o.user_id AND d.region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach>)</when>
         <otherwise>AND 1=0</otherwise>
       </choose>
     </when>

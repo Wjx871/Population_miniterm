@@ -61,14 +61,13 @@ public class ExportPolicy {
                     || (owner && (normalPermission || sensitiveDownloadPermission))
                     || (sensitiveDownloadPermission
                     && user.permissions().contains("approval:view")
-                    && inSameRegion(log.getRegionCode(), user.regionCode()));
+                    && includesRegion(user, log.getRegionCode()));
             default -> false;
         };
     }
 
-    boolean inSameRegion(String left, String right) {
-        return left != null && right != null && left.length() >= 2 && right.length() >= 2
-                && left.substring(0, 2).equals(right.substring(0, 2));
+    boolean includesRegion(AuthenticatedUser user, String regionCode) {
+        return regionCode != null && user.regionCodes().contains(regionCode);
     }
 
     private void bad(String message) {

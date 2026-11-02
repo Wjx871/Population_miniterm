@@ -13,6 +13,8 @@ public interface AuthMapper {
 
     List<String> selectPermissionCodesByRoleId(Long roleId);
 
+    List<String> selectEnabledRegionCodes(String regionCode);
+
     /** 系统管理员始终加载全部启用权限，避免角色授权遗漏导致降权。 */
     List<String> selectAllEnabledPermissionCodes();
 
