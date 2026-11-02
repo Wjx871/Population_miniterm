@@ -30,6 +30,48 @@ class Phase03MigrationIntegrationTest {
 @Test void staleOutVersionDoesNotChangeHouseholdOrMemberRows() throws Exception {long id=approvedOut(103);executeOutVersion(id,99,409);assertThat(jdbc.queryForObject("SELECT head_person_id FROM household WHERE household_id=101",Long.class)).isEqualTo(101);assertThat(jdbc.queryForObject("SELECT relationship FROM household_member WHERE household_id=101 AND person_id=103",String.class)).isEqualTo("CHILD");assertThat(jdbc.queryForObject("SELECT status FROM household_member WHERE household_id=101 AND person_id=101",String.class)).isEqualTo("ACTIVE");assertThat(count("residence_archive","application_id",id)).isZero();assertThat(statusOf(id)).isEqualTo("APPROVED");}
 @Test void concurrentOutExecutionAllowsOnlyOneTransactionToComplete() throws Exception {long id=approvedOut(103);String authorization=bearer(token("household"));CountDownLatch ready=new CountDownLatch(2);CountDownLatch start=new CountDownLatch(1);ExecutorService executor=Executors.newFixedThreadPool(2);try{Callable<Integer> request=()->{ready.countDown();start.await();try{return mvc.perform(post("/api/migrations/out/applications/"+id+"/execute").header("Authorization",authorization).contentType(MediaType.APPLICATION_JSON).content("{\"version\":2}")).andReturn().getResponse().getStatus();}catch(Exception e){throw new RuntimeException(e);}};Future<Integer> first=executor.submit(request);Future<Integer> second=executor.submit(request);ready.await();start.countDown();int firstStatus=first.get();int secondStatus=second.get();assertThat(List.of(firstStatus,secondStatus)).containsExactlyInAnyOrder(200,409);}finally{executor.shutdownNow();}assertThat(statusOf(id)).isEqualTo("COMPLETED");assertThat(count("residence_archive","application_id",id)).isOne();assertThat(jdbc.queryForObject("SELECT head_person_id FROM household WHERE household_id=101",Long.class)).isEqualTo(103);assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=101 AND status='ACTIVE' AND relationship='HEAD'",Integer.class)).isOne();}@Test void archiveIdentityIsMaskedForReadOnlyArchiveViewer() throws Exception {long id=approvedOut(103);execute("out",id,200);mvc.perform(get("/api/residence-archives").header("Authorization",bearer(token("approver")))).andExpect(status().isOk()).andExpect(jsonPath("$.data.content[0].identityNo").value("1101**********0011"));}
 
+ @Test void returnedMigrationCanReplaceMaterialsResubmitAndCompleteWithExistingApprovalHistory() throws Exception {
+  long id=createOut(103,(Long)null);
+  long identity=uploadMaterialViaApi(id,"IDENTITY_PROOF","household");
+  long oldBook=uploadMaterialViaApi(id,"HOUSEHOLD_BOOK","household");
+  submitApproveWithApiMaterials(id,identity,oldBook);
+  long approval=jdbc.queryForObject("SELECT approval_id FROM sys_approval_request WHERE application_id=?",Long.class,id);
+  mvc.perform(post("/api/applications/"+id+"/return").header("Authorization",bearer(token("household"))).contentType(MediaType.APPLICATION_JSON).content("{\"comment\":\"请补充户口簿材料\",\"version\":2}")).andExpect(status().isOk());
+  assertThat(statusOf(id)).isEqualTo("RETURNED");
+  assertThat(jdbc.queryForObject("SELECT business_status FROM migration_out WHERE application_id=?",String.class,id)).isEqualTo("APPROVED");
+  mvc.perform(put("/api/migrations/out/applications/"+id).header("Authorization",bearer(token("household"))).contentType(MediaType.APPLICATION_JSON).content("{\"personId\":103,\"migrationType\":\"OUTSIDE_CITY\",\"toAddress\":\"上海\",\"outDate\":\"2026-07-12\",\"reason\":\"不允许改业务字段\",\"title\":\"迁出申请\",\"version\":2}")).andExpect(status().isConflict());
+
+  int deleteStatus=mvc.perform(delete("/api/materials/"+oldBook).header("Authorization",bearer(token("household")))).andReturn().getResponse().getStatus();
+  var replacementResponse=mvc.perform(multipart("/api/applications/"+id+"/materials").file(new MockMultipartFile("file","HOUSEHOLD_BOOK-replacement.pdf","application/pdf","%PDF-synthetic-replacement".getBytes(StandardCharsets.UTF_8))).param("materialType","HOUSEHOLD_BOOK").param("materialName","补正户口簿").param("requiredFlag","true").header("Authorization",bearer(token("household")))).andReturn().getResponse();
+  assertThat(deleteStatus).isEqualTo(200);
+  assertThat(replacementResponse.getStatus()).isEqualTo(201);
+  assertThat(count("application_material","material_id",oldBook)).isZero();
+  long replacement=jdbc.queryForObject("SELECT material_id FROM application_material WHERE application_id=? AND material_type='HOUSEHOLD_BOOK'",Long.class,id);
+  assertThat(jdbc.queryForObject("SELECT verify_status FROM application_material WHERE material_id=?",String.class,replacement)).isEqualTo("PENDING");
+  assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_approval_log WHERE application_id=? AND action='RETURN'",Integer.class,id)).isOne();
+
+  submit(id);
+  assertThat(statusOf(id)).isEqualTo("UNDER_REVIEW");
+  assertThat(jdbc.queryForObject("SELECT business_status FROM migration_out WHERE application_id=?",String.class,id)).isEqualTo("UNDER_REVIEW");
+  assertThat(jdbc.queryForObject("SELECT approval_id FROM sys_approval_request WHERE application_id=?",Long.class,id)).isEqualTo(approval);
+  assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_approval_log WHERE application_id=? AND action='SUBMIT'",Integer.class,id)).isEqualTo(2);
+  assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_approval_log WHERE application_id=? AND action='APPROVE'",Integer.class,id)).isOne();
+  approve(approval,0,"approver",409);
+  assertThat(statusOf(id)).isEqualTo("UNDER_REVIEW");
+  verifyMaterialViaApi(replacement,"VERIFIED","approver");
+  approve(approval,0,"approver",200);
+  assertThat(statusOf(id)).isEqualTo("APPROVED");
+  assertThat(jdbc.queryForObject("SELECT business_status FROM migration_out WHERE application_id=?",String.class,id)).isEqualTo("APPROVED");
+  int executionVersion=jdbc.queryForObject("SELECT version FROM migration_out WHERE application_id=?",Integer.class,id);
+  mvc.perform(post("/api/migrations/out/applications/"+id+"/execute").header("Authorization",bearer(token("household"))).contentType(MediaType.APPLICATION_JSON).content("{\"version\":"+executionVersion+"}")).andExpect(status().isOk());
+  assertThat(statusOf(id)).isEqualTo("COMPLETED");
+  assertThat(jdbc.queryForObject("SELECT business_status FROM migration_out WHERE application_id=?",String.class,id)).isEqualTo("COMPLETED");
+  assertThat(count("residence","person_id",103)).isZero();
+  assertThat(count("residence_archive","application_id",id)).isOne();
+  assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_approval_log WHERE application_id=? AND action='RETURN'",Integer.class,id)).isOne();
+  assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_approval_log WHERE application_id=? AND action='APPROVE'",Integer.class,id)).isEqualTo(2);
+ }
+
  private long uploadMaterialViaApi(long id,String type,String user)throws Exception{mvc.perform(multipart("/api/applications/"+id+"/materials").file(new MockMultipartFile("file",type+".pdf","application/pdf","%PDF-synthetic".getBytes(StandardCharsets.UTF_8))).param("materialType",type).param("materialName",type).param("requiredFlag","true").header("Authorization",bearer(token(user)))).andExpect(status().isCreated());return jdbc.queryForObject("SELECT material_id FROM application_material WHERE application_id=? AND material_type=? ORDER BY material_id DESC LIMIT 1",Long.class,id,type);}
  private void verifyMaterialViaApi(long material,String result,String user)throws Exception{mvc.perform(post("/api/materials/"+material+"/verify").header("Authorization",bearer(token(user))).contentType(MediaType.APPLICATION_JSON).content("{\"result\":\""+result+"\",\"comment\":\"合成材料核验\"}")).andExpect(status().isOk());} private void expectCreateInFor(int person,int expected){createInFor(person,expected);}
  private long createOut(long person,int head)throws Exception{return createOut(person,Long.valueOf(head));}
