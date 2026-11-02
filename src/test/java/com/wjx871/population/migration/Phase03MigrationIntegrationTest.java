@@ -72,6 +72,41 @@ class Phase03MigrationIntegrationTest {
   assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_approval_log WHERE application_id=? AND action='APPROVE'",Integer.class,id)).isEqualTo(2);
  }
 
+ @Test void applicantAndUploaderCannotVerifyOwnMaterialButIndependentReviewerCan() throws Exception {
+  long id=createOut(103,(Long)null,"admin");
+  long identity=uploadMaterialViaApi(id,"IDENTITY_PROOF","admin");
+  long book=uploadMaterialViaApi(id,"HOUSEHOLD_BOOK","admin");
+  mvc.perform(post("/api/applications/"+id+"/submit").header("Authorization",bearer(token("admin")))).andExpect(status().isOk());
+  assertThat(statusOf(id)).isEqualTo("UNDER_REVIEW");
+
+  var selfResponse=mvc.perform(post("/api/materials/"+identity+"/verify").header("Authorization",bearer(token("admin"))).contentType(MediaType.APPLICATION_JSON).content("{\"result\":\"VERIFIED\",\"comment\":\"本人核验尝试\"}")).andReturn().getResponse();
+  assertThat(selfResponse.getStatus()).isEqualTo(403);
+  assertThat(jdbc.queryForObject("SELECT verify_status FROM application_material WHERE material_id=?",String.class,identity)).isEqualTo("PENDING");
+  assertThat(jdbc.queryForObject("SELECT verify_user_id FROM application_material WHERE material_id=?",Long.class,identity)).isNull();
+  assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_approval_log WHERE application_id=? AND action IN('MATERIAL_VERIFY','MATERIAL_REJECT')",Integer.class,id)).isZero();
+
+  long differentApplicant=jdbc.queryForObject("SELECT user_id FROM sys_user WHERE username='household'",Long.class);
+  jdbc.update("UPDATE business_application SET applicant_user_id=? WHERE application_id=?",differentApplicant,id);
+  mvc.perform(post("/api/materials/"+book+"/verify").header("Authorization",bearer(token("admin"))).contentType(MediaType.APPLICATION_JSON).content("{\"result\":\"VERIFIED\",\"comment\":\"上传人核验尝试\"}")).andExpect(status().isForbidden());
+  assertThat(jdbc.queryForObject("SELECT verify_status FROM application_material WHERE material_id=?",String.class,book)).isEqualTo("PENDING");
+  assertThat(jdbc.queryForObject("SELECT verify_user_id FROM application_material WHERE material_id=?",Long.class,book)).isNull();
+  assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_approval_log WHERE application_id=? AND action IN('MATERIAL_VERIFY','MATERIAL_REJECT')",Integer.class,id)).isZero();
+  mvc.perform(post("/api/materials/"+book+"/verify").header("Authorization",bearer(token("viewer"))).contentType(MediaType.APPLICATION_JSON).content("{\"result\":\"VERIFIED\",\"comment\":\"无核验权限\"}")).andExpect(status().isForbidden());
+  assertThat(jdbc.queryForObject("SELECT verify_status FROM application_material WHERE material_id=?",String.class,book)).isEqualTo("PENDING");
+  assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_approval_log WHERE application_id=? AND action IN('MATERIAL_VERIFY','MATERIAL_REJECT')",Integer.class,id)).isZero();
+
+  verifyMaterialViaApi(identity,"VERIFIED","approver");
+  verifyMaterialViaApi(book,"VERIFIED","approver");
+  Long independentReviewer=jdbc.queryForObject("SELECT user_id FROM sys_user WHERE username='approver'",Long.class);
+  assertThat(jdbc.queryForObject("SELECT verify_status FROM application_material WHERE material_id=?",String.class,identity)).isEqualTo("VERIFIED");
+  assertThat(jdbc.queryForObject("SELECT verify_user_id FROM application_material WHERE material_id=?",Long.class,identity)).isEqualTo(independentReviewer);
+  mvc.perform(post("/api/materials/"+identity+"/verify").header("Authorization",bearer(token("approver"))).contentType(MediaType.APPLICATION_JSON).content("{\"result\":\"REJECTED\",\"comment\":\"重复核验\"}")).andExpect(status().isConflict());
+  assertThat(jdbc.queryForObject("SELECT verify_status FROM application_material WHERE material_id=?",String.class,identity)).isEqualTo("VERIFIED");
+  assertThat(jdbc.queryForObject("SELECT verify_user_id FROM application_material WHERE material_id=?",Long.class,identity)).isEqualTo(independentReviewer);
+  assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_approval_log WHERE application_id=? AND action='MATERIAL_VERIFY'",Integer.class,id)).isEqualTo(2);
+  assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_approval_log WHERE application_id=? AND action='MATERIAL_REJECT'",Integer.class,id)).isZero();
+ }
+
  private long uploadMaterialViaApi(long id,String type,String user)throws Exception{mvc.perform(multipart("/api/applications/"+id+"/materials").file(new MockMultipartFile("file",type+".pdf","application/pdf","%PDF-synthetic".getBytes(StandardCharsets.UTF_8))).param("materialType",type).param("materialName",type).param("requiredFlag","true").header("Authorization",bearer(token(user)))).andExpect(status().isCreated());return jdbc.queryForObject("SELECT material_id FROM application_material WHERE application_id=? AND material_type=? ORDER BY material_id DESC LIMIT 1",Long.class,id,type);}
  private void verifyMaterialViaApi(long material,String result,String user)throws Exception{mvc.perform(post("/api/materials/"+material+"/verify").header("Authorization",bearer(token(user))).contentType(MediaType.APPLICATION_JSON).content("{\"result\":\""+result+"\",\"comment\":\"合成材料核验\"}")).andExpect(status().isOk());} private void expectCreateInFor(int person,int expected){createInFor(person,expected);}
  private long createOut(long person,int head)throws Exception{return createOut(person,Long.valueOf(head));}
@@ -84,7 +119,8 @@ class Phase03MigrationIntegrationTest {
  private long createIn(){return createInFor(102,201);} private long createInFor(long person,int expected){try{String b=mvc.perform(post("/api/migrations/in/applications").header("Authorization",bearer(token("household"))).contentType(MediaType.APPLICATION_JSON).content("{\"personId\":"+person+",\"migrationType\":\"OUTSIDE_CITY\",\"fromRegionCode\":\"370100\",\"fromAddress\":\"济南\",\"toRegionCode\":\"110101\",\"toHouseholdId\":101,\"inDate\":\"2026-07-12\",\"reason\":\"投靠\",\"title\":\"迁入申请\"}")).andExpect(status().is(expected)).andReturn().getResponse().getContentAsString();return expected==201?json.readTree(b).path("data").path("applicationId").asLong():0;}catch(Exception e){throw new RuntimeException(e);}}
  private long createCrossIn(long person,String batch)throws Exception{String b=mvc.perform(post("/api/migrations/in/applications").header("Authorization",bearer(token("household"))).contentType(MediaType.APPLICATION_JSON).content("{\"personId\":"+person+",\"migrationType\":\"IN_CITY_CROSS_DISTRICT\",\"fromRegionCode\":\"110000\",\"fromAddress\":\"原区地址\",\"toRegionCode\":\"110101\",\"toHouseholdId\":101,\"transferBatchNo\":\""+batch+"\",\"inDate\":\"2026-07-13\",\"reason\":\"跨区\",\"title\":\"跨区迁入\"}")).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();return json.readTree(b).path("data").path("applicationId").asLong();}
  private void expectCreateIn(String user,int expected){try{mvc.perform(post("/api/migrations/in/applications").header("Authorization",bearer(token(user))).contentType(MediaType.APPLICATION_JSON).content("{\"personId\":102,\"migrationType\":\"OUTSIDE_CITY\",\"fromAddress\":\"济南\",\"toRegionCode\":\"110101\",\"toHouseholdId\":101,\"inDate\":\"2026-07-12\",\"reason\":\"投靠\",\"title\":\"迁入申请\"}")).andExpect(status().is(expected));}catch(Exception e){throw new RuntimeException(e);}}
- private long createOut(long person,Long head)throws Exception{String h=head==null?"null":head.toString();String b=mvc.perform(post("/api/migrations/out/applications").header("Authorization",bearer(token("household"))).contentType(MediaType.APPLICATION_JSON).content("{\"personId\":"+person+",\"migrationType\":\"OUTSIDE_CITY\",\"toRegionCode\":\"310000\",\"toAddress\":\"上海\",\"outDate\":\"2026-07-12\",\"reason\":\"工作\",\"newHeadPersonId\":"+h+",\"fromHouseholdId\":999,\"fromAddressSnapshot\":\"伪造\",\"title\":\"迁出申请\"}")).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();return json.readTree(b).path("data").path("applicationId").asLong();}
+ private long createOut(long person,Long head)throws Exception{return createOut(person,head,"household");}
+ private long createOut(long person,Long head,String user)throws Exception{String h=head==null?"null":head.toString();String b=mvc.perform(post("/api/migrations/out/applications").header("Authorization",bearer(token(user))).contentType(MediaType.APPLICATION_JSON).content("{\"personId\":"+person+",\"migrationType\":\"OUTSIDE_CITY\",\"toRegionCode\":\"310000\",\"toAddress\":\"上海\",\"outDate\":\"2026-07-12\",\"reason\":\"工作\",\"newHeadPersonId\":"+h+",\"fromHouseholdId\":999,\"fromAddressSnapshot\":\"伪造\",\"title\":\"迁出申请\"}")).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();return json.readTree(b).path("data").path("applicationId").asLong();}
  private void expectCreateOut(long p,Long h,int expected){try{String head=h==null?"null":h.toString();mvc.perform(post("/api/migrations/out/applications").header("Authorization",bearer(token("household"))).contentType(MediaType.APPLICATION_JSON).content("{\"personId\":"+p+",\"migrationType\":\"OUTSIDE_CITY\",\"toAddress\":\"上海\",\"outDate\":\"2026-07-12\",\"reason\":\"工作\",\"newHeadPersonId\":"+head+",\"title\":\"迁出申请\"}")).andExpect(status().is(expected));}catch(Exception e){throw new RuntimeException(e);}}
  private void execute(String direction,long id,int status)throws Exception{mvc.perform(post("/api/migrations/"+direction+"/applications/"+id+"/execute").header("Authorization",bearer(token("household"))).contentType(MediaType.APPLICATION_JSON).content("{\"version\":2}")).andExpect(status().is(status));}
  private void executeOutVersion(long id,int version,int expected)throws Exception{mvc.perform(post("/api/migrations/out/applications/"+id+"/execute").header("Authorization",bearer(token("household"))).contentType(MediaType.APPLICATION_JSON).content("{\"version\":"+version+"}")).andExpect(status().is(expected));} private int count(String table,String key,long id){return jdbc.queryForObject("SELECT COUNT(*) FROM "+table+" WHERE "+key+"=?",Integer.class,id);}private String statusOf(long id){return jdbc.queryForObject("SELECT status FROM business_application WHERE application_id=?",String.class,id);}
