@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,6 +67,151 @@ class Phase10KeyPopulationGateIntegrationTest {
         mvc.perform(post("/api/key-populations/register-applications/999/execute").header("Authorization", viewer)
                 .contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void registerReturnedAndOtherOpenStatusesBlockDuplicatesButTerminalsDoNot() throws Exception {
+        long current = createRegisterDraft();
+        for (String status : List.of("DRAFT", "SUBMITTED", "UNDER_REVIEW", "APPROVED", "RETURNED")) {
+            jdbc.update("UPDATE business_application SET status=? WHERE application_id=?", status, current);
+            mvc.perform(post("/api/key-populations/register-applications").header("Authorization", token("population"))
+                    .contentType(MediaType.APPLICATION_JSON).content(registerBody())).andExpect(status().isConflict());
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM key_population_application WHERE person_id=11001 AND population_type='OTHER' AND operation_type='REGISTER'",
+                    Integer.class)).isEqualTo(1);
+        }
+        for (String terminal : List.of("REJECTED", "CANCELLED", "WITHDRAWN", "COMPLETED")) {
+            jdbc.update("UPDATE business_application SET status=? WHERE application_id=?", terminal, current);
+            current = createRegisterDraft();
+        }
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM key_population_application WHERE person_id=11001 AND population_type='OTHER' AND operation_type='REGISTER'",
+                Integer.class)).isEqualTo(5);
+    }
+
+    @Test
+    void releaseReturnedAndOtherOpenStatusesBlockDuplicatesButTerminalsDoNot() throws Exception {
+        long record = createActiveRecord();
+        long current = createReleaseDraft(record);
+        for (String status : List.of("DRAFT", "SUBMITTED", "UNDER_REVIEW", "APPROVED", "RETURNED")) {
+            jdbc.update("UPDATE business_application SET status=? WHERE application_id=?", status, current);
+            mvc.perform(post("/api/key-populations/" + record + "/release-applications").header("Authorization", token("population"))
+                    .contentType(MediaType.APPLICATION_JSON).content(releaseBody())).andExpect(status().isConflict());
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM key_population_application WHERE record_id=? AND operation_type='RELEASE'",
+                    Integer.class, record)).isEqualTo(1);
+        }
+        for (String terminal : List.of("REJECTED", "CANCELLED", "WITHDRAWN", "COMPLETED")) {
+            jdbc.update("UPDATE business_application SET status=? WHERE application_id=?", terminal, current);
+            current = createReleaseDraft(record);
+        }
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM key_population_application WHERE record_id=? AND operation_type='RELEASE'",
+                Integer.class, record)).isEqualTo(5);
+    }
+
+    @Test
+    void realReturnedRegisterWorkflowStillBlocksDuplicate() throws Exception {
+        long app = approvedRegister();
+        returnApprovedApplication(app);
+        assertThat(appStatus(app)).isEqualTo("RETURNED");
+        mvc.perform(post("/api/key-populations/register-applications").header("Authorization", token("population"))
+                .contentType(MediaType.APPLICATION_JSON).content(registerBody())).andExpect(status().isConflict());
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM key_population_application WHERE person_id=11001 AND population_type='OTHER' AND operation_type='REGISTER'",
+                Integer.class)).isOne();
+    }
+
+    @Test
+    void realReturnedReleaseWorkflowStillBlocksDuplicate() throws Exception {
+        long record = executeRegisterNormally();
+        long app = approvedRelease(record);
+        returnApprovedApplication(app);
+        assertThat(appStatus(app)).isEqualTo("RETURNED");
+        mvc.perform(post("/api/key-populations/" + record + "/release-applications").header("Authorization", token("population"))
+                .contentType(MediaType.APPLICATION_JSON).content(releaseBody())).andExpect(status().isConflict());
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM key_population_application WHERE record_id=? AND operation_type='RELEASE'",
+                Integer.class, record)).isOne();
+    }
+
+    @Test
+    void concurrentRegisterApplicationsSerializeOnPerson() throws Exception {
+        CountDownLatch firstPassedCheck = new CountDownLatch(1);
+        CountDownLatch secondPassedCheck = new CountDownLatch(1);
+        CountDownLatch releaseFirst = new CountDownLatch(1);
+        AtomicInteger checkNumber = new AtomicInteger();
+        org.mockito.Mockito.doAnswer(invocation -> {
+            if (checkNumber.getAndIncrement() == 0) {
+                firstPassedCheck.countDown();
+                if (!releaseFirst.await(5, TimeUnit.SECONDS)) throw new IllegalStateException("first register release timeout");
+            } else {
+                secondPassedCheck.countDown();
+            }
+            return null;
+        }).when(hook).afterOpenApplicationCheck();
+
+        String auth = token("population");
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        Future<Integer> first = null;
+        Future<Integer> second = null;
+        try {
+            first = pool.submit(() -> mvc.perform(post("/api/key-populations/register-applications").header("Authorization", auth)
+                    .contentType(MediaType.APPLICATION_JSON).content(registerBody())).andReturn().getResponse().getStatus());
+            assertThat(firstPassedCheck.await(5, TimeUnit.SECONDS)).isTrue();
+            second = pool.submit(() -> mvc.perform(post("/api/key-populations/register-applications").header("Authorization", auth)
+                    .contentType(MediaType.APPLICATION_JSON).content(registerBody())).andReturn().getResponse().getStatus());
+            boolean secondPassedDuplicateCheck = secondPassedCheck.await(300, TimeUnit.MILLISECONDS);
+            releaseFirst.countDown();
+            List<Integer> statuses = List.of(first.get(15, TimeUnit.SECONDS), second.get(15, TimeUnit.SECONDS));
+            System.out.printf("KEY_REGISTER_CONCURRENCY statuses=%s secondPassedCheckBeforeCommit=%s%n", statuses, secondPassedDuplicateCheck);
+            assertThat(secondPassedDuplicateCheck).isFalse();
+            assertThat(statuses).containsExactlyInAnyOrder(201, 409);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM key_population_application WHERE person_id=11001 AND population_type='OTHER' AND operation_type='REGISTER'",
+                    Integer.class)).isOne();
+            assertThat(countOperation("KEY_POPULATION_REGISTER_CREATE")).isOne();
+        } finally {
+            releaseFirst.countDown();
+            pool.shutdownNow();
+            assertThat(pool.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+        }
+    }
+
+    @Test
+    void concurrentReleaseApplicationsSerializeOnRecord() throws Exception {
+        long record = createActiveRecord();
+        CountDownLatch firstPassedCheck = new CountDownLatch(1);
+        CountDownLatch secondPassedCheck = new CountDownLatch(1);
+        CountDownLatch releaseFirst = new CountDownLatch(1);
+        AtomicInteger checkNumber = new AtomicInteger();
+        org.mockito.Mockito.doAnswer(invocation -> {
+            if (checkNumber.getAndIncrement() == 0) {
+                firstPassedCheck.countDown();
+                if (!releaseFirst.await(5, TimeUnit.SECONDS)) throw new IllegalStateException("first release release timeout");
+            } else {
+                secondPassedCheck.countDown();
+            }
+            return null;
+        }).when(hook).afterOpenApplicationCheck();
+
+        String auth = token("population");
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        Future<Integer> first = null;
+        Future<Integer> second = null;
+        try {
+            first = pool.submit(() -> mvc.perform(post("/api/key-populations/" + record + "/release-applications").header("Authorization", auth)
+                    .contentType(MediaType.APPLICATION_JSON).content(releaseBody())).andReturn().getResponse().getStatus());
+            assertThat(firstPassedCheck.await(5, TimeUnit.SECONDS)).isTrue();
+            second = pool.submit(() -> mvc.perform(post("/api/key-populations/" + record + "/release-applications").header("Authorization", auth)
+                    .contentType(MediaType.APPLICATION_JSON).content(releaseBody())).andReturn().getResponse().getStatus());
+            boolean secondPassedDuplicateCheck = secondPassedCheck.await(300, TimeUnit.MILLISECONDS);
+            releaseFirst.countDown();
+            List<Integer> statuses = List.of(first.get(15, TimeUnit.SECONDS), second.get(15, TimeUnit.SECONDS));
+            System.out.printf("KEY_RELEASE_CONCURRENCY statuses=%s secondPassedCheckBeforeCommit=%s%n", statuses, secondPassedDuplicateCheck);
+            assertThat(secondPassedDuplicateCheck).isFalse();
+            assertThat(statuses).containsExactlyInAnyOrder(201, 409);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM key_population_application WHERE record_id=? AND operation_type='RELEASE'",
+                    Integer.class, record)).isOne();
+            assertThat(countOperation("KEY_POPULATION_RELEASE_CREATE")).isOne();
+        } finally {
+            releaseFirst.countDown();
+            pool.shutdownNow();
+            assertThat(pool.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+        }
     }
 
     @Test
@@ -174,6 +320,24 @@ class Phase10KeyPopulationGateIntegrationTest {
         assertThat(count("key_population", "source_application_id", app)).isZero();
         return app;
     }
+    private long createRegisterDraft() throws Exception {
+        JsonNode created = json.readTree(mvc.perform(post("/api/key-populations/register-applications")
+                .header("Authorization", token("population")).contentType(MediaType.APPLICATION_JSON).content(registerBody()))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+        return created.path("data").path("application").path("applicationId").asLong();
+    }
+    private long createReleaseDraft(long record) throws Exception {
+        JsonNode created = json.readTree(mvc.perform(post("/api/key-populations/" + record + "/release-applications")
+                .header("Authorization", token("population")).contentType(MediaType.APPLICATION_JSON).content(releaseBody()))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+        return created.path("data").path("application").path("applicationId").asLong();
+    }
+    private long createActiveRecord() {
+        jdbc.update("INSERT INTO key_population(key_id,person_id,key_type,management_level,register_reason,register_date,responsible_department_id,responsible_user_id,status,version) " +
+                "VALUES(11001,11001,'OTHER','MEDIUM','合成建档',DATE '2026-01-01',4,6,'ACTIVE',0)");
+        return 11001;
+    }
+    private String releaseBody() { return "{\"releaseReason\":\"门禁解除\",\"releaseDate\":\"2026-07-13\",\"title\":\"解除申请\"}"; }
     private long approvedRelease(long record) throws Exception {
         String body = "{\"releaseReason\":\"门禁解除\",\"releaseDate\":\"2026-07-13\",\"title\":\"解除申请\"}";
         JsonNode created = json.readTree(mvc.perform(post("/api/key-populations/" + record + "/release-applications")
@@ -191,6 +355,11 @@ class Phase10KeyPopulationGateIntegrationTest {
         long approval = jdbc.queryForObject("SELECT approval_id FROM sys_approval_request WHERE application_id=?", Long.class, app);
         mvc.perform(post("/api/approvals/" + approval + "/approve").header("Authorization", token("approver"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"comment\":\"同意\",\"version\":0}"))
+                .andExpect(status().isOk());
+    }
+    private void returnApprovedApplication(long app) throws Exception {
+        mvc.perform(post("/api/applications/" + app + "/return").header("Authorization", token("household"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"comment\":\"补正后再审\",\"version\":2}"))
                 .andExpect(status().isOk());
     }
     private void prepareMaterials(long app) {
