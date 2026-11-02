@@ -21,6 +21,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -38,6 +40,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.http.MediaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wjx871.population.floating.FloatingResidenceTransactionHook;
 
 /**
  * Explicit MySQL 8.4 gate. This class is intentionally named *IT so the normal H2
@@ -61,6 +64,7 @@ class MySql84CriticalAcceptanceIT {
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
     @Autowired PasswordEncoder passwordEncoder;
+    @MockBean FloatingResidenceTransactionHook floatingHook;
 
     private static GateSettings settings() {
         String url = required("MYSQL84_GATE_DB_URL");
@@ -103,6 +107,7 @@ class MySql84CriticalAcceptanceIT {
 
     @org.junit.jupiter.api.BeforeEach
     void verifyDedicatedMysqlIdentity() {
+        org.mockito.Mockito.reset(floatingHook);
         GateSettings gate = settings();
         Map<String, Object> identity = jdbc.queryForMap(
                 "SELECT @@version version, @@port port, @@bind_address bind_address, " +
@@ -214,6 +219,78 @@ class MySql84CriticalAcceptanceIT {
         assertApplicationCompleted(out);
         assertApplicationCompleted(cancellation);
         System.out.println("PASS headless household: final member out transitioned to PENDING_CANCELLATION and cancellation archived it.");
+    }
+
+    @Test
+    void closeThenEndorseLocksFloatingBeforePermitWithoutDeadlock() throws Exception {
+        GateSettings gate = settings();
+        enableStatementErrorHistory(gate);
+        String closeToken = "Bearer " + token("household");
+        String endorseToken = "Bearer " + token("household");
+        for (int run = 1; run <= 10; run++) {
+            EndorseScenario scenario = createApprovedEndorsementScenario();
+            long deadlocksBefore = mysqlErrorCount(gate, 1213);
+            CountDownLatch closeHoldsFloating = new CountDownLatch(1);
+            CountDownLatch endorseApplicationLocked = new CountDownLatch(1);
+            CountDownLatch releaseClose = new CountDownLatch(1);
+            AtomicLong closeConnectionId = new AtomicLong();
+            AtomicLong endorseConnectionId = new AtomicLong();
+            org.mockito.Mockito.doAnswer(invocation -> {
+                closeConnectionId.set(jdbc.queryForObject("SELECT CONNECTION_ID()", Long.class));
+                closeHoldsFloating.countDown();
+                if (!releaseClose.await(20, TimeUnit.SECONDS)) throw new IllegalStateException("close barrier timed out");
+                return null;
+            }).when(floatingHook).afterFloatingClose();
+            org.mockito.Mockito.doAnswer(invocation -> {
+                endorseConnectionId.set(jdbc.queryForObject("SELECT CONNECTION_ID()", Long.class));
+                endorseApplicationLocked.countDown();
+                return null;
+            }).when(floatingHook).afterPermitApplicationLock();
+
+            ExecutorService pool = Executors.newFixedThreadPool(2);
+            try {
+                Future<MvcResult> closeFuture = pool.submit(() -> mvc.perform(post("/api/floating-populations/" + scenario.floatingId() + "/close")
+                        .header("Authorization", closeToken).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reasonCode\":\"LEFT_REGION\",\"comment\":\"MySQL 并发合成关闭\",\"version\":0}"))
+                        .andReturn());
+                assertThat(closeHoldsFloating.await(10, TimeUnit.SECONDS)).isTrue();
+                Future<MvcResult> endorseFuture = pool.submit(() -> mvc.perform(post("/api/residence-permits/applications/" + scenario.endorsementApplicationId() + "/endorse")
+                        .header("Authorization", endorseToken).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":2}"))
+                        .andReturn());
+                assertThat(endorseApplicationLocked.await(10, TimeUnit.SECONDS)).isTrue();
+                String lockEvidence = awaitInnoDbCloseEndorseWait(gate, endorseConnectionId.get(), closeConnectionId.get(), 5_000);
+                System.out.printf("MYSQL_LOCK_ORDER run=%d closeConnection=%d endorseConnection=%d %s%n",
+                        run, closeConnectionId.get(), endorseConnectionId.get(),
+                        lockEvidence == null ? "no correlated wait observed" : lockEvidence);
+                releaseClose.countDown();
+
+                MvcResult closeResult = closeFuture.get(30, TimeUnit.SECONDS);
+                MvcResult endorseResult = endorseFuture.get(30, TimeUnit.SECONDS);
+                long deadlocksAfter = mysqlErrorCount(gate, 1213);
+                if (deadlocksAfter > deadlocksBefore) {
+                    ErrorStatement error = mysqlErrorStatement(gate, 1213, "40001");
+                    System.out.printf("MYSQL_DEADLOCK_FAIL run=%d closeHttp=%d endorseHttp=%d errno=%d sqlstate=%s mysqlThread=%d connection=%d%n",
+                            run, closeResult.getResponse().getStatus(), endorseResult.getResponse().getStatus(),
+                            error.mysqlErrno(), error.sqlState(), error.threadId(), error.processlistId());
+                    logLatestDeadlock(gate, run);
+                }
+                assertThat(closeConnectionId.get()).isPositive().isNotEqualTo(endorseConnectionId.get());
+                assertThat(lockEvidence).as("correlated InnoDB wait graph").isNotNull()
+                        .contains("requesterGranted=")
+                        .doesNotContain("residence_permit/PRIMARY/RECORD");
+                assertThat(deadlocksAfter).as("MySQL 1213 count must not increase").isEqualTo(deadlocksBefore);
+                assertThat(closeResult.getResponse().getStatus()).isEqualTo(200);
+                assertThat(endorseResult.getResponse().getStatus()).isEqualTo(409);
+                assertCloseEndorseOutcome(scenario, closeResult.getResponse().getStatus(), endorseResult.getResponse().getStatus());
+                System.out.printf("MYSQL_CONCURRENCY_PASS run=%d closeHttp=200 endorseHttp=409 deadlocks=%d isolation=REPEATABLE-READ%n",
+                        run, deadlocksAfter - deadlocksBefore);
+            } finally {
+                releaseClose.countDown();
+                pool.shutdownNow();
+                assertThat(pool.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+            }
+        }
     }
 
     @Test
@@ -676,6 +753,190 @@ class MySql84CriticalAcceptanceIT {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=? AND person_id=? AND status='ACTIVE' AND relationship='HEAD'", Long.class, household, expectedHead)).isOne();
     }
 
+    private EndorseScenario createApprovedEndorsementScenario() {
+        long person = createPerson("REGISTERED");
+        long owner = userId("population");
+        long ownerDepartment = departmentId("population");
+        long operator = userId("household");
+        long operatorDepartment = departmentId("household");
+        long approver = userId("approver");
+        long approverDepartment = departmentId("approver");
+        long floatingSource = insertSyntheticBusinessApplication("FLOATING_REGISTRATION", person, operator,
+                operatorDepartment, "110000", "COMPLETED");
+        KeyHolder floatingKey = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            PreparedStatement statement = connection.prepareStatement(
+                    "INSERT INTO floating_population(registration_no,source_application_id,person_id,source_region_code," +
+                    "source_address,current_region_code,current_address,residence_reason_code,residence_proof_type," +
+                    "arrival_date,registration_date,eligible_from_date,department_id,operator_id,status,current_flag,version) " +
+                    "VALUES(?,?,?,'110000','synthetic source','110000','synthetic current','EMPLOYMENT','EMPLOYER_ACCOMMODATION'," +
+                    "DATE_SUB(CURRENT_DATE,INTERVAL 200 DAY),CURRENT_DATE,DATE_SUB(CURRENT_DATE,INTERVAL 20 DAY),?,?,'ACTIVE',1,0)",
+                    Statement.RETURN_GENERATED_KEYS);
+            statement.setString(1, "R4-FR-" + UUID.randomUUID().toString().replace("-", "").substring(0, 20));
+            statement.setLong(2, floatingSource);
+            statement.setLong(3, person);
+            statement.setLong(4, operatorDepartment);
+            statement.setLong(5, operator);
+            return statement;
+        }, floatingKey);
+        long floating = generatedId(floatingKey);
+
+        long permitSource = insertSyntheticBusinessApplication("RESIDENCE_PERMIT_FIRST_ISSUE", person, operator,
+                operatorDepartment, "110000", "COMPLETED");
+        KeyHolder permitKey = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            PreparedStatement statement = connection.prepareStatement(
+                    "INSERT INTO residence_permit(permit_no,person_id,floating_id,source_application_id,issue_region_code," +
+                    "issuing_department_id,issuing_authority,issue_date,valid_from,valid_until,status,current_flag,version) " +
+                    "VALUES(?,?,?,?,'110000',?,'synthetic authority',DATE_SUB(CURRENT_DATE,INTERVAL 350 DAY)," +
+                    "DATE_SUB(CURRENT_DATE,INTERVAL 350 DAY),DATE_ADD(CURRENT_DATE,INTERVAL 15 DAY),'ACTIVE',1,0)",
+                    Statement.RETURN_GENERATED_KEYS);
+            statement.setString(1, "R4-RP-" + UUID.randomUUID().toString().replace("-", "").substring(0, 20));
+            statement.setLong(2, person);
+            statement.setLong(3, floating);
+            statement.setLong(4, permitSource);
+            statement.setLong(5, operatorDepartment);
+            return statement;
+        }, permitKey);
+        long permit = generatedId(permitKey);
+        LocalDate originalValidUntil = jdbc.queryForObject(
+                "SELECT valid_until FROM residence_permit WHERE permit_id=?", LocalDate.class, permit);
+
+        long endorsementApplication = insertSyntheticBusinessApplication("RESIDENCE_PERMIT_ENDORSEMENT", person,
+                owner, ownerDepartment, "110000", "APPROVED");
+        jdbc.update("INSERT INTO sys_approval_request(approval_no,application_id,status,current_approver_id," +
+                        "current_department_id,current_region_code,submitted_by,submitted_at,decided_by,decided_at," +
+                        "decision_comment,version) VALUES(?,?,'APPROVED',?,?,'110000',?,CURRENT_TIMESTAMP,?,CURRENT_TIMESTAMP,?,1)",
+                "R4-APR-" + UUID.randomUUID().toString().replace("-", "").substring(0, 20),
+                endorsementApplication, approver, approverDepartment, owner, approver, "synthetic approved endorsement");
+        jdbc.update("INSERT INTO residence_permit_application(application_id,apply_type,floating_id,permit_id,person_id," +
+                        "current_region_code,residence_basis_code,business_status,version) " +
+                        "VALUES(?,'ENDORSEMENT',?,?,?,'110000','EMPLOYMENT','APPROVED',2)",
+                endorsementApplication, floating, permit, person);
+        insertPermitMaterial(endorsementApplication, "CURRENT_RESIDENCE_PERMIT", owner, approver);
+        insertPermitMaterial(endorsementApplication, "CONTINUED_RESIDENCE_PROOF", owner, approver);
+        return new EndorseScenario(person, floating, permit, endorsementApplication, originalValidUntil);
+    }
+
+    private long insertSyntheticBusinessApplication(String type, long person, long applicant, long department,
+                                                    String region, String status) {
+        KeyHolder key = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            PreparedStatement statement = connection.prepareStatement(
+                    "INSERT INTO business_application(application_no,business_type,title,applicant_user_id," +
+                    "applicant_department_id,applicant_region_code,target_person_id,status,reason,version) " +
+                    "VALUES(?,?,?,?,?,?,?,?,?,0)", Statement.RETURN_GENERATED_KEYS);
+            statement.setString(1, "R4-APP-" + UUID.randomUUID().toString().replace("-", "").substring(0, 20));
+            statement.setString(2, type);
+            statement.setString(3, "synthetic " + type);
+            statement.setLong(4, applicant);
+            statement.setLong(5, department);
+            statement.setString(6, region);
+            statement.setLong(7, person);
+            statement.setString(8, status);
+            statement.setString(9, "synthetic MySQL concurrency fixture");
+            return statement;
+        }, key);
+        return generatedId(key);
+    }
+
+    private void insertPermitMaterial(long application, String type, long applicant, long approver) {
+        String suffix = UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "");
+        jdbc.update("INSERT INTO application_material(application_id,material_type,material_name,original_filename," +
+                        "stored_filename,storage_path,content_type,file_size,file_sha256,required_flag,verify_status," +
+                        "verify_user_id,verified_at,uploaded_by) VALUES(?,?,?,'synthetic.pdf',?,'mysql-gate-synthetic'," +
+                        "'application/pdf',1,?,1,'VERIFIED',?,CURRENT_TIMESTAMP,?)",
+                application, type, "synthetic " + type, suffix + ".pdf", suffix, approver, applicant);
+    }
+
+    private long departmentId(String username) {
+        return jdbc.queryForObject("SELECT department_id FROM sys_user WHERE username=? AND status='ENABLED'",
+                Long.class, username);
+    }
+
+    private String awaitInnoDbCloseEndorseWait(GateSettings gate, long requesterConnection,
+                                               long blockerConnection, long timeoutMillis) throws Exception {
+        String waitSql = "SELECT req.OBJECT_NAME,req.INDEX_NAME,req.LOCK_TYPE,req.LOCK_MODE,req.LOCK_STATUS," +
+                "block.OBJECT_NAME,block.INDEX_NAME,block.LOCK_TYPE,block.LOCK_MODE,block.LOCK_STATUS " +
+                "FROM performance_schema.data_lock_waits w " +
+                "JOIN performance_schema.data_locks req ON req.ENGINE=w.ENGINE AND req.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID " +
+                "JOIN performance_schema.data_locks block ON block.ENGINE=w.ENGINE AND block.ENGINE_LOCK_ID=w.BLOCKING_ENGINE_LOCK_ID " +
+                "JOIN performance_schema.threads rt ON rt.THREAD_ID=w.REQUESTING_THREAD_ID " +
+                "JOIN performance_schema.threads bt ON bt.THREAD_ID=w.BLOCKING_THREAD_ID " +
+                "WHERE rt.PROCESSLIST_ID=? AND bt.PROCESSLIST_ID=? AND req.OBJECT_SCHEMA=? LIMIT 1";
+        long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        try (Connection admin = DriverManager.getConnection(gate.url(), gate.adminUser(), gate.adminPassword());
+             PreparedStatement waitQuery = admin.prepareStatement(waitSql)) {
+            while (System.nanoTime() < deadline) {
+                waitQuery.setLong(1, requesterConnection);
+                waitQuery.setLong(2, blockerConnection);
+                waitQuery.setString(3, gate.database());
+                try (ResultSet rows = waitQuery.executeQuery()) {
+                    if (rows.next()) {
+                        String wait = "request=" + rows.getString(1) + "/" + rows.getString(2) + "/" +
+                                rows.getString(3) + "/" + rows.getString(4) + "/" + rows.getString(5) +
+                                " blocker=" + rows.getString(6) + "/" + rows.getString(7) + "/" +
+                                rows.getString(8) + "/" + rows.getString(9) + "/" + rows.getString(10);
+                        return wait + " requesterGranted=" + grantedLocks(admin, requesterConnection, gate.database());
+                    }
+                }
+                Thread.sleep(10);
+            }
+        }
+        return null;
+    }
+
+    private String grantedLocks(Connection admin, long connectionId, String schema) throws Exception {
+        String sql = "SELECT GROUP_CONCAT(CONCAT(l.OBJECT_NAME,'/',COALESCE(l.INDEX_NAME,''),'/',l.LOCK_TYPE,'/',l.LOCK_MODE) " +
+                "ORDER BY l.OBJECT_NAME,l.INDEX_NAME SEPARATOR ';') FROM performance_schema.data_locks l " +
+                "JOIN performance_schema.threads t ON t.THREAD_ID=l.THREAD_ID " +
+                "WHERE t.PROCESSLIST_ID=? AND l.OBJECT_SCHEMA=? AND l.LOCK_STATUS='GRANTED'";
+        try (PreparedStatement statement = admin.prepareStatement(sql)) {
+            statement.setLong(1, connectionId);
+            statement.setString(2, schema);
+            try (ResultSet row = statement.executeQuery()) {
+                return row.next() ? row.getString(1) : "none";
+            }
+        }
+    }
+
+    private void assertCloseEndorseOutcome(EndorseScenario scenario, int closeStatus, int endorseStatus) {
+        String floatingStatus = jdbc.queryForObject("SELECT status FROM floating_population WHERE floating_id=?",
+                String.class, scenario.floatingId());
+        String permitStatus = jdbc.queryForObject("SELECT status FROM residence_permit WHERE permit_id=?",
+                String.class, scenario.permitId());
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence_permit_log WHERE permit_id=? AND action='ENDORSE'",
+                Integer.class, scenario.permitId())).isEqualTo(endorseStatus == 200 ? 1 : 0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence_permit_log WHERE permit_id=? AND action='REGISTRATION_CLOSED'",
+                Integer.class, scenario.permitId())).isEqualTo(closeStatus == 200 ? 1 : 0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_approval_log WHERE application_id=? AND action='EXECUTE'",
+                Integer.class, scenario.endorsementApplicationId())).isEqualTo(endorseStatus == 200 ? 1 : 0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM operation_log WHERE request_path=? AND operation_type='FLOATING_REGISTRATION_CLOSE'",
+                Integer.class, "/api/floating-populations/" + scenario.floatingId() + "/close")).isEqualTo(closeStatus == 200 ? 1 : 0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM operation_log WHERE request_path=? AND operation_type='RESIDENCE_PERMIT_ENDORSE'",
+                Integer.class, "/api/residence-permits/applications/" + scenario.endorsementApplicationId() + "/endorse"))
+                .isEqualTo(endorseStatus == 200 ? 1 : 0);
+        assertThat(jdbc.queryForObject("SELECT status FROM business_application WHERE application_id=?",
+                String.class, scenario.endorsementApplicationId())).isEqualTo(endorseStatus == 200 ? "COMPLETED" : "APPROVED");
+        if (closeStatus == 200) {
+            assertThat(floatingStatus).isEqualTo("LEFT");
+            assertThat(permitStatus).isEqualTo("CANCELLED");
+            assertThat(jdbc.queryForObject("SELECT current_flag FROM floating_population WHERE floating_id=?",
+                    Object.class, scenario.floatingId())).isNull();
+            assertThat(jdbc.queryForObject("SELECT current_flag FROM residence_permit WHERE permit_id=?",
+                    Object.class, scenario.permitId())).isNull();
+        } else {
+            assertThat(floatingStatus).isEqualTo("ACTIVE");
+            assertThat(permitStatus).isEqualTo("ACTIVE");
+            assertThat(jdbc.queryForObject("SELECT current_flag FROM floating_population WHERE floating_id=?",
+                    Integer.class, scenario.floatingId())).isEqualTo(1);
+            assertThat(jdbc.queryForObject("SELECT current_flag FROM residence_permit WHERE permit_id=?",
+                    Integer.class, scenario.permitId())).isEqualTo(1);
+            assertThat(jdbc.queryForObject("SELECT valid_until FROM residence_permit WHERE permit_id=?",
+                    LocalDate.class, scenario.permitId())).isAfter(scenario.originalValidUntil());
+        }
+    }
+
     private int invalidHouseholdHeadCount() throws Exception {
         String sql = Files.readString(Path.of("doc/database/check_backend_v1.sql")).trim();
         return jdbc.queryForObject("SELECT abnormal_count FROM (" + sql.substring(0, sql.length() - 1) +
@@ -871,6 +1132,8 @@ class MySql84CriticalAcceptanceIT {
     }
 
     private record Execution(long threadId, int httpStatus, String responseBody) {}
+    private record EndorseScenario(long personId, long floatingId, long permitId, long endorsementApplicationId,
+                                  LocalDate originalValidUntil) {}
     private record ErrorStatement(int mysqlErrno, String sqlState, long threadId, long processlistId, String sqlText) {}
     private record GateSettings(String url, String appUser, String appPassword, String adminUser,
                                 String adminPassword, String apiTestPassword, int port, String database) {}
