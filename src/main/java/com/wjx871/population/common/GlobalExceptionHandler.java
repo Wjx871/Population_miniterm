@@ -5,6 +5,12 @@ import com.wjx871.population.security.AuthenticatedUser;
 import com.wjx871.population.security.CurrentUserContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import java.sql.SQLException;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
+import java.util.Deque;
 import java.util.stream.Collectors;
 import lombok.extern.log4j.Log4j2;
 import lombok.RequiredArgsConstructor;
@@ -85,8 +91,29 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception exception) {
+        if (isMySqlDeadlock(exception)) {
+            log.warn("Request transaction rolled back after a MySQL deadlock");
+            return response(HttpStatus.CONFLICT, "业务数据正在被并发修改，请刷新后重试");
+        }
         log.error("Unhandled request exception", exception);
         return response(HttpStatus.INTERNAL_SERVER_ERROR, "服务器处理请求失败");
+    }
+
+    private boolean isMySqlDeadlock(Throwable exception) {
+        Deque<Throwable> pending = new ArrayDeque<>();
+        Set<Throwable> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        pending.add(exception);
+        while (!pending.isEmpty()) {
+            Throwable current = pending.removeFirst();
+            if (!visited.add(current)) continue;
+            if (current instanceof SQLException sqlException) {
+                if (sqlException.getErrorCode() == 1213 && "40001".equals(sqlException.getSQLState())) return true;
+                SQLException next = sqlException.getNextException();
+                if (next != null) pending.addLast(next);
+            }
+            if (current.getCause() != null) pending.addLast(current.getCause());
+        }
+        return false;
     }
 
     private ResponseEntity<ApiResponse<Void>> response(HttpStatus status, String message) {
