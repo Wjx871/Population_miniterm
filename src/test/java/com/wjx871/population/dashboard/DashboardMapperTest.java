@@ -2,15 +2,21 @@ package com.wjx871.population.dashboard;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.wjx871.population.security.AuthenticatedUser;
 import com.wjx871.population.security.DataScope;
 import com.wjx871.population.security.DataScopeCriteria;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
+import org.assertj.core.api.SoftAssertions;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -26,6 +32,9 @@ class DashboardMapperTest {
     @Autowired
     private JdbcTemplate jdbc;
 
+    @Autowired
+    private DashboardService dashboardService;
+
     private Long personActive;
     private Long personInactiveResidence;
     private Long personOtherRegion;
@@ -34,6 +43,11 @@ class DashboardMapperTest {
     void setUp() {
         cleanBusinessData();
         seedData();
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -125,12 +139,188 @@ class DashboardMapperTest {
         assertThat(mapper.countPendingSensitiveExport(all)).isZero();
     }
 
+    @Test
+    void selfFloatingAndPermitStatisticsFollowApplicantAcrossExecutors() {
+        seedSelfOwnershipScenario();
+        LocalDate today = LocalDate.now();
+        LocalDate from = today.minusDays(6);
+
+        DataScopeCriteria a = selfScope(2L, 2L);
+        DataScopeCriteria b = selfScope(99202L, 2L);
+        DataScopeCriteria executor = selfScope(99203L, 2L);
+        SoftAssertions softly = new SoftAssertions();
+
+        softly.assertThat(mapper.countActiveFloating(a)).as("A sees own floating record executed by C").isEqualTo(1L);
+        softly.assertThat(mapper.countActivePermits(a)).as("A cannot see B's permit").isEqualTo(1L);
+        softly.assertThat(mapper.countExpiringPermits(today, today.plusDays(30), a))
+                .as("A sees only own expiring permit").isEqualTo(1L);
+        softly.assertThat(mapper.countActiveFloating(b)).as("B sees own floating record").isEqualTo(1L);
+        softly.assertThat(mapper.countActivePermits(b)).as("B cannot see A's permit").isEqualTo(1L);
+        softly.assertThat(mapper.countExpiringPermits(today, today.plusDays(30), b))
+                .as("B sees only own expiring permit").isEqualTo(1L);
+        softly.assertThat(mapper.countActiveFloating(executor)).as("C has no applicant-owned floating record").isZero();
+        softly.assertThat(mapper.countActivePermits(executor)).as("C has no applicant-owned permit").isZero();
+        softly.assertThat(mapper.countExpiringPermits(today, today.plusDays(30), executor))
+                .as("C has no applicant-owned expiring permit").isZero();
+
+        assertTrend(softly, a, from, today, 1L, 1L, "A");
+        assertTrend(softly, b, from, today, 1L, 1L, "B");
+        assertTrend(softly, executor, from, today, 0L, 0L, "C");
+        softly.assertAll();
+    }
+
+    @Test
+    void dashboardServiceReturnsSelfScopedOverviewAndTrendCounts() {
+        seedSelfOwnershipScenario();
+        authenticateSelf(2L, 2L);
+
+        DashboardOverviewView overview = dashboardService.overview(7, 30);
+        DashboardChartsView charts = dashboardService.charts(7, 8);
+        LocalDate today = LocalDate.now();
+        PopulationScaleTrendPoint todayTrend = charts.getPopulationScaleTrend().stream()
+                .filter(point -> today.equals(point.getDate()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(overview.getActiveFloatingPopulation()).isEqualTo(1L);
+        assertThat(overview.getActiveResidencePermits()).isEqualTo(1L);
+        assertThat(overview.getExpiringResidencePermits()).isEqualTo(1L);
+        assertThat(todayTrend.getFloatingPopulation()).isEqualTo(1L);
+        assertThat(todayTrend.getResidencePermits()).isEqualTo(1L);
+    }
+
+    @Test
+    void departmentRegionAndAllScopesRemainUnchangedAndIgnoreHistoricalCurrentFlags() {
+        seedSelfOwnershipScenario();
+        LocalDate today = LocalDate.now();
+        LocalDate from = today.minusDays(6);
+        DataScopeCriteria department = new DataScopeCriteria(DataScope.DEPARTMENT, 2L, 2L, "110000");
+        DataScopeCriteria region = new DataScopeCriteria(DataScope.REGION, 2L, 2L, "110101", List.of("110101"));
+        DataScopeCriteria all = new DataScopeCriteria(DataScope.ALL, 3L, 3L, "110000");
+
+        assertThat(mapper.countActiveFloating(department)).isEqualTo(2L);
+        assertThat(mapper.countActivePermits(department)).isEqualTo(2L);
+        assertThat(mapper.countExpiringPermits(today, today.plusDays(30), department)).isEqualTo(2L);
+        assertThat(mapper.countActiveFloating(region)).isEqualTo(2L);
+        assertThat(mapper.countActivePermits(region)).isEqualTo(2L);
+        assertThat(mapper.countExpiringPermits(today, today.plusDays(30), region)).isEqualTo(2L);
+        assertThat(mapper.countActiveFloating(all)).isEqualTo(3L);
+        assertThat(mapper.countActivePermits(all)).isEqualTo(3L);
+        assertThat(mapper.countExpiringPermits(today, today.plusDays(30), all)).isEqualTo(3L);
+
+        SoftAssertions trendAssertions = new SoftAssertions();
+        assertTrend(trendAssertions, department, from, today, 2L, 2L, "department");
+        assertTrend(trendAssertions, region, from, today, 2L, 2L, "region");
+        assertTrend(trendAssertions, all, from, today, 3L, 3L, "all");
+        trendAssertions.assertAll();
+    }
+
     private DataScopeCriteria allScope() {
         return new DataScopeCriteria(DataScope.ALL, 3L, 3L, "110000");
     }
 
     private List<String> regionCodes() {
         return List.of("110000", "110100", "110101", "110105", "110105001", "110105001001");
+    }
+
+    private DataScopeCriteria selfScope(long userId, long departmentId) {
+        return new DataScopeCriteria(DataScope.SELF, userId, departmentId, "110101");
+    }
+
+    private void assertTrend(SoftAssertions softly, DataScopeCriteria scope, LocalDate from, LocalDate to,
+            long expectedFloating, long expectedPermits, String label) {
+        List<PopulationScaleTrendPoint> rows = mapper.populationScaleTrend(from, to, scope);
+        PopulationScaleTrendPoint today = rows.stream()
+                .filter(point -> to.equals(point.getDate()))
+                .findFirst()
+                .orElse(new PopulationScaleTrendPoint(to, 0L, 0L, 0L));
+        softly.assertThat(today.getFloatingPopulation()).as(label + " floating trend").isEqualTo(expectedFloating);
+        softly.assertThat(today.getResidencePermits()).as(label + " permit trend").isEqualTo(expectedPermits);
+    }
+
+    private void seedSelfOwnershipScenario() {
+        long ownerB = 99202L;
+        long executor = 99203L;
+        jdbc.update("INSERT INTO sys_user(user_id,username,password_hash,role_id,department_id,real_name,status) "
+                + "VALUES(?,?,?,2,2,?,'ENABLED')", ownerB, "audit-self-b", "synthetic-test-hash", "SELF owner B");
+        jdbc.update("INSERT INTO sys_user(user_id,username,password_hash,role_id,department_id,real_name,status) "
+                + "VALUES(?,?,?,2,2,?,'ENABLED')", executor, "audit-self-c", "synthetic-test-hash", "SELF executor C");
+
+        LocalDate today = LocalDate.now();
+        LocalDate historicalDate = today.minusDays(90);
+        jdbc.update("UPDATE floating_population SET current_region_code='110101',operator_id=?,registration_date=? "
+                + "WHERE person_id=? AND status='ACTIVE' AND current_flag=1", executor, today, personActive);
+        Long floatingA = jdbc.queryForObject(
+                "SELECT floating_id FROM floating_population WHERE person_id=? AND status='ACTIVE' AND current_flag=1",
+                Long.class, personActive);
+        jdbc.update("UPDATE residence_permit SET issue_region_code='110101',issue_date=?,valid_from=?,valid_until=? "
+                + "WHERE person_id=? AND status='ACTIVE' AND current_flag=1", today, today, today.plusDays(7), personActive);
+
+        Long personB = insertPerson("SELF owner B", auditId("B"));
+        Long appFloatB = insertApplication("DASH-SELF-B-F-" + auditSuffix(), ownerB, 2L, "110101", personB);
+        Long floatingB = insertSyntheticFloating(personB, appFloatB, "ACTIVE", 1, "110101", 2L, executor, today);
+        Long appPermitB = insertApplication("DASH-SELF-B-P-" + auditSuffix(), ownerB, 2L, "110101", personB);
+        insertSyntheticPermit(personB, floatingB, appPermitB, "ACTIVE", 1, "110101", 2L, today,
+                today, today.plusDays(7));
+
+        Long outsiderAppFloat = insertApplication("DASH-SELF-O-F-" + auditSuffix(), 6L, 4L, "120000", personOtherRegion);
+        Long outsiderFloating = insertSyntheticFloating(personOtherRegion, outsiderAppFloat, "ACTIVE", 1,
+                "120000", 4L, executor, today);
+        Long outsiderAppPermit = insertApplication("DASH-SELF-O-P-" + auditSuffix(), 6L, 4L, "120000", personOtherRegion);
+        insertSyntheticPermit(personOtherRegion, outsiderFloating, outsiderAppPermit, "ACTIVE", 1,
+                "120000", 4L, today, today, today.plusDays(7));
+
+        Long closedApp = insertApplication("DASH-SELF-A-FH-" + auditSuffix(), 2L, 2L, "110101", personActive);
+        insertSyntheticFloating(personActive, closedApp, "CLOSED", null, "110101", 2L, executor, historicalDate);
+        Long nonCurrentApp = insertApplication("DASH-SELF-A-P0-" + auditSuffix(), 2L, 2L, "110101", personActive);
+        insertSyntheticPermit(personActive, floatingA, nonCurrentApp, "ACTIVE", 0, "110101", 2L,
+                historicalDate, today, today.plusDays(7));
+        Long cancelledApp = insertApplication("DASH-SELF-A-PC-" + auditSuffix(), 2L, 2L, "110101", personActive);
+        insertSyntheticPermit(personActive, floatingA, cancelledApp, "CANCELLED", null, "110101", 2L,
+                historicalDate, historicalDate, today.plusDays(7));
+        Long expiredApp = insertApplication("DASH-SELF-A-PE-" + auditSuffix(), 2L, 2L, "110101", personActive);
+        insertSyntheticPermit(personActive, floatingA, expiredApp, "EXPIRED", null, "110101", 2L,
+                historicalDate, historicalDate, today.minusDays(1));
+    }
+
+    private Long insertSyntheticFloating(Long personId, Long applicationId, String status, Integer currentFlag,
+            String region, Long departmentId, Long operatorId, LocalDate registrationDate) {
+        String registrationNo = "DSF-" + auditSuffix();
+        jdbc.update("INSERT INTO floating_population(registration_no,source_application_id,person_id,"
+                + "source_region_code,current_region_code,current_address,residence_reason_code,residence_proof_type,"
+                + "arrival_date,registration_date,department_id,operator_id,status,current_flag,version) "
+                + "VALUES(?, ?, ?, '110000', ?, 'synthetic address', 'WORK', 'LEASE', ?, ?, ?, ?, ?, ?, 0)",
+                registrationNo, applicationId, personId, region, registrationDate, registrationDate, departmentId,
+                operatorId, status, currentFlag);
+        return jdbc.queryForObject("SELECT floating_id FROM floating_population WHERE registration_no=?",
+                Long.class, registrationNo);
+    }
+
+    private void insertSyntheticPermit(Long personId, Long floatingId, Long applicationId, String status,
+            Integer currentFlag, String region, Long departmentId, LocalDate issueDate, LocalDate validFrom,
+            LocalDate validUntil) {
+        String permitNo = "DSP-" + auditSuffix();
+        jdbc.update("INSERT INTO residence_permit(permit_no,person_id,floating_id,source_application_id,"
+                + "issue_region_code,issuing_department_id,issuing_authority,issue_date,valid_from,valid_until,"
+                + "status,current_flag,version) VALUES(?,?,?,?,?,?, 'Synthetic authority',?,?,?,?,?,0)",
+                permitNo, personId, floatingId, applicationId, region, departmentId, issueDate, validFrom,
+                validUntil, status, currentFlag);
+    }
+
+    private String auditId(String owner) {
+        return "AUD" + owner + auditSuffix();
+    }
+
+    private String auditSuffix() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+    }
+
+    private void authenticateSelf(long userId, long departmentId) {
+        AuthenticatedUser user = new AuthenticatedUser(userId, "dashboard-self-" + userId, "", "Synthetic user",
+                "ENABLED", 2L, "SELF_TEST", "SELF test", null, DataScope.SELF, "ENABLED", departmentId,
+                "Population", "110101", List.of("statistics:view"));
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
     }
 
     private void cleanBusinessData() {
