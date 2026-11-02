@@ -9,6 +9,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wjx871.population.security.JwtService;
+import com.wjx871.population.security.TokenRevocationService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
@@ -45,6 +47,12 @@ class AuthRbacIntegrationTest {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private TokenRevocationService revocations;
 
     @BeforeEach
     void resetAuditState() {
@@ -91,6 +99,33 @@ class AuthRbacIntegrationTest {
         mockMvc.perform(login("admin", "wrong"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value(401));
+    }
+
+    @Test
+    void publicLoginIgnoresInvalidExpiredAndRevokedBearerTokensButProtectedApiRejectsThem() throws Exception {
+        mockMvc.perform(login("admin", "123456"))
+                .andExpect(status().isOk());
+
+        String valid = tokenFor("admin");
+        mockMvc.perform(login("admin", "123456").header("Authorization", bearer(valid)))
+                .andExpect(status().isOk());
+
+        String invalid = "not-a-jwt";
+        String expired = expiredToken();
+        String revoked = tokenFor("admin");
+        var claims = jwtService.parseClaims(revoked);
+        revocations.revoke(claims.getId(), claims.getExpiration().toInstant());
+
+        for (String stale : new String[]{invalid, expired, revoked}) {
+            mockMvc.perform(login("admin", "123456").header("Authorization", bearer(stale)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.token").isNotEmpty());
+            mockMvc.perform(get("/api/persons").header("Authorization", bearer(stale)))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        mockMvc.perform(get("/api/persons").header("Authorization", bearer(valid)))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -281,6 +316,19 @@ class AuthRbacIntegrationTest {
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         JsonNode body = objectMapper.readTree(response);
         return body.path("data").path("token").asText();
+    }
+
+    private String expiredToken() {
+        Instant now = Instant.now();
+        var key = Keys.hmacShaKeyFor("test-jwt-secret-must-have-at-least-thirty-two-bytes"
+                .getBytes(StandardCharsets.UTF_8));
+        return Jwts.builder()
+                .id("expired-login-token")
+                .subject("admin")
+                .issuedAt(Date.from(now.minusSeconds(120)))
+                .expiration(Date.from(now.minusSeconds(60)))
+                .signWith(key)
+                .compact();
     }
 
     private String bearer(String token) {
