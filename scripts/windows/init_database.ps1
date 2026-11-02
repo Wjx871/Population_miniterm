@@ -159,7 +159,7 @@ function Invoke-Verify {
     $requiredTables = @('person','household','residence','business_application','sys_approval_request','cancellation_record','household_archive','floating_registration_application','residence_permit','data_export_request','data_export_log','admin_region','data_dictionary','key_population','key_population_application','key_population_history','operation_log')
     $requiredRoles = @('QUERY_VIEWER','POPULATION_MANAGER','HOUSEHOLD_MANAGER','APPROVER','SYSTEM_ADMIN')
     $requiredPermissions = @('application:view','migration:view','cancellation:view','floating:view','residence-permit:view','data:export:normal','data:export:log:view','region:view','dictionary:view','certificate:view','key-population:view','log:view')
-    $requiredIndexes = @('idx_key_population_query','idx_household_member_person_status','idx_household_member_household_status','idx_person_query','idx_operation_log_query','idx_migration_in_query','idx_migration_out_query')
+    $requiredIndexes = @('idx_key_population_query','idx_household_member_person_status','idx_household_member_household_status','idx_person_query','idx_operation_log_query','idx_migration_in_query','idx_migration_out_query','idx_person_initial_scope_user','idx_person_initial_scope_department','idx_person_initial_scope_region')
 
     foreach ($table in $requiredTables) {
         $count = Invoke-MySql -Sql "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$Database' AND table_name='$table';" -Batch
@@ -178,7 +178,7 @@ function Invoke-Verify {
         if ([int]$count[-1] -lt 1) { throw "缺少必需索引：$index" }
     }
     Assert-MySqlZeroResult -Sql (Get-Content -LiteralPath $checkSql -Raw) -Description '数据库一致性检查'
-    Write-Host "[PASS] 数据库 Verify：$Database（结构、角色、权限、V4_010 相关索引和一致性检查均通过）"
+    Write-Host "[PASS] 数据库 Verify：$Database（结构、角色、权限、V4_014 相关索引和一致性检查均通过）"
 }
 
 if ($Mode -eq 'Verify') { Invoke-Verify; exit 0 }

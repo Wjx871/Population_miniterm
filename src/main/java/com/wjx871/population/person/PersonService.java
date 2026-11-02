@@ -18,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.wjx871.population.security.SensitiveDataMaskingService;
 import com.wjx871.population.security.DataScopeCriteria;
 import com.wjx871.population.security.CurrentUserContext;
+import com.wjx871.population.security.AuthenticatedUser;
 
 /**
  * 人口基础信息业务服务。
@@ -71,19 +72,22 @@ public class PersonService {
 
     @Transactional
     public Person create(PersonRequest request) {
-        return createInternal(request, null);
+        AuthenticatedUser scopeOwner = CurrentUserContext.requireUser();
+        return createInternal(request, null, scopeOwner.userId(), scopeOwner.departmentId(), scopeOwner.regionCode());
     }
 
     /** Called only after the approval service has validated an eligible, in-scope approval. */
     @Transactional
-    public Person createForApproval(PersonRequest request, Long applicantUserId) {
+    public Person createForApproval(PersonRequest request, Long applicantUserId,
+                                    Long applicantDepartmentId, String applicantRegionCode) {
         if (!CurrentUserContext.requireUser().permissions().contains("approval:handle")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "缺少审批处理权限");
         }
-        return createInternal(request, applicantUserId);
+        return createInternal(request, applicantUserId, applicantUserId, applicantDepartmentId, applicantRegionCode);
     }
 
-    private Person createInternal(PersonRequest request, Long approvedImageOwnerId) {
+    private Person createInternal(PersonRequest request, Long approvedImageOwnerId, Long initialScopeUserId,
+                                  Long initialScopeDepartmentId, String initialScopeRegionCode) {
         IdCardValidator.Identity identity = idCards.validate(request.idCard(), request.birthDate(), request.gender());
         String idCard = identity.normalized();
         if (personMapper.countByIdCard(idCard) > 0) {
@@ -118,6 +122,9 @@ public class PersonService {
         apply(request, person, identity);
         person.setStatus(PersonStatus.NORMAL);
         person.setIdCard(idCard);
+        person.setInitialScopeUserId(initialScopeUserId);
+        person.setInitialScopeDepartmentId(initialScopeDepartmentId);
+        person.setInitialScopeRegionCode(initialScopeRegionCode);
         person.setCreatedAt(now);
         person.setUpdatedAt(now);
         personMapper.insertPerson(person);

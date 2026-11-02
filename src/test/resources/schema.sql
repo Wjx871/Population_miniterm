@@ -119,6 +119,9 @@ CREATE TABLE person (
     phone VARCHAR(20),
     current_address VARCHAR(255),
     status VARCHAR(20) NOT NULL DEFAULT '正常',
+    initial_scope_user_id BIGINT,
+    initial_scope_department_id BIGINT,
+    initial_scope_region_code VARCHAR(20),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -339,6 +342,9 @@ INSERT INTO sys_role_permission(role_id,permission_id) VALUES(1,58),(2,58),(2,59
 CREATE INDEX idx_cancellation_region_created ON cancellation_record(region_code_snapshot,created_at);
 CREATE INDEX idx_household_archive_no ON household_archive(household_no_snapshot);
 CREATE INDEX idx_person_query ON person(current_status_code,gender,birth_date);
+CREATE INDEX idx_person_initial_scope_user ON person(initial_scope_user_id);
+CREATE INDEX idx_person_initial_scope_department ON person(initial_scope_department_id);
+CREATE INDEX idx_person_initial_scope_region ON person(initial_scope_region_code);
 CREATE INDEX idx_operation_log_query ON operation_log(operation_time,operation_type,module_name,operation_result,user_id);
 CREATE INDEX idx_migration_in_query ON migration_in(in_date,business_status,migration_type,person_id);
 CREATE INDEX idx_migration_out_query ON migration_out(out_date,business_status,migration_type,person_id);

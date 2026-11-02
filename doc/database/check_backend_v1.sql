@@ -24,7 +24,9 @@ UNION ALL SELECT 'required_table_missing',COUNT(*) FROM (
     UNION ALL SELECT 'operation_log'
 ) required LEFT JOIN information_schema.tables actual ON actual.table_schema=DATABASE() AND actual.table_name=required.object_name WHERE actual.table_name IS NULL
 UNION ALL SELECT 'required_column_missing',COUNT(*) FROM (
-    SELECT 'person' table_name,'current_status_code' column_name UNION ALL SELECT 'household','version'
+    SELECT 'person' table_name,'current_status_code' column_name UNION ALL SELECT 'person','initial_scope_user_id'
+    UNION ALL SELECT 'person','initial_scope_department_id' UNION ALL SELECT 'person','initial_scope_region_code'
+    UNION ALL SELECT 'household','version'
     UNION ALL SELECT 'residence','status' UNION ALL SELECT 'business_application','status'
     UNION ALL SELECT 'key_population','active_flag' UNION ALL SELECT 'operation_log','operation_time'
 ) required LEFT JOIN information_schema.columns actual ON actual.table_schema=DATABASE() AND actual.table_name=required.table_name AND actual.column_name=required.column_name WHERE actual.column_name IS NULL
@@ -32,6 +34,8 @@ UNION ALL SELECT 'required_index_missing',COUNT(*) FROM (
     SELECT 'idx_household_member_person_status' object_name UNION ALL SELECT 'idx_household_member_household_status'
     UNION ALL SELECT 'idx_key_population_query' UNION ALL SELECT 'idx_person_query'
     UNION ALL SELECT 'idx_operation_log_query' UNION ALL SELECT 'idx_migration_in_query' UNION ALL SELECT 'idx_migration_out_query'
+    UNION ALL SELECT 'idx_person_initial_scope_user' UNION ALL SELECT 'idx_person_initial_scope_department'
+    UNION ALL SELECT 'idx_person_initial_scope_region'
 ) required LEFT JOIN (SELECT DISTINCT index_name FROM information_schema.statistics WHERE table_schema=DATABASE()) actual ON actual.index_name=required.object_name WHERE actual.index_name IS NULL
 UNION ALL SELECT 'required_permission_missing',COUNT(*) FROM (
     SELECT 'application:view' object_name UNION ALL SELECT 'migration:view' UNION ALL SELECT 'cancellation:view'

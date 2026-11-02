@@ -1,5 +1,6 @@
 package com.wjx871.population.person;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -33,6 +34,15 @@ public class Person {
 
     private String status = PersonStatus.NORMAL;
     private String currentStatusCode;
+
+    @JsonIgnore
+    private Long initialScopeUserId;
+
+    @JsonIgnore
+    private Long initialScopeDepartmentId;
+
+    @JsonIgnore
+    private String initialScopeRegionCode;
 
     private LocalDateTime createdAt;
 

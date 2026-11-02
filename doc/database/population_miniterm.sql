@@ -148,10 +148,16 @@ CREATE TABLE IF NOT EXISTS person (
     phone VARCHAR(20) NULL,
     current_address VARCHAR(255) NULL,
     status VARCHAR(20) NOT NULL DEFAULT '正常',
+    initial_scope_user_id BIGINT NULL,
+    initial_scope_department_id BIGINT NULL,
+    initial_scope_region_code VARCHAR(20) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (person_id),
-    UNIQUE KEY uk_person_id_card (id_card)
+    UNIQUE KEY uk_person_id_card (id_card),
+    KEY idx_person_initial_scope_user (initial_scope_user_id),
+    KEY idx_person_initial_scope_department (initial_scope_department_id),
+    KEY idx_person_initial_scope_region (initial_scope_region_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS household (

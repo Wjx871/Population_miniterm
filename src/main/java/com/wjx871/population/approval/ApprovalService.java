@@ -120,7 +120,8 @@ public class ApprovalService {
             throw conflict("必需材料尚未全部核验通过");
         }
 
-        Person person = persons.createForApproval(body.person(), application.getApplicantUserId());
+        Person person = persons.createForApproval(body.person(), application.getApplicantUserId(),
+                application.getApplicantDepartmentId(), application.getApplicantRegionCode());
         if (mapper.decide(id, ApprovalStatus.PENDING, ApprovalStatus.APPROVED, body.version(), user.userId(), body.comment()) == 0) {
             ApplicationService.conflict();
         }
