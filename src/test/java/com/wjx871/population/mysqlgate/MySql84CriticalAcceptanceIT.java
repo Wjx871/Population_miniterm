@@ -26,6 +26,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -54,6 +55,7 @@ class MySql84CriticalAcceptanceIT {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
+    @Autowired PasswordEncoder passwordEncoder;
 
     private static GateSettings settings() {
         String url = required("MYSQL84_GATE_DB_URL");
@@ -109,6 +111,9 @@ class MySql84CriticalAcceptanceIT {
         System.out.printf("MYSQL_GATE_INSTANCE version=%s port=%s database=%s isolation=%s user=%s%n",
                 version, identity.get("port"), identity.get("database_name"),
                 identity.get("isolation_level"), identity.get("database_user"));
+        String testPasswordHash = passwordEncoder.encode(settings().apiTestPassword());
+        assertThat(jdbc.update("UPDATE sys_user SET password_hash=? WHERE username IN('household','approver')",
+                testPasswordHash)).isEqualTo(2);
     }
 
     @Test
