@@ -4,82 +4,185 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wjx871.population.stats.StatisticsMapper">
 
+    <sql id="personScope">
+        <choose>
+            <when test="scope == null or scope.dataScope == null">AND 1=0</when>
+            <when test="scope.dataScope.name() == 'ALL'"></when>
+            <when test="scope.dataScope.name() == 'SELF'">
+                AND EXISTS (SELECT 1 FROM business_application a
+                            WHERE a.target_person_id=p.person_id AND a.applicant_user_id=#{scope.userId})
+            </when>
+            <when test="scope.dataScope.name() == 'DEPARTMENT'">
+                AND EXISTS (SELECT 1 FROM business_application a
+                            WHERE a.target_person_id=p.person_id AND a.applicant_department_id=#{scope.departmentId})
+            </when>
+            <when test="scope.dataScope.name() == 'REGION'">
+                <choose>
+                    <when test="scope.regionCodes == null or scope.regionCodes.isEmpty()">AND 1=0</when>
+                    <otherwise>
+                        AND (EXISTS (SELECT 1 FROM residence rs WHERE rs.person_id=p.person_id AND rs.status='ACTIVE'
+                                     AND rs.region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach>)
+                             OR EXISTS (SELECT 1 FROM business_application a WHERE a.target_person_id=p.person_id
+                                        AND a.applicant_region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach>))
+                    </otherwise>
+                </choose>
+            </when>
+            <otherwise>AND 1=0</otherwise>
+        </choose>
+    </sql>
+
+    <sql id="floatingScope">
+        <choose>
+            <when test="scope == null or scope.dataScope == null">AND 1=0</when>
+            <when test="scope.dataScope.name() == 'ALL'"></when>
+            <when test="scope.dataScope.name() == 'SELF'">AND a.applicant_user_id=#{scope.userId}</when>
+            <when test="scope.dataScope.name() == 'DEPARTMENT'">
+                AND (f.department_id=#{scope.departmentId} OR a.applicant_department_id=#{scope.departmentId})
+            </when>
+            <when test="scope.dataScope.name() == 'REGION'">
+                <choose>
+                    <when test="scope.regionCodes == null or scope.regionCodes.isEmpty()">AND 1=0</when>
+                    <otherwise>
+                        AND (f.current_region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach>
+                             OR a.applicant_region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach>)
+                    </otherwise>
+                </choose>
+            </when>
+            <otherwise>AND 1=0</otherwise>
+        </choose>
+    </sql>
+
+    <sql id="householdScope">
+        <choose>
+            <when test="scope == null or scope.dataScope == null">AND 1=0</when>
+            <when test="scope.dataScope.name() == 'ALL'"></when>
+            <when test="scope.dataScope.name() == 'SELF'">AND 1=0</when>
+            <when test="scope.dataScope.name() == 'DEPARTMENT'">
+                AND EXISTS (SELECT 1 FROM business_application a WHERE a.target_household_id=h.household_id
+                            AND a.applicant_department_id=#{scope.departmentId})
+            </when>
+            <when test="scope.dataScope.name() == 'REGION'">
+                <choose>
+                    <when test="scope.regionCodes == null or scope.regionCodes.isEmpty()">AND 1=0</when>
+                    <otherwise>AND h.region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach></otherwise>
+                </choose>
+            </when>
+            <otherwise>AND 1=0</otherwise>
+        </choose>
+    </sql>
+
+    <sql id="applicationScope">
+        <choose>
+            <when test="scope == null or scope.dataScope == null">AND 1=0</when>
+            <when test="scope.dataScope.name() == 'ALL'"></when>
+            <when test="scope.dataScope.name() == 'SELF'">AND a.applicant_user_id=#{scope.userId}</when>
+            <when test="scope.dataScope.name() == 'DEPARTMENT'">AND a.applicant_department_id=#{scope.departmentId}</when>
+            <when test="scope.dataScope.name() == 'REGION'">
+                <choose>
+                    <when test="scope.regionCodes == null or scope.regionCodes.isEmpty()">AND 1=0</when>
+                    <otherwise>AND a.applicant_region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach></otherwise>
+                </choose>
+            </when>
+            <otherwise>AND 1=0</otherwise>
+        </choose>
+    </sql>
+
     <select id="countActivePersons" resultType="long">
-        SELECT COUNT(*)
-        FROM person
-        WHERE status != '已注销'
+        SELECT COUNT(DISTINCT p.person_id)
+        FROM person p
+        LEFT JOIN residence r ON r.person_id=p.person_id AND r.status='ACTIVE'
+        WHERE p.current_status_code='REGISTERED'
+          AND EXISTS (SELECT 1 FROM residence active_residence
+                      WHERE active_residence.person_id=p.person_id AND active_residence.status='ACTIVE')
+        <include refid="personScope"/>
     </select>
 
     <select id="countFloatingPopulation" resultType="long">
         SELECT COUNT(*)
-        FROM floating_population
-        WHERE current_flag = 1 AND status = 'ACTIVE'
+        FROM floating_population f
+        JOIN business_application a ON a.application_id=f.source_application_id
+        WHERE f.current_flag=1 AND f.status='ACTIVE'
+        <include refid="floatingScope"/>
     </select>
 
     <select id="countKeyPopulation" resultType="long">
-        SELECT COUNT(*)
-        FROM key_population
-        WHERE status = '有效'
+        SELECT COUNT(DISTINCT k.person_id)
+        FROM key_population k
+        JOIN person p ON p.person_id=k.person_id
+        LEFT JOIN residence r ON r.person_id=p.person_id AND r.status='ACTIVE'
+        WHERE k.status='ACTIVE'
+        <include refid="personScope"/>
     </select>
 
     <select id="countHouseholds" resultType="long">
         SELECT COUNT(*)
-        FROM household
-        WHERE status = '正常'
+        FROM household h
+        WHERE h.status='ACTIVE'
+        <include refid="householdScope"/>
     </select>
 
     <select id="countKeyPopulationByType" resultType="map">
-        SELECT key_type as name, COUNT(*) as value
-        FROM key_population
-        WHERE status = '有效'
-        GROUP BY key_type
+        SELECT k.key_type AS name, COUNT(*) AS `value`
+        FROM key_population k
+        JOIN person p ON p.person_id=k.person_id
+        LEFT JOIN residence r ON r.person_id=p.person_id AND r.status='ACTIVE'
+        WHERE k.status='ACTIVE'
+        <include refid="personScope"/>
+        GROUP BY k.key_type
+        ORDER BY k.key_type
     </select>
 
     <select id="countCertificateByStatus" resultType="map">
-        SELECT status as name, COUNT(*) as value
-        FROM certificate
-        GROUP BY status
+        SELECT c.status AS name, COUNT(*) AS `value`
+        FROM certificate c
+        JOIN person p ON p.person_id=c.person_id
+        LEFT JOIN residence r ON r.person_id=p.person_id AND r.status='ACTIVE'
+        WHERE 1=1
+        <include refid="personScope"/>
+        GROUP BY c.status
+        ORDER BY c.status
     </select>
 
     <select id="countRecentMigrationIn" resultType="map">
-        SELECT DATE_FORMAT(in_date, '%m-%d') as date, COUNT(*) as count
-        FROM migration_in
-        WHERE in_date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-        GROUP BY DATE_FORMAT(in_date, '%m-%d')
-        ORDER BY date ASC
+        SELECT mi.in_date AS date, COUNT(*) AS count
+        FROM migration_in mi
+        JOIN business_application a ON a.application_id=mi.application_id
+        WHERE mi.business_status='COMPLETED' AND mi.in_date &gt;=#{from} AND mi.in_date &lt;=CURRENT_DATE
+        <include refid="applicationScope"/>
+        GROUP BY mi.in_date
+        ORDER BY mi.in_date
     </select>
 
     <select id="countRecentMigrationOut" resultType="map">
-        SELECT DATE_FORMAT(out_date, '%m-%d') as date, COUNT(*) as count
-        FROM migration_out
-        WHERE out_date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-        GROUP BY DATE_FORMAT(out_date, '%m-%d')
-        ORDER BY date ASC
+        SELECT mo.out_date AS date, COUNT(*) AS count
+        FROM migration_out mo
+        JOIN business_application a ON a.application_id=mo.application_id
+        WHERE mo.business_status='COMPLETED' AND mo.out_date &gt;=#{from} AND mo.out_date &lt;=CURRENT_DATE
+        <include refid="applicationScope"/>
+        GROUP BY mo.out_date
+        ORDER BY mo.out_date
     </select>
 
     <select id="selectRecentLogs" resultType="map">
-        SELECT 
-            l.log_id as id,
-            u.username as operator,
-            l.operation_type as type,
-            l.target_table as targetTable,
-            l.operation_result as result,
-            l.operation_time as time,
-            CAST(l.detail AS CHAR) as detail
+        SELECT l.log_id AS id, u.username AS operator, l.operation_type AS type,
+               l.target_table AS targetTable, l.operation_result AS result,
+               l.operation_time AS time, CAST(l.detail AS CHAR) AS detail
         FROM operation_log l
-        LEFT JOIN sys_user u ON l.user_id = u.user_id
-        LEFT JOIN sys_department d ON u.department_id = d.department_id
+        LEFT JOIN sys_user u ON l.user_id=u.user_id
+        LEFT JOIN sys_department d ON u.department_id=d.department_id
         <where>
             <choose>
-                <when test="dataScope.name() == 'DEPARTMENT'">
-                    u.department_id = #{departmentId}
+                <when test="scope == null or scope.dataScope == null">AND 1=0</when>
+                <when test="scope.dataScope.name() == 'ALL'"></when>
+                <when test="scope.dataScope.name() == 'SELF'">AND l.user_id=#{scope.userId}</when>
+                <when test="scope.dataScope.name() == 'DEPARTMENT'">AND u.department_id=#{scope.departmentId}</when>
+                <when test="scope.dataScope.name() == 'REGION'">
+                    <choose>
+                        <when test="scope.regionCodes == null or scope.regionCodes.isEmpty()">AND 1=0</when>
+                        <otherwise>AND d.region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach></otherwise>
+                    </choose>
                 </when>
-                <when test="dataScope.name() == 'REGION'">
-                    d.region_code = #{regionCode}
-                </when>
-                <when test="dataScope.name() == 'SELF'">
-                    l.user_id = #{userId}
-                </when>
+                <otherwise>AND 1=0</otherwise>
             </choose>
         </where>
         ORDER BY l.operation_time DESC

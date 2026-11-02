@@ -66,7 +66,7 @@ class DashboardServiceTest {
     }
 
     @Test
-    void overviewEscalatesViewerDepartmentScopeToAll() {
+    void overviewKeepsTheAuthenticatedDepartmentScopeEvenWithStatisticsPermission() {
         SecurityContextHolder.clearContext();
         AuthenticatedUser viewer = new AuthenticatedUser(8L, "viewer", "", "Viewer", "ENABLED", 1L,
                 "QUERY_VIEWER", "Query Viewer", null, DataScope.DEPARTMENT, "ENABLED",
@@ -88,7 +88,7 @@ class DashboardServiceTest {
         org.mockito.Mockito.verify(mapper, org.mockito.Mockito.atLeastOnce())
                 .countRegisteredPopulation(captor.capture());
         assertThat(captor.getAllValues())
-                .allSatisfy(c -> assertThat(c.dataScope()).isEqualTo(DataScope.ALL));
+                .allSatisfy(c -> assertThat(c.dataScope()).isEqualTo(DataScope.DEPARTMENT));
     }
 
     @Test
