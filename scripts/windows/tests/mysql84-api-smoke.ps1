@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$ApiBaseUrl = 'http://127.0.0.1:18086',
+    [string]$ApiBaseUrl,
     [string]$MySqlClient = 'mysql'
 )
 
@@ -10,29 +10,32 @@ $ErrorActionPreference = 'Stop'
 $databaseUrl = $env:DB_URL
 $databaseUser = $env:DB_USERNAME
 $databasePassword = $env:DB_PASSWORD
-$testPassword = $env:MYSQL_GATE_TEST_PASSWORD
+$testPassword = $env:MYSQL84_GATE_API_TEST_PASSWORD
 $serverPort = $env:SERVER_PORT
+if ([string]::IsNullOrWhiteSpace($databaseUrl)) { throw 'Set DB_URL for the isolated test instance; the script will not infer a default database.' }
 $urlMatch = [regex]::Match(
     $databaseUrl,
-    '^jdbc:mysql://(?<host>[^/:?]+):(?<port>\d+)/(?<database>[A-Za-z0-9_]+)(?<query>\?.*)?$',
+    '^jdbc:mysql://(?<host>[^/:?]+):(?<port>\d+)/(?<database>[A-Za-z0-9_]+)\?(?<query>.*)$',
     [Text.RegularExpressions.RegexOptions]::IgnoreCase)
 
-if (-not $urlMatch.Success) { throw 'DB_URL must be a complete jdbc:mysql://host:port/database URL.' }
+if (-not $urlMatch.Success) { throw 'DB_URL must be a complete jdbc:mysql://127.0.0.1:port/database?... URL.' }
 if ($urlMatch.Groups['host'].Value -ne '127.0.0.1') { throw 'MySQL gate refuses non-loopback database hosts.' }
-if ([int]$urlMatch.Groups['port'].Value -ne 13386) { throw 'MySQL gate requires the dedicated non-default port 13386.' }
-if ($urlMatch.Groups['database'].Value -ne 'population_miniterm_mysql_gate_20261102_run2') {
-    throw 'MySQL gate refuses any schema other than the named isolated test database.'
+if ([int]$urlMatch.Groups['port'].Value -eq 3306) { throw 'MySQL gate refuses the default/course MySQL port 3306.' }
+$databaseName = $urlMatch.Groups['database'].Value
+$databasePort = [int]$urlMatch.Groups['port'].Value
+if ($databaseName -notmatch '^population_miniterm_mysql_gate_[a-zA-Z0-9_]+$' -or $databaseName -eq 'population_miniterm') {
+    throw 'MySQL gate requires an explicitly named population_miniterm_mysql_gate_* test database.'
 }
-if ($urlMatch.Groups['query'].Value -notmatch '(?i)(?:\?|&)createDatabaseIfNotExist=false(?:&|$)') {
+if ($urlMatch.Groups['query'].Value -notmatch '(?i)(?:^|&)createDatabaseIfNotExist=false(?:&|$)') {
     throw 'DB_URL must explicitly set createDatabaseIfNotExist=false.'
 }
 if ([string]::IsNullOrWhiteSpace($databaseUser) -or $databaseUser -eq 'root') {
     throw 'Use the dedicated non-root test database account.'
 }
 if ([string]::IsNullOrWhiteSpace($databasePassword) -or [string]::IsNullOrWhiteSpace($testPassword)) {
-    throw 'Set DB_PASSWORD and MYSQL_GATE_TEST_PASSWORD in the current process environment.'
+    throw 'Set DB_PASSWORD and MYSQL84_GATE_API_TEST_PASSWORD in the current process environment.'
 }
-if ($serverPort -ne '18086') { throw 'Set SERVER_PORT=18086 for the isolated API process.' }
+if ($serverPort -notmatch '^\d+$') { throw 'Set SERVER_PORT to the explicitly configured API loopback port.' }
 if ($env:REDIS_ENABLED -ne 'false' -or $env:POLICY_AI_ENABLED -ne 'false') {
     throw 'The MySQL gate requires REDIS_ENABLED=false and POLICY_AI_ENABLED=false.'
 }
@@ -40,10 +43,12 @@ if ([string]::IsNullOrWhiteSpace($env:APP_UPLOAD_DIR) -or [string]::IsNullOrWhit
     throw 'Set isolated APP_UPLOAD_DIR and EXPORT_DIR paths before starting the API.'
 }
 
-$apiUri = [uri]$ApiBaseUrl
-if ($apiUri.Scheme -ne 'http' -or $apiUri.Host -ne '127.0.0.1' -or $apiUri.Port -ne 18086) {
-    throw 'API smoke test only accepts http://127.0.0.1:18086.'
+$apiBase = if (-not [string]::IsNullOrWhiteSpace($ApiBaseUrl)) { $ApiBaseUrl } elseif ($env:MYSQL84_GATE_API_BASE_URL) { $env:MYSQL84_GATE_API_BASE_URL } else { "http://127.0.0.1:$serverPort" }
+$apiUri = [uri]$apiBase
+if ($apiUri.Scheme -ne 'http' -or $apiUri.Host -ne '127.0.0.1' -or $apiUri.Port -ne [int]$serverPort) {
+    throw 'API smoke test only accepts the explicitly configured http://127.0.0.1:$SERVER_PORT endpoint.'
 }
+$ApiBaseUrl = $apiBase
 
 $health = Invoke-RestMethod -Uri ($ApiBaseUrl.TrimEnd('/') + '/api/health') -TimeoutSec 15
 if ($health.code -ne 200 -or $health.data.database -ne 'UP' -or $health.data.redisEnabled -ne $false) {
@@ -72,6 +77,15 @@ $client = (Get-Command $MySqlClient -ErrorAction Stop).Source
 $previousMysqlPassword = [Environment]::GetEnvironmentVariable('MYSQL_PWD', 'Process')
 try {
     [Environment]::SetEnvironmentVariable('MYSQL_PWD', $databasePassword, 'Process')
+    $identitySql = 'SELECT @@version,@@port,@@bind_address,@@transaction_isolation,DATABASE(),CURRENT_USER();'
+    $identityOutput = @($identitySql | & $client --protocol=TCP --host=127.0.0.1 --port=$databasePort `
+        "--user=$databaseUser" "--database=$databaseName" --batch --skip-column-names)
+    if ($LASTEXITCODE -ne 0 -or $identityOutput.Count -ne 1) { throw 'Could not verify selected MySQL instance identity.' }
+    $identity = ([string]$identityOutput[0]).Split([char]9)
+    if ($identity.Count -ne 6 -or $identity[0] -notmatch '^8\.4\.' -or [int]$identity[1] -ne $databasePort -or
+        $identity[2] -ne '127.0.0.1' -or $identity[4] -ne $databaseName -or $identity[5] -notmatch ('^' + [regex]::Escape($databaseUser) + '@')) {
+        throw 'Connected MySQL identity does not match the requested loopback 8.4 test instance/schema/user.'
+    }
     $sql = @"
 SELECT
  (SELECT COUNT(*) FROM person p JOIN residence r ON r.person_id=p.person_id AND r.status='ACTIVE'),
@@ -86,8 +100,8 @@ SELECT
  (SELECT COUNT(*) FROM migration_out mo JOIN business_application a ON a.application_id=mo.application_id
     WHERE mo.business_status='COMPLETED' AND mo.out_date BETWEEN DATE_SUB(CURRENT_DATE,INTERVAL 29 DAY) AND CURRENT_DATE);
 "@
-    $sqlOutput = $sql | & $client --protocol=TCP --host=127.0.0.1 --port=13386 `
-        "--user=$databaseUser" --database=population_miniterm_mysql_gate_20261102_run2 `
+    $sqlOutput = $sql | & $client --protocol=TCP --host=127.0.0.1 --port=$databasePort `
+        "--user=$databaseUser" "--database=$databaseName" `
         --default-character-set=utf8mb4 --batch --skip-column-names
     if ($LASTEXITCODE -ne 0) { throw 'Direct MySQL comparison query failed.' }
     $values = ([string]($sqlOutput | Select-Object -Last 1)).Split([char]9)
