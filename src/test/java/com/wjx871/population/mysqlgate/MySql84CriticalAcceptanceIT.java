@@ -207,10 +207,10 @@ class MySql84CriticalAcceptanceIT {
     }
 
     @Test
-    void sameHouseholdInboundAndLastMemberOutRaceIsSafeAcrossThreeRuns() throws Exception {
+    void sameHouseholdInboundAndLastMemberOutRaceIsReliableAcrossTenRuns() throws Exception {
         String isolation = jdbc.queryForObject("SELECT @@transaction_isolation", String.class);
         assertThat(isolation).isNotBlank();
-        for (int run = 1; run <= 3; run++) {
+        for (int run = 1; run <= 10; run++) {
             long head = createPerson("REGISTERED");
             long inboundPerson = createPerson("MIGRATED_OUT");
             long household = createHousehold(head);
@@ -237,19 +237,51 @@ class MySql84CriticalAcceptanceIT {
                 start.countDown();
                 Execution outResult = outFuture.get(30, TimeUnit.SECONDS);
                 Execution inResult = inFuture.get(30, TimeUnit.SECONDS);
-                assertThat(List.of(outResult.httpStatus(), inResult.httpStatus())).allMatch(status -> List.of(200, 409, 500).contains(status));
-                assertThat(outResult.httpStatus() == 200 && inResult.httpStatus() == 200).isFalse();
                 assertThat(outResult.threadId()).isNotEqualTo(inResult.threadId());
-                assertRaceInvariant(household, head, inboundPerson, out, inbound);
-                String failureEvidence = "HTTP_CONFLICT";
-                if (outResult.httpStatus() == 500 || inResult.httpStatus() == 500) {
-                    assertThat(mysqlErrorCount(settings(), 1213)).isGreaterThan(deadlocksBefore);
+                String outcome = assertRaceInvariant(household, head, inboundPerson, out, inbound);
+                System.out.printf("ATOMICITY_PASS run=%d outcome=%s household=%d%n", run, outcome, household);
+
+                boolean hasHttp500 = outResult.httpStatus() == 500 || inResult.httpStatus() == 500;
+                if (hasHttp500) {
+                    long deadlocksAfter = mysqlErrorCount(settings(), 1213);
+                    ErrorStatement deadlock = deadlocksAfter > deadlocksBefore
+                            ? mysqlErrorStatement(settings(), 1213, "40001") : null;
+                    System.out.printf("RELIABILITY_FAIL run=%d http=[%d,%d] mysql1213=%s mysqlState=%s mysqlThread=%s%n",
+                            run, outResult.httpStatus(), inResult.httpStatus(), deadlocksAfter > deadlocksBefore,
+                            deadlock == null ? "unknown" : deadlock.sqlState(),
+                            deadlock == null ? "unknown" : deadlock.threadId());
+                }
+                assertThat(List.of(outResult.httpStatus(), inResult.httpStatus()))
+                        .as("HTTP 500 is not a successful business outcome; response bodies: [%s] [%s]",
+                                outResult.responseBody(), inResult.responseBody())
+                        .allMatch(status -> status == 200 || status == 409);
+                assertThat(outResult.httpStatus() == 200 && inResult.httpStatus() == 200)
+                        .as("both competing transactions must not commit")
+                        .isFalse();
+                assertThat(outResult.httpStatus() == 200 || inResult.httpStatus() == 200)
+                        .as("at least one legal execution or explicit retry must make progress")
+                        .isTrue();
+                assertExecutionAudit(out, outResult.httpStatus() == 200);
+                assertExecutionAudit(inbound, inResult.httpStatus() == 200);
+
+                if (outResult.httpStatus() == 409 && inResult.httpStatus() == 409
+                        && "ACTIVE".equals(jdbc.queryForObject("SELECT status FROM household WHERE household_id=?", String.class, household))) {
+                    int retryVersion = migrationVersion(inbound, "migration_in");
+                    execute("/api/migrations/in/applications/" + inbound + "/execute", 200,
+                            householdToken, retryVersion);
+                    assertRaceInvariant(household, head, inboundPerson, out, inbound);
+                    assertExecutionAudit(inbound, true);
+                }
+
+                String failureEvidence = "none";
+                long deadlocksAfter = mysqlErrorCount(settings(), 1213);
+                if (deadlocksAfter > deadlocksBefore) {
                     ErrorStatement deadlock = mysqlErrorStatement(settings(), 1213, "40001");
                     failureEvidence = "MYSQL_DEADLOCK_SQLSTATE=" + deadlock.sqlState() + "_ERRNO=" + deadlock.mysqlErrno() + "_THREAD=" + deadlock.threadId();
                 }
-                System.out.printf("PASS migration race run=%d isolation=%s workerThreads=[%d,%d] http=[%d,%d] rejected=%s household=%d%n",
+                System.out.printf("RELIABILITY_PASS run=%d isolation=%s workerThreads=[%d,%d] http=[%d,%d] rejected=%s%n",
                         run, isolation, outResult.threadId(), inResult.threadId(), outResult.httpStatus(),
-                        inResult.httpStatus(), failureEvidence, household);
+                        inResult.httpStatus(), failureEvidence);
             } finally {
                 executor.shutdownNow();
             }
@@ -320,36 +352,64 @@ class MySql84CriticalAcceptanceIT {
         return new Execution(threadId, result.getResponse().getStatus(), result.getResponse().getContentAsString());
     }
 
-    private void assertRaceInvariant(long household, long head, long inboundPerson, long out, long inbound) {
+    private String assertRaceInvariant(long household, long head, long inboundPerson, long out, long inbound) {
         String householdStatus = jdbc.queryForObject("SELECT status FROM household WHERE household_id=?", String.class, household);
         String outStatus = jdbc.queryForObject("SELECT status FROM business_application WHERE application_id=?", String.class, out);
         String inStatus = jdbc.queryForObject("SELECT status FROM business_application WHERE application_id=?", String.class, inbound);
+        String outBusinessStatus = jdbc.queryForObject("SELECT business_status FROM migration_out WHERE application_id=?", String.class, out);
+        String inBusinessStatus = jdbc.queryForObject("SELECT business_status FROM migration_in WHERE application_id=?", String.class, inbound);
         long activeMembers = jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=? AND status='ACTIVE'", Long.class, household);
         long activeResidences = jdbc.queryForObject("SELECT COUNT(*) FROM residence WHERE household_id=? AND status='ACTIVE'", Long.class, household);
         if ("COMPLETED".equals(outStatus)) {
             assertThat(inStatus).isEqualTo("APPROVED");
+            assertThat(outBusinessStatus).isEqualTo("COMPLETED");
+            assertThat(inBusinessStatus).isEqualTo("APPROVED");
             assertThat(householdStatus).isEqualTo("PENDING_CANCELLATION");
             assertThat(activeMembers).isZero();
             assertThat(activeResidences).isZero();
             assertThat(jdbc.queryForObject("SELECT head_person_id FROM household WHERE household_id=?", Long.class, household)).isNull();
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence_archive WHERE application_id=?", Integer.class, out)).isOne();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence_archive WHERE application_id=?", Integer.class, inbound)).isZero();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=? AND person_id=? AND status='ACTIVE'", Integer.class, household, inboundPerson)).isZero();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence WHERE person_id=? AND status='ACTIVE'", Integer.class, inboundPerson)).isZero();
+            return "OUT_COMMITTED";
         } else if ("COMPLETED".equals(inStatus)) {
             assertThat(outStatus).isEqualTo("APPROVED");
+            assertThat(outBusinessStatus).isEqualTo("APPROVED");
+            assertThat(inBusinessStatus).isEqualTo("COMPLETED");
             assertThat(householdStatus).isEqualTo("ACTIVE");
             assertThat(activeMembers).isEqualTo(2);
             assertThat(activeResidences).isEqualTo(2);
             assertHeadInvariant(household, head, 1);
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence WHERE person_id=? AND status='ACTIVE'", Integer.class, inboundPerson)).isOne();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=? AND person_id=? AND status='ACTIVE'", Integer.class, household, inboundPerson)).isOne();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence_archive WHERE application_id=?", Integer.class, out)).isZero();
+            return "IN_COMMITTED";
         } else {
             assertThat(outStatus).isEqualTo("APPROVED");
             assertThat(inStatus).isEqualTo("APPROVED");
+            assertThat(outBusinessStatus).isEqualTo("APPROVED");
+            assertThat(inBusinessStatus).isEqualTo("APPROVED");
             assertThat(householdStatus).isEqualTo("ACTIVE");
             assertThat(activeMembers).isOne();
             assertThat(activeResidences).isOne();
             assertHeadInvariant(household, head, 1);
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence_archive WHERE application_id=?", Integer.class, out)).isZero();
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM residence WHERE person_id=? AND status='ACTIVE'", Integer.class, inboundPerson)).isZero();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household_member WHERE household_id=? AND person_id=? AND status='ACTIVE'", Integer.class, household, inboundPerson)).isZero();
+            return "BOTH_ROLLED_BACK";
         }
+    }
+
+    private void assertExecutionAudit(long applicationId, boolean completed) {
+        int expected = completed ? 1 : 0;
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_approval_log WHERE application_id=? AND action='EXECUTE'",
+                Integer.class, applicationId)).isEqualTo(expected);
+        String pathSuffix = "/api/migrations/" + (jdbc.queryForObject(
+                "SELECT COUNT(*) FROM migration_in WHERE application_id=?", Integer.class, applicationId) == 1 ? "in" : "out")
+                + "/applications/" + applicationId + "/execute";
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM operation_log WHERE operation_type IN('MIGRATION_IN_EXECUTE','MIGRATION_OUT_EXECUTE') AND request_path=?",
+                Integer.class, pathSuffix)).isEqualTo(expected);
     }
 
     private void assertHeadInvariant(long household, long expectedHead, long count) {
