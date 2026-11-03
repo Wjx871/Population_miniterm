@@ -19,6 +19,7 @@
 | 导出 | `/api/exports` | [export-audit-api.md](export-audit-api.md) |
 | 综合查询 | `/api/query/persons`,`/households`,`/migration-history` | [query-statistics-api.md](query-statistics-api.md) |
 | 统计 | `/api/statistics` | [query-statistics-api.md](query-statistics-api.md) |
+| S2 远程统计派生摘要（默认关闭） | `GET /api/s2/statistics/aggregate` | [s2-statistics-api.md](s2-statistics-api.md) |
 | 操作与登录日志 | `/api/logs` | [log-api.md](log-api.md) |
 | 健康检查 | `/api/health` | [backend-v1-deployment.md](../deployment/backend-v1-deployment.md) |
 

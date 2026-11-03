@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN" monitorInterval="30">
     <Properties>
-        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %logger{36} - %msg%n</Property>
-        <Property name="LOG_DIR">${sys:LOG_DIR:-${env:LOG_DIR:-logs}}</Property>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [traceId=%X{traceId} instanceId=%X{instanceId}] [%t] %logger{36} - %msg%n</Property>
+        <Property name="LOG_DIRECTORY">${sys:LOG_DIR:-${env:LOG_DIR:-logs}}</Property>
         <Property name="APP_NAME">population-miniterm</Property>
     </Properties>
 
@@ -12,8 +12,8 @@
         </Console>
 
         <RollingFile name="ApplicationFile"
-                     fileName="${LOG_DIR}/${APP_NAME}.log"
-                     filePattern="${LOG_DIR}/${APP_NAME}-%d{yyyy-MM-dd}-%i.log.gz">
+                     fileName="${LOG_DIRECTORY}/${APP_NAME}.log"
+                     filePattern="${LOG_DIRECTORY}/${APP_NAME}-%d{yyyy-MM-dd}-%i.log.gz">
             <PatternLayout pattern="${LOG_PATTERN}"/>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
