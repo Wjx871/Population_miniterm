@@ -105,10 +105,10 @@ CURRENT 代码事实：
 
 ### A.5 Python 受控读取材料（PROPOSED）
 
-RabbitMQ 消息只带 taskId 和不透明 stageMaterialId，不传证件原文、二进制内容、绝对路径、服务凭据或 JWT。首选由 Python worker 使用独立服务身份经内网调用 Java 的受控内容流接口：
+RabbitMQ 事件只携带 taskId、eventId、taskType、schemaVersion、traceId、occurredAt 等必要元数据，不携带 stageMaterialId、证件原文、二进制内容、绝对路径、服务凭据或 JWT。消费者先用 taskId 读取 MySQL 中持久化的任务记录，再从该任务关联中取得 stageMaterialId；任务记录是材料引用的事实源。首选由 Python worker 使用独立服务身份经内网调用 Java 的受控内容流接口：
 
 - 建议 Java 内部端点：POST /internal/ai/materials:resolve。
-- 请求：taskId、stageMaterialId、requestId。
+- 请求：taskId、stageMaterialId、requestId。stageMaterialId 必须来自该 taskId 读取到的持久化关联，不能由 MQ 消息或 Python 任意指定。
 - Java 校验服务身份、任务与材料关联、任务未终结、材料创建者和状态；材料不存在或超出该任务引用集合时返回统一拒绝。
 - 响应为文件流及可信 MIME、大小、短期 content digest；不返回文件系统路径。
 - 接口仅允许有 document:read 能力的服务身份；采用 mTLS 或短时、定 audience、可轮换的服务令牌。令牌只在 TLS 服务间认证中使用，不写日志、不放 MQ。
@@ -129,6 +129,7 @@ POST /api/ai/tasks 创建材料预审任务；建议要求 ai:precheck:create �
   "requestSchemaVersion": "1.0",
   "taskType": "DOCUMENT_PRECHECK",
   "businessType": "MIGRATION_IN",
+  "migrationType": "OUTSIDE_CITY",
   "stageMaterialIds": ["stg_opaque_a1"],
   "idempotencyKey": "client-generated-uuid"
 }
@@ -139,10 +140,11 @@ POST /api/ai/tasks 创建材料预审任务；建议要求 ai:precheck:create �
 | requestSchemaVersion | string | 是 | 首版为 1.0；未知主版本返回 422 UNSUPPORTED_SCHEMA_VERSION。 |
 | taskType | enum | 是 | 首版仅 DOCUMENT_PRECHECK。 |
 | businessType | enum | 是 | 首版仅 MIGRATION_IN。 |
+| migrationType | enum | 是 | OUTSIDE_CITY 或 IN_CITY_CROSS_DISTRICT；用于生成材料规则和后续确认上下文。 |
 | stageMaterialIds | string[] | 是 | 1—10 个去重的不透明 ID；每项都必须属于当前用户且为 READY。 |
 | idempotencyKey | string | 是 | 用户侧唯一键；键作用域为 userId + taskType + endpoint；同键同请求返回同一 taskId，同键不同规范化请求返回 409。 |
 
-成功返回 envelope 的 data 建议含 taskId、taskType、status=PENDING、acceptedAt、taskSchemaVersion=1.0、resultSchemaVersion=1.0、traceId、pollAfterMs。受理只说明请求已经持久化，不表示材料齐全、AI 已完成或预审通过。
+任务持久化记录保存 migrationType、stageMaterialIds、创建者、规则版本及幂等请求摘要；MQ 只引用 taskId。成功返回 envelope 的 data 建议含 taskId、taskType、status=PENDING、acceptedAt、taskSchemaVersion=1.0、resultSchemaVersion=1.0、traceId、pollAfterMs。受理只说明请求已经持久化，不表示材料齐全、AI 已完成或预审通过。
 
 ### B.2 查询任务
 
@@ -257,17 +259,41 @@ stateDiagram-v2
 ~~~json
 {
   "schemaVersion": "1.0",
-  "requestId": "req-demo-001",
-  "taskId": "task-demo-001",
-  "traceId": "trace-demo-001",
+  "requestId": "req-schema-001",
+  "taskId": "task-schema-001",
+  "traceId": "trace-schema-001",
   "businessType": "MIGRATION_IN",
-  "expectedMaterialTypes": ["IDENTITY_PROOF", "HOUSEHOLD_BOOK_OR_ADDRESS_PROOF"],
+  "migrationType": "OUTSIDE_CITY",
+  "materialRequirements": [
+    {
+      "ruleId": "MIGRATION_IDENTITY",
+      "allOf": [{"materialType": "IDENTITY_PROOF", "minCount": 1}]
+    },
+    {
+      "ruleId": "MIGRATION_BOOK_OR_ADDRESS",
+      "anyOf": [
+        {"materialType": "HOUSEHOLD_BOOK", "minCount": 1},
+        {"materialType": "ADDRESS_PROOF", "minCount": 1}
+      ]
+    },
+    {
+      "ruleId": "MIGRATION_TRANSFER_PROOF",
+      "when": {"migrationType": "IN_CITY_CROSS_DISTRICT"},
+      "allOf": [{"materialType": "MIGRATION_PROOF", "minCount": 1}]
+    }
+  ],
   "materials": [
     {
-      "materialRef": "stg_opaque_a1",
+      "materialRef": "stg_schema_id_1",
       "contentType": "image/jpeg",
       "sizeBytes": 245000,
       "sourceRoleHint": "IDENTITY_CARD_FRONT"
+    },
+    {
+      "materialRef": "stg_schema_book_1",
+      "contentType": "application/pdf",
+      "sizeBytes": 420000,
+      "sourceRoleHint": "HOUSEHOLD_REGISTER_PAGE"
     }
   ]
 }
@@ -278,12 +304,14 @@ stateDiagram-v2
 | schemaVersion | string | 是 | 内部请求结构版本。 |
 | requestId / taskId / traceId | string | 是 | Java 生成并贯穿全链路的关联值。 |
 | businessType | enum | 是 | 首版 MIGRATION_IN。 |
-| expectedMaterialTypes | string[] | 是 | Java 根据当前迁入规则计算；Python 仅生成缺件提醒，不拥有规则最终决定权。 |
-| materials | object[] | 是 | 仅列任务允许读取的材料引用；每项包含 opaque materialRef、由 Java 校验的 MIME/大小和用户提示类别。 |
+| migrationType | enum | 是 | Java 从持久化任务上下文传入，值为 OUTSIDE_CITY 或 IN_CITY_CROSS_DISTRICT。 |
+| materialRequirements | object[] | 是 | Java 根据 businessType、migrationType 和现行规则计算的约束。allOf 表示全部满足；anyOf 表示至少满足其中一个分支。此处 ruleId 是规则标识，HOUSEHOLD_BOOK_OR_ADDRESS 不是 materialType。 |
+| materials | object[] | 是 | 仅列任务持久化记录所关联且服务端授权读取的材料引用；每项含 opaque materialRef、由 Java 校验的 MIME/大小和非权威用户提示类别。 |
 | sourceRoleHint | enum/string | 否 | 用户/前端建议的类别，明确不可信；Python 可返回自己的 detectedType。 |
 
-Java-Python 请求不带用户 Token、数据库 ID、绝对路径或直接凭据。文件通过 A.5 的受控 Java 内容接口取得。
+materialRequirements 内每个 materialType 都必须是当前业务允许的正式标准码；逻辑组合名称只出现在 ruleId。Python 只能用这些规则产生缺件提醒，不拥有规则最终决定权。Java 通过 taskId 读取持久化 migrationType 和材料关联后构造请求，不从 MQ 读取材料列表。
 
+Java-Python 请求不带用户 Token、数据库主键、绝对路径或直接凭据。文件通过 A.5 的受控 Java 内容接口取得。
 ### D.2 响应与空值规则
 
 建议响应字段：
@@ -298,15 +326,41 @@ Java-Python 请求不带用户 Token、数据库 ID、绝对路径或直接凭�
 | fields[].fieldStatus | enum | PRESENT、NOT_FOUND、UNREADABLE、NOT_APPLICABLE。 |
 | fields[].confidence | number/null | 0—1 的识别置信度；null 表示模型未给出该指标，0 是明确最低分。不是字段正确概率。 |
 | fields[].source | object/null | 有证据时包含 materialRef、page（从 1 开始）和归一化 boundingBox x/y/width/height；无证据时为 null。 |
-| alerts[] | object[] | 缺件、低置信度、跨材料冲突、无法识别、类型不符；包含 code、severity、fieldCodes、materialRefs、safeMessage。 |
+| alerts[] | object[] | 缺件、低置信度、跨材料冲突、无法识别、类型不符；包含 code、severity、fieldCodes、materialRefs、safeMessage；材料规则告警另含 ruleId 和 alternatives，alternatives 只列有效 materialType 候选码。 |
 | modelVersion、ocrEngineVersion、ruleSetVersion | string/null | 记录实际使用的模型、OCR 与规则版本；未使用时为 null。 |
 | elapsedMs | integer | Python 服务内部耗时；Java 另记录完整调用耗时。 |
+| error.materialRefs | string[]/optional | 失败时可原样回显本次请求引用，便于追踪；必须是本请求 materials 的子集，不能生成新引用。 |
 
 Python 的材料类型分类是建议。Java 负责把 detectedType 映射到 A.4 标准码，应用提交仍以 Java MigrationMaterialRequirementService 的规则重算。Python 返回 200 表示结构化分析成功，不表示预审通过。HTTP 4xx/5xx 用 D.3 错误体表达。
 
-### D.3 虚构响应样例
+### D.3 虚构请求/响应样例
 
-#### 1. 正常识别（值为虚构演示内容）
+以下四组均是完整的 Java→Python 请求和对应响应。requestId、taskId、traceId 一一对应；响应只能引用该组请求中的 materialRef，字段来源也必须指向本组输入。
+
+#### 1. 正常识别
+
+请求：
+
+~~~json
+{
+  "schemaVersion": "1.0",
+  "requestId": "req-demo-001",
+  "taskId": "task-demo-001",
+  "traceId": "trace-demo-001",
+  "businessType": "MIGRATION_IN",
+  "migrationType": "OUTSIDE_CITY",
+  "materialRequirements": [
+    {"ruleId": "MIGRATION_IDENTITY", "allOf": [{"materialType": "IDENTITY_PROOF", "minCount": 1}]},
+    {"ruleId": "MIGRATION_BOOK_OR_ADDRESS", "anyOf": [{"materialType": "HOUSEHOLD_BOOK", "minCount": 1}, {"materialType": "ADDRESS_PROOF", "minCount": 1}]}
+  ],
+  "materials": [
+    {"materialRef": "stg_demo_id_1", "contentType": "image/jpeg", "sizeBytes": 245000, "sourceRoleHint": "IDENTITY_CARD_FRONT"},
+    {"materialRef": "stg_demo_book_1", "contentType": "application/pdf", "sizeBytes": 420000, "sourceRoleHint": "HOUSEHOLD_REGISTER_PAGE"}
+  ]
+}
+~~~
+
+响应：
 
 ~~~json
 {
@@ -326,22 +380,14 @@ Python 的材料类型分类是建议。Java 负责把 detectedType 映射到 A.
           "value": "示例甲",
           "fieldStatus": "PRESENT",
           "confidence": 0.98,
-          "source": {
-            "materialRef": "stg_demo_id_1",
-            "page": 1,
-            "boundingBox": {"x": 0.12, "y": 0.18, "width": 0.20, "height": 0.05}
-          }
+          "source": {"materialRef": "stg_demo_id_1", "page": 1, "boundingBox": {"x": 0.12, "y": 0.18, "width": 0.20, "height": 0.05}}
         },
         {
           "fieldCode": "person.idCard",
           "value": "SIMULATED-ID-001",
           "fieldStatus": "PRESENT",
           "confidence": 0.93,
-          "source": {
-            "materialRef": "stg_demo_id_1",
-            "page": 1,
-            "boundingBox": {"x": 0.55, "y": 0.44, "width": 0.30, "height": 0.06}
-          }
+          "source": {"materialRef": "stg_demo_id_1", "page": 1, "boundingBox": {"x": 0.55, "y": 0.44, "width": 0.30, "height": 0.06}}
         }
       ]
     },
@@ -355,11 +401,7 @@ Python 的材料类型分类是建议。Java 负责把 detectedType 映射到 A.
           "value": "示例甲",
           "fieldStatus": "PRESENT",
           "confidence": 0.94,
-          "source": {
-            "materialRef": "stg_demo_book_1",
-            "page": 2,
-            "boundingBox": {"x": 0.10, "y": 0.22, "width": 0.18, "height": 0.05}
-          }
+          "source": {"materialRef": "stg_demo_book_1", "page": 2, "boundingBox": {"x": 0.10, "y": 0.22, "width": 0.18, "height": 0.05}}
         }
       ]
     }
@@ -374,7 +416,27 @@ Python 的材料类型分类是建议。Java 负责把 detectedType 映射到 A.
 
 #### 2. 材料缺失
 
-Java 规则预计身份材料及户口簿/地址证明；这里只上传身份材料。Python 提示缺件，Java 在提交申请时仍重新验证：
+请求只包含身份证材料；materialRequirements 中的 anyOf 规则仍要求户口簿或地址证明至少一项。
+
+~~~json
+{
+  "schemaVersion": "1.0",
+  "requestId": "req-demo-002",
+  "taskId": "task-demo-002",
+  "traceId": "trace-demo-002",
+  "businessType": "MIGRATION_IN",
+  "migrationType": "OUTSIDE_CITY",
+  "materialRequirements": [
+    {"ruleId": "MIGRATION_IDENTITY", "allOf": [{"materialType": "IDENTITY_PROOF", "minCount": 1}]},
+    {"ruleId": "MIGRATION_BOOK_OR_ADDRESS", "anyOf": [{"materialType": "HOUSEHOLD_BOOK", "minCount": 1}, {"materialType": "ADDRESS_PROOF", "minCount": 1}]}
+  ],
+  "materials": [
+    {"materialRef": "stg_demo_id_2", "contentType": "image/jpeg", "sizeBytes": 232000, "sourceRoleHint": "IDENTITY_CARD_FRONT"}
+  ]
+}
+~~~
+
+响应：
 
 ~~~json
 {
@@ -393,8 +455,10 @@ Java 规则预计身份材料及户口簿/地址证明；这里只上传身份�
   ],
   "alerts": [
     {
-      "code": "MATERIAL_MISSING",
+      "code": "MATERIAL_REQUIREMENT_UNSATISFIED",
       "severity": "WARNING",
+      "ruleId": "MIGRATION_BOOK_OR_ADDRESS",
+      "alternatives": ["HOUSEHOLD_BOOK", "ADDRESS_PROOF"],
       "fieldCodes": [],
       "materialRefs": [],
       "safeMessage": "尚未提供户口簿或地址证明。"
@@ -409,7 +473,28 @@ Java 规则预计身份材料及户口簿/地址证明；这里只上传身份�
 
 #### 3. 低置信度与字段冲突
 
-名字只用于虚构冲突示例；后端不得自动选择一份材料作为正确值：
+两份输入分别识别出冲突姓名；Python 不选择哪份材料正确。
+
+~~~json
+{
+  "schemaVersion": "1.0",
+  "requestId": "req-demo-003",
+  "taskId": "task-demo-003",
+  "traceId": "trace-demo-003",
+  "businessType": "MIGRATION_IN",
+  "migrationType": "OUTSIDE_CITY",
+  "materialRequirements": [
+    {"ruleId": "MIGRATION_IDENTITY", "allOf": [{"materialType": "IDENTITY_PROOF", "minCount": 1}]},
+    {"ruleId": "MIGRATION_BOOK_OR_ADDRESS", "anyOf": [{"materialType": "HOUSEHOLD_BOOK", "minCount": 1}, {"materialType": "ADDRESS_PROOF", "minCount": 1}]}
+  ],
+  "materials": [
+    {"materialRef": "stg_demo_id_3", "contentType": "image/jpeg", "sizeBytes": 244000, "sourceRoleHint": "IDENTITY_CARD_FRONT"},
+    {"materialRef": "stg_demo_book_3", "contentType": "application/pdf", "sizeBytes": 418000, "sourceRoleHint": "HOUSEHOLD_REGISTER_PAGE"}
+  ]
+}
+~~~
+
+响应：
 
 ~~~json
 {
@@ -473,7 +558,27 @@ Java 规则预计身份材料及户口簿/地址证明；这里只上传身份�
 
 #### 4. AI 服务失败
 
-失败不是分析结果；Java 消费者按 retryable 和有限次数决定重试，最后一次才将任务置为 FAILED：
+请求包含的引用仍可追踪；失败响应不伪造材料分析结果。
+
+~~~json
+{
+  "schemaVersion": "1.0",
+  "requestId": "req-demo-004",
+  "taskId": "task-demo-004",
+  "traceId": "trace-demo-004",
+  "businessType": "MIGRATION_IN",
+  "migrationType": "OUTSIDE_CITY",
+  "materialRequirements": [
+    {"ruleId": "MIGRATION_IDENTITY", "allOf": [{"materialType": "IDENTITY_PROOF", "minCount": 1}]},
+    {"ruleId": "MIGRATION_BOOK_OR_ADDRESS", "anyOf": [{"materialType": "HOUSEHOLD_BOOK", "minCount": 1}, {"materialType": "ADDRESS_PROOF", "minCount": 1}]}
+  ],
+  "materials": [
+    {"materialRef": "stg_demo_id_4", "contentType": "image/jpeg", "sizeBytes": 239000, "sourceRoleHint": "IDENTITY_CARD_FRONT"}
+  ]
+}
+~~~
+
+响应：
 
 ~~~json
 {
@@ -484,13 +589,13 @@ Java 规则预计身份材料及户口簿/地址证明；这里只上传身份�
   "error": {
     "code": "MODEL_UNAVAILABLE",
     "retryable": true,
+    "materialRefs": ["stg_demo_id_4"],
     "safeMessage": "文档分析服务暂时不可用，请稍后查看任务状态。"
   }
 }
 ~~~
 
-错误体不包含真实地址、凭据、栈信息、原始文件名或证件字段。若同一任务重试耗尽，Java 持久化 failureCode=RETRY_EXHAUSTED，任务状态成为 FAILED。
-
+失败不是分析结果；Java 消费者按 retryable 和有限次数决定重试，最后一次才将任务置为 FAILED。错误体不包含真实地址、凭据、栈信息、原始文件名或证件字段。
 ### D.4 认证、超时与责任
 
 内部服务需独立认证，最小授权限定 document:analyze；服务凭据只保存在受保护的运行环境，不进代码、浏览器、MQ 消息、日志或响应。首轮超时建议 connect 2 秒、document-analysis read 120 秒，单次调用由任务消费者承载而不阻塞用户 HTTP 请求；数值作为后端 Mock/适配起点；worker 租约和 AI 侧并发上限在真实 Python/Broker 联调时按实测调整。HTTP 超时按临时失败重试，若服务返回格式不合法则记录 AI_INVALID_RESPONSE 并按非重试或一次有限重试处理。正式规则仍由 Java 校验。
@@ -508,108 +613,176 @@ Java 规则预计身份材料及户口簿/地址证明；这里只上传身份�
 | 字段 | 语义 |
 |---|---|
 | schemaVersion、requestId、traceId | 版本与链路校验字段。 |
+| citationIdsUsed | string[] | 本答案实际引用的 citations.sourceId；Java 校验后重新编号引用标记。 |
 | outcome | ANSWERED、INSUFFICIENT_EVIDENCE；服务错误由调用层表示。 |
-| answer | 基于检索证据生成的简短政策回答；无依据时明确说无法确认。 |
-| citations[] | sourceId、title、section、excerpt、sourceVersion、effectiveFrom、effectiveTo、regionCode、retrievedAt。 |
+| answer | 基于检索证据生成的简短政策回答；用 [[sourceId]] 标记引用；无依据时明确说无法确认并令 citationIdsUsed 为空。 |
+| citations[] | sourceId、title、section、category、sourceType、excerpt、sourceVersion、effectiveFrom、effectiveTo、regionCode、retrievedAt。category 用于 Java 现有意图过滤。 |
 | knowledgeBaseVersion | Python 当前使用的知识库快照/索引版本。 |
 | modelVersion、retrievalVersion、rerankerVersion | 本次实际组件版本；未使用的组件为 null。 |
 | evidenceLevel | SUFFICIENT、PARTIAL、INSUFFICIENT；检索分数不作为答案正确概率。 |
 | elapsedMs | Python 本次处理耗时。 |
 
-建议 connect 超时 2 秒、整体 read 超时 8 秒，不自动长时间重试。数值作为后端默认适配起点，真实 Python 接入时根据实测延迟调整。引用应是前端可展示的来源与版本，不返回内部绝对路径或服务凭据。
+建议 connect 超时 2 秒、整体 read 超时 8 秒，不自动长时间重试。数值作为后端默认适配起点，真实 Python 接入时根据实测延迟调整。sourceMode 由 Java 调用路径设置而不是由 Python 自报。引用应是前端可展示的来源与版本，不返回内部绝对路径或服务凭据。
 
 ### E.2 Java 降级及对外模式
 
-Java 继续拥有公共 API 响应格式和 PolicyTaskAgentService.AgentResponse 的现有字段语义。调用 Python 超时、5xx、服务未配置或响应 schema 无效时，Java 执行现有 PolicyAssistantService.query 本地知识检索，再由 PolicyTaskAgentService 组装当前意图、证据、citations、warnings、nextActions、needHumanHelp 和 trace。Java 本地检索当前按 Markdown 知识块和中文二元组计分，并非 Python 混合向量检索或重排序。
+CURRENT 调用链必须保留。PolicyAssistantController.query 调用 PolicyTaskAgentService.execute；该方法负责意图识别、追问改写、查询扩展、调用 PolicyAssistantService.query、融合 citations、计算 evidenceStatus、权限过滤 nextActions，并由 buildSummary 构造 answerSummary。当前实现不会直接把 QueryResponse.answer 写入 AgentResponse.answerSummary；仅修改 PolicyAssistantService 去请求 Python，不能让 Python answer 自然进入当前公共响应。
 
-建议在保持现有 AgentResponse 字段语义的基础上增加 sourceMode，不直接重解释既有 mode。保留当前 mode 的 AI_ASSISTED、RETRIEVAL_ONLY、SAFE_REFUSAL 语义；用 evidenceStatus 表示证据是否充分，用 sourceMode 表示服务来源：
+PROPOSED Java→Python 兼容适配流程：
 
-| mode | evidenceStatus | sourceMode | 含义 |
+1. Java 仍先运行现有敏感信息规则。命中后不把问题发送 Python，维持现有 SAFE_REFUSAL 语义。
+2. 保留 PolicyTaskAgentService 的 intent 分类、standaloneQuestion 改写、查询扩展和有限历史处理。它为每个查询调用 Java PolicyAssistantService；启用 Python 的请求由该服务代理到 /internal/policy-query。
+3. Java 校验 Python 的 requestId/schemaVersion、citationIdsUsed 和 citations。Python 只能提供回答与证据，不提供业务动作，不提供授权身份。
+4. PolicyAssistantService.QueryResponse.answer 已是当前 Java DTO 字段；Python adapter 将通过 schema 校验的 Python answer 填入该字段，并由 Java 设置 sourceMode/evidenceLevel 元数据，而不是新造一个不被后续链路读取的字段。Java 不直接信任 evidenceLevel：先验证引用和意图匹配，再映射到现有 AgentResponse.evidenceStatus；证据不匹配时降级为 PARTIAL/INSUFFICIENT，Python confidence 不作为答案正确性依据。若 Python 不可用或响应无效，PolicyAssistantService 改用纯 Java 本地检索结果；该 fallback 不再调用 legacy 外部 LLM，避免第二个远程依赖造成不确定延迟。
+5. 每条 Python citation 映射到现有 PolicyAssistantService.Citation：Java 生成 index；title、section、category、sourceType 映射同名字段；sourceVersion 映射 version；sourceId 映射 logicalPath；excerpt 映射 summary。category 必须存在，供 PolicyTaskAgentService.matchesIntent 使用。effectiveFrom/effectiveTo/regionCode 可作为 Java Citation 的可选扩展字段保留，不替换已有字段。
+6. Java 按 sourceId 融合引用、重新编号；只接受 citationIdsUsed 全部能映射到最终引用集的 answer。将 Python answer 中的 citation sourceId 标记重写为 Java 编号（如 [1]）；无效、缺失引用或被意图过滤的引用导致 answer 丢弃并走本地 fallback。
+7. PolicyTaskAgentService 继续用 Java 计算 conditions、requiredMaterials、steps、warnings；asksStatus 命中时仍附加 Java 维护的业务状态说明。nextActions 继续由 getAllowedActions(intent, 当前用户权限) 生成，忽略 Python 建议动作。
+8. 有效且有足够证据的 Python 回答成为 AgentResponse.answerSummary 的主体，并保留已重编号引用；Java 的业务状态提示可追加。Java fallback 使用现有 buildSummary。证据不足时不展示未经支持的 Python answer，使用 Java 的安全无依据说明。
+
+mode、sourceMode、evidenceStatus 各自职责如下：
+
+| mode | sourceMode | evidenceStatus | 语义 |
 |---|---|---|---|
-| AI_ASSISTED | SUFFICIENT/PARTIAL | PYTHON_HYBRID_RAG | Python 有证据并给出回答。 |
-| RETRIEVAL_ONLY | SUFFICIENT/PARTIAL | JAVA_LOCAL_FALLBACK | Python 不可用，由 Java 本地检索回答；明确提示降级。 |
-| SAFE_REFUSAL | INSUFFICIENT | PYTHON_HYBRID_RAG | Python 检索未得到足以支持确定回答的证据。 |
-| SAFE_REFUSAL | INSUFFICIENT | JAVA_LOCAL_FALLBACK | Java 本地降级检索未得到足以支持确定回答的证据。 |
-| SAFE_REFUSAL | INSUFFICIENT | SERVICE_ERROR | Python 与 Java 本地检索均未能提供可用结果；对外保留 ApiResponse，显示安全失败信息和人工渠道建议。 |
+| AI_ASSISTED | PYTHON_HYBRID_RAG | SUFFICIENT/PARTIAL | Python answer 已通过 Java 的引用校验，并作为 answerSummary 主体。 |
+| RETRIEVAL_ONLY | JAVA_LOCAL_FALLBACK | SUFFICIENT/PARTIAL | Python 超时、5xx、未配置或响应非法；Java 本地检索提供 answerSummary。 |
+| RETRIEVAL_ONLY | PYTHON_HYBRID_RAG 或 JAVA_LOCAL_FALLBACK | INSUFFICIENT | 已有检索路径但证据不足；Java 不展示生成式结论，needHumanHelp=true。 |
+| AI_ASSISTED | JAVA_LEGACY_AI_ASSISTED | SUFFICIENT/PARTIAL | Python 未启用时保留当前可选 Java legacy LLM 路径；不是 Python 混合检索。 |
+| SAFE_REFUSAL | JAVA_SENSITIVE_GUARD | INSUFFICIENT | 仅限现有 PolicyAssistantService 敏感输入规则；不扩展为普通无依据或服务错误状态。 |
+| SERVICE_ERROR（新增值） | SERVICE_ERROR | INSUFFICIENT | Python 路径失败且 Java 本地检索本身也不可用；返回安全错误说明和人工渠道，needHumanHelp=true。 |
 
-该方案保持现有 mode/evidenceStatus 字段语义，通过新增 sourceMode 区分 Python、Java fallback 和两条路径都失败。无依据时 evidenceStatus=INSUFFICIENT；服务完全不可用时 mode=SAFE_REFUSAL、sourceMode=SERVICE_ERROR、needHumanHelp=true。旧客户端可忽略新增 sourceMode。
-
+现有 mode 的 SAFE_REFUSAL 不用于普通“没有证据”或“服务不可用”。新增 SERVICE_ERROR 是明确的新枚举值；旧客户端应把未知 mode 按安全提示展示。sourceMode 标明实际路径，evidenceStatus 仍表示 Java 校验后的证据程度；Python 的 confidence/retrieval score 不作为答案正确概率。若 Python 未启用，保留当前 Java 检索及可选 legacy LLM 行为，并使用单独的 sourceMode=JAVA_LEGACY_AI_ASSISTED 标识该旧路径，不将其称为 Python RAG。
 ## F. OCR 文本到可信迁入实体（PROPOSED）
 
 实体解析只由 Java 完成。Python 输出 person.name、person.idCard、household.householdNo、household.address 等文本和来源；不会提供 personId、toHouseholdId 或任何数据库主键。Java 从当前 AuthenticatedUser/DataScopeCriteria 构造授权查询，候选必须限定在调用人有权访问的范围内。
 
-现有 MigrationInRequest 字段包括 personId、migrationType、fromRegionCode、fromAddress、toRegionCode、toHouseholdId、inDate、reason、title、remark、transferBatchNo 和版本字段。人工确认后 Java 必须重新构造此请求所需的主键和枚举，而不是复制模型响应。
+现有 MigrationInRequest 字段包括 personId、migrationType、fromRegionCode、fromAddress、toRegionCode、toHouseholdId、inDate、reason、title、remark、transferBatchNo 和版本字段。人工确认后 Java 从授权候选令牌恢复 personId/toHouseholdId，并重建迁入请求；模型文本和客户端字段都不是主键来源。
 
 | 场景 | Java 可信规则 | 是否可继续/建议交互 | 错误语义建议 |
 |---|---|---|---|
-| 身份证号与人员匹配 | 规范化文本后在授权范围内精确查询；使用 PersonMapper 的 scoped query 思路，不使用无范围全表搜索。 | 唯一匹配且后续字段一致时可进入确认预览；仍须用户显式确认。 | 仅允许范围内候选；无权资源与不存在统一 404 ENTITY_NOT_FOUND。 |
-| 姓名与证件号不一致 | 对照同一人员记录中的姓名；不可用模型建议覆盖数据库姓名，也不可自动更新人员主档。 | 停止草稿创建；让用户对照原材料修正识别值或联系有权经办人。 | 409 PERSON_NAME_MISMATCH，字段和值脱敏。 |
-| 无人员匹配 | 不自动新建人口；先引导走已有授权的人口建档流程，再重新进入迁入。 | 不能继续迁入草稿；人工建档后重新上传/解析或选择授权人员。 | 404 ENTITY_NOT_FOUND 或明确的 PERSON_NOT_FOUND（仅限已授权范围且不泄露范围外存在性）。 |
-| 多个人员候选 | 精确证件号原则上应唯一；若历史异常造成多条，仅返回权限内最少展示字段和短时 candidateToken。 | 用户从授权候选中人工选择；不能使用模型猜测。 | 409 ENTITY_AMBIGUOUS；候选使用短时不透明令牌，不回传身份证号或数据库 ID。 |
-| 目标户号/地址无匹配 | 先按授权范围精确查户号；地址模糊结果只能作提示，必须由用户选择当前授权的 ACTIVE 户。 | 可选现有授权 ACTIVE 户；无户时先使用现有建户业务，不在 AI 确认中自动建户。 | 404 TARGET_HOUSEHOLD_NOT_FOUND；不可泄露其他区县户号。 |
-| 多个户匹配或仅地址匹配 | 地址不是稳定唯一键；用 DataScope 过滤候选，显示必要的掩码户号/区划/地址片段。 | 用户明确选择合法候选；若超出权限则无候选可见。 | 409 ENTITY_AMBIGUOUS，未经授权候选不计数、不显示。 |
-| 目标户不存在或非 ACTIVE | Java 重查并锁定目标户；状态必须为 ACTIVE。 | 不可继续；提示选择其他有效户或先走授权的家庭户维护流程。 | 不存在/越权返回统一 404；已授权但非 ACTIVE 返回 409 TARGET_HOUSEHOLD_INACTIVE。 |
-| toRegionCode 与目标户区划冲突 | Java 从受权目标户读取 regionCode，要求与请求 toRegionCode 相等，并校验用户可办理该区域。不可使用 OCR 地址推断区划后直接写库。 | 用户重新选目标户或在有权范围内选择正确区划。 | 409 TARGET_REGION_MISMATCH；无权区划按统一 404/403 策略隐藏。 |
+| 身份证号与人员匹配 | 规范化文本后在授权范围内精确查询；使用 PersonMapper 的 scoped query 思路，不使用无范围全表搜索。 | 唯一匹配返回一个 person candidateToken；用户仍须在确认页明确选择。 | 仅允许范围内候选；无权资源与不存在统一 404 ENTITY_NOT_FOUND。 |
+| 姓名与证件号不一致 | 对照同一人员记录中的姓名；不可用模型建议覆盖数据库姓名，也不可自动更新人员主档。 | 停止草稿创建；用户修正后重新预览候选。 | 409 PERSON_NAME_MISMATCH，字段和值脱敏。 |
+| 无人员匹配 | 不自动新建人口；先引导走已有授权的人口建档流程，再重新进入迁入。 | 返回无候选和安全建档引导，不发出可确认 token。 | 404 ENTITY_NOT_FOUND 或明确的 PERSON_NOT_FOUND（仅限已授权范围且不泄露范围外存在性）。 |
+| 多个人员候选 | 精确证件号原则上应唯一；若历史异常造成多条，仅返回权限内最少展示字段和短时 candidateToken。 | 返回全部权限内候选；用户必须选择其中一个，不能由模型或排序结果代选。 | 200 + resolutionStatus=SELECTION_REQUIRED；候选显示掩码字段，不回传数据库 ID。 |
+| 目标户号/地址无匹配 | 先按授权范围精确查户号；地址模糊结果只能作提示，必须由用户选择当前授权的 ACTIVE 户。 | 无户时先使用现有建户业务，不在 AI 确认中自动建户；不发出可确认 token。 | 404 TARGET_HOUSEHOLD_NOT_FOUND；不可泄露其他区县户号。 |
+| 多个户匹配或仅地址匹配 | 地址不是稳定唯一键；用 DataScope 过滤候选，显示必要的掩码户号/区划/地址片段。 | 返回权限内候选及各自 candidateToken；用户必须选择一个。 | 200 + resolutionStatus=SELECTION_REQUIRED；未经授权候选不计数、不显示。 |
+| 目标户非 ACTIVE | Java 重查并锁定目标户；状态必须为 ACTIVE。 | 不可继续；提示选择其他有效户或先走授权的家庭户维护流程。 | 已授权但非 ACTIVE 返回 409 TARGET_HOUSEHOLD_INACTIVE。 |
+| toRegionCode 与目标户区划冲突 | Java 从授权目标户读取 regionCode，要求与用户确认的 toRegionCode 相等，并校验用户可办理该区域。不可使用 OCR 地址推断区划后直接写库。 | 用户重新选择候选或区划并重新预览。 | 409 TARGET_REGION_MISMATCH；无权区划按统一 404/403 策略隐藏。 |
 | 人员已有有效户籍或有效家庭成员关系 | 创建预览和最终确认时均重新检查 residence 与 ACTIVE membership；执行前仍由现有业务再校验。 | 不可继续；按人工业务流程先处理当前户籍/关系。AI 不发起迁出或覆盖登记。 | 409 PERSON_ALREADY_REGISTERED。 |
 | IN_CITY_CROSS_DISTRICT 批次 | Java 要求 transferBatchNo 对应已完成迁出批次、相同人员/目标区划、尚未使用；数据库读取和锁/唯一约束由后续实现评审。 | 不匹配或已使用时停止，提示经办人员核实原迁出流程。 | 409 TRANSFER_BATCH_INVALID 或 TRANSFER_BATCH_ALREADY_USED；不返回其他人的批次明细。 |
-| DataScope 越权 | 人员、目标户和批次每次查询都按 ALL/DEPARTMENT/REGION/SELF 规则过滤；不能把“AI 找到”当作授权。 | 未授权对象不展示候选；用户需转交本范围内经办人。 | 统一 404 以避免枚举，确知已授权资源但权限不符时可按现有 API 返回 403。 |
-| 预览后数据变化 | 预览返回短期 resolutionToken，绑定 userId、taskId、task result version、候选和实体 version；确认事务内锁定/重查人员、家庭户、批次、当前户籍。 | 数据变化时停止写入，让用户刷新并重新确认。 | 409 BUSINESS_STATE_CHANGED。 |
+| DataScope 越权 | 人员、目标户和批次每次查询都按 ALL/DEPARTMENT/REGION/SELF 规则过滤；不能把“AI 找到”当作授权。 | 未授权对象不展示候选；用户需转交本范围内经办人。 | 未知、越权或令牌不属于当前调用人时统一 404，避免枚举。 |
+| 预览后数据变化 | 确认时重查并锁定人员、家庭户、批次、当前户籍；比较候选实体版本、任务版本和当前 DataScope。 | 任一变化即停止写入，刷新并重新预览/选择。 | 409 BUSINESS_STATE_CHANGED 或 RESOLUTION_SCOPE_CHANGED。 |
 
-静态源码差异：MigrationService.createIn 当前调用 persons.selectById、lockActiveHousehold，并未在该方法中显式带 DataScope；审计账本 #21 还记录 executeIn 未比较目标户区划和迁入区划。S1 只在新契约中要求受控解析与区划核验，不修改现有人工接口，也不把该问题写成已修复。
+### F.1 resolution-preview 与候选令牌
 
-建议的短期候选句柄不能让用户传任意数据库主键。候选显示字段仅限经授权后的掩码名称、掩码户号和区划，身份证号不展示。每次确认仍重查库。
+POST /api/ai/tasks/{taskId}/resolution-preview 接收 taskVersion、用户修正字段和业务上下文（migrationType、toRegionCode 等）。Java 用任务结果中的识别文本与用户修正值执行授权查询，再返回：
+
+- resolutionStatus：RESOLVED_SINGLE（唯一候选，仍需用户选择）、SELECTION_REQUIRED（多候选）、NEEDS_CORRECTION（识别值冲突/无候选）之一。
+- resolutionToken：一次预览会话的不透明随机令牌，推荐 5 分钟过期。
+- personCandidates[] / targetHouseholdCandidates[]：仅包含当前权限范围内的候选；每项带 candidateToken、掩码展示字段和 entityVersion。
+- requiredSelections：需要用户选择的实体类别。
+- warnings：需确认的字段差异、未匹配或业务提示。
+
+唯一候选也发 candidateToken，前端显式展示并要求用户选择，不能只因候选数量为 1 而静默选中。无匹配时不返回候选令牌；多候选时不排序代选。
+
+resolutionToken 与 candidateToken 是不同令牌：
+
+| 令牌 | 绑定内容 | 用途 |
+|---|---|---|
+| resolutionToken | 当前 userId、taskId、taskVersion、规范化修正字段摘要、当前 DataScope/权限指纹、候选集及过期时间。 | 确认这次预览会话，防止把另一用户/任务/字段的候选带入。 |
+| candidateToken | 所属 resolutionToken、实体类型（person/household）、服务端实体主键、entityVersion、授权范围指纹和过期时间。实体主键只保存在 Java 服务端，不编码进令牌明文。 | 表达用户选择的一个授权候选，不向浏览器传 personId 或 toHouseholdId。 |
+
+令牌使用高熵随机值并由服务端保存/校验；不能把签名可解码的主键放入 token。令牌绑定当前用户、任务和数据范围；确认时再次检查权限与实体状态。用户修改预览字段后必须重新调用 resolution-preview，不能沿用旧 resolutionToken。
+
+预览响应示例（全部候选数据为虚构且已脱敏）：
+
+~~~json
+{
+  "taskId": "task-demo-confirm",
+  "taskVersion": 3,
+  "resolutionStatus": "RESOLVED_SINGLE",
+  "resolutionToken": "res_opaque_demo",
+  "expiresAt": "2026-11-03T11:00:00+08:00",
+  "requiredSelections": ["person", "targetHousehold"],
+  "personCandidates": [
+    {
+      "candidateToken": "pc_opaque_demo_1",
+      "display": {"name": "示例甲", "idCardMasked": "SIMULATED-****-001"},
+      "entityVersion": 2
+    }
+  ],
+  "targetHouseholdCandidates": [
+    {
+      "candidateToken": "hc_opaque_demo_1",
+      "display": {"householdNoMasked": "示例户****421", "regionCode": "110101", "addressMasked": "示例街道*号", "status": "ACTIVE"},
+      "entityVersion": 5
+    }
+  ]
+}
+~~~
+
+若 person/household 任一候选为空，返回对应安全错误和必要人工指引；不能返回范围外是否存在或数量。用户未选择、选择令牌类型不匹配、令牌来自别的预览/用户/任务或一次提交多个候选时，Java 拒绝确认。令牌过期要求重新预览；候选或数据版本变化返回 409 并要求重新选择。
+
+静态源码差异：MigrationService.createIn 当前调用 persons.selectById、lockActiveHousehold，并未在该方法中显式带 DataScope；审计账本 #21 还记录 executeIn 未比较目标户区划和迁入区划。S1 只在新解析流程契约中要求受控解析与区划核验，不修改现有人工接口，也不把该问题写成已修复。
 
 ## G. 人工确认与 DRAFT 创建（PROPOSED）
 
-### G.1 流程接口
+### G.1 确认请求与候选选择
 
-建议新增：
+POST /api/ai/tasks/{taskId}/confirm 要求 Bearer JWT、ai:precheck:confirm 和 migration:in:create。只有 status=SUCCEEDED 的 DOCUMENT_PRECHECK 任务可继续。
 
-- POST /api/ai/tasks/{taskId}/resolution-preview：按当前用户权限和任务结果查询实体并返回字段差异、缺件和短时 resolutionToken。
-- POST /api/ai/tasks/{taskId}/confirm：用户明确确认或修正识别值、选择授权实体，并请求创建迁入 DRAFT。
+确认请求包含 resolutionToken、selectedCandidates.person、selectedCandidates.targetHousehold；两个值都是本次 resolution-preview 返回的 candidateToken。请求中禁止出现 personId、toHouseholdId、person 主键或 household 主键。Java 由服务端令牌记录解析所选实体，再次校验授权范围、实体版本、ACTIVE 状态、区划、当前户籍和批次。
 
-两者都要求 Bearer JWT、ai:precheck:confirm 和 migration:in:create；Java 还需单独确认用户有权选择该人员、目标户和区划。仅有浏览权限或仅有 AI task 查看权限不能创建申请。
+confirmedFields 只包含用户已确认的非主键业务字段（如 migrationType、toRegionCode、inDate、reason、title、remark、transferBatchNo）以及本次预览已绑定的字段修正。字段修正值与 resolutionToken 中的摘要不一致时，返回 409 RESOLUTION_INPUT_CHANGED，用户需重新预览。
 
-确认请求示意：
+materialBindings 中的 materialType 只是用户对材料类别的选择/修正建议，不是正式写库值。Java 必须验证 stageMaterialId 属于当前用户和当前任务、材料仍可用，并把用户建议映射到标准码白名单；最终 materialType 和 requiredFlag 由 Java 根据业务类型、migrationType、授权材料分类及现有 MigrationMaterialRequirementService 规则计算。忽略客户端/AI 提交的 requiredFlag，不允许写入未知或未授权的材料引用。
+
+确认请求示例：
 
 ~~~json
 {
   "requestSchemaVersion": "1.0",
   "taskVersion": 3,
-  "resolutionToken": "short-lived-opaque-reference",
+  "resolutionToken": "res_opaque_demo",
+  "selectedCandidates": {
+    "person": "pc_opaque_demo_1",
+    "targetHousehold": "hc_opaque_demo_1"
+  },
   "idempotencyKey": "client-confirm-uuid",
   "confirmedFields": [
-    {"fieldCode": "person.name", "value": "示例甲", "source": "AI_CORRECTED_BY_USER"},
-    {"fieldCode": "migration.toRegionCode", "value": "110101", "source": "USER_SELECTED"}
+    {"fieldCode": "person.name", "value": "示例甲"},
+    {"fieldCode": "migration.migrationType", "value": "OUTSIDE_CITY"},
+    {"fieldCode": "migration.toRegionCode", "value": "110101"},
+    {"fieldCode": "migration.inDate", "value": "2026-11-03"},
+    {"fieldCode": "migration.reason", "value": "虚构事由"}
   ],
-  "acknowledgedAlerts": ["LOW_CONFIDENCE"],
+  "acknowledgedAlerts": [],
   "materialBindings": [
-    {"stageMaterialId": "stg_opaque_a1", "materialType": "IDENTITY_PROOF", "required": true}
+    {"stageMaterialId": "stg_demo_id_1", "materialType": "IDENTITY_PROOF"}
   ]
 }
 ~~~
 
-server 创建的 personId、toHouseholdId 等主键不从模型字段读取。resolutionToken 只引用 Java 在授权范围内确认的候选；最终写入前 Java 重新查库并在事务中核对实体当前状态。
-
-### G.2 规则与结果
+### G.2 选择错误、令牌过期与写入结果
 
 | 条件 | 规则 |
 |---|---|
-| 任务状态 | 只允许 status=SUCCEEDED、taskType=DOCUMENT_PRECHECK、结果结构版本受支持且未过任务结果保留期的任务。PENDING/RUNNING/FAILED 不可确认。 |
-| 显式确认 | UI 必须逐字段展示识别值、来源材料、页码/位置、置信度和告警。用户须确认必填识别字段或修改后确认；低置信度/字段冲突必须逐项 acknowledged，不允许默认勾选。 |
-| 身份、户和区划 | resolutionToken 绑定当前用户和 taskVersion；Java 事务内重新解析身份证号/姓名、目标 ACTIVE 户、DataScope、现有户籍、区划匹配及跨区批次。 |
-| 幂等 | Idempotency-Key 在 userId + taskId 范围唯一；同键同请求返回首次创建的 applicationId；同键不同请求返回 409 IDEMPOTENCY_KEY_REUSED。一个 task 最多成功绑定一个迁入草稿；已被消费的任务使用另一键重试也返回 409 TASK_ALREADY_CONSUMED。 |
-| 并发 | 确认时带 taskVersion 和业务实体 version；任务、暂存材料及目标实体发生变化时返回 409 BUSINESS_STATE_CHANGED，不创建半成品。 |
-| 创建业务 | 只调用现有迁入专业业务语义，状态为 DRAFT；不调用 submit、approval、executeIn。申请创建、migration_in 详情、材料绑定及确认审计应处于同一数据库事务。 |
-| 材料绑定 | 每份正式 application_material 使用 Java 算出的材料标准码、requiredFlag 和文件元数据；verifyStatus 一律初始化 PENDING。AI 的“识别成功”不能转成 VERIFIED。 |
-| 事务/文件补偿 | DB 事务回滚时暂存文件保持 READY/IN_USE 并可重试；不能先删除文件。推荐正式记录引用同一私有对象，提交后状态变 BOUND；如必须复制，增加可重放的文件绑定/清理事件并在后续实施前确认补偿规则。 |
-| 审计 | 记录调用人、taskId、traceId、确认时间、字段版本、用户修正字段清单、候选解析版本、applicationId、幂等键摘要和结果；不记录完整身份证号、文件内容、服务 Token。 |
-| 返回 | 首次创建返回 HTTP 201 和 applicationId、applicationNo、migrationDetailId、status=DRAFT、version、绑定材料状态列表（PENDING）及 warnings。重复同键请求返回同一资源，不再创建第二份草稿。 |
+| 候选选择缺失 | 必须恰有一个 person token 和一个 targetHousehold token；缺失返回 422 CANDIDATE_SELECTION_REQUIRED。 |
+| 选择多个或令牌类型不符 | 每类是单个字符串字段；数组/多个令牌、person token 用于 household 等返回 400 INVALID_CANDIDATE_SELECTION。 |
+| 令牌不存在、越权或非当前 task | 对外统一 404 CANDIDATE_NOT_FOUND/RESOLUTION_NOT_FOUND，避免枚举候选。 |
+| 令牌过期或已失效 | 返回 409 RESOLUTION_EXPIRED；必须重新运行 resolution-preview 并重新选择。 |
+| DataScope/权限变化 | 对令牌重新核验当前权限；不再有权时撤销令牌并返回统一 404 或 409 RESOLUTION_SCOPE_CHANGED，不泄露原候选信息。 |
+| 候选记录/迁入业务状态变化 | 事务内重新读取并锁定实体、检查 entityVersion、当前户籍、ACTIVE household、区划和批次；改变时返回 409 BUSINESS_STATE_CHANGED。 |
+| 幂等 | Idempotency-Key 在 userId + taskId 范围唯一；同键同请求返回首次 applicationId；同键不同请求 409 IDEMPOTENCY_KEY_REUSED。任务最多绑定一个草稿；换键重复确认返回 409 TASK_ALREADY_CONSUMED。相同幂等请求的重试返回已有结果，不重复消费令牌创建草稿。 |
+| 用户字段变化 | 任一 confirmedFields 与 resolutionToken 绑定摘要不一致时返回 409 RESOLUTION_INPUT_CHANGED；重新预览。 |
+| 创建业务 | 仅创建迁入 DRAFT；不调用 submit、approval 或 executeIn。申请、迁入详情、正式材料绑定和审计在同一数据库事务。 |
+| 材料绑定 | Java 根据业务类型、migrationType、用户确认后的标准码和当前材料规则计算 requiredFlag；verifyStatus 一律初始化 PENDING。 |
+| 事务/文件补偿 | DB 回滚时暂存文件保持 READY/IN_USE 并可重试；不能先删除文件。提交后再标记 BOUND；需要复制时使用可重放事件/补偿，不能假设文件系统与 MySQL 原子提交。 |
+
+成功首次创建返回 HTTP 201：applicationId、applicationNo、migrationDetailId、status=DRAFT、version、材料标准码/requiredFlag 的服务端计算结果（verifyStatus=PENDING）及 warnings。响应可供用户检查结果，但不代替提交或审批。
 
 流程铁律：创建 DRAFT 后，仍由申请人走 POST /api/applications/{id}/submit；申请进入 UNDER_REVIEW 后由合规 L3 人员通过现有材料核验接口人工核验；随后按现有审批接口审批；批准后再由获授权人员显式调用 POST /api/migrations/in/applications/{id}/execute。不得由 AI 任务、确认接口或 Python 绕过这些步骤。
 
 双轨并行：现有 POST /api/migrations/in/applications 必须继续可单独创建 DRAFT；传统人工路径不依赖 AI、RabbitMQ、Python、Redis 或预审材料服务。新增入口失败、AI 不可用或 Broker 停机时，传统迁入入口保持既有行为。
-
 ## H. 运维聚合接口与跨实例边界（PROPOSED）
 
 建议 Java 提供受保护的 GET /api/ops/overview?window=5m，权限码建议 ops:overview:view。角色映射由赵书亚与张锦源确认；不得默认向所有已登录用户开放。浏览器和 JavaFX 只访问 Java 聚合接口，不直连 Actuator、Prometheus、RabbitMQ 管理端、Redis 或数据库端口。

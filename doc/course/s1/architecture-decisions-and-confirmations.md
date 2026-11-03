@@ -68,7 +68,7 @@
 | B. AI 流程开始时先创建正式 DRAFT，再复用当前材料服务 | 复用现有表、权限和文件服务，不加暂存表。 | 申请在用户确认前就存在，废弃草稿增多，改变“先传材料、后建正式申请”语义。 |
 | C. 复用 person_idcard_image | 已有草稿 UUID 和创建者字段。 | 业务边界、字段和 OCR 状态仅适合身份证影印本，无法表达多种材料和申请生命周期。 |
 
-**推荐后端基线：** 方案 A。后端 Mock 的暂存对象使用随机不透明 stageMaterialId、ownerUserId、文件元数据、内部对象引用、expiresAt 和 READY/IN_USE/BOUND/CANCELLED/EXPIRED 等暂存状态。AI task 消息只含 stageMaterialId，不含内容、绝对路径或凭据。Python 通过 Java 受控文件流读取，或经后续部署对接只读卷兼容适配。
+**推荐后端基线：** 方案 A。后端 Mock 的暂存对象使用随机不透明 stageMaterialId、ownerUserId、文件元数据、内部对象引用、expiresAt 和 READY/IN_USE/BOUND/CANCELLED/EXPIRED 等暂存状态。RabbitMQ 事件只含 taskId 与 eventId、taskType、schemaVersion、traceId、occurredAt 等元数据，不含 stageMaterialId、内容、绝对路径或凭据；消费者由 taskId 查询持久化任务并取得其关联材料引用。Python 通过 Java 受控文件流读取，或经后续部署对接只读卷兼容适配。
 
 首选在共享私有存储中保持文件对象引用不变；创建 DRAFT 时同一 MySQL 事务写 business_application、migration_in、application_material 和绑定状态。若后续环境要求复制文件，改为绑定事件加可重放补偿，不能将文件系统和数据库说成同一原子事务。
 
@@ -80,7 +80,7 @@
 - 同市跨区迁移证明 → MIGRATION_PROOF。
 - 迁出同意材料 → HOUSEHOLD_CONSENT（现有码值）。
 - 申请表 → APPLICATION_FORM 候选；当前迁入规则不要求。绑定是否采用此新增码，后续与 AI/前端材料清单对接；不得误映射成 MIGRATION_PROOF。
-- requiredFlag 由 Java 按业务规则计算，不能由 AI 或浏览器决定；正式材料初始核验状态固定 PENDING。
+- 客户端 materialType 仅是用户的分类/修正建议；Java 校验材料归属和标准码白名单，并按 businessType、migrationType、授权分类及现行迁入规则计算 requiredFlag。不能信任客户端或 AI 的 requiredFlag；正式材料初始核验状态固定 PENDING。
 
 **责任：** 按分工，张锦源负责业务暂存/绑定和 Java 授权；赵书亚负责共享文件卷与保留策略；王家兴提供 AI 文件引用读取适配；张蕊提供上传/进度/预览交互。
 
@@ -100,7 +100,7 @@
 - 只用模型值填充 personId/toHouseholdId：不可接受，存在主键猜测和权限越界风险。
 - Java 按当前权限范围精确查询，再由用户确认授权候选：能够保持 Java 为主数据唯一裁定方，并支持无匹配、多候选、冲突和数据变化处理。
 
-**推荐后端基线：** 对证件号精确查人员并检查姓名一致；按授权范围精确查 ACTIVE 目标户；地址仅提供提示，不作为唯一键；确认前和事务写入时重查并锁定人员、目标户、批次与当前户籍。人户区划冲突返回 409；越权或范围外资源返回统一 404；多候选返回短时 opaque candidateToken 和掩码字段；人员不存在时引导先走现有建档业务，AI 不自动建人/户。
+**推荐后端基线：** 对证件号精确查人员并检查姓名一致；按授权范围精确查 ACTIVE 目标户；地址仅提供提示，不作为唯一键。resolution-preview 发会话级 resolutionToken 和按实体类型区分的 candidateToken；前者绑定 userId、taskId、taskVersion、DataScope 指纹、修正字段摘要、候选集和有效期，后者绑定父 resolutionToken、实体类型、实体版本和服务端主键（主键不在 token 明文）。confirm 必须显式提交 person 与 targetHousehold 的各一个 candidateToken，不接受 personId/toHouseholdId。唯一候选也必须由用户显式选中；缺选、多选、错类、过期或不属于当前用户/task/scope 的令牌均拒绝。Java 在事务写入时重查并锁定人员、目标户、批次与当前户籍；数据变化返回 409 并要求重新预览。人户区划冲突返回 409；越权或范围外资源返回统一 404；人员不存在时引导先走现有建档业务，AI 不自动建人/户。
 
 若目标户不存在、非 ACTIVE、人员已有有效户籍或有效成员关系、跨区批次不匹配/已用、DataScope 不允许或预览后数据变化，则拒绝创建草稿并返回字段级安全提示。只有经授权人员才能看到候选；错误响应不得暴露无权资料。
 
@@ -120,10 +120,14 @@
 
 **推荐后端基线：**
 
-- POST /internal/document-analysis：使用 taskId/requestId/traceId、schemaVersion=1.0、业务类型、Java 推导的预期材料类型和不透明材料引用；返回材料分类、字段值/空值状态、来源材料/page/boundingBox、置信度、缺件/冲突告警、模型/规则版本及耗时。
+- POST /internal/document-analysis：使用 taskId/requestId/traceId、schemaVersion=1.0、businessType/migrationType、Java 推导的结构化 materialRequirements（allOf/anyOf）和任务持久化记录中的不透明材料引用；返回材料分类、字段值/空值状态、来源材料/page/boundingBox、置信度、缺件/冲突告警、模型/规则版本及耗时。逻辑规则名不是 materialType。
 - POST /internal/policy-query：含问题、有限历史、业务类型/区划；返回 answer、citations、来源版本、生效期、knowledgeBaseVersion、模型/检索版本、evidenceLevel、elapsedMs。
 - 内部认证采用 mTLS 或短时服务身份，Python 仅有分析权限；浏览器不直连 Python，不传用户 JWT/DB 主键。
-- 政策 public API 保持 Java ApiResponse 和当前 AgentResponse 语义；新增 sourceMode 区分 PYTHON_HYBRID_RAG、JAVA_LOCAL_FALLBACK、SERVICE_ERROR。Python 不可用时 Java 使用本地检索；无依据时 evidenceStatus=INSUFFICIENT；两条路径均失败时 sourceMode=SERVICE_ERROR。
+- 当前 PolicyAssistantController.query → PolicyTaskAgentService.execute 会调用 PolicyAssistantService.query、融合 citations、计算 evidenceStatus、过滤 nextActions，并由 buildSummary 构造 answerSummary；它不会自动将 QueryResponse.answer 复制到 AgentResponse。Python answer 必须由适配后的 QueryResponse.answer 明确进入 PolicyTaskAgentService，并经 citation 校验后成为 answerSummary 主体。
+- 新增 sourceMode 明确区分 PYTHON_HYBRID_RAG、JAVA_LOCAL_FALLBACK、JAVA_LEGACY_AI_ASSISTED、JAVA_SENSITIVE_GUARD 和 SERVICE_ERROR。mode/evidenceStatus 保留现有语义；SAFE_REFUSAL 只用于敏感输入拒答，普通无依据保持 RETRIEVAL_ONLY + INSUFFICIENT。
+- Python citation 的 sourceId 映射到 Java Citation.logicalPath，category 保留供 matchesIntent 使用，sourceVersion 映射 version、excerpt 映射 summary；Java 融合后重新编号并验证 citationIdsUsed。有效 Python answer 写入现有 QueryResponse.answer，再由 PolicyTaskAgentService 明确设置 answerSummary；Java 的 conditions、steps、warnings、状态说明和权限过滤 nextActions 保持原有职责。
+- Java 校验 Python evidenceLevel 与最终融合 citation 集，再映射到 AgentResponse.evidenceStatus；引用不支持或不足时降级为 PARTIAL/INSUFFICIENT，不把模型置信度当作答案正确率。
+- Python 或 Java 检索无证据时，mode=RETRIEVAL_ONLY、evidenceStatus=INSUFFICIENT 并使用 Java 无依据文案；SAFE_REFUSAL 仅用于现有敏感输入规则。Python 异常先回退纯 Java 本地检索；本地检索服务也异常时用新增 SERVICE_ERROR mode/sourceMode，不伪装成拒答。
 - 建议 policy connect/total timeout 2s/8s；document-analysis connect/read timeout 2s/120s，任务 worker 有限重试。timeout 值是后端默认起点，可在真实 Python 性能联调时调整，不阻止用 Mock 开发。
 
 **责任：** 王家兴负责 Python 服务及检索质量；张锦源负责 Java API 编排、服务身份边界、结果持久化和 fallback；张蕊消费稳定的 Java API；赵书亚提供容器网络和部署参数。
