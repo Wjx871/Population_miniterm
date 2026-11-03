@@ -1,5 +1,7 @@
 package com.wjx871.population.s2.rmi;
 
+import lombok.extern.log4j.Log4j2;
+
 import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
@@ -10,22 +12,11 @@ import java.net.Socket;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.util.Objects;
-import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
+@Log4j2
 public final class RmiSocketFactories {
 
-    private static final ConcurrentLinkedQueue<String> OBSERVED_ENDPOINTS = new ConcurrentLinkedQueue<>();
-
     private RmiSocketFactories() {
-    }
-
-    public static void resetObservedEndpoints() {
-        OBSERVED_ENDPOINTS.clear();
-    }
-
-    public static List<String> observedEndpoints() {
-        return List.copyOf(OBSERVED_ENDPOINTS);
     }
 
     public static final class LoopbackServerSocketFactory implements RMIServerSocketFactory, Serializable {
@@ -64,13 +55,14 @@ public final class RmiSocketFactories {
 
         @Override
         public Socket createSocket(String host, int port) throws IOException {
-            OBSERVED_ENDPOINTS.add(host + ":" + port);
             if (!RmiPorts.LOOPBACK_HOST.equals(host) || port != expectedPort) {
                 throw new IOException("RMI endpoint does not match the configured loopback address and port");
             }
             Socket socket = new Socket();
             socket.connect(new InetSocketAddress(InetAddress.getByName(host), port), connectTimeoutMillis);
             socket.setSoTimeout(readTimeoutMillis);
+            log.info("S2 RMI socket connected host={} port={} connectTimeoutMillis={} readTimeoutMillis={}",
+                    host, port, connectTimeoutMillis, readTimeoutMillis);
             return socket;
         }
 

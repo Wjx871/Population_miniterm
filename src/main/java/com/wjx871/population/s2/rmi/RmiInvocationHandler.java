@@ -17,7 +17,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.List;
+
 import java.util.concurrent.TimeUnit;
 
 @Log4j2
@@ -48,7 +48,7 @@ public class RmiInvocationHandler implements InvocationHandler {
         long started = System.nanoTime();
         String interfaceName = PopulationMetricsClient.class.getName();
         try (S2TraceContext.Scope ignored = S2TraceContext.open(traceId)) {
-            RmiSocketFactories.resetObservedEndpoints();
+
             log.info("S2 proxy resolving interface={} method={} registryHost={} registryPort={} expectedObjectPort={}",
                     interfaceName, method.getName(), RmiPorts.LOOPBACK_HOST, registryPort, objectPort);
             Registry registry = LocateRegistry.getRegistry(RmiPorts.LOOPBACK_HOST, registryPort,
@@ -60,13 +60,8 @@ public class RmiInvocationHandler implements InvocationHandler {
             log.info("S2 proxy before interface={} method={} registryPort={} stubDescriptor={}",
                     interfaceName, method.getName(), registryPort, stubReference);
             Object result = remoteMethod.invoke(remote, args);
-            List<String> observedEndpoints = RmiSocketFactories.observedEndpoints();
-            if (!observedEndpoints.contains(RmiPorts.LOOPBACK_HOST + ":" + registryPort)
-                    || !observedEndpoints.contains(RmiPorts.LOOPBACK_HOST + ":" + objectPort)) {
-                throw new RemoteException("RMI client did not observe the configured Registry and Remote Object endpoints");
-            }
-            log.info("S2 proxy after interface={} method={} elapsedMs={} outcome=SUCCESS observedSocketEndpoints={}",
-                    interfaceName, method.getName(), elapsedMillis(started), observedEndpoints);
+            log.info("S2 proxy after interface={} method={} elapsedMs={} outcome=SUCCESS",
+                    interfaceName, method.getName(), elapsedMillis(started));
             return result;
         } catch (InvocationTargetException exception) {
             Throwable cause = exception.getCause();

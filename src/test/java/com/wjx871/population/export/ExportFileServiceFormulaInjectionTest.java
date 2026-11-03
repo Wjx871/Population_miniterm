@@ -17,10 +17,10 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.api.io.CleanupMode;
+
 
 class ExportFileServiceFormulaInjectionTest {
-    @TempDir(cleanup = CleanupMode.NEVER)
+    @TempDir
     Path exportDirectory;
 
     @Test

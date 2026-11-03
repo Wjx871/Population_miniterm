@@ -31,7 +31,8 @@ SOAP/WSDL 与双 JVM RMI 是按 S1 保守教学方案实施。教师尚未确认
 
 - `PopulationMetricsRemote` 是 RMI Remote 接口；请求、响应和校验异常可序列化。
 - `RmiServerMain` 在独立 JVM 中创建 Registry 和远程对象；端口默认分别为 1199、1200，均使用绑定 `127.0.0.1` 的 `RMIServerSocketFactory`。`java.rmi.server.hostname` 同样固定为 `127.0.0.1`。
-- 客户端连接 Registry 时使用的 `RMIClientSocketFactory` 会校验实际 host/port；Registry 返回的 Remote Object stub 使用同样的端点校验，实际 `createSocket(host, port)` 参数来自 RMI stub 引用，非 `127.0.0.1` 或非预期端口会被拒绝。连接超时为 1 秒、读取超时为 2 秒。另由 `RmiStubVerifier` 检查 JDK 远程代理/引用类型；演示脚本用 `Get-NetTCPConnection` 核对 Registry 与对象的实际监听地址、端口及 PID。
+- 客户端连接 Registry 时使用的 `RMIClientSocketFactory` 会校验实际 host/port；Registry 返回的 Remote Object stub 使用同样的端点校验，`createSocket(host, port)` 收到的 host 和 port 来自该 RMI 引用，非 `127.0.0.1` 或非预期端口会被拒绝。连接超时为 1 秒、读取超时为 2 秒。另由 `RmiStubVerifier` 检查 JDK 远程代理/引用类型；演示脚本用 `Get-NetTCPConnection` 核对 Registry 与对象的实际监听地址、端口及 PID。
+- RMI Transport 可以复用已建立的 TCP 连接，所以 `createSocket` 不保证每次业务调用都会运行。它只在新 Socket 创建时强制校验端点并写入诊断日志；调用成功与否依据远程返回值或异常分类，不依赖跨请求共享的观察队列或每次调用都新建 Socket。
 - `PopulationMetricsClientFactory` 使用 `Proxy.newProxyInstance` 创建 JDK 动态代理。`RmiInvocationHandler` 用 `Method` 反射调用远程接口，记录接口、方法、耗时、结果或异常分类，不记录请求参数。
 - 错误分类为 `REMOTE_UNAVAILABLE`、`REMOTE_TIMEOUT`、`REMOTE_FAILURE`；业务参数校验错误单独报告为 `INVALID_REQUEST`。服务端演示延迟通过 `s2.rmi.demo-delay-millis` 注入，默认 0，最大 30 秒。
 
