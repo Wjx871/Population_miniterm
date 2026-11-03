@@ -62,14 +62,40 @@ class PersonRegionOwnershipAuditIntegrationTest {
     private String householdNo;
     private LocalDateTime auditStart;
     private String personName;
+    private Long otherDepartmentId;
+    private boolean createdOtherDepartment;
+    private Long ownerUserId;
+    private Long ownerDepartmentId;
+    private String ownerRegionCode;
 
     @BeforeEach
     void createOtherRegionAccount() {
+        Map<String, Object> owner = jdbc.queryForMap("SELECT u.user_id,u.department_id,d.region_code " +
+                "FROM sys_user u JOIN sys_department d ON d.department_id=u.department_id WHERE u.username='population'");
+        ownerUserId = ((Number) owner.get("user_id")).longValue();
+        ownerDepartmentId = ((Number) owner.get("department_id")).longValue();
+        ownerRegionCode = String.valueOf(owner.get("region_code"));
+
+        List<Long> departmentIds = jdbc.query("SELECT department_id FROM sys_department WHERE department_code='R4_REGION_120000'",
+                (rs, row) -> rs.getLong(1));
+        if (departmentIds.isEmpty()) {
+            jdbc.update("INSERT INTO sys_department(department_code,department_name,region_code,status,sort_no) " +
+                    "VALUES('R4_REGION_120000','R4 synthetic region','120000','ENABLED',990)");
+            otherDepartmentId = jdbc.queryForObject("SELECT department_id FROM sys_department " +
+                    "WHERE department_code='R4_REGION_120000'", Long.class);
+            createdOtherDepartment = true;
+        } else {
+            otherDepartmentId = departmentIds.get(0);
+            createdOtherDepartment = true;
+            assertThat(jdbc.queryForObject("SELECT region_code FROM sys_department WHERE department_id=?", String.class,
+                    otherDepartmentId)).isEqualTo("120000");
+        }
+        jdbc.update("DELETE FROM operation_log WHERE user_id = ?", OTHER_REGION_USER_ID);
         jdbc.update("DELETE FROM sys_user WHERE user_id = ?", OTHER_REGION_USER_ID);
         jdbc.update("INSERT INTO sys_user(user_id,username,password_hash,role_id,department_id,real_name,status) " +
                         "VALUES(?,?,?,?,?,?, 'ENABLED')",
                 OTHER_REGION_USER_ID, OTHER_REGION_USERNAME, passwordEncoder.encode("123456"),
-                2L, 6L, "第四批外区合成账号");
+                2L, otherDepartmentId, "R4 synthetic other-region user");
     }
 
     @AfterEach
@@ -88,11 +114,14 @@ class PersonRegionOwnershipAuditIntegrationTest {
             jdbc.update("DELETE FROM household WHERE household_no = ?", householdNo);
         }
         if (auditStart != null) {
-            jdbc.update("DELETE FROM operation_log WHERE user_id = 2 AND operation_type = 'PERSON_CREATE' " +
-                    "AND operation_time >= ?", auditStart);
+            jdbc.update("DELETE FROM operation_log WHERE user_id = ? AND operation_type = 'PERSON_CREATE' " +
+                    "AND operation_time >= ?", ownerUserId, auditStart);
         }
         jdbc.update("DELETE FROM operation_log WHERE user_id = ?", OTHER_REGION_USER_ID);
         jdbc.update("DELETE FROM sys_user WHERE user_id = ?", OTHER_REGION_USER_ID);
+        if (createdOtherDepartment && otherDepartmentId != null) {
+            jdbc.update("DELETE FROM sys_department WHERE department_id = ?", otherDepartmentId);
+        }
     }
 
     @Test
@@ -143,11 +172,11 @@ class PersonRegionOwnershipAuditIntegrationTest {
                         .header("Authorization", bearer(allScopeToken)))
                 .andReturn();
 
-        DataScopeCriteria ownerSelf = new DataScopeCriteria(DataScope.SELF, 2L, 2L, "110000", List.of());
-        DataScopeCriteria otherSelf = new DataScopeCriteria(DataScope.SELF, OTHER_REGION_USER_ID, 6L, "120000", List.of());
-        DataScopeCriteria ownerDepartment = new DataScopeCriteria(DataScope.DEPARTMENT, 9L, 2L, "110000", List.of());
-        DataScopeCriteria otherDepartment = new DataScopeCriteria(DataScope.DEPARTMENT, 9L, 6L, "120000", List.of());
-        DataScopeCriteria otherRegion = new DataScopeCriteria(DataScope.REGION, 9L, 6L, "120000", List.of("120000"));
+        DataScopeCriteria ownerSelf = new DataScopeCriteria(DataScope.SELF, ownerUserId, ownerDepartmentId, ownerRegionCode, List.of());
+        DataScopeCriteria otherSelf = new DataScopeCriteria(DataScope.SELF, OTHER_REGION_USER_ID, otherDepartmentId, "120000", List.of());
+        DataScopeCriteria ownerDepartment = new DataScopeCriteria(DataScope.DEPARTMENT, ownerUserId, ownerDepartmentId, ownerRegionCode, List.of());
+        DataScopeCriteria otherDepartment = new DataScopeCriteria(DataScope.DEPARTMENT, OTHER_REGION_USER_ID, otherDepartmentId, "120000", List.of());
+        DataScopeCriteria otherRegion = new DataScopeCriteria(DataScope.REGION, OTHER_REGION_USER_ID, otherDepartmentId, "120000", List.of("120000"));
         assertThat(personMapper.selectScopedById(personId, ownerSelf)).isPresent();
         assertThat(personMapper.selectScopedById(personId, otherSelf)).isEmpty();
         assertThat(personMapper.selectScopedById(personId, ownerDepartment)).isPresent();
