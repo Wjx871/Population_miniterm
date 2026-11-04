@@ -127,6 +127,7 @@ public class PersonService {
         person.setInitialScopeRegionCode(initialScopeRegionCode);
         person.setCreatedAt(now);
         person.setUpdatedAt(now);
+        person.setVersion(0L);
         personMapper.insertPerson(person);
         Person created = personMapper.selectById(person.getPersonId()).orElseThrow();
         if (idCardImageMapper.bindPerson(img.getImageId(), created.getPersonId(), img.getUserId()) != 1) {
@@ -162,7 +163,9 @@ public class PersonService {
         apply(request, person, identity);
         person.setIdCard(idCard);
         person.setUpdatedAt(LocalDateTime.now());
-        personMapper.updatePerson(person);
+        if (personMapper.updatePerson(person) != 1) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "PERSON_VERSION_CONFLICT");
+        }
         return get(personId);
     }
 

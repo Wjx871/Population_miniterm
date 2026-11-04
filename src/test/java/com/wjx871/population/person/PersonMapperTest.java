@@ -71,6 +71,8 @@ class PersonMapperTest {
         assertThat(affectedRows).isEqualTo(1);
         assertThat(person.getPersonId()).isNotNull();
         assertThat(actualCount).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT version FROM person WHERE person_id=?", Long.class,
+                person.getPersonId())).isZero();
     }
 
     @Test
@@ -121,6 +123,20 @@ class PersonMapperTest {
         assertThat(actual.getPhone()).isEqualTo("13600136000");
         assertThat(actual.getCurrentAddress()).isEqualTo("Updated Test Road");
         assertThat(actual.getStatus()).isEqualTo(PersonStatus.NORMAL);
+        assertThat(actual.getVersion()).isEqualTo(1L);
+    }
+
+    @Test
+    void staleServerReadVersionCannotOverwriteConcurrentPersonUpdate() {
+        Person stale = personMapper.selectByIdCard("110101199901010011").orElseThrow();
+        jdbcTemplate.update("UPDATE person SET version=version+1 WHERE person_id=?", stale.getPersonId());
+        stale.setPhone("13600136000");
+        stale.setUpdatedAt(LocalDateTime.now());
+
+        assertThat(personMapper.updatePerson(stale)).isZero();
+        Person current = personMapper.selectById(stale.getPersonId()).orElseThrow();
+        assertThat(current.getVersion()).isEqualTo(1L);
+        assertThat(current.getPhone()).isEqualTo("13800138000");
     }
 
     @Test
@@ -138,5 +154,6 @@ class PersonMapperTest {
         assertThat(affectedRows).isEqualTo(1);
         assertThat(actualCount).isEqualTo(1);
         assertThat(actual.getStatus()).isEqualTo(PersonStatus.DELETED);
+        assertThat(actual.getVersion()).isEqualTo(1L);
     }
 }

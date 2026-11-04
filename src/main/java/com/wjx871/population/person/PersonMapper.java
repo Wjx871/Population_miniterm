@@ -39,6 +39,7 @@ public interface PersonMapper {
      */
     Optional<Person> selectByIdCard(String idCard);
     Optional<Person> selectScopedById(@Param("personId")Long personId,@Param("scope")DataScopeCriteria scope);
+    Optional<Person> selectScopedByIdForUpdate(@Param("personId")Long personId,@Param("scope")DataScopeCriteria scope);
     Optional<Person> selectScopedByIdCard(@Param("idCard")String idCard,@Param("scope")DataScopeCriteria scope);
     long countScopedByCondition(@Param("name")String name,@Param("idCard")String idCard,@Param("status")String status,@Param("scope")DataScopeCriteria scope);
     List<Person> selectScopedListByCondition(@Param("name")String name,@Param("idCard")String idCard,@Param("status")String status,@Param("scope")DataScopeCriteria scope,@Param("limit")int limit,@Param("offset")long offset);

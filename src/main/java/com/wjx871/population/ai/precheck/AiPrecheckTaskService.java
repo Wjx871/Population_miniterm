@@ -199,6 +199,12 @@ public class AiPrecheckTaskService {
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "任务不存在"));
     }
 
+    TaskRow lockOwnedForResolution(long ownerUserId, String taskId) {
+        return jdbc.query("SELECT * FROM ai_precheck_task WHERE task_id=? AND owner_user_id=? FOR UPDATE",
+                        TASK_ROW_MAPPER, taskId, ownerUserId).stream().findFirst()
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "任务不存在"));
+    }
+
     TaskRow findTask(String taskId) {
         return jdbc.query("SELECT * FROM ai_precheck_task WHERE task_id=?", TASK_ROW_MAPPER, taskId)
                 .stream().findFirst().orElse(null);

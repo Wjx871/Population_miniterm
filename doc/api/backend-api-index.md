@@ -20,7 +20,7 @@
 | 综合查询 | `/api/query/persons`,`/households`,`/migration-history` | [query-statistics-api.md](query-statistics-api.md) |
 | 统计 | `/api/statistics` | [query-statistics-api.md](query-statistics-api.md) |
 | S2 远程统计派生摘要（默认关闭） | `GET /api/s2/statistics/aggregate` | [s2-statistics-api.md](s2-statistics-api.md) |
-| S3 AI 材料暂存与异步预审（默认关闭） | `/api/ai/materials`,`/api/ai/tasks` | [ai-precheck-api.md](ai-precheck-api.md) |
+| S3 AI 材料暂存、异步预审与 S4-A 实体解析预览（默认关闭） | `/api/ai/materials`,`/api/ai/tasks`,`/api/ai/tasks/{taskId}/resolution-preview` | [ai-precheck-api.md](ai-precheck-api.md) |
 | 操作与登录日志 | `/api/logs` | [log-api.md](log-api.md) |
 | 健康检查 | `/api/health` | [backend-v1-deployment.md](../deployment/backend-v1-deployment.md) |
 

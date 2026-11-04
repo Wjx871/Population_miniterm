@@ -1,6 +1,7 @@
 package com.wjx871.population.ai.precheck;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -15,6 +16,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wjx871.population.auth.AuthService;
+import com.wjx871.population.common.BusinessException;
+import com.wjx871.population.migration.MigrationType;
+import com.wjx871.population.security.AuthenticatedUser;
+import com.wjx871.population.security.DataScope;
+import com.wjx871.population.security.RoleLevel;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -22,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -38,6 +46,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -69,6 +79,8 @@ class AiPrecheckIntegrationTest {
     @Autowired PlatformTransactionManager transactionManager;
     @SpyBean AiPrivateFileStorageService storage;
     @Autowired AiPrecheckLifecycleReaper lifecycleReaper;
+    @Autowired AiResolutionService resolutionService;
+    @Autowired AuthService authService;
 
     private String householdToken;
     private String adminToken;
@@ -76,6 +88,8 @@ class AiPrecheckIntegrationTest {
 
     @BeforeEach
     void resetS3DataAndAuthenticate() throws Exception {
+        jdbc.update("DELETE FROM ai_resolution_candidate");
+        jdbc.update("DELETE FROM ai_resolution_session");
         jdbc.update("DELETE FROM ai_precheck_inbox");
         jdbc.update("DELETE FROM ai_precheck_audit");
         jdbc.update("DELETE FROM ai_precheck_outbox");
@@ -88,6 +102,297 @@ class AiPrecheckIntegrationTest {
         viewerToken = token("viewer");
         properties.setMockFailuresBeforeSuccess(0);
         properties.setMockMode(AiPrecheckProperties.MockMode.SUCCESS);
+        resetResolutionFixture();
+    }
+
+    @Test
+    void resolutionPreviewRequiresOwnedSucceededTaskAndCurrentPermissions() throws Exception {
+        resetResolutionFixture();
+        String taskId = createTaskWithoutProcessing(householdToken, "resolution-pending-task", "OUTSIDE_CITY");
+        AiResolutionPreviewRequest body = resolutionRequest(0L, completeCorrections(), MigrationType.OUTSIDE_CITY,
+                "110105", null);
+        mvc.perform(post("/api/ai/tasks/{id}/resolution-preview", taskId)
+                        .header("Authorization", bearer(householdToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.message").value("TASK_NOT_READY_FOR_RESOLUTION"));
+        jdbc.update("UPDATE ai_precheck_task SET status='FAILED' WHERE task_id=?", taskId);
+        mvc.perform(post("/api/ai/tasks/{id}/resolution-preview", taskId)
+                        .header("Authorization", bearer(householdToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.message").value("TASK_NOT_READY_FOR_RESOLUTION"));
+
+        mvc.perform(post("/api/ai/tasks/{id}/resolution-preview", taskId)
+                        .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/ai/tasks/{id}/resolution-preview", taskId)
+                        .header("Authorization", bearer(viewerToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/ai/tasks/{id}/resolution-preview", taskId)
+                        .header("Authorization", bearer(adminToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isNotFound());
+
+        String succeededTaskId = createSuccessfulTask(householdToken, "resolution-task-version");
+        long version = taskVersion(succeededTaskId);
+        AiResolutionPreviewRequest wrongVersion = resolutionRequest(version + 1, completeCorrections(),
+                MigrationType.OUTSIDE_CITY, "110105", null);
+        mvc.perform(post("/api/ai/tasks/{id}/resolution-preview", succeededTaskId)
+                        .header("Authorization", bearer(householdToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(wrongVersion)))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.message").value("TASK_VERSION_MISMATCH"));
+        mvc.perform(post("/api/ai/tasks/{id}/resolution-preview", succeededTaskId)
+                        .header("Authorization", bearer(adminToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resolutionRequest(version, completeCorrections(),
+                                MigrationType.OUTSIDE_CITY, "110105", null))))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void resolutionPreviewIssuesScopedOpaqueCandidatesAndRepreviewRevokesOldTokens() throws Exception {
+        resetResolutionFixture();
+        insertResolutionFixture();
+        String taskId = createSuccessfulTask(householdToken, "resolution-success-task");
+        long taskVersion = taskVersion(taskId);
+        MvcResult firstResult = preview(taskId, resolutionRequest(taskVersion, completeCorrections(),
+                MigrationType.OUTSIDE_CITY, "110105", null));
+        assertThat(firstResult.getResponse().getStatus()).isEqualTo(200);
+        JsonNode first = objectMapper.readTree(firstResult.getResponse().getContentAsString()).path("data");
+        assertThat(first.path("resolutionStatus").asText()).isEqualTo("RESOLVED_SINGLE");
+        assertThat(first.path("confirmable").asBoolean()).isTrue();
+        assertThat(first.path("personCandidates").size()).isEqualTo(1);
+        assertThat(first.path("targetHouseholdCandidates").size()).isEqualTo(1);
+        String oldResolutionToken = first.path("resolutionToken").asText();
+        String oldPersonToken = first.path("personCandidates").get(0).path("candidateToken").asText();
+        String oldHouseholdToken = first.path("targetHouseholdCandidates").get(0).path("candidateToken").asText();
+        assertThat(oldResolutionToken).startsWith("res_").hasSizeGreaterThan(40);
+        assertThat(oldPersonToken).startsWith("pc_").hasSizeGreaterThan(40);
+        assertThat(oldHouseholdToken).startsWith("hc_").hasSizeGreaterThan(40);
+        assertThat(firstResult.getResponse().getContentAsString()).doesNotContain("9801", "9802", "110105198001010016");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_resolution_session WHERE resolution_token_sha256=?",
+                Integer.class, sha256(oldResolutionToken))).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_resolution_session WHERE resolution_token_sha256=?",
+                Integer.class, oldResolutionToken)).isZero();
+
+        List<AiResolutionPreviewRequest.Correction> changed = new ArrayList<>(completeCorrections());
+        changed.add(new AiResolutionPreviewRequest.Correction("household.address", "测试路 99 号"));
+        JsonNode second = objectMapper.readTree(preview(taskId, resolutionRequest(taskVersion, changed,
+                MigrationType.OUTSIDE_CITY, "110105", null)).getResponse().getContentAsString()).path("data");
+        assertThat(second.path("resolutionStatus").asText()).isEqualTo("RESOLVED_SINGLE");
+        String newResolutionToken = second.path("resolutionToken").asText();
+        String newPersonToken = second.path("personCandidates").get(0).path("candidateToken").asText();
+        String newHouseholdToken = second.path("targetHouseholdCandidates").get(0).path("candidateToken").asText();
+        assertThat(newResolutionToken).isNotEqualTo(oldResolutionToken);
+        assertThat(jdbc.queryForObject("SELECT request_digest FROM ai_resolution_session WHERE resolution_token_sha256=?",
+                String.class, sha256(newResolutionToken))).isNotEqualTo(jdbc.queryForObject(
+                "SELECT request_digest FROM ai_resolution_session WHERE resolution_token_sha256=?", String.class,
+                sha256(oldResolutionToken)));
+        assertThat(jdbc.queryForObject("SELECT status FROM ai_resolution_session WHERE resolution_token_sha256=?",
+                String.class, sha256(oldResolutionToken))).isEqualTo("REVOKED");
+        assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(taskId,
+                taskVersion, newResolutionToken, oldPersonToken, newHouseholdToken)))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("INVALID_CANDIDATE_TOKEN");
+        assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(taskId,
+                taskVersion, newResolutionToken, newHouseholdToken, newPersonToken)))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("INVALID_CANDIDATE_TOKEN");
+        assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(taskId,
+                taskVersion, oldResolutionToken, oldPersonToken, oldHouseholdToken)))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("RESOLUTION_EXPIRED");
+        String otherTaskId = createSuccessfulTask(householdToken, "resolution-other-task");
+        assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(otherTaskId,
+                taskVersion(otherTaskId), newResolutionToken, newPersonToken, newHouseholdToken)))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("RESOLUTION_EXPIRED");
+        AiResolutionService.ResolutionSelection selection = withHouseholdUser(() -> resolutionService
+                .validateForConfirmation(taskId, taskVersion, newResolutionToken, newPersonToken, newHouseholdToken));
+        assertThat(selection.personId()).isEqualTo(9801L);
+        assertThat(selection.targetHouseholdId()).isEqualTo(9801L);
+        jdbc.update("UPDATE ai_resolution_session SET expires_at=? WHERE resolution_token_sha256=?",
+                java.sql.Timestamp.valueOf(java.time.LocalDateTime.now().minusSeconds(1)), sha256(newResolutionToken));
+        assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(taskId,
+                taskVersion, newResolutionToken, newPersonToken, newHouseholdToken)))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("RESOLUTION_EXPIRED");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM business_application WHERE applicant_user_id=6 AND target_person_id=9801",
+                Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM migration_in WHERE person_id=9801",
+                Integer.class)).isZero();
+    }
+
+    @Test
+    void partialResolutionIsExplicitlyNonConfirmableAndCannotCreateDraft() throws Exception {
+        resetResolutionFixture();
+        insertResolutionFixture();
+        String taskId = createSuccessfulTask(householdToken, "resolution-partial-task");
+        long version = taskVersion(taskId);
+        List<AiResolutionPreviewRequest.Correction> partial = completeCorrections().stream()
+                .filter(c -> !"household.householdNo".equals(c.fieldCode())).toList();
+        JsonNode data = objectMapper.readTree(preview(taskId, resolutionRequest(version, partial,
+                MigrationType.OUTSIDE_CITY, "110105", null)).getResponse().getContentAsString()).path("data");
+        assertThat(data.path("resolutionStatus").asText()).isEqualTo("NEEDS_CORRECTION");
+        assertThat(data.path("confirmable").asBoolean()).isFalse();
+        assertThat(data.path("personCandidates").size()).isEqualTo(1);
+        assertThat(data.path("targetHouseholdCandidates").size()).isZero();
+        assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(taskId,
+                version, data.path("resolutionToken").asText(), "pc_invalid", "hc_invalid")))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("RESOLUTION_NOT_CONFIRMABLE");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM business_application WHERE target_person_id=9801",
+                Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM migration_in WHERE person_id=9801",
+                Integer.class)).isZero();
+    }
+
+    @Test
+    void candidateSnapshotDetectsMembershipAndPersonVersionChanges() throws Exception {
+        resetResolutionFixture();
+        insertResolutionFixture();
+        String taskId = createSuccessfulTask(householdToken, "resolution-state-task");
+        long version = taskVersion(taskId);
+        JsonNode first = objectMapper.readTree(preview(taskId, resolutionRequest(version, completeCorrections(),
+                MigrationType.OUTSIDE_CITY, "110105", null)).getResponse().getContentAsString()).path("data");
+        int householdVersion = jdbc.queryForObject("SELECT version FROM household WHERE household_id=9801", Integer.class);
+        jdbc.update("INSERT INTO person(person_id,name,gender,id_card,status,current_status_code,initial_scope_region_code,version) "
+                + "VALUES(9802,'解析成员乙','F','110105198002020024','正常','PENDING','110000',0)");
+        jdbc.update("INSERT INTO household_member(household_id,person_id,relationship,join_date,status,version) "
+                + "VALUES(9801,9802,'MEMBER',DATE '2020-01-01','ACTIVE',0)");
+        assertThat(jdbc.queryForObject("SELECT version FROM household WHERE household_id=9801", Integer.class))
+                .isEqualTo(householdVersion);
+        assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(taskId, version,
+                first.path("resolutionToken").asText(), first.path("personCandidates").get(0).path("candidateToken").asText(),
+                first.path("targetHouseholdCandidates").get(0).path("candidateToken").asText())))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("RESOLUTION_ENTITY_CHANGED");
+
+        resetResolutionFixture();
+        insertResolutionFixture();
+        String secondTask = createSuccessfulTask(householdToken, "resolution-person-version-task");
+        long secondVersion = taskVersion(secondTask);
+        JsonNode preview = objectMapper.readTree(preview(secondTask, resolutionRequest(secondVersion, completeCorrections(),
+                MigrationType.OUTSIDE_CITY, "110105", null)).getResponse().getContentAsString()).path("data");
+        jdbc.update("UPDATE person SET version=version+1 WHERE person_id=9801");
+        assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(secondTask, secondVersion,
+                preview.path("resolutionToken").asText(), preview.path("personCandidates").get(0).path("candidateToken").asText(),
+                preview.path("targetHouseholdCandidates").get(0).path("candidateToken").asText())))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("RESOLUTION_ENTITY_CHANGED");
+    }
+
+    @Test
+    void currentPermissionAndDataScopeChangesInvalidatePreview() throws Exception {
+        resetResolutionFixture();
+        insertResolutionFixture();
+        String taskId = createSuccessfulTask(householdToken, "resolution-scope-task");
+        long version = taskVersion(taskId);
+        JsonNode preview = objectMapper.readTree(preview(taskId, resolutionRequest(version, completeCorrections(),
+                MigrationType.OUTSIDE_CITY, "110105", null)).getResponse().getContentAsString()).path("data");
+        AuthenticatedUser current = authService.loadUser("household");
+        List<String> changedPermissions = new ArrayList<>(current.permissions());
+        changedPermissions.add("test:permission-snapshot-change");
+        AuthenticatedUser permissionChanged = new AuthenticatedUser(current.userId(), current.username(),
+                current.passwordHash(), current.realName(), current.userStatus(), current.roleId(), current.roleCode(),
+                current.roleName(), current.roleLevel(), current.dataScope(), current.roleStatus(), current.departmentId(),
+                current.departmentName(), current.regionCode(), changedPermissions, current.regionCodes());
+        assertThatThrownBy(() -> withUser(permissionChanged, () -> resolutionService.validateForConfirmation(taskId,
+                version, preview.path("resolutionToken").asText(), preview.path("personCandidates").get(0).path("candidateToken").asText(),
+                preview.path("targetHouseholdCandidates").get(0).path("candidateToken").asText())))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("RESOLUTION_SCOPE_CHANGED");
+
+        AuthenticatedUser scopeChanged = new AuthenticatedUser(current.userId(), current.username(),
+                current.passwordHash(), current.realName(), current.userStatus(), current.roleId(), current.roleCode(),
+                current.roleName(), current.roleLevel(), DataScope.ALL, current.roleStatus(), current.departmentId(),
+                current.departmentName(), current.regionCode(), current.permissions(), List.of());
+        assertThatThrownBy(() -> withUser(scopeChanged, () -> resolutionService.validateForConfirmation(taskId,
+                version, preview.path("resolutionToken").asText(), preview.path("personCandidates").get(0).path("candidateToken").asText(),
+                preview.path("targetHouseholdCandidates").get(0).path("candidateToken").asText())))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("RESOLUTION_SCOPE_CHANGED");
+    }
+
+    @Test
+    void previewHandlesIdentityHouseholdRegionResidenceAndBatchConflicts() throws Exception {
+        resetResolutionFixture();
+        insertResolutionFixture();
+        String taskId = createSuccessfulTask(householdToken, "resolution-warning-task");
+        long version = taskVersion(taskId);
+
+        List<AiResolutionPreviewRequest.Correction> unknownIdentity = List.of(
+                new AiResolutionPreviewRequest.Correction("person.name", "解析测试甲"),
+                new AiResolutionPreviewRequest.Correction("person.idCard", "11010519491231002X"),
+                new AiResolutionPreviewRequest.Correction("household.householdNo", "S4A-H-ALPHA"));
+        JsonNode noPerson = previewData(taskId, resolutionRequest(version, unknownIdentity,
+                MigrationType.OUTSIDE_CITY, "110105", null));
+        assertThat(noPerson.path("resolutionStatus").asText()).isEqualTo("NEEDS_CORRECTION");
+        assertThat(noPerson.path("personCandidates").size()).isZero();
+        assertThat(noPerson.path("warnings").toString()).contains("ENTITY_NOT_FOUND");
+
+        List<AiResolutionPreviewRequest.Correction> nameMismatch = List.of(
+                new AiResolutionPreviewRequest.Correction("person.name", "错误姓名"),
+                new AiResolutionPreviewRequest.Correction("person.idCard", "110105198001010016"),
+                new AiResolutionPreviewRequest.Correction("household.householdNo", "S4A-H-ALPHA"));
+        JsonNode mismatch = previewData(taskId, resolutionRequest(version, nameMismatch,
+                MigrationType.OUTSIDE_CITY, "110105", null));
+        assertThat(mismatch.path("warnings").toString()).contains("PERSON_NAME_MISMATCH");
+
+        jdbc.update("UPDATE household SET status='PENDING_CANCELLATION' WHERE household_id=9801");
+        JsonNode inactive = previewData(taskId, resolutionRequest(version, completeCorrections(),
+                MigrationType.OUTSIDE_CITY, "110105", null));
+        assertThat(inactive.path("warnings").toString()).contains("TARGET_HOUSEHOLD_NOT_ACTIVE");
+
+        jdbc.update("UPDATE household SET status='ACTIVE',region_code='110100' WHERE household_id=9801");
+        JsonNode regionMismatch = previewData(taskId, resolutionRequest(version, completeCorrections(),
+                MigrationType.OUTSIDE_CITY, "110105", null));
+        assertThat(regionMismatch.path("warnings").toString()).contains("TARGET_REGION_MISMATCH");
+
+        jdbc.update("UPDATE household SET region_code='110105' WHERE household_id=9801");
+        jdbc.update("INSERT INTO residence(person_id,household_id,registered_address,region_code,register_type_code,"
+                        + "register_date,start_date,status,version) VALUES(9801,9801,'示例地址','110105','HOUSEHOLD',"
+                        + "DATE '2020-01-01',DATE '2020-01-01','ACTIVE',0)");
+        JsonNode alreadyRegistered = previewData(taskId, resolutionRequest(version, completeCorrections(),
+                MigrationType.OUTSIDE_CITY, "110105", null));
+        assertThat(alreadyRegistered.path("warnings").toString()).contains("PERSON_CURRENTLY_REGISTERED");
+        jdbc.update("DELETE FROM residence WHERE person_id=9801");
+
+        String crossDistrictTask = createSuccessfulTask(householdToken, "resolution-invalid-batch",
+                "IN_CITY_CROSS_DISTRICT");
+        JsonNode invalidBatch = previewData(crossDistrictTask, resolutionRequest(taskVersion(crossDistrictTask),
+                completeCorrections(), MigrationType.IN_CITY_CROSS_DISTRICT, "110105", "missing-batch"));
+        assertThat(invalidBatch.path("warnings").toString()).contains("TRANSFER_BATCH_INVALID_OR_USED");
+    }
+
+    @Test
+    void addressHintReturnsScopedCandidatesAndOutOfScopePersonIsHidden() throws Exception {
+        resetResolutionFixture();
+        insertResolutionFixture();
+        jdbc.update("INSERT INTO household(household_id,household_no,address,establish_date,status,region_code,version) "
+                        + "VALUES(9803,'S4A-H-BETA','示例市示例区测试路2号',DATE '2020-01-01','ACTIVE','110105',0)");
+        String taskId = createSuccessfulTask(householdToken, "resolution-multiple-households");
+        long version = taskVersion(taskId);
+        List<AiResolutionPreviewRequest.Correction> addressHint = List.of(
+                new AiResolutionPreviewRequest.Correction("person.name", "解析测试甲"),
+                new AiResolutionPreviewRequest.Correction("person.idCard", "110105198001010016"),
+                new AiResolutionPreviewRequest.Correction("household.address", "测试路"));
+        JsonNode multiple = previewData(taskId, resolutionRequest(version, addressHint,
+                MigrationType.OUTSIDE_CITY, "110105", null));
+        assertThat(multiple.path("resolutionStatus").asText()).isEqualTo("SELECTION_REQUIRED");
+        assertThat(multiple.path("confirmable").asBoolean()).isTrue();
+        assertThat(multiple.path("targetHouseholdCandidates").size()).isEqualTo(2);
+
+        jdbc.update("UPDATE person SET initial_scope_region_code='120000' WHERE person_id=9801");
+        JsonNode outOfScope = previewData(taskId, resolutionRequest(version, completeCorrections(),
+                MigrationType.OUTSIDE_CITY, "110105", null));
+        assertThat(outOfScope.path("personCandidates").size()).isZero();
+        assertThat(outOfScope.path("warnings").toString()).contains("ENTITY_NOT_FOUND");
+        assertThat(outOfScope.toString()).doesNotContain("110105198001010016", "personId", "9801");
+    }
+
+    @Test
+    void previewRejectsClientSuppliedEntityPrimaryKeyFields() throws Exception {
+        resetResolutionFixture();
+        insertResolutionFixture();
+        String taskId = createSuccessfulTask(householdToken, "resolution-primary-key-reject");
+        long version = taskVersion(taskId);
+        List<AiResolutionPreviewRequest.Correction> forged = new ArrayList<>(completeCorrections());
+        forged.add(new AiResolutionPreviewRequest.Correction("person.personId", "9801"));
+        MvcResult result = preview(taskId, resolutionRequest(version, forged, MigrationType.OUTSIDE_CITY, "110105", null));
+        assertThat(result.getResponse().getStatus()).isEqualTo(400);
+        assertThat(result.getResponse().getContentAsString()).contains("UNSUPPORTED_CORRECTION_FIELD");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM business_application WHERE target_person_id=9801",
+                Integer.class)).isZero();
     }
 
     @Test
@@ -781,6 +1086,93 @@ class AiPrecheckIntegrationTest {
 
     private AiTaskCreateRequest taskRequest(List<String> stageIds, String key, String migrationType) {
         return new AiTaskCreateRequest("1.0", "DOCUMENT_PRECHECK", "MIGRATION_IN", migrationType, stageIds, key);
+    }
+
+    private String createTaskWithoutProcessing(String token, String key, String migrationType) throws Exception {
+        String stageId = upload(token, "stage-" + key, "resolution.pdf", "application/pdf",
+                pdf("synthetic resolution document"), "UNKNOWN").path("stageMaterialId").asText();
+        MvcResult accepted = createTask(token, taskRequest(List.of(stageId), key, migrationType))
+                .andExpect(status().isAccepted()).andReturn();
+        return objectMapper.readTree(accepted.getResponse().getContentAsString()).path("data").path("taskId").asText();
+    }
+
+    private String createSuccessfulTask(String token, String key) throws Exception {
+        return createSuccessfulTask(token, key, "OUTSIDE_CITY");
+    }
+
+    private String createSuccessfulTask(String token, String key, String migrationType) throws Exception {
+        String taskId = createTaskWithoutProcessing(token, key, migrationType);
+        jdbc.update("UPDATE ai_precheck_task SET next_attempt_at=? WHERE task_id=? AND status='PENDING'",
+                java.sql.Timestamp.valueOf(java.time.LocalDateTime.now().minusSeconds(1)), taskId);
+        String body = jdbc.queryForObject("SELECT payload_json FROM ai_precheck_outbox WHERE task_id=?",
+                String.class, taskId);
+        AiPrecheckTaskService.EventEnvelope event = objectMapper.readValue(body, AiPrecheckTaskService.EventEnvelope.class);
+        worker.process(event);
+        assertThat(jdbc.queryForObject("SELECT status FROM ai_precheck_task WHERE task_id=?", String.class, taskId))
+                .isEqualTo("SUCCEEDED");
+        return taskId;
+    }
+
+    private long taskVersion(String taskId) {
+        return jdbc.queryForObject("SELECT version FROM ai_precheck_task WHERE task_id=?", Long.class, taskId);
+    }
+
+    private MvcResult preview(String taskId, AiResolutionPreviewRequest body) throws Exception {
+        return mvc.perform(post("/api/ai/tasks/{id}/resolution-preview", taskId)
+                        .header("Authorization", bearer(householdToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andReturn();
+    }
+
+    private JsonNode previewData(String taskId, AiResolutionPreviewRequest body) throws Exception {
+        MvcResult result = preview(taskId, body);
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        return objectMapper.readTree(result.getResponse().getContentAsString()).path("data");
+    }
+
+    private AiResolutionPreviewRequest resolutionRequest(long version,
+            List<AiResolutionPreviewRequest.Correction> corrections, MigrationType type, String region, String batch) {
+        return new AiResolutionPreviewRequest("1.0", version, corrections, type, region, batch);
+    }
+
+    private List<AiResolutionPreviewRequest.Correction> completeCorrections() {
+        return List.of(new AiResolutionPreviewRequest.Correction("person.name", "解析测试甲"),
+                new AiResolutionPreviewRequest.Correction("person.idCard", "110105198001010016"),
+                new AiResolutionPreviewRequest.Correction("household.householdNo", "S4A-H-ALPHA"));
+    }
+
+    private void resetResolutionFixture() {
+        jdbc.update("DELETE FROM household_member WHERE person_id IN (9801,9802) OR household_id=9801");
+        jdbc.update("DELETE FROM residence WHERE person_id IN (9801,9802) OR household_id=9801");
+        jdbc.update("DELETE FROM household WHERE household_id IN (9801,9803)");
+        jdbc.update("DELETE FROM person WHERE person_id IN (9801,9802)");
+    }
+
+    private void insertResolutionFixture() {
+        jdbc.update("INSERT INTO person(person_id,name,gender,id_card,birth_date,status,current_status_code,"
+                        + "initial_scope_region_code,version) VALUES(9801,'解析测试甲','M','110105198001010016',"
+                        + "DATE '1980-01-01','正常','PENDING','110000',0)");
+        jdbc.update("INSERT INTO household(household_id,household_no,address,establish_date,status,region_code,version) "
+                        + "VALUES(9801,'S4A-H-ALPHA','示例市示例区测试路1号',DATE '2020-01-01','ACTIVE','110105',0)");
+    }
+
+    private <T> T withHouseholdUser(Supplier<T> action) {
+        return withUser(authService.loadUser("household"), action);
+    }
+
+    private <T> T withUser(AuthenticatedUser user, Supplier<T> action) {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+        try {
+            return action.get();
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    private String sha256(String value) throws Exception {
+        return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                .digest(value.getBytes(StandardCharsets.UTF_8)));
     }
 
     private String token(String username) throws Exception {

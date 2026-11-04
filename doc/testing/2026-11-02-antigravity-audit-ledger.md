@@ -26,7 +26,7 @@
 | 18 | CRITICAL | 户主迁出申请缺少继任者导致批准后无法执行 | FIXED_NOT_VERIFIED | 新申请在提交时校验继任者，`Phase03MigrationIntegrationTest` 验证新流；已批准但缺少继任者的历史单仍需补正/重新审批方案；`eabae6a`。 | 后端后续处理历史单 |
 | 19 | HIGH | 跨区迁移批次号全局唯一使取消草稿占号 | OPEN | 批次号生成与表唯一约束仍未按已取消草稿释放；本轮未改。 | 后端 |
 | 20 | HIGH | 户主交接只改主表指针未更新成员 HEAD 关系 | FIXED_VERIFIED | `MigrationService.executeOut` 同事务更新新户主关系与家庭户指针；迁出交接测试覆盖；`eabae6a`。 | 后端已完成 |
-| 21 | MEDIUM | 目标家庭户与迁入区划不一致 | OPEN | 目标家庭户现在通过 `lockActiveHousehold` 加锁；但 `executeIn` 仍未比较 `household.region_code` 与 `migration_in.to_region_code`。本轮静态核对，未改该项。 | 后端 |
+| 21 | MEDIUM | 目标家庭户与迁入区划不一致 | FIXED_VERIFIED | `MigrationService.createIn/updateIn/executeIn` 均在服务端锁定/读取目标户后要求非空 `household.region_code` 与 `to_region_code` 精确一致；执行时再次验证。`Phase03MigrationIntegrationTest.targetRegionMismatchIsRejectedOnCreateUpdateAndExecute` 覆盖三处拒绝、草稿不被改写及执行失败不改人员/户籍。 | 后端已完成 |
 | 22 | MEDIUM | 户籍归档写入未检查受影响行数 | OPEN | `MigrationService` 调用归档写入后未检查插入影响行数；本轮未改。 | 后端 |
 | 23 | MEDIUM | 迁出表单缺少新户主选择与同意材料 | FRONTEND_HANDOFF | 前端申请表单/材料配置需核验；新后端提交门禁已要求继任者；本轮未改前端。 | 前端组 |
 | 24 | LOW | 迁出区划与归档查询类型交互不规范 | FRONTEND_HANDOFF | 查询控件绑定问题；本轮未改前端。 | 前端组 |
@@ -38,7 +38,7 @@
 | 30 | LOW | 注销状态监听器未映射 RETURNED | OPEN | `CancellationStatusListener` 将状态直接 `CancellationStatus.valueOf`，而枚举无 `RETURNED`；退回该业务可能抛异常；本轮未改。 | 后端 |
 | 31 | CRITICAL | SELF 可绕过归属校验读取他人流动/居住证 | FIXED_VERIFIED | 服务层按来源申请人校验 SELF；`FloatingSelfScopeAuditIntegrationTest` 覆盖本人允许、他人拒绝及列表/详情；`6541a05`。 | 后端已完成 |
 | 32 | HIGH | 流动关闭与居住证签注锁顺序形成 MySQL 死锁 | FIXED_VERIFIED | 本轮旧实现捕获 8.4.8 `1213/40001` 等待环；修复后 MySQL 10/10 轮关闭 200、签注 409、死锁计数不增；`MySql84CriticalAcceptanceIT.closeThenEndorseLocksFloatingBeforePermitWithoutDeadlock`，`2bfa038`。 | 后端已完成 |
-| 33 | HIGH | 同市跨区户籍冲突只按区划精确相等判断 | OPEN | `countActiveResidenceInRegion` 仍按 `region_code=#{region}` 精确匹配；同城下级区划冲突未覆盖；本轮未改。 | 后端 |
+| 33 | HIGH | 同市跨区户籍冲突只按区划精确相等判断 | OPEN | `countActiveResidenceInRegion` 与 `MigrationMapper.xml` 仍按 `region_code=#{region}` 精确匹配。仓库 admin_region 有层级表和合成种子，但没有权威完整区划数据或可证明“同市”归属规则；本轮不推断编码前缀/长度、不修改查询。需业务提供权威区划数据与边界规则后再修复。 | 后端/业务规则提供方 |
 | 34 | HIGH | 居住证申请缺少在途排他检查 | OPEN | 首次申领路径检查当前 ACTIVE 证件，但未按人员/流动登记拒绝已有同类未结申请；本轮未改。 | 后端 |
 | 35 | MEDIUM | 居住证到期预警页签复用停滞 | FRONTEND_HANDOFF | 前端 Tab/列表刷新问题；本轮未改前端。 | 前端组 |
 | 36 | MEDIUM | 申领弹窗可选不合资格人员 | FRONTEND_HANDOFF | 候选项筛选属前端；后端执行仍校验有效登记与申领日期；本轮未改前端。 | 前端组 |
@@ -99,7 +99,7 @@
 - #32/#38：MySQL 8.4.8 `REPEATABLE-READ` 实际捕获锁环：签注事务持有居住证主键锁等待 `person`，关闭事务持有 `person` 等待居住证；修复后 10 轮无 1213。
 - #39：当前材料契约明确建档与解除相同；未作无依据的业务改动。
 - #44：旧实现 RETURNED 状态重复申请返回 201，并发竞态两边均 201；修复后 H2 11 项门禁通过。
-- #21、#41、#43：本轮发现原报告之外仍有未闭环风险，均保留 OPEN，没有顺手修改。
+- #21：S4-A 已修复并以 H2 集成测试验证；#41、#43 仍保留 OPEN，未扩大修改范围。
 
 
 ## 第四批 MySQL 最终门禁补充

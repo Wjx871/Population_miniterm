@@ -84,6 +84,37 @@ S3 新增接口默认关闭：需显式设置 `AI_PRECHECK_ENABLED=true`。所�
 
 需要 `ai:precheck:view`，且只有创建者能读取；跨用户和不存在任务都返回统一 `404`。任务状态为 `PENDING`、`RUNNING`、`SUCCEEDED`、`FAILED` 之一。只有 `SUCCEEDED` 返回 `result`，只有 `FAILED` 返回安全 `failure`。成功只表示结构化分析流程完成，不表示材料合格、身份真实或业务获批。Mock 结果会包含 `mode=MOCK`，并明确提示人工复核。
 
+## S4-A 实体解析预览
+
+### `POST /api/ai/tasks/{taskId}/resolution-preview`
+
+需要 `ai:precheck:view` 与 `migration:in:create`。任务必须属于当前用户、为 `DOCUMENT_PRECHECK` / `MIGRATION_IN` 且处于 `SUCCEEDED`；请求中的 `taskVersion` 必须等于服务端当前版本。非本人任务与不存在任务统一 `404`，未完成任务、版本冲突和业务上下文冲突返回 `409`。未知 `requestSchemaVersion` 返回 `422`。
+
+```json
+{
+  "requestSchemaVersion": "1.0",
+  "taskVersion": 2,
+  "corrections": [
+    { "fieldCode": "person.name", "value": "示例姓名" },
+    { "fieldCode": "person.idCard", "value": "110105194912310011" },
+    { "fieldCode": "household.householdNo", "value": "S4A-H-ALPHA" }
+  ],
+  "migrationType": "OUTSIDE_CITY",
+  "toRegionCode": "110105",
+  "transferBatchNo": null
+}
+```
+
+仅接受 `person.name`、`person.idCard`、`household.householdNo` 和 `household.address` 四种修正字段；同一字段不可重复。修正值只作为查询文本，经 NFC/空白规范化与字段校验后使用。人员按规范化证件号在当前 `DataScopeCriteria` 内精确查询，并要求姓名一致；目标户优先按户号精确查询。地址只能在当前范围内作为辅助候选提示，所有候选仍须由用户显式选择。客户端不能提交人员/家庭户主键、实体版本事实、权限范围或候选集合。
+
+`resolutionStatus` 为 `RESOLVED_SINGLE`、`SELECTION_REQUIRED` 或 `NEEDS_CORRECTION`。唯一候选也必须显式选择。识别字段缺失/冲突、人员未建档或不匹配、已有当前户籍/有效成员关系、目标户不为 `ACTIVE`、区划不一致、跨区批次无效/已使用等情况会返回安全 warning；未匹配和超出范围使用一致的 `ENTITY_NOT_FOUND`，不暴露越权实体。`NEEDS_CORRECTION` 可含部分候选，但 `confirmable=false`，后续确认校验必须拒绝该会话。
+
+响应仅返回必要的脱敏展示字段、`entityVersion`、不透明 candidateToken 和安全 warning，不返回数据库主键、完整证件号或完整地址。`resolutionToken` 与 candidateToken 均为高熵随机值；数据库只保存 SHA-256 摘要。candidateToken 绑定父会话及实体类型。会话默认 5 分钟过期，可用 `AI_RESOLUTION_TOKEN_TTL` 配置。同一用户/任务再次生成预览时，事务会撤销该任务此前所有仍有效会话；旧 resolutionToken 和 candidateToken 不能与新会话组合。
+
+规范化输入摘要绑定任务版本、迁入类型、目标区划、迁出批次和解析/修正字段；另一个摘要绑定当前用户、权限、DataScope、部门、区划与授权区划集合。人员候选快照包含 person.version、状态、全部户籍与成员关系；家庭户快照包含 household.version/status/regionCode、成员关系、户籍及在途迁入。内部 S4-B 校验原语在事务中再次锁定并核对任务、会话、令牌、当前权限与范围、人员状态/户籍/有效成员关系、家庭户状态/区划/版本/成员/户籍、迁出批次状态及使用情况。
+
+本阶段没有创建正式迁入草稿的 HTTP 入口，也不写 `business_application`、`migration_in` 或 `application_material`。S4-B 尚未施工。真实 Python 联调、真实 RabbitMQ 联调和前端联调均为 `NOT_VERIFIED`。
+
 ## 权限
 
-迁移 `V4_015_ai_precheck_async.sql` 只向 `HOUSEHOLD_MANAGER` 和 `SYSTEM_ADMIN` 授予新增 AI 预审权限。创建任务还要求既有 `migration:in:create`。查看和材料删除都再次核验当前用户所有权。传统材料、人口、迁入和审批 API 的权限与语义未改变。
+迁移 `V4_015_ai_precheck_async.sql` 只向 `HOUSEHOLD_MANAGER` 和 `SYSTEM_ADMIN` 授予新增 AI 预审权限。创建任务还要求既有 `migration:in:create`；S4-A 解析预览要求 `ai:precheck:view` 和 `migration:in:create`。查看、上传、预览都会核验当前用户所有权。传统材料、人口、迁入和审批 API 的权限与语义未改变。

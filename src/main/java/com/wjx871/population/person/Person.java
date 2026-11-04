@@ -47,4 +47,7 @@ public class Person {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    @JsonIgnore
+    private Long version = 0L;
 }

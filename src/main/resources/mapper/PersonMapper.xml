@@ -20,12 +20,13 @@
         <result property="initialScopeRegionCode" column="initial_scope_region_code"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
+        <result property="version" column="version"/>
     </resultMap>
 
     <sql id="PersonColumns">
         person_id, name, gender, id_card, birth_date, ethnicity, phone,
         current_address, status, current_status_code, initial_scope_user_id, initial_scope_department_id,
-        initial_scope_region_code, created_at, updated_at
+        initial_scope_region_code, created_at, updated_at, version
     </sql>
 
     <select id="selectById" resultMap="PersonResultMap">
@@ -65,6 +66,7 @@
         </if>
     </sql>
     <select id="selectScopedById" resultMap="PersonResultMap">SELECT p.* FROM person p WHERE p.person_id=#{personId}<include refid="Scope"/></select>
+    <select id="selectScopedByIdForUpdate" resultMap="PersonResultMap">SELECT p.* FROM person p WHERE p.person_id=#{personId}<include refid="Scope"/> FOR UPDATE</select>
     <select id="selectScopedByIdCard" resultMap="PersonResultMap">SELECT p.* FROM person p WHERE p.id_card=#{idCard}<include refid="Scope"/></select>
     <sql id="ScopedFilter"><where><if test="name!=null">AND LOWER(p.name) LIKE LOWER(CONCAT('%',#{name},'%'))</if><if test="idCard!=null">AND p.id_card LIKE CONCAT('%',#{idCard},'%')</if><if test="status!=null">AND p.status=#{status}</if><include refid="Scope"/></where></sql>
     <select id="countScopedByCondition" resultType="long">SELECT COUNT(*) FROM person p <include refid="ScopedFilter"/></select>
@@ -116,11 +118,11 @@
         INSERT INTO person (
             name, gender, id_card, birth_date, ethnicity, phone,
             current_address, status, initial_scope_user_id, initial_scope_department_id,
-            initial_scope_region_code, created_at, updated_at
+            initial_scope_region_code, created_at, updated_at, version
         ) VALUES (
             #{name}, #{gender}, #{idCard}, #{birthDate}, #{ethnicity}, #{phone},
             #{currentAddress}, #{status}, #{initialScopeUserId}, #{initialScopeDepartmentId},
-            #{initialScopeRegionCode}, #{createdAt}, #{updatedAt}
+            #{initialScopeRegionCode}, #{createdAt}, #{updatedAt}, #{version}
         )
     </insert>
 
@@ -133,14 +135,16 @@
             ethnicity = #{ethnicity},
             phone = #{phone},
             current_address = #{currentAddress},
-            updated_at = #{updatedAt}
-        WHERE person_id = #{personId}
+            updated_at = #{updatedAt},
+            version = version + 1
+        WHERE person_id = #{personId} AND version = #{version}
     </update>
 
     <update id="updateStatusToDeleted">
         UPDATE person
         SET status = #{status},
-            updated_at = CURRENT_TIMESTAMP
+            updated_at = CURRENT_TIMESTAMP,
+            version = version + 1
         WHERE person_id = #{personId}
     </update>
 </mapper>
