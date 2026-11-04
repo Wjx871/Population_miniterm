@@ -1,12 +1,14 @@
 package com.wjx871.population.ai.precheck;
 
 import com.wjx871.population.common.ApiResponse;
+import com.wjx871.population.common.BusinessException;
 import com.wjx871.population.security.CurrentUserContext;
 import com.wjx871.population.s2.trace.S2TraceContext;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,8 +39,19 @@ public class AiStageMaterialController {
             @RequestPart("file") MultipartFile file,
             jakarta.servlet.http.HttpServletRequest request) {
         String traceId = S2TraceContext.resolveTraceId(request.getHeader(S2TraceContext.TRACE_HEADER));
-        var result = service.upload(CurrentUserContext.requireUser(), idempotencyKey, businessType,
-                documentRoleHint, file, traceId);
+        AiStageMaterialService.UploadResult result;
+        try {
+            result = service.upload(CurrentUserContext.requireUser(), idempotencyKey, businessType,
+                    documentRoleHint, file, traceId);
+        } catch (BusinessException exception) {
+            if (exception.getStatus() == HttpStatus.CONFLICT
+                    && exception.getMessage() != null
+                    && exception.getMessage().startsWith("MATERIAL_UPLOAD_IN_PROGRESS")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).header(HttpHeaders.RETRY_AFTER, "1")
+                        .body(ApiResponse.fail(HttpStatus.CONFLICT.value(), exception.getMessage()));
+            }
+            throw exception;
+        }
         ApiResponse<AiStageMaterialView> body = result.replayed()
                 ? ApiResponse.ok(result.material()) : ApiResponse.created(result.material());
         return ResponseEntity.status(result.replayed() ? HttpStatus.OK : HttpStatus.CREATED).body(body);

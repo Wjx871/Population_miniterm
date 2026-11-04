@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.text.Normalizer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
@@ -58,9 +59,9 @@ public class AiPrivateFileStorageService {
         if (file.getSize() > properties.maxMaterialSizeBytes()) {
             throw new BusinessException(HttpStatus.PAYLOAD_TOO_LARGE, "文件超过预审材料大小上限");
         }
-        String originalName = safeDisplayName(file.getOriginalFilename());
+        String originalName = normalizeDisplayName(file.getOriginalFilename());
         String extension = extensionOf(originalName);
-        String declaredType = file.getContentType() == null ? "" : file.getContentType().trim().toLowerCase(Locale.ROOT);
+        String declaredType = normalizeContentType(file.getContentType());
         String expectedType = switch (extension) {
             case "pdf" -> "application/pdf";
             case "jpg", "jpeg" -> "image/jpeg";
@@ -174,14 +175,36 @@ public class AiPrivateFileStorageService {
         return path;
     }
 
-    private String safeDisplayName(String input) {
-        String value = input == null ? "material" : input.replace('\\', '/');
-        value = value.substring(value.lastIndexOf('/') + 1).replaceAll("[\\p{Cntrl}]", "").trim();
-        if (value.isBlank()) value = "material";
-        return value.length() <= 200 ? value : value.substring(value.length() - 200);
+    String normalizeDisplayName(String input) {
+        if (input == null) throw bad("文件名不能为空");
+        String normalized = Normalizer.normalize(input, Normalizer.Form.NFC);
+        if (normalized.indexOf('/') >= 0 || normalized.indexOf('\\') >= 0
+                || normalized.chars().anyMatch(character -> "<>:\"|?*".indexOf(character) >= 0)) {
+            throw bad("文件名不能包含路径或保留字符");
+        }
+        for (int offset = 0; offset < normalized.length();) {
+            int codePoint = normalized.codePointAt(offset);
+            int type = Character.getType(codePoint);
+            if (Character.isISOControl(codePoint) || type == Character.FORMAT
+                    || type == Character.LINE_SEPARATOR || type == Character.PARAGRAPH_SEPARATOR
+                    || type == Character.SURROGATE) {
+                throw bad("文件名不能包含控制字符");
+            }
+            offset += Character.charCount(codePoint);
+        }
+        String value = normalized.strip();
+        if (value.isBlank() || value.equals(".") || value.equals("..") || value.endsWith(".")) {
+            throw bad("文件名不合法");
+        }
+        if (value.codePointCount(0, value.length()) > 200) throw bad("文件名过长");
+        return value;
     }
 
-    private String extensionOf(String name) {
+    String normalizeContentType(String input) {
+        return input == null ? "" : input.trim().toLowerCase(Locale.ROOT);
+    }
+
+    String extensionOf(String name) {
         int dot = name.lastIndexOf('.');
         return dot >= 0 ? name.substring(dot + 1).toLowerCase(Locale.ROOT) : "";
     }

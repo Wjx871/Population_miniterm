@@ -3,6 +3,7 @@ package com.wjx871.population.ai.precheck;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -22,9 +23,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,11 +111,81 @@ class AiPrecheckIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.status").value("CANCELLED"));
         MvcResult cancelledReplay = uploadRaw(householdToken, "upload-key-cancel", "cancel.pdf", "application/pdf",
                 pdf("cancel test"), "UNKNOWN");
-        assertThat(cancelledReplay.getResponse().getStatus()).isEqualTo(200);
+        assertThat(cancelledReplay.getResponse().getStatus()).isEqualTo(409);
         assertThat(objectMapper.readTree(cancelledReplay.getResponse().getContentAsString())
-                .path("data").path("status").asText()).isEqualTo("CANCELLED");
+                .path("message").asText()).isEqualTo("MATERIAL_NOT_AVAILABLE_CANCELLED");
+        assertThat(objectMapper.readTree(cancelledReplay.getResponse().getContentAsString()).path("data").isNull())
+                .isTrue();
         assertThat(jdbc.queryForObject("SELECT status FROM ai_stage_material WHERE stage_material_id=?",
                 String.class, cancelId)).isEqualTo("CANCELLED");
+    }
+
+    @Test
+    void uploadRequestFingerprintCoversNormalizedDisplayNameAndSemanticFields() throws Exception {
+        byte[] bytes = pdf("same synthetic bytes");
+        String firstId = upload(householdToken, "semantic-upload-key", "proof.pdf", "application/pdf", bytes,
+                "IDENTITY_CARD_FRONT").path("stageMaterialId").asText();
+
+        MvcResult renamed = uploadRaw(householdToken, "semantic-upload-key", "renamed.pdf", "application/pdf",
+                bytes, "IDENTITY_CARD_FRONT");
+        assertThat(renamed.getResponse().getStatus()).isEqualTo(409);
+        assertThat(objectMapper.readTree(renamed.getResponse().getContentAsString()).path("message").asText())
+                .isEqualTo("IDEMPOTENCY_KEY_REUSED");
+
+        MvcResult changedRole = uploadRaw(householdToken, "semantic-upload-key", "proof.pdf", "application/pdf",
+                bytes, "IDENTITY_CARD_BACK");
+        assertThat(changedRole.getResponse().getStatus()).isEqualTo(409);
+        MvcResult changedBusiness = uploadRaw(householdToken, "semantic-upload-key", "proof.pdf", "application/pdf",
+                bytes, "IDENTITY_CARD_FRONT", "MIGRATION_OUT");
+        assertThat(changedBusiness.getResponse().getStatus()).isEqualTo(409);
+
+        MvcResult equivalentUnicode = uploadRaw(householdToken, "unicode-upload-key", "cafe\u0301.pdf",
+                "application/pdf", bytes, "UNKNOWN");
+        assertThat(equivalentUnicode.getResponse().getStatus()).isEqualTo(201);
+        JsonNode unicodeBody = objectMapper.readTree(equivalentUnicode.getResponse().getContentAsString()).path("data");
+        assertThat(unicodeBody.path("originalFilename").asText()).isEqualTo("café.pdf");
+        MvcResult normalizedReplay = uploadRaw(householdToken, "unicode-upload-key", "café.pdf",
+                "application/pdf", bytes, "UNKNOWN");
+        assertThat(normalizedReplay.getResponse().getStatus()).isEqualTo(200);
+        JsonNode normalizedBody = objectMapper.readTree(normalizedReplay.getResponse().getContentAsString())
+                .path("data");
+        assertThat(normalizedBody.path("stageMaterialId").asText())
+                .isEqualTo(unicodeBody.path("stageMaterialId").asText());
+        assertThat(normalizedBody.path("originalFilename").asText()).isEqualTo("café.pdf");
+
+        MvcResult sameFileNewKey = uploadRaw(householdToken, "same-file-different-key", "proof.pdf",
+                "application/pdf", bytes, "IDENTITY_CARD_FRONT");
+        assertThat(sameFileNewKey.getResponse().getStatus()).isEqualTo(201);
+        assertThat(objectMapper.readTree(sameFileNewKey.getResponse().getContentAsString()).path("data")
+                .path("stageMaterialId").asText()).isNotEqualTo(firstId);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_stage_material WHERE sha256=?",
+                Integer.class, jdbc.queryForObject("SELECT sha256 FROM ai_stage_material WHERE stage_material_id=?",
+                        String.class, firstId))).isEqualTo(3);
+    }
+
+    @Test
+    void sameUploadKeyIsScopedToOwnerAndUnsafeFilenamesAreRejected() throws Exception {
+        byte[] bytes = pdf("user scoped synthetic data");
+        MvcResult owner = uploadRaw(householdToken, "owner-scoped-upload-key", "proof.pdf", "application/pdf",
+                bytes, "UNKNOWN");
+        MvcResult other = uploadRaw(adminToken, "owner-scoped-upload-key", "proof.pdf", "application/pdf",
+                bytes, "UNKNOWN");
+        assertThat(owner.getResponse().getStatus()).isEqualTo(201);
+        assertThat(other.getResponse().getStatus()).isEqualTo(201);
+        String ownerId = objectMapper.readTree(owner.getResponse().getContentAsString()).path("data")
+                .path("stageMaterialId").asText();
+        String otherId = objectMapper.readTree(other.getResponse().getContentAsString()).path("data")
+                .path("stageMaterialId").asText();
+        assertThat(otherId).isNotEqualTo(ownerId);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_stage_material WHERE idempotency_key=?",
+                Integer.class, "owner-scoped-upload-key")).isEqualTo(2);
+
+        for (String filename : List.of("..\\escape.pdf", "folder/escape.pdf", "control\u0001.pdf", "hidden\u202E.pdf")) {
+            MvcResult invalid = uploadRaw(householdToken, "unsafe-name-" + filename.hashCode(), filename,
+                    "application/pdf", bytes, "UNKNOWN");
+            assertThat(invalid.getResponse().getStatus()).isEqualTo(400);
+            assertThat(invalid.getResponse().getContentAsString()).doesNotContain(STORAGE_ROOT, "user scoped synthetic data");
+        }
     }
 
     @Test
@@ -177,6 +250,16 @@ class AiPrecheckIntegrationTest {
                 "occurredAt", "producer");
         assertThat(jdbc.queryForObject("SELECT status FROM ai_stage_material WHERE stage_material_id=?",
                 String.class, stageId)).isEqualTo("IN_USE");
+        String stagedObject = jdbc.queryForObject("SELECT stored_object_key FROM ai_stage_material WHERE stage_material_id=?",
+                String.class, stageId);
+        MvcResult uploadReplay = uploadRaw(householdToken, "task-stage", "household-book.pdf", "application/pdf",
+                pdf("synthetic household material"), "HOUSEHOLD_REGISTER_PAGE");
+        assertThat(uploadReplay.getResponse().getStatus()).isEqualTo(409);
+        assertThat(objectMapper.readTree(uploadReplay.getResponse().getContentAsString()).path("message").asText())
+                .isEqualTo("MATERIAL_IN_USE");
+        assertThat(jdbc.queryForObject("SELECT status FROM ai_stage_material WHERE stage_material_id=?",
+                String.class, stageId)).isEqualTo("IN_USE");
+        assertThat(storage.objectExists(stagedObject)).isTrue();
         mvc.perform(delete("/api/ai/materials/{id}", stageId)
                         .header("Authorization", bearer(householdToken)))
                 .andExpect(status().isConflict());
@@ -338,6 +421,13 @@ class AiPrecheckIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT status FROM ai_stage_material WHERE stage_material_id=?", String.class,
                 boundId)).isEqualTo("BOUND");
         assertThat(storage.objectExists(boundKey)).isTrue();
+        MvcResult boundReplay = uploadRaw(householdToken, "bound-stage", "bound.pdf", "application/pdf",
+                pdf("bound"), "UNKNOWN");
+        assertThat(boundReplay.getResponse().getStatus()).isEqualTo(409);
+        assertThat(objectMapper.readTree(boundReplay.getResponse().getContentAsString()).path("message").asText())
+                .isEqualTo("MATERIAL_BOUND");
+        assertThat(jdbc.queryForObject("SELECT status FROM ai_stage_material WHERE stage_material_id=?",
+                String.class, boundId)).isEqualTo("BOUND");
         mvc.perform(delete("/api/ai/materials/{id}", boundId).header("Authorization", bearer(householdToken)))
                 .andExpect(status().isConflict());
 
@@ -351,6 +441,13 @@ class AiPrecheckIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT status FROM ai_stage_material WHERE stage_material_id=?", String.class,
                 expiredId)).isEqualTo("EXPIRED");
         assertThat(storage.objectExists(expiredKey)).isFalse();
+        MvcResult expiredReplay = uploadRaw(householdToken, "expired-stage", "expired.pdf", "application/pdf",
+                pdf("expired"), "UNKNOWN");
+        assertThat(expiredReplay.getResponse().getStatus()).isEqualTo(409);
+        assertThat(objectMapper.readTree(expiredReplay.getResponse().getContentAsString()).path("message").asText())
+                .isEqualTo("MATERIAL_NOT_AVAILABLE_EXPIRED");
+        assertThat(jdbc.queryForObject("SELECT status FROM ai_stage_material WHERE stage_material_id=?",
+                String.class, expiredId)).isEqualTo("EXPIRED");
     }
 
     @Test
@@ -414,14 +511,161 @@ class AiPrecheckIntegrationTest {
                     "application/pdf", pdf("parallel upload"), "ADDRESS_PROOF");
             Future<MvcResult> first = executor.submit(call);
             Future<MvcResult> second = executor.submit(call);
-            JsonNode a = objectMapper.readTree(first.get().getResponse().getContentAsString()).path("data");
-            JsonNode b = objectMapper.readTree(second.get().getResponse().getContentAsString()).path("data");
-            assertThat(first.get().getResponse().getStatus()).isIn(200, 201);
-            assertThat(second.get().getResponse().getStatus()).isIn(200, 201);
-            assertThat(a.path("stageMaterialId").asText()).isEqualTo(b.path("stageMaterialId").asText());
+            MvcResult a = first.get(10, TimeUnit.SECONDS);
+            MvcResult b = second.get(10, TimeUnit.SECONDS);
+            assertThat(a.getResponse().getStatus()).isIn(200, 201, 409);
+            assertThat(b.getResponse().getStatus()).isIn(200, 201, 409);
+            assertThat(List.of(a.getResponse().getStatus(), b.getResponse().getStatus())).contains(201);
+            List<String> returnedIds = new ArrayList<>();
+            for (MvcResult result : List.of(a, b)) {
+                JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+                if (result.getResponse().getStatus() == 409) {
+                    assertThat(result.getResponse().getHeader("Retry-After")).isEqualTo("1");
+                    assertThat(body.path("message").asText()).startsWith("MATERIAL_UPLOAD_IN_PROGRESS");
+                    assertThat(body.path("data").isNull()).isTrue();
+                } else {
+                    returnedIds.add(body.path("data").path("stageMaterialId").asText());
+                    assertThat(body.path("data").path("status").asText()).isEqualTo("READY");
+                }
+            }
+            assertThat(returnedIds).isNotEmpty().containsOnly(jdbc.queryForObject(
+                    "SELECT stage_material_id FROM ai_stage_material WHERE idempotency_key='parallel-upload-key'",
+                    String.class));
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_stage_material WHERE idempotency_key='parallel-upload-key'",
                     Integer.class)).isEqualTo(1);
         } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void uploadingReplayWaitsForReadyAndTaskAdmissionStillRequiresReady() throws Exception {
+        CountDownLatch promoteEntered = new CountDownLatch(1);
+        CountDownLatch releasePromote = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            promoteEntered.countDown();
+            assertThat(releasePromote.await(10, TimeUnit.SECONDS)).isTrue();
+            return invocation.callRealMethod();
+        }).when(storage).promote(any());
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Callable<MvcResult> firstCall = () -> uploadRaw(householdToken, "latched-upload-key", "latched.pdf",
+                    "application/pdf", pdf("latched upload"), "ADDRESS_PROOF");
+            Future<MvcResult> first = executor.submit(firstCall);
+            assertThat(promoteEntered.await(10, TimeUnit.SECONDS)).isTrue();
+
+            String stageId = jdbc.queryForObject("SELECT stage_material_id FROM ai_stage_material WHERE idempotency_key=?",
+                    String.class, "latched-upload-key");
+            String tempKey = jdbc.queryForObject("SELECT temp_object_key FROM ai_stage_material WHERE stage_material_id=?",
+                    String.class, stageId);
+            String objectKey = jdbc.queryForObject("SELECT stored_object_key FROM ai_stage_material WHERE stage_material_id=?",
+                    String.class, stageId);
+            assertThat(jdbc.queryForObject("SELECT status FROM ai_stage_material WHERE stage_material_id=?",
+                    String.class, stageId)).isEqualTo("UPLOADING");
+            assertThat(storage.tempExists(tempKey)).isTrue();
+            assertThat(storage.objectExists(objectKey)).isFalse();
+
+            MvcResult replayWhileUploading = uploadRaw(householdToken, "latched-upload-key", "latched.pdf",
+                    "application/pdf", pdf("latched upload"), "ADDRESS_PROOF");
+            assertThat(replayWhileUploading.getResponse().getStatus()).isEqualTo(409);
+            assertThat(replayWhileUploading.getResponse().getHeader("Retry-After")).isEqualTo("1");
+            JsonNode inProgress = objectMapper.readTree(replayWhileUploading.getResponse().getContentAsString());
+            assertThat(inProgress.path("message").asText()).startsWith("MATERIAL_UPLOAD_IN_PROGRESS");
+            assertThat(inProgress.path("data").isNull()).isTrue();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_stage_material WHERE idempotency_key=?",
+                    Integer.class, "latched-upload-key")).isEqualTo(1);
+
+            AiTaskCreateRequest earlyTask = taskRequest(List.of(stageId), "task-before-ready", "OUTSIDE_CITY");
+            MvcResult rejectedTask = createTask(householdToken, earlyTask).andExpect(status().isConflict()).andReturn();
+            assertThat(objectMapper.readTree(rejectedTask.getResponse().getContentAsString()).path("message").asText())
+                    .isEqualTo("MATERIAL_NOT_READY");
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_precheck_task WHERE idempotency_key=?",
+                    Integer.class, "task-before-ready")).isZero();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_precheck_outbox", Integer.class)).isZero();
+
+            lifecycleReaper.reapMaterials();
+            assertThat(jdbc.queryForObject("SELECT status FROM ai_stage_material WHERE stage_material_id=?",
+                    String.class, stageId)).isEqualTo("UPLOADING");
+            assertThat(storage.tempExists(tempKey)).isTrue();
+
+            releasePromote.countDown();
+            MvcResult firstResponse = first.get(10, TimeUnit.SECONDS);
+            assertThat(firstResponse.getResponse().getStatus()).isEqualTo(201);
+            JsonNode firstData = objectMapper.readTree(firstResponse.getResponse().getContentAsString()).path("data");
+            assertThat(firstData.path("stageMaterialId").asText()).isEqualTo(stageId);
+            assertThat(firstData.path("status").asText()).isEqualTo("READY");
+            assertThat(storage.objectExists(objectKey)).isTrue();
+            assertThat(storage.tempExists(tempKey)).isFalse();
+
+            MvcResult replayAfterReady = uploadRaw(householdToken, "latched-upload-key", "latched.pdf",
+                    "application/pdf", pdf("latched upload"), "ADDRESS_PROOF");
+            assertThat(replayAfterReady.getResponse().getStatus()).isEqualTo(200);
+            JsonNode replayData = objectMapper.readTree(replayAfterReady.getResponse().getContentAsString()).path("data");
+            assertThat(replayData.path("stageMaterialId").asText()).isEqualTo(stageId);
+            assertThat(replayData.path("status").asText()).isEqualTo("READY");
+            assertThat(storage.objectExists(objectKey)).isTrue();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_stage_material WHERE idempotency_key=?",
+                    Integer.class, "latched-upload-key")).isEqualTo(1);
+        } finally {
+            releasePromote.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void failedFirstUploadNeverMakesUploadingReplayLookSuccessful() throws Exception {
+        CountDownLatch promoteEntered = new CountDownLatch(1);
+        CountDownLatch releaseFailure = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            promoteEntered.countDown();
+            assertThat(releaseFailure.await(10, TimeUnit.SECONDS)).isTrue();
+            throw new IOException("synthetic private upload failure");
+        }).when(storage).promote(any());
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<MvcResult> first = executor.submit(() -> uploadRaw(householdToken, "failed-latched-key",
+                    "failed-latched.pdf", "application/pdf", pdf("private synthetic failure"), "UNKNOWN"));
+            assertThat(promoteEntered.await(10, TimeUnit.SECONDS)).isTrue();
+            String stageId = jdbc.queryForObject("SELECT stage_material_id FROM ai_stage_material WHERE idempotency_key=?",
+                    String.class, "failed-latched-key");
+            String tempKey = jdbc.queryForObject("SELECT temp_object_key FROM ai_stage_material WHERE stage_material_id=?",
+                    String.class, stageId);
+            String objectKey = jdbc.queryForObject("SELECT stored_object_key FROM ai_stage_material WHERE stage_material_id=?",
+                    String.class, stageId);
+            assertThat(jdbc.queryForObject("SELECT status FROM ai_stage_material WHERE stage_material_id=?",
+                    String.class, stageId)).isEqualTo("UPLOADING");
+            assertThat(storage.tempExists(tempKey)).isTrue();
+
+            MvcResult inProgress = uploadRaw(householdToken, "failed-latched-key", "failed-latched.pdf",
+                    "application/pdf", pdf("private synthetic failure"), "UNKNOWN");
+            assertThat(inProgress.getResponse().getStatus()).isEqualTo(409);
+            assertThat(inProgress.getResponse().getHeader("Retry-After")).isEqualTo("1");
+            assertThat(objectMapper.readTree(inProgress.getResponse().getContentAsString()).path("message").asText())
+                    .startsWith("MATERIAL_UPLOAD_IN_PROGRESS");
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_stage_material WHERE idempotency_key=?",
+                    Integer.class, "failed-latched-key")).isEqualTo(1);
+
+            releaseFailure.countDown();
+            MvcResult failedFirst = first.get(10, TimeUnit.SECONDS);
+            assertThat(failedFirst.getResponse().getStatus()).isEqualTo(500);
+            assertThat(failedFirst.getResponse().getContentAsString()).doesNotContain(STORAGE_ROOT,
+                    "private synthetic failure");
+            assertThat(jdbc.queryForObject("SELECT status FROM ai_stage_material WHERE stage_material_id=?",
+                    String.class, stageId)).isEqualTo("UPLOAD_FAILED");
+            assertThat(storage.tempExists(tempKey)).isFalse();
+            assertThat(storage.objectExists(objectKey)).isFalse();
+
+            MvcResult failedReplay = uploadRaw(householdToken, "failed-latched-key", "failed-latched.pdf",
+                    "application/pdf", pdf("private synthetic failure"), "UNKNOWN");
+            assertThat(failedReplay.getResponse().getStatus()).isEqualTo(409);
+            assertThat(objectMapper.readTree(failedReplay.getResponse().getContentAsString()).path("message").asText())
+                    .startsWith("MATERIAL_UPLOAD_FAILED");
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_stage_material WHERE idempotency_key=?",
+                    Integer.class, "failed-latched-key")).isEqualTo(1);
+        } finally {
+            releaseFailure.countDown();
             executor.shutdownNow();
         }
     }
@@ -438,6 +682,52 @@ class AiPrecheckIntegrationTest {
                 String.class)).isEqualTo("UPLOAD_FAILED");
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_stage_material WHERE idempotency_key='upload-failure-key' AND status='READY'",
                 Integer.class)).isZero();
+    }
+
+    @Test
+    void replayOfReadyRowWithMissingPrivateObjectCannotReturnSuccess() throws Exception {
+        byte[] bytes = pdf("object loss synthetic fixture");
+        String id = upload(householdToken, "missing-object-key", "missing.pdf", "application/pdf", bytes,
+                "UNKNOWN").path("stageMaterialId").asText();
+        String objectKey = jdbc.queryForObject("SELECT stored_object_key FROM ai_stage_material WHERE stage_material_id=?",
+                String.class, id);
+        storage.deleteObject(objectKey);
+
+        MvcResult replay = uploadRaw(householdToken, "missing-object-key", "missing.pdf", "application/pdf", bytes,
+                "UNKNOWN");
+        assertThat(replay.getResponse().getStatus()).isEqualTo(409);
+        assertThat(objectMapper.readTree(replay.getResponse().getContentAsString()).path("message").asText())
+                .isEqualTo("MATERIAL_OBJECT_MISSING");
+        assertThat(objectMapper.readTree(replay.getResponse().getContentAsString()).path("data").isNull()).isTrue();
+        assertThat(jdbc.queryForObject("SELECT status FROM ai_stage_material WHERE stage_material_id=?",
+                String.class, id)).isEqualTo("UPLOAD_FAILED");
+        assertThat(storage.objectExists(objectKey)).isFalse();
+    }
+
+    @Test
+    void staleUploadingRowRecoveredFromPromotedFileKeepsIdempotencySemantics() throws Exception {
+        byte[] bytes = pdf("recovery synthetic fixture");
+        String id = upload(householdToken, "recovery-upload-key", "recovery.pdf", "application/pdf", bytes,
+                "UNKNOWN").path("stageMaterialId").asText();
+        String objectKey = jdbc.queryForObject("SELECT stored_object_key FROM ai_stage_material WHERE stage_material_id=?",
+                String.class, id);
+        jdbc.update("UPDATE ai_stage_material SET status='UPLOADING', temp_object_key=NULL, uploaded_at=NULL, expires_at=NULL, updated_at=?, version=version+1 WHERE stage_material_id=?",
+                java.sql.Timestamp.valueOf(java.time.LocalDateTime.now().minusMinutes(6)), id);
+
+        lifecycleReaper.reapMaterials();
+        assertThat(jdbc.queryForObject("SELECT status FROM ai_stage_material WHERE stage_material_id=?",
+                String.class, id)).isEqualTo("READY");
+        assertThat(storage.objectExists(objectKey)).isTrue();
+
+        MvcResult replay = uploadRaw(householdToken, "recovery-upload-key", "recovery.pdf", "application/pdf",
+                bytes, "UNKNOWN");
+        assertThat(replay.getResponse().getStatus()).isEqualTo(200);
+        JsonNode data = objectMapper.readTree(replay.getResponse().getContentAsString()).path("data");
+        assertThat(data.path("stageMaterialId").asText()).isEqualTo(id);
+        assertThat(data.path("status").asText()).isEqualTo("READY");
+        assertThat(storage.objectExists(objectKey)).isTrue();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_stage_material WHERE idempotency_key=?",
+                Integer.class, "recovery-upload-key")).isEqualTo(1);
     }
 
     @Test
@@ -471,10 +761,15 @@ class AiPrecheckIntegrationTest {
 
     private MvcResult uploadRaw(String token, String key, String filename, String contentType, byte[] data,
                                 String roleHint) throws Exception {
+        return uploadRaw(token, key, filename, contentType, data, roleHint, "MIGRATION_IN");
+    }
+
+    private MvcResult uploadRaw(String token, String key, String filename, String contentType, byte[] data,
+                                String roleHint, String businessType) throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", filename, contentType, data);
         return mvc.perform(multipart("/api/ai/materials").file(file)
                         .header("Authorization", bearer(token)).header("Idempotency-Key", key)
-                        .param("businessType", "MIGRATION_IN").param("documentRoleHint", roleHint))
+                        .param("businessType", businessType).param("documentRoleHint", roleHint))
                 .andReturn();
     }
 

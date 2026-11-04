@@ -15,7 +15,9 @@ S3 新增接口默认关闭：需显式设置 `AI_PRECHECK_ENABLED=true`。所�
 | `documentRoleHint` | 否 | `IDENTITY_CARD_FRONT`、`IDENTITY_CARD_BACK`、`HOUSEHOLD_REGISTER_PAGE`、`ADDRESS_PROOF`、`TRANSFER_CERTIFICATE`、`CROSS_DISTRICT_TRANSFER`、`APPLICATION_FORM` 或 `UNKNOWN`，默认 `UNKNOWN`。这是提示，不是识别结论。 |
 | `Idempotency-Key` 请求头 | 是 | 1–128 位 ASCII 字母、数字、点、下划线或连字符。 |
 
-首次成功返回 `201` 和材料摘要；相同 owner、endpoint、key 与规范化请求再次上传时返回 `200` 和原 `stageMaterialId` 及其当前状态。请求指纹包含服务端计算的文件 SHA-256、`MIGRATION_IN`、角色提示和检测到的内容类型；同键不同指纹返回 `409 IDEMPOTENCY_KEY_REUSED`。唯一约束为 `(owner_user_id, idempotency_endpoint, idempotency_key)`。幂等重试只读回原记录，不会重开 `CANCELLED`、`EXPIRED`、`UPLOAD_FAILED` 或其他不可用材料。
+首次上传只有在数据库状态为 `READY` 且私有对象确认存在后才返回 `201`。相同 owner、endpoint、key 与规范化请求只有在原材料仍为 `READY`、未过期且对象存在时才返回 `200` 和原 `stageMaterialId`。`UPLOADING` 返回 `409 MATERIAL_UPLOAD_IN_PROGRESS`，带 `Retry-After: 1`，提示约 1 秒后用同一 key 重试；`UPLOAD_FAILED`、`CANCELLED`、`EXPIRED`、`IN_USE` 或 `BOUND` 均返回 `409` 并保留原状态。READY 记录对应对象缺失时会标成 `UPLOAD_FAILED`，返回 `409 MATERIAL_OBJECT_MISSING`。幂等重试不重新激活任何不可用材料。
+
+请求指纹包含服务端计算的文件 SHA-256、规范化业务类型、角色提示、检测到的内容类型、NFC 规范化展示文件名和小写文件扩展名。同键任一指纹字段不同均返回 `409 IDEMPOTENCY_KEY_REUSED`。文件名保留大小写用于展示；路径分隔符、Windows 路径保留字符、控制/格式字符和过长名称会被拒绝。Unicode NFC 等价名称会存储为同一展示名并产生相同语义指纹。唯一约束为 `(owner_user_id, idempotency_endpoint, idempotency_key)`；并发重放对现有行做数据库行锁复核，重复请求只删除自己生成的临时对象。
 
 成功响应示例：
 

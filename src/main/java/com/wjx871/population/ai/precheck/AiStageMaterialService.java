@@ -3,10 +3,13 @@ package com.wjx871.population.ai.precheck;
 import com.wjx871.population.common.BusinessException;
 import com.wjx871.population.security.AuthenticatedUser;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +37,8 @@ public class AiStageMaterialService {
             rs.getString("file_extension"), rs.getLong("file_size"), rs.getString("sha256"),
             rs.getString("request_digest"), rs.getString("status"), rs.getLong("version"),
             rs.getTimestamp("created_at").toLocalDateTime(),
-            rs.getTimestamp("expires_at") == null ? null : rs.getTimestamp("expires_at").toLocalDateTime());
+            rs.getTimestamp("expires_at") == null ? null : rs.getTimestamp("expires_at").toLocalDateTime(),
+            rs.getTimestamp("file_deleted_at") == null ? null : rs.getTimestamp("file_deleted_at").toLocalDateTime());
 
     private final JdbcTemplate jdbc;
     private final AiPrecheckProperties properties;
@@ -44,39 +48,43 @@ public class AiStageMaterialService {
     public UploadResult upload(AuthenticatedUser user, String idempotencyKey, String businessType,
                                DocumentRoleHint roleHint, org.springframework.web.multipart.MultipartFile file,
                                String traceId) {
-        if (!"MIGRATION_IN".equals(businessType)) throw bad("S3 仅支持 MIGRATION_IN 材料");
         if (roleHint == null) roleHint = DocumentRoleHint.UNKNOWN;
         validateKey(idempotencyKey);
+        if (file == null || file.isEmpty()) throw bad("上传文件不能为空");
+        String normalizedBusinessType = normalizeBusinessType(businessType);
+        String normalizedFilename = storage.normalizeDisplayName(file.getOriginalFilename());
+        String normalizedContentType = storage.normalizeContentType(file.getContentType());
+        String normalizedExtension = storage.extensionOf(normalizedFilename);
+        StageRow existing = findByKey(user.userId(), idempotencyKey);
+        if (existing != null) {
+            requireSameSemanticRequest(existing, normalizedBusinessType, roleHint, normalizedFilename,
+                    normalizedContentType, normalizedExtension);
+        }
+
         AiPrivateFileStorageService.PreparedFile prepared = storage.prepare(file);
-        String requestDigest = digest(prepared.sha256() + "\nMIGRATION_IN\n" + roleHint.name()
-                + "\n" + prepared.contentType());
+        String requestDigest = requestDigest(prepared, normalizedBusinessType, roleHint);
         String stageId = "stg_" + UUID.randomUUID().toString().replace("-", "");
-        StageRow claimed;
-        boolean inserted;
+        ClaimResult claim;
         try {
-            ClaimResult result = insertClaim(user, idempotencyKey, stageId, prepared, requestDigest, roleHint, traceId);
-            claimed = result.row();
-            inserted = result.inserted();
+            claim = insertClaim(user, idempotencyKey, stageId, prepared, requestDigest, normalizedBusinessType,
+                    roleHint, traceId);
         } catch (DuplicateKeyException exception) {
             storage.deleteTempQuietly(prepared.tempObjectKey());
-            claimed = findByKey(user.userId(), idempotencyKey);
-            if (claimed == null) throw conflict("IDEMPOTENCY_KEY_REUSED");
-            requireSameRequest(claimed, requestDigest);
-            return new UploadResult(view(refreshAvailability(claimed)), true);
+            return replayReady(user, idempotencyKey, requestDigest);
         } catch (RuntimeException exception) {
             storage.deleteTempQuietly(prepared.tempObjectKey());
             throw exception;
         }
 
-        if (!inserted) {
+        if (!claim.inserted()) {
             storage.deleteTempQuietly(prepared.tempObjectKey());
-            requireSameRequest(claimed, requestDigest);
-            return new UploadResult(view(refreshAvailability(claimed)), true);
+            requireSameRequest(claim.row(), requestDigest);
+            return replayReady(user, idempotencyKey, requestDigest);
         }
 
         try {
             storage.promote(prepared);
-            StageRow ready = transaction(() -> {
+            transaction(() -> {
                 LocalDateTime now = LocalDateTime.now();
                 LocalDateTime expiry = now.plus(properties.getReadyRetention());
                 int updated = jdbc.update("UPDATE ai_stage_material SET status='READY', temp_object_key=NULL, uploaded_at=?, expires_at=?, updated_at=?, version=version+1 WHERE stage_material_id=? AND status='UPLOADING' AND version=0",
@@ -84,23 +92,32 @@ public class AiStageMaterialService {
                         java.sql.Timestamp.valueOf(now), stageId);
                 if (updated != 1) throw new IllegalStateException("AI staged upload claim changed before completion");
                 audit(null, stageId, user.userId(), "MATERIAL_UPLOADED", "UPLOADING", "READY", null, traceId, 0);
-                return findOwned(user.userId(), stageId);
+                return null;
             });
+            AiStageMaterialView ready = requireReadyMaterial(user, idempotencyKey, requestDigest);
             log.info("AI stage material ready stageMaterialId={} ownerUserId={} instanceId={} sizeBytes={} traceId={}",
                     stageId, user.userId(), com.wjx871.population.s2.trace.S2TraceContext.instanceId(),
                     prepared.fileSize(), traceId);
-            return new UploadResult(view(ready), false);
+            return new UploadResult(ready, false);
         } catch (Exception exception) {
             storage.deleteTempQuietly(prepared.tempObjectKey());
             LocalDateTime now = LocalDateTime.now();
-            transaction(() -> {
-                jdbc.update("UPDATE ai_stage_material SET status='UPLOAD_FAILED', temp_object_key=NULL, expires_at=?, updated_at=?, version=version+1 WHERE stage_material_id=? AND status='UPLOADING'",
-                        java.sql.Timestamp.valueOf(now), java.sql.Timestamp.valueOf(now), stageId);
-                audit(null, stageId, user.userId(), "MATERIAL_UPLOAD_FAILED", "UPLOADING", "UPLOAD_FAILED",
-                        "UPLOAD_FAILED", traceId, 0);
-                return null;
-            });
-            storage.deleteObjectQuietly(prepared.storedObjectKey());
+            boolean markedFailed = false;
+            try {
+                markedFailed = transaction(() -> {
+                    int updated = jdbc.update("UPDATE ai_stage_material SET status='UPLOAD_FAILED', temp_object_key=NULL, expires_at=?, updated_at=?, version=version+1 WHERE stage_material_id=? AND status='UPLOADING'",
+                            java.sql.Timestamp.valueOf(now), java.sql.Timestamp.valueOf(now), stageId);
+                    if (updated == 1) {
+                        audit(null, stageId, user.userId(), "MATERIAL_UPLOAD_FAILED", "UPLOADING", "UPLOAD_FAILED",
+                                "UPLOAD_FAILED", traceId, 0);
+                    }
+                    return updated == 1;
+                });
+            } catch (RuntimeException compensationFailure) {
+                log.warn("AI staged upload failure compensation deferred stageMaterialId={} traceId={} errorClass={}",
+                        stageId, traceId, compensationFailure.getClass().getSimpleName());
+            }
+            if (markedFailed) storage.deleteObjectQuietly(prepared.storedObjectKey());
             if (exception instanceof BusinessException businessException) throw businessException;
             throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, "预审材料暂存失败");
         }
@@ -143,13 +160,14 @@ public class AiStageMaterialService {
 
     private ClaimResult insertClaim(AuthenticatedUser user, String idempotencyKey, String stageId,
                                     AiPrivateFileStorageService.PreparedFile file, String requestDigest,
-                                    DocumentRoleHint roleHint, String traceId) {
+                                    String businessType, DocumentRoleHint roleHint, String traceId) {
         return transaction(() -> {
             StageRow existing = findByKey(user.userId(), idempotencyKey);
             if (existing != null) return new ClaimResult(existing, false);
+            if (!"MIGRATION_IN".equals(businessType)) throw bad("S3 仅支持 MIGRATION_IN 材料");
             jdbc.update("INSERT INTO ai_stage_material(stage_material_id, owner_user_id, owner_department_id, owner_region_code, owner_data_scope, business_type, document_role_hint, original_filename, stored_object_key, temp_object_key, content_type, file_extension, file_size, sha256, request_digest, idempotency_endpoint, idempotency_key, status, created_at, updated_at, version) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'UPLOADING',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,0)",
                     stageId, user.userId(), user.departmentId(), user.regionCode(),
-                    user.dataScope() == null ? "SELF" : user.dataScope().name(), "MIGRATION_IN", roleHint.name(),
+                    user.dataScope() == null ? "SELF" : user.dataScope().name(), businessType, roleHint.name(),
                     file.originalFilename(), file.storedObjectKey(), file.tempObjectKey(), file.contentType(),
                     file.fileExtension(), file.fileSize(), file.sha256(), requestDigest, ENDPOINT, idempotencyKey);
             StageRow inserted = findOwned(user.userId(), stageId);
@@ -159,32 +177,39 @@ public class AiStageMaterialService {
     }
 
     private StageRow refreshAvailability(StageRow row) {
-        if (!"READY".equals(row.status())) return row;
-        LocalDateTime now = LocalDateTime.now();
-        if (row.expiresAt() != null && !row.expiresAt().isAfter(now)) {
-            StageRow expired = transaction(() -> {
-                int updated = jdbc.update("UPDATE ai_stage_material SET status='EXPIRED', deleted_at=?, updated_at=?, version=version+1 WHERE stage_material_id=? AND status='READY' AND version=? AND expires_at<=?",
-                        java.sql.Timestamp.valueOf(now), java.sql.Timestamp.valueOf(now), row.stageMaterialId(),
-                        row.version(), java.sql.Timestamp.valueOf(now));
-                if (updated == 1) audit(null, row.stageMaterialId(), row.ownerUserId(), "MATERIAL_EXPIRED",
-                        "READY", "EXPIRED", null, null, 0);
-                return jdbc.query("SELECT * FROM ai_stage_material WHERE stage_material_id=?", ROW_MAPPER,
-                        row.stageMaterialId()).stream().findFirst().orElse(row);
-            });
-            if ("EXPIRED".equals(expired.status())) storage.deleteObjectQuietly(expired.storedObjectKey());
-            return expired;
-        }
-        if (!storage.objectExists(row.storedObjectKey())) {
-            return transaction(() -> {
+        StageRow current = transaction(() -> {
+            StageRow locked = findByStageIdForUpdate(row.stageMaterialId());
+            if (locked == null || !"READY".equals(locked.status())) return locked == null ? row : locked;
+            LocalDateTime now = LocalDateTime.now();
+            if (locked.expiresAt() == null || !locked.expiresAt().isAfter(now)) {
+                String status = locked.expiresAt() == null ? "UPLOAD_FAILED" : "EXPIRED";
+                String errorCode = locked.expiresAt() == null ? "MATERIAL_EXPIRY_MISSING" : null;
+                int updated = jdbc.update("UPDATE ai_stage_material SET status=?, deleted_at=?, updated_at=?, version=version+1 WHERE stage_material_id=? AND status='READY' AND version=?",
+                        status, Timestamp.valueOf(now), Timestamp.valueOf(now), locked.stageMaterialId(), locked.version());
+                if (updated == 1) {
+                    audit(null, locked.stageMaterialId(), locked.ownerUserId(), "MATERIAL_" + status, "READY", status,
+                            errorCode, null, 0);
+                    return findByStageId(locked.stageMaterialId());
+                }
+                return findByStageId(locked.stageMaterialId());
+            }
+            if (!storage.objectExists(locked.storedObjectKey())) {
                 int updated = jdbc.update("UPDATE ai_stage_material SET status='UPLOAD_FAILED', updated_at=?, version=version+1 WHERE stage_material_id=? AND status='READY' AND version=?",
-                        java.sql.Timestamp.valueOf(now), row.stageMaterialId(), row.version());
-                if (updated == 1) audit(null, row.stageMaterialId(), row.ownerUserId(), "MATERIAL_OBJECT_MISSING",
-                        "READY", "UPLOAD_FAILED", "MATERIAL_OBJECT_MISSING", null, 0);
-                return jdbc.query("SELECT * FROM ai_stage_material WHERE stage_material_id=?", ROW_MAPPER,
-                        row.stageMaterialId()).stream().findFirst().orElse(row);
-            });
+                        Timestamp.valueOf(now), locked.stageMaterialId(), locked.version());
+                if (updated == 1) {
+                    audit(null, locked.stageMaterialId(), locked.ownerUserId(), "MATERIAL_OBJECT_MISSING", "READY",
+                            "UPLOAD_FAILED", "MATERIAL_OBJECT_MISSING", null, 0);
+                    return findByStageId(locked.stageMaterialId());
+                }
+                return findByStageId(locked.stageMaterialId());
+            }
+            return locked;
+        });
+        if (current != null && current.fileDeletedAt() == null
+                && ("EXPIRED".equals(current.status()) || "UPLOAD_FAILED".equals(current.status()))) {
+            deletePhysicalFiles(current);
         }
-        return row;
+        return current;
     }
 
     private void deletePhysicalFiles(StageRow row) {
@@ -199,8 +224,117 @@ public class AiStageMaterialService {
         }
     }
 
+    private UploadResult replayReady(AuthenticatedUser user, String key, String requestDigest) {
+        return new UploadResult(requireReadyMaterial(user, key, requestDigest), true);
+    }
+
+    private AiStageMaterialView requireReadyMaterial(AuthenticatedUser user, String key, String requestDigest) {
+        ReplayResolution resolution = transaction(() -> {
+            StageRow row = findByKeyForUpdate(user.userId(), key);
+            if (row == null) throw conflict("IDEMPOTENCY_RECORD_NOT_FOUND");
+            requireSameRequest(row, requestDigest);
+            if (!"READY".equals(row.status())) return new ReplayResolution(row, false, false, null);
+
+            LocalDateTime now = LocalDateTime.now();
+            if (row.expiresAt() == null || !row.expiresAt().isAfter(now)) {
+                String targetStatus = row.expiresAt() == null ? "UPLOAD_FAILED" : "EXPIRED";
+                String code = row.expiresAt() == null ? "MATERIAL_EXPIRY_MISSING" : "MATERIAL_NOT_AVAILABLE_EXPIRED";
+                int updated = jdbc.update("UPDATE ai_stage_material SET status=?, deleted_at=?, updated_at=?, version=version+1 WHERE stage_material_id=? AND status='READY' AND version=?",
+                        targetStatus, Timestamp.valueOf(now), Timestamp.valueOf(now), row.stageMaterialId(), row.version());
+                if (updated == 1) {
+                    audit(null, row.stageMaterialId(), user.userId(), "MATERIAL_" + targetStatus, "READY",
+                            targetStatus, code, null, 0);
+                    row = findByKey(user.userId(), key);
+                    return new ReplayResolution(row, false, true, code);
+                }
+                return new ReplayResolution(findByKey(user.userId(), key), false, false, "MATERIAL_STATE_CHANGED");
+            }
+
+            if (!storage.objectExists(row.storedObjectKey())) {
+                int updated = jdbc.update("UPDATE ai_stage_material SET status='UPLOAD_FAILED', updated_at=?, version=version+1 WHERE stage_material_id=? AND status='READY' AND version=?",
+                        Timestamp.valueOf(now), row.stageMaterialId(), row.version());
+                if (updated == 1) {
+                    audit(null, row.stageMaterialId(), user.userId(), "MATERIAL_OBJECT_MISSING", "READY",
+                            "UPLOAD_FAILED", "MATERIAL_OBJECT_MISSING", null, 0);
+                    row = findByKey(user.userId(), key);
+                    return new ReplayResolution(row, false, true, "MATERIAL_OBJECT_MISSING");
+                }
+                return new ReplayResolution(findByKey(user.userId(), key), false, false, "MATERIAL_STATE_CHANGED");
+            }
+            return new ReplayResolution(row, true, false, null);
+        });
+
+        if (resolution.cleanup() && resolution.row() != null) deletePhysicalFiles(resolution.row());
+        if (!resolution.ready()) {
+            String failure = resolution.failureCode() == null
+                    ? unavailableReplayCode(resolution.row()) : resolution.failureCode();
+            throw conflict(failure);
+        }
+        return view(resolution.row());
+    }
+
+    private StageRow findByKeyForUpdate(long ownerUserId, String key) {
+        return jdbc.query("SELECT * FROM ai_stage_material WHERE owner_user_id=? AND idempotency_endpoint=? AND idempotency_key=? FOR UPDATE",
+                ROW_MAPPER, ownerUserId, ENDPOINT, key).stream().findFirst().orElse(null);
+    }
+
+    private StageRow findByStageIdForUpdate(String stageId) {
+        return jdbc.query("SELECT * FROM ai_stage_material WHERE stage_material_id=? FOR UPDATE",
+                ROW_MAPPER, stageId).stream().findFirst().orElse(null);
+    }
+
+    private StageRow findByStageId(String stageId) {
+        return jdbc.query("SELECT * FROM ai_stage_material WHERE stage_material_id=?",
+                ROW_MAPPER, stageId).stream().findFirst().orElse(null);
+    }
+
+    private String unavailableReplayCode(StageRow row) {
+        if (row == null) return "IDEMPOTENCY_RECORD_NOT_FOUND";
+        return switch (row.status()) {
+            case "UPLOADING" -> "MATERIAL_UPLOAD_IN_PROGRESS; retry the same Idempotency-Key after 1 second";
+            case "UPLOAD_FAILED" -> "MATERIAL_UPLOAD_FAILED; upload again with a new Idempotency-Key";
+            case "CANCELLED" -> "MATERIAL_NOT_AVAILABLE_CANCELLED";
+            case "EXPIRED" -> "MATERIAL_NOT_AVAILABLE_EXPIRED";
+            case "IN_USE" -> "MATERIAL_IN_USE";
+            case "BOUND" -> "MATERIAL_BOUND";
+            default -> "MATERIAL_NOT_READY";
+        };
+    }
+
+    private String normalizeBusinessType(String businessType) {
+        return businessType == null ? "" : businessType.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private void requireSameSemanticRequest(StageRow existing, String businessType, DocumentRoleHint roleHint,
+                                            String filename, String contentType, String extension) {
+        if (!existing.businessType().equals(businessType)
+                || !existing.documentRoleHint().equals(roleHint.name())
+                || !existing.originalFilename().equals(filename)
+                || !existing.contentType().equals(contentType)
+                || !existing.fileExtension().equals(extension)) {
+            throw conflict("IDEMPOTENCY_KEY_REUSED");
+        }
+    }
+
     private void requireSameRequest(StageRow existing, String requestDigest) {
         if (!existing.requestDigest().equals(requestDigest)) throw conflict("IDEMPOTENCY_KEY_REUSED");
+    }
+
+    private String requestDigest(AiPrivateFileStorageService.PreparedFile file, String businessType,
+                                 DocumentRoleHint roleHint) {
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+            List<String> fields = List.of(file.sha256(), businessType, roleHint.name(), file.contentType(),
+                    file.originalFilename(), file.fileExtension());
+            for (String field : fields) {
+                byte[] bytes = field.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                messageDigest.update(ByteBuffer.allocate(Integer.BYTES).putInt(bytes.length).array());
+                messageDigest.update(bytes);
+            }
+            return HexFormat.of().formatHex(messageDigest.digest());
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is unavailable");
+        }
     }
 
     private void audit(String taskId, String stageId, Long actorId, String event, String from, String to,
@@ -234,15 +368,6 @@ public class AiStageMaterialService {
         if (key == null || !key.matches("[A-Za-z0-9._-]{1,128}")) throw bad("Idempotency-Key 格式不合法");
     }
 
-    private String digest(String text) {
-        try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                    .digest(text.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 is unavailable");
-        }
-    }
-
     private BusinessException bad(String message) {
         return new BusinessException(HttpStatus.BAD_REQUEST, message);
     }
@@ -254,10 +379,13 @@ public class AiStageMaterialService {
     private record ClaimResult(StageRow row, boolean inserted) {
     }
 
+    private record ReplayResolution(StageRow row, boolean ready, boolean cleanup, String failureCode) {
+    }
+
     record StageRow(String stageMaterialId, long ownerUserId, String businessType, String documentRoleHint,
                     String originalFilename, String storedObjectKey, String tempObjectKey, String contentType,
                     String fileExtension, long fileSize, String sha256, String requestDigest, String status,
-                    long version, LocalDateTime createdAt, LocalDateTime expiresAt) {
+                    long version, LocalDateTime createdAt, LocalDateTime expiresAt, LocalDateTime fileDeletedAt) {
     }
 
     public record UploadResult(AiStageMaterialView material, boolean replayed) {

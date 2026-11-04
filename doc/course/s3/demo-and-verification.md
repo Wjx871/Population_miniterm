@@ -7,16 +7,21 @@
 | 检查 | 结果 |
 |---|---|
 | Java 21 运行环境，项目 `--release 17` 编译 | 通过 |
-| 定向 H2/Mock（集成、响应校验、default-off 启动） | 18 tests，0 failures/errors/skips |
-| 完整 `mvnw.cmd test` | 517 tests，0 failures/errors/skips；包含本轮与既有业务测试 |
-| Windows 演示脚本 `-Mode Mock` | 18 tests，0 failures/errors/skips |
+| S3 定向 H2/Mock（21 项集成、2 项响应校验） | 23 tests，0 failures/errors/skips |
+| S2 定向 API/RMI/聚合回归 | 初次 15 tests 全通过；随后 RMI 子套件 3 tests 中 1 项重复失败 |
+| 最终完整 `mvnw.cmd test` | 523 tests，1 failure，0 errors/skips；唯一失败在既有 `S2RmiClientConcurrencyIntegrationTest` |
+| Windows 演示脚本 `-Mode Mock`（另含默认关闭启动测试） | 24 tests，0 failures/errors/skips |
 | PowerShell 脚本语法解析 | 通过 |
 | MySQL 迁移执行 | 未执行；仅静态审查，未访问共享数据库 |
 | RabbitMQ 真实生产/消费及 broker 故障恢复 | `NOT_VERIFIED` |
 | Python OCR/RAG | `NOT_VERIFIED`；当前客户端为 `mode=MOCK` |
 | 审计账本 #3 | 保持 `OPEN` |
 
-H2 集成回归覆盖用户/权限隔离、同键幂等与冲突、并发上传竞争、非法文件签名、上传失败补偿、任务与 Outbox 同事务、强制 Outbox 插入失败回滚、容量并发上限、Mock 成功/重试/永久失败/非法响应、终态重复投递、保留期清理及活动材料保护。Broker 不可用用关闭 Rabbit 集成的 H2 应用状态模拟 Outbox 不发布；此测试不证明 TCP 断连、Rabbit confirm、队列重连或 DLQ 行为。
+H2 集成回归用 `CountDownLatch` 暂停首个请求在数据库 `UPLOADING` 已提交而物理对象尚未 promote 的位置。第二个同键请求稳定得到 409；任务创建在同一窗口得到 `MATERIAL_NOT_READY` 且事务回滚；reaper 不删除仍被 UPLOADING 行引用的临时对象。释放首请求后它返回 201/READY，同键重试返回相同 ID/200。另一项 latch 测试让首请求最终上传失败，期间第二个请求仍只能得到 409，失败后重试也不能成功。回归还覆盖同文件不同 key、跨用户 key 隔离、业务/角色/文件名差异、NFC 文件名归一化、路径及控制字符拒绝、取消/过期/IN_USE/BOUND 状态、READY 对象缺失，以及已 promote 文件的陈旧 UPLOADING 崩溃恢复。
+
+最终全量测试唯一失败：`S2RmiClientConcurrencyIntegrationTest.oneProxySupportsRepeatedAndConcurrentCallsAcrossRealJvmBoundary` 在服务端子进程停止后期望 `REMOTE_UNAVAILABLE`，实际分类为 `REMOTE_FAILURE`。该断言在最终全量和随后单类重跑都失败；本轮未修改 S2 文件。此前相同 15 项 S2 聚合回归全部通过。该失败不计作 S3 通过，S3 仍未验收。
+
+其余 H2 集成回归覆盖权限隔离、非法文件签名、任务与 Outbox 同事务、强制 Outbox 插入失败回滚、容量并发上限、Mock 成功/重试/永久失败/非法响应、终态重复投递、保留期清理及活动材料保护。Broker 不可用用关闭 Rabbit 集成的 H2 应用状态模拟 Outbox 不发布；此测试不证明 TCP 断连、Rabbit confirm、队列重连或 DLQ 行为。
 
 ## Windows 演示
 
