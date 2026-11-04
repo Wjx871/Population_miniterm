@@ -109,7 +109,11 @@ S3 新增接口默认关闭：需显式设置 `AI_PRECHECK_ENABLED=true`。所�
 
 `resolutionStatus` 为 `RESOLVED_SINGLE`、`SELECTION_REQUIRED` 或 `NEEDS_CORRECTION`。唯一候选也必须显式选择。识别字段缺失/冲突、人员未建档或不匹配、已有当前户籍/有效成员关系、目标户不为 `ACTIVE`、区划不一致、跨区批次无效/已使用等情况会返回安全 warning；未匹配和超出范围使用一致的 `ENTITY_NOT_FOUND`，不暴露越权实体。`NEEDS_CORRECTION` 可含部分候选，但 `confirmable=false`，后续确认校验必须拒绝该会话。
 
-响应仅返回必要的脱敏展示字段、`entityVersion`、不透明 candidateToken 和安全 warning，不返回数据库主键、完整证件号或完整地址。`resolutionToken` 与 candidateToken 均为高熵随机值；数据库只保存 SHA-256 摘要。candidateToken 绑定父会话及实体类型。会话默认 5 分钟过期，可用 `AI_RESOLUTION_TOKEN_TTL` 配置。同一用户/任务再次生成预览时，事务会撤销该任务此前所有仍有效会话；旧 resolutionToken 和 candidateToken 不能与新会话组合。
+响应仅返回必要的脱敏展示字段、`entityVersion`、不透明 candidateToken 和安全 warning，不返回数据库主键、完整证件号或完整地址；AI 预览地址始终脱敏，即便调用者具备敏感信息完整查看权限。`resolutionToken` 与 candidateToken 均为高熵随机值；数据库只保存 SHA-256 摘要。candidateToken 绑定父会话及实体类型。会话默认 5 分钟过期，可用 `AI_RESOLUTION_TOKEN_TTL` 配置。同一用户/任务再次生成预览时，事务会撤销该任务此前所有仍有效会话；旧 resolutionToken 和 candidateToken 不能与新会话组合。
+
+未来确认能力必须在同一数据库事务内调用校验原语并完成草稿和材料绑定；该原语使用 `Propagation.MANDATORY`，不会单独提交或提前释放锁。令牌错误返回语义：缺失 resolutionToken、其他用户或其他任务的 resolutionToken、缺失或类型不符 candidateToken 均统一 404；仍存在的已过期/撤销会话及不可确认的 `NEEDS_CORRECTION` 会话返回 409。当前权限丢失或实体超出范围统一 404，权限范围、任务或实体快照变化返回 409。安全保留期清理后已删除的令牌按不存在返回 404。
+
+令牌会话保留策略默认启用：每小时最多删除 100 条已超过 30 天安全保留期的过期/撤销会话，并通过外键级联清理候选，不清理预审审计。可通过 `AI_RESOLUTION_CLEANUP_ENABLED`、`AI_RESOLUTION_SESSION_RETENTION`、`AI_RESOLUTION_CLEANUP_BATCH_SIZE`、`AI_RESOLUTION_CLEANUP_POLL_MS` 配置；测试和演示使用 H2。
 
 规范化输入摘要绑定任务版本、迁入类型、目标区划、迁出批次和解析/修正字段；另一个摘要绑定当前用户、权限、DataScope、部门、区划与授权区划集合。人员候选快照包含 person.version、状态、全部户籍与成员关系；家庭户快照包含 household.version/status/regionCode、成员关系、户籍及在途迁入。内部 S4-B 校验原语在事务中再次锁定并核对任务、会话、令牌、当前权限与范围、人员状态/户籍/有效成员关系、家庭户状态/区划/版本/成员/户籍、迁出批次状态及使用情况。
 

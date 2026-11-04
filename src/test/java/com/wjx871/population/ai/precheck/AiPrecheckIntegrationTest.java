@@ -22,9 +22,11 @@ import com.wjx871.population.migration.MigrationType;
 import com.wjx871.population.security.AuthenticatedUser;
 import com.wjx871.population.security.DataScope;
 import com.wjx871.population.security.RoleLevel;
+import com.wjx871.population.security.SensitiveDataMaskingService;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +40,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
@@ -49,6 +52,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.IllegalTransactionStateException;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -80,6 +85,8 @@ class AiPrecheckIntegrationTest {
     @SpyBean AiPrivateFileStorageService storage;
     @Autowired AiPrecheckLifecycleReaper lifecycleReaper;
     @Autowired AiResolutionService resolutionService;
+    @Autowired AiResolutionRetentionCleaner resolutionRetentionCleaner;
+    @Autowired SensitiveDataMaskingService masking;
     @Autowired AuthService authService;
 
     private String householdToken;
@@ -191,17 +198,23 @@ class AiPrecheckIntegrationTest {
                 String.class, sha256(oldResolutionToken))).isEqualTo("REVOKED");
         assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(taskId,
                 taskVersion, newResolutionToken, oldPersonToken, newHouseholdToken)))
-                .isInstanceOf(BusinessException.class).hasMessageContaining("INVALID_CANDIDATE_TOKEN");
+                .isInstanceOf(BusinessException.class).hasMessage("实体不存在或超出数据范围")
+                .satisfies(error -> assertThat(((BusinessException) error).getStatus()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND));
         assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(taskId,
                 taskVersion, newResolutionToken, newHouseholdToken, newPersonToken)))
-                .isInstanceOf(BusinessException.class).hasMessageContaining("INVALID_CANDIDATE_TOKEN");
+                .isInstanceOf(BusinessException.class).hasMessage("实体不存在或超出数据范围")
+                .satisfies(error -> assertThat(((BusinessException) error).getStatus()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND));
         assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(taskId,
                 taskVersion, oldResolutionToken, oldPersonToken, oldHouseholdToken)))
-                .isInstanceOf(BusinessException.class).hasMessageContaining("RESOLUTION_EXPIRED");
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getStatus()).isEqualTo(org.springframework.http.HttpStatus.CONFLICT);
+                    assertThat(exception.getMessage()).isEqualTo("RESOLUTION_EXPIRED");
+                });
         String otherTaskId = createSuccessfulTask(householdToken, "resolution-other-task");
         assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(otherTaskId,
                 taskVersion(otherTaskId), newResolutionToken, newPersonToken, newHouseholdToken)))
-                .isInstanceOf(BusinessException.class).hasMessageContaining("RESOLUTION_EXPIRED");
+                .isInstanceOf(BusinessException.class).hasMessage("实体不存在或超出数据范围")
+                .satisfies(error -> assertThat(((BusinessException) error).getStatus()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND));
         AiResolutionService.ResolutionSelection selection = withHouseholdUser(() -> resolutionService
                 .validateForConfirmation(taskId, taskVersion, newResolutionToken, newPersonToken, newHouseholdToken));
         assertThat(selection.personId()).isEqualTo(9801L);
@@ -210,11 +223,237 @@ class AiPrecheckIntegrationTest {
                 java.sql.Timestamp.valueOf(java.time.LocalDateTime.now().minusSeconds(1)), sha256(newResolutionToken));
         assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(taskId,
                 taskVersion, newResolutionToken, newPersonToken, newHouseholdToken)))
-                .isInstanceOf(BusinessException.class).hasMessageContaining("RESOLUTION_EXPIRED");
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getStatus()).isEqualTo(org.springframework.http.HttpStatus.CONFLICT);
+                    assertThat(exception.getMessage()).isEqualTo("RESOLUTION_EXPIRED");
+                });
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM business_application WHERE applicant_user_id=6 AND target_person_id=9801",
                 Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM migration_in WHERE person_id=9801",
                 Integer.class)).isZero();
+    }
+
+    @Test
+    void confirmationPrimitiveRequiresAndJoinsCallerTransaction() throws Exception {
+        resetResolutionFixture();
+        insertResolutionFixture();
+        String taskId = createSuccessfulTask(householdToken, "resolution-mandatory-transaction");
+        long version = taskVersion(taskId);
+        JsonNode preview = previewData(taskId, resolutionRequest(version, completeCorrections(),
+                MigrationType.OUTSIDE_CITY, "110105", null));
+        String resolutionToken = preview.path("resolutionToken").asText();
+        String personToken = preview.path("personCandidates").get(0).path("candidateToken").asText();
+        String householdCandidate = preview.path("targetHouseholdCandidates").get(0).path("candidateToken").asText();
+        AuthenticatedUser user = authService.loadUser("household");
+
+        assertThatThrownBy(() -> withUserWithoutTransaction(user, () -> resolutionService.validateForConfirmation(
+                taskId, version, resolutionToken, personToken, householdCandidate)))
+                .isInstanceOf(IllegalTransactionStateException.class);
+
+        String sessionHash = sha256(resolutionToken);
+        assertThatThrownBy(() -> new TransactionTemplate(transactionManager).execute(status -> {
+            assertThat(org.springframework.transaction.support.TransactionSynchronizationManager
+                    .isActualTransactionActive()).isTrue();
+            withUserWithoutTransaction(user, () -> {
+                AiResolutionService.ResolutionSelection selection = resolutionService.validateForConfirmation(
+                        taskId, version, resolutionToken, personToken, householdCandidate);
+                assertThat(selection.personId()).isEqualTo(9801L);
+                assertThat(org.springframework.transaction.support.TransactionSynchronizationManager
+                        .isActualTransactionActive()).isTrue();
+                jdbc.update("UPDATE ai_resolution_session SET resolution_status='SIMULATED_DRAFT' "
+                        + "WHERE resolution_token_sha256=?", sessionHash);
+                assertThat(jdbc.queryForObject("SELECT resolution_status FROM ai_resolution_session "
+                        + "WHERE resolution_token_sha256=?", String.class, sessionHash)).isEqualTo("SIMULATED_DRAFT");
+                return null;
+            });
+            throw new IllegalStateException("simulated draft write failure");
+        })).isInstanceOf(IllegalStateException.class).hasMessage("simulated draft write failure");
+
+        assertThat(jdbc.queryForObject("SELECT resolution_status FROM ai_resolution_session "
+                + "WHERE resolution_token_sha256=?", String.class, sessionHash)).isEqualTo("RESOLVED_SINGLE");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM business_application WHERE target_person_id=9801",
+                Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM migration_in WHERE person_id=9801",
+                Integer.class)).isZero();
+    }
+
+    @Test
+    void confirmationLocksRemainHeldUntilCallerTransactionEnds() throws Exception {
+        resetResolutionFixture();
+        insertResolutionFixture();
+        String taskId = createSuccessfulTask(householdToken, "resolution-lock-lifetime");
+        long version = taskVersion(taskId);
+        JsonNode preview = previewData(taskId, resolutionRequest(version, completeCorrections(),
+                MigrationType.OUTSIDE_CITY, "110105", null));
+        String resolutionToken = preview.path("resolutionToken").asText();
+        String personToken = preview.path("personCandidates").get(0).path("candidateToken").asText();
+        String householdCandidate = preview.path("targetHouseholdCandidates").get(0).path("candidateToken").asText();
+        long resolutionId = jdbc.queryForObject("SELECT resolution_id FROM ai_resolution_session "
+                + "WHERE resolution_token_sha256=?", Long.class, sha256(resolutionToken));
+        AuthenticatedUser user = authService.loadUser("household");
+        CountDownLatch validationReturned = new CountDownLatch(1);
+        CountDownLatch releaseOuterTransaction = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<?> outer = executor.submit(() -> new TransactionTemplate(transactionManager).execute(status -> {
+                withUserWithoutTransaction(user, () -> resolutionService.validateForConfirmation(taskId, version,
+                        resolutionToken, personToken, householdCandidate));
+                validationReturned.countDown();
+                try {
+                    assertThat(releaseOuterTransaction.await(5, TimeUnit.SECONDS)).isTrue();
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("interrupted while holding resolution transaction", exception);
+                }
+                return null;
+            }));
+            assertThat(validationReturned.await(5, TimeUnit.SECONDS)).isTrue();
+            Future<Integer> competingUpdate = executor.submit(() -> new TransactionTemplate(transactionManager)
+                    .execute(status -> {
+                        return jdbc.update("UPDATE ai_resolution_session SET updated_at=CURRENT_TIMESTAMP "
+                                + "WHERE resolution_id=?", resolutionId);
+                    }));
+            assertThatThrownBy(() -> competingUpdate.get(5, TimeUnit.SECONDS))
+                    .isInstanceOf(java.util.concurrent.ExecutionException.class)
+                    .hasCauseInstanceOf(DataAccessException.class);
+            releaseOuterTransaction.countDown();
+            outer.get(5, TimeUnit.SECONDS);
+            assertThat(jdbc.update("UPDATE ai_resolution_session SET updated_at=CURRENT_TIMESTAMP "
+                    + "WHERE resolution_id=?", resolutionId)).isEqualTo(1);
+        } finally {
+            releaseOuterTransaction.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void missingForeignAndWrongTypeResolutionTokensShareSafeNotFoundContract() throws Exception {
+        resetResolutionFixture();
+        insertResolutionFixture();
+        String ownerTaskId = createSuccessfulTask(householdToken, "resolution-token-owner");
+        long ownerVersion = taskVersion(ownerTaskId);
+        JsonNode preview = previewData(ownerTaskId, resolutionRequest(ownerVersion, completeCorrections(),
+                MigrationType.OUTSIDE_CITY, "110105", null));
+        String resolutionToken = preview.path("resolutionToken").asText();
+        String personToken = preview.path("personCandidates").get(0).path("candidateToken").asText();
+        String householdCandidate = preview.path("targetHouseholdCandidates").get(0).path("candidateToken").asText();
+        AuthenticatedUser owner = authService.loadUser("household");
+
+        assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(ownerTaskId,
+                ownerVersion, "res_missing", personToken, householdCandidate)))
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getStatus()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+                    assertThat(exception.getMessage()).isEqualTo("实体不存在或超出数据范围");
+                });
+        assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(ownerTaskId,
+                ownerVersion, resolutionToken, "pc_missing", householdCandidate)))
+                .isInstanceOfSatisfying(BusinessException.class, exception ->
+                        assertThat(exception.getStatus()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND));
+        assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(ownerTaskId,
+                ownerVersion, resolutionToken, householdCandidate, personToken)))
+                .isInstanceOfSatisfying(BusinessException.class, exception ->
+                        assertThat(exception.getStatus()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND));
+
+        String foreignTaskId = createSuccessfulTask(adminToken, "resolution-token-foreign-user");
+        AuthenticatedUser admin = authService.loadUser("admin");
+        assertThatThrownBy(() -> withUser(admin, () -> resolutionService.validateForConfirmation(foreignTaskId,
+                taskVersion(foreignTaskId), resolutionToken, personToken, householdCandidate)))
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getStatus()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+                    assertThat(exception.getMessage()).isEqualTo("实体不存在或超出数据范围");
+                });
+
+        List<String> revokedPermissions = new ArrayList<>(owner.permissions());
+        revokedPermissions.remove("migration:in:create");
+        AuthenticatedUser noLongerAuthorized = new AuthenticatedUser(owner.userId(), owner.username(), owner.passwordHash(),
+                owner.realName(), owner.userStatus(), owner.roleId(), owner.roleCode(), owner.roleName(), owner.roleLevel(),
+                owner.dataScope(), owner.roleStatus(), owner.departmentId(), owner.departmentName(), owner.regionCode(),
+                revokedPermissions, owner.regionCodes());
+        assertThatThrownBy(() -> withUser(noLongerAuthorized, () -> resolutionService.validateForConfirmation(
+                ownerTaskId, ownerVersion, resolutionToken, personToken, householdCandidate)))
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getStatus()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+                    assertThat(exception.getMessage()).isEqualTo("实体不存在或超出数据范围");
+                });
+    }
+
+    @Test
+    void resolutionRetentionCleanupKeepsSafetyWindowAndTouchesOnlyTokenTables() throws Exception {
+        resetResolutionFixture();
+        insertResolutionFixture();
+        String taskId = createSuccessfulTask(householdToken, "resolution-retention-batch");
+        properties.setResolutionSessionRetention(java.time.Duration.ofDays(30));
+        properties.setResolutionCleanupBatchSize(1);
+        LocalDateTime now = LocalDateTime.now();
+        long oldRevoked = insertResolutionSessionForCleanup(taskId, "REVOKED", now.minusDays(40), now.minusDays(31));
+        long oldExpiredActive = insertResolutionSessionForCleanup(taskId, "ACTIVE", now.minusDays(31), now.minusDays(31));
+        long recentRevoked = insertResolutionSessionForCleanup(taskId, "REVOKED", now.minusDays(40), now.minusDays(29));
+        long recentExpiredActive = insertResolutionSessionForCleanup(taskId, "ACTIVE", now.minusDays(1), now.minusDays(1));
+        long unexpiredActive = insertResolutionSessionForCleanup(taskId, "ACTIVE", now.plusDays(1), now);
+        int auditCount = jdbc.queryForObject("SELECT COUNT(*) FROM ai_precheck_audit", Integer.class);
+        int personCount = jdbc.queryForObject("SELECT COUNT(*) FROM person", Integer.class);
+        int householdCount = jdbc.queryForObject("SELECT COUNT(*) FROM household", Integer.class);
+        int migrationCount = jdbc.queryForObject("SELECT COUNT(*) FROM migration_in", Integer.class);
+        int materialCount = jdbc.queryForObject("SELECT COUNT(*) FROM application_material", Integer.class);
+
+        properties.setResolutionCleanupEnabled(false);
+        assertThat(resolutionRetentionCleaner.cleanupExpiredBatch()).isZero();
+        properties.setResolutionCleanupEnabled(true);
+        assertThat(resolutionRetentionCleaner.cleanupExpiredBatch()).isEqualTo(1);
+        assertThat(sessionExists(oldRevoked)).isFalse();
+        assertThat(sessionExists(oldExpiredActive)).isTrue();
+        assertThat(resolutionRetentionCleaner.cleanupExpiredBatch()).isEqualTo(1);
+        assertThat(resolutionRetentionCleaner.cleanupExpiredBatch()).isZero();
+
+        for (long retained : List.of(recentRevoked, recentExpiredActive, unexpiredActive)) {
+            assertThat(sessionExists(retained)).isTrue();
+        }
+        assertThat(candidateCount(oldRevoked)).isZero();
+        assertThat(candidateCount(oldExpiredActive)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_resolution_candidate", Integer.class)).isEqualTo(3);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_precheck_audit", Integer.class)).isEqualTo(auditCount);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM person", Integer.class)).isEqualTo(personCount);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household", Integer.class)).isEqualTo(householdCount);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM migration_in", Integer.class)).isEqualTo(migrationCount);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM application_material", Integer.class)).isEqualTo(materialCount);
+    }
+
+    @Test
+    void concurrentResolutionRetentionCleanersAreBoundedAndIdempotent() throws Exception {
+        resetResolutionFixture();
+        insertResolutionFixture();
+        String taskId = createSuccessfulTask(householdToken, "resolution-retention-concurrent");
+        properties.setResolutionSessionRetention(java.time.Duration.ofDays(30));
+        properties.setResolutionCleanupBatchSize(100);
+        LocalDateTime old = LocalDateTime.now().minusDays(31);
+        for (int i = 0; i < 12; i++) {
+            insertResolutionSessionForCleanup(taskId, "REVOKED", old, old);
+        }
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+        try {
+            Future<Integer> first = executor.submit(() -> {
+                ready.countDown();
+                assertThat(start.await(5, TimeUnit.SECONDS)).isTrue();
+                return resolutionRetentionCleaner.cleanupExpiredBatch();
+            });
+            Future<Integer> second = executor.submit(() -> {
+                ready.countDown();
+                assertThat(start.await(5, TimeUnit.SECONDS)).isTrue();
+                return resolutionRetentionCleaner.cleanupExpiredBatch();
+            });
+            assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+            assertThat(first.get(10, TimeUnit.SECONDS) + second.get(10, TimeUnit.SECONDS)).isEqualTo(12);
+        } finally {
+            start.countDown();
+            executor.shutdownNow();
+        }
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_resolution_session WHERE task_id=?",
+                Integer.class, taskId)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_resolution_candidate", Integer.class)).isZero();
+        assertThat(resolutionRetentionCleaner.cleanupExpiredBatch()).isZero();
     }
 
     @Test
@@ -233,7 +472,10 @@ class AiPrecheckIntegrationTest {
         assertThat(data.path("targetHouseholdCandidates").size()).isZero();
         assertThatThrownBy(() -> withHouseholdUser(() -> resolutionService.validateForConfirmation(taskId,
                 version, data.path("resolutionToken").asText(), "pc_invalid", "hc_invalid")))
-                .isInstanceOf(BusinessException.class).hasMessageContaining("RESOLUTION_NOT_CONFIRMABLE");
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getStatus()).isEqualTo(org.springframework.http.HttpStatus.CONFLICT);
+                    assertThat(exception.getMessage()).isEqualTo("RESOLUTION_NOT_CONFIRMABLE");
+                });
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM business_application WHERE target_person_id=9801",
                 Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM migration_in WHERE person_id=9801",
@@ -378,6 +620,29 @@ class AiPrecheckIntegrationTest {
         assertThat(outOfScope.path("personCandidates").size()).isZero();
         assertThat(outOfScope.path("warnings").toString()).contains("ENTITY_NOT_FOUND");
         assertThat(outOfScope.toString()).doesNotContain("110105198001010016", "personId", "9801");
+    }
+
+    @Test
+    void aiPreviewAlwaysMasksAddressEvenForFullSensitiveDataUsers() throws Exception {
+        resetResolutionFixture();
+        insertResolutionFixture();
+        String taskId = createSuccessfulTask(householdToken, "resolution-full-permission-mask");
+        long version = taskVersion(taskId);
+        AuthenticatedUser base = authService.loadUser("household");
+        List<String> permissions = new ArrayList<>(base.permissions());
+        permissions.add("sensitive-data:view-full");
+        AuthenticatedUser fullAccessUser = new AuthenticatedUser(base.userId(), base.username(), base.passwordHash(),
+                base.realName(), base.userStatus(), base.roleId(), base.roleCode(), base.roleName(), base.roleLevel(),
+                base.dataScope(), base.roleStatus(), base.departmentId(), base.departmentName(), base.regionCode(),
+                permissions, base.regionCodes());
+        AiResolutionPreviewView result = withUser(fullAccessUser, () -> resolutionService.preview(fullAccessUser,
+                taskId, resolutionRequest(version, completeCorrections(), MigrationType.OUTSIDE_CITY, "110105", null),
+                "s4a-mask-test"));
+
+        assertThat(result.targetHouseholdCandidates()).hasSize(1);
+        assertThat(result.targetHouseholdCandidates().get(0).addressMasked())
+                .isEqualTo("示例市示例区（详细地址已隐藏）")
+                .doesNotContain("测试路1号");
     }
 
     @Test
@@ -653,6 +918,8 @@ class AiPrecheckIntegrationTest {
         AiPrecheckTaskService.EventEnvelope first = objectMapper.readValue(firstPayload,
                 AiPrecheckTaskService.EventEnvelope.class);
         jdbc.update("UPDATE ai_precheck_outbox SET status='PUBLISHED' WHERE event_id=?", first.eventId());
+        jdbc.update("UPDATE ai_precheck_task SET next_attempt_at=? WHERE task_id=?",
+                java.sql.Timestamp.valueOf(LocalDateTime.now().minusSeconds(1)), taskId);
         properties.setMockFailuresBeforeSuccess(1);
         worker.process(first);
         properties.setMockFailuresBeforeSuccess(0);
@@ -1156,11 +1423,45 @@ class AiPrecheckIntegrationTest {
                         + "VALUES(9801,'S4A-H-ALPHA','示例市示例区测试路1号',DATE '2020-01-01','ACTIVE','110105',0)");
     }
 
+    private long insertResolutionSessionForCleanup(String taskId, String status, LocalDateTime expiresAt,
+                                                   LocalDateTime updatedAt) throws Exception {
+        long ownerId = authService.loadUser("household").userId();
+        String tokenHash = sha256("cleanup-session-" + UUID.randomUUID());
+        LocalDateTime createdAt = updatedAt.minusDays(1);
+        jdbc.update("INSERT INTO ai_resolution_session(resolution_token_sha256,owner_user_id,task_id,task_version,"
+                        + "request_digest,scope_digest,migration_type,to_region_code,transfer_batch_no,resolution_status,"
+                        + "confirmable,status,expires_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,"
+                        + "'NEEDS_CORRECTION',FALSE,?,?,?,?)",
+                tokenHash, ownerId, taskId, taskVersion(taskId), "a".repeat(64), "b".repeat(64), "OUTSIDE_CITY",
+                "110105", null, status, java.sql.Timestamp.valueOf(expiresAt),
+                java.sql.Timestamp.valueOf(createdAt), java.sql.Timestamp.valueOf(updatedAt));
+        long resolutionId = jdbc.queryForObject("SELECT resolution_id FROM ai_resolution_session "
+                + "WHERE resolution_token_sha256=?", Long.class, tokenHash);
+        jdbc.update("INSERT INTO ai_resolution_candidate(resolution_id,candidate_token_sha256,entity_type,entity_id,"
+                        + "entity_version,entity_status,state_digest) VALUES(?,?,'PERSON',9801,0,'正常',?)",
+                resolutionId, sha256("cleanup-candidate-" + UUID.randomUUID()), "c".repeat(64));
+        return resolutionId;
+    }
+
+    private boolean sessionExists(long resolutionId) {
+        return jdbc.queryForObject("SELECT COUNT(*) FROM ai_resolution_session WHERE resolution_id=?",
+                Integer.class, resolutionId) > 0;
+    }
+
+    private int candidateCount(long resolutionId) {
+        return jdbc.queryForObject("SELECT COUNT(*) FROM ai_resolution_candidate WHERE resolution_id=?",
+                Integer.class, resolutionId);
+    }
+
     private <T> T withHouseholdUser(Supplier<T> action) {
         return withUser(authService.loadUser("household"), action);
     }
 
     private <T> T withUser(AuthenticatedUser user, Supplier<T> action) {
+        return new TransactionTemplate(transactionManager).execute(status -> withUserWithoutTransaction(user, action));
+    }
+
+    private <T> T withUserWithoutTransaction(AuthenticatedUser user, Supplier<T> action) {
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
         try {

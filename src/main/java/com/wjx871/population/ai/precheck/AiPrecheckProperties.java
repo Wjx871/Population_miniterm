@@ -17,6 +17,10 @@ public class AiPrecheckProperties {
     private Duration readyRetention = Duration.ofHours(24);
     private Duration completedRetention = Duration.ofHours(24);
     private Duration resolutionTokenTtl = Duration.ofMinutes(5);
+    private boolean resolutionCleanupEnabled = true;
+    private Duration resolutionSessionRetention = Duration.ofDays(30);
+    private int resolutionCleanupBatchSize = 100;
+    private long resolutionCleanupPollMs = 3_600_000L;
     private boolean rabbitEnabled;
     private String exchange = "population.ai.precheck.exchange";
     private String queue = "population.ai.precheck.queue";
@@ -48,6 +52,9 @@ public class AiPrecheckProperties {
                 || workerLeaseDuration.compareTo(processingTimeout) <= 0
                 || analysisReadTimeout.compareTo(processingTimeout) >= 0
                 || resolutionTokenTtl == null || resolutionTokenTtl.isZero() || resolutionTokenTtl.isNegative()
+                || resolutionSessionRetention == null || resolutionSessionRetention.compareTo(resolutionTokenTtl) <= 0
+                || resolutionCleanupBatchSize <= 0 || resolutionCleanupBatchSize > 1000
+                || resolutionCleanupPollMs <= 0
                 || backoff == null || backoff.isEmpty() || backoff.stream().anyMatch(d -> d == null || d.isNegative())) {
             throw new IllegalStateException("Invalid AI precheck resource or timeout configuration");
         }

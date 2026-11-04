@@ -43,6 +43,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Resolves OCR/user-corrected text to scoped candidates and persists opaque, expiring preview tokens. */
@@ -163,13 +164,13 @@ public class AiResolutionService {
      * S4-B transaction primitive. It is intentionally not exposed as an HTTP endpoint.
      * Callers must keep this transaction open through draft creation and material binding.
      */
-    @Transactional
+    @Transactional(propagation = Propagation.MANDATORY)
     public ResolutionSelection validateForConfirmation(String taskId, long taskVersion, String resolutionToken,
                                                        String personCandidateToken, String householdCandidateToken) {
         AuthenticatedUser user = com.wjx871.population.security.CurrentUserContext.requireUser();
-        requirePermissions(user);
-        DataScopeCriteria scope = scope(user);
-        if (resolutionToken == null || resolutionToken.length() > 80) throw conflict("RESOLUTION_EXPIRED");
+        requireConfirmationPermissions(user);
+        DataScopeCriteria scope = confirmationScope(user);
+        if (resolutionToken == null || resolutionToken.length() > 80) throw notFound();
         AiPrecheckTaskService.TaskRow task = tasks.lockOwnedForResolution(user.userId(), taskId);
         if (!TASK_TYPE.equals(task.taskType()) || !BUSINESS_TYPE.equals(task.businessType())
                 || !"SUCCEEDED".equals(task.status()) || task.version() != taskVersion) {
@@ -183,10 +184,10 @@ public class AiResolutionService {
                         rs.getString("scope_digest"), rs.getString("migration_type"), rs.getString("to_region_code"),
                         rs.getString("transfer_batch_no"), rs.getString("resolution_status"), rs.getBoolean("confirmable"),
                         rs.getString("status"), rs.getTimestamp("expires_at").toLocalDateTime()),
-                sha256(resolutionToken)).stream().findFirst().orElseThrow(() -> conflict("RESOLUTION_EXPIRED"));
+                sha256(resolutionToken)).stream().findFirst().orElseThrow(AiResolutionService::notFound);
         LocalDateTime now = LocalDateTime.now();
-        if (session.ownerUserId() != user.userId() || !session.taskId().equals(taskId)
-                || session.taskVersion() != taskVersion || !"ACTIVE".equals(session.status())
+        if (session.ownerUserId() != user.userId() || !session.taskId().equals(taskId)) throw notFound();
+        if (session.taskVersion() != taskVersion || !"ACTIVE".equals(session.status())
                 || !session.expiresAt().isAfter(now)) throw conflict("RESOLUTION_EXPIRED");
         if (!session.migrationType().equals(task.migrationType())) throw conflict("MIGRATION_CONTEXT_MISMATCH");
         if (!session.confirmable() || "NEEDS_CORRECTION".equals(session.resolutionStatus())) {
@@ -324,14 +325,14 @@ public class AiResolutionService {
     }
 
     private CandidateRow lockSelectedCandidate(long resolutionId, String token, String entityType) {
-        if (token == null || token.length() > 80) throw conflict("INVALID_CANDIDATE_TOKEN");
+        if (token == null || token.length() > 80) throw notFound();
         return jdbc.query("SELECT candidate_id,resolution_id,entity_type,entity_id,entity_version,entity_status,state_digest "
                         + "FROM ai_resolution_candidate WHERE resolution_id=? AND candidate_token_sha256=? AND entity_type=? FOR UPDATE",
                 (rs, n) -> new CandidateRow(rs.getLong("candidate_id"), rs.getLong("resolution_id"),
                         rs.getString("entity_type"), rs.getLong("entity_id"), rs.getLong("entity_version"),
                         rs.getString("entity_status"), rs.getString("state_digest")),
                 resolutionId, sha256(token), entityType).stream().findFirst()
-                .orElseThrow(() -> conflict("INVALID_CANDIDATE_TOKEN"));
+                .orElseThrow(AiResolutionService::notFound);
     }
 
     private String insertCandidate(String resolutionToken, String type, Long entityId, Long entityVersion,
@@ -437,6 +438,24 @@ public class AiResolutionService {
                 || !user.permissions().contains("migration:in:create")) {
             throw new BusinessException(HttpStatus.FORBIDDEN, "无实体解析预览权限");
         }
+    }
+
+    private void requireConfirmationPermissions(AuthenticatedUser user) {
+        if (user == null || user.userId() == null) {
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED");
+        }
+        if (user.permissions() == null || !user.permissions().contains("ai:precheck:view")
+                || !user.permissions().contains("migration:in:create")) {
+            throw notFound();
+        }
+    }
+
+    private DataScopeCriteria confirmationScope(AuthenticatedUser user) {
+        if (user.dataScope() == null || (user.dataScope() == DataScope.REGION && user.regionCodes().isEmpty())) {
+            throw notFound();
+        }
+        return new DataScopeCriteria(user.dataScope(), user.userId(), user.departmentId(), user.regionCode(),
+                user.regionCodes());
     }
 
     private DataScopeCriteria scope(AuthenticatedUser user) {

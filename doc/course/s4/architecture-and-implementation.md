@@ -29,11 +29,15 @@
 
 `resolutionToken`、person candidateToken、household candidateToken 分别使用 256-bit SecureRandom 值与不同前缀。数据库只保存 SHA-256 摘要。候选记录绑定父 session、实体类型、服务端主键、实体版本、实体状态与状态摘要。candidateToken 只有与本次 resolutionToken 同时使用才可解析。
 
+令牌数据默认保留 30 天。每小时最多清理 100 条满足以下条件的 session：`ACTIVE` 且 `expires_at` 已超过 30 天，或 `REVOKED` 且撤销更新时间已超过 30 天。删除 session 后由外键级联删除其 candidate；不清理 `ai_precheck_audit` 或任何人员、家庭户、迁入及材料数据。可用 `AI_RESOLUTION_CLEANUP_ENABLED`、`AI_RESOLUTION_SESSION_RETENTION`、`AI_RESOLUTION_CLEANUP_BATCH_SIZE` 和 `AI_RESOLUTION_CLEANUP_POLL_MS` 调整；默认启用、`P30D`、100 条、3600000 毫秒。失败日志只记录异常类型，调度任务捕获清理异常。
+
 同一用户/任务重跑预览时，服务在持有 `ai_precheck_task` 行锁的事务内撤销旧 ACTIVE session、创建新 session 并写入候选。该数据库锁串行化跨 JVM 的重新预览；旧候选不会被复用。默认令牌 TTL 为 5 分钟，可由 `AI_RESOLUTION_TOKEN_TTL` 配置。请求摘要绑定规范化修正/识别字段、任务版本、迁入类型、目标区划和批次；权限摘要绑定 userId、当前权限、DataScope、部门、当前区划与授权区划集合。
 
 person 候选快照包含 person.version/status/current_status_code 与所有 residence/member 行；household 候选快照包含 household.version/status/regionCode、所有成员关系、户籍与在途迁入记录。因此，即使 household.version 未变而成员关系发生变化，S4-B 内部校验也会拒绝旧快照。
 
-`AiResolutionService.validateForConfirmation(...)` 是未映射到 HTTP 的 S4-B 事务校验原语。调用方必须在同一事务中继续完成正式 DRAFT 创建和材料绑定。该原语锁定任务、解析会话、候选、person、household、相关 residence/member 和迁出批次，并重新检查：任务状态/版本、token 归属/过期/confirmable、当前权限/DataScope、person.version/status/current residence/member、household.version/status/regionCode/成员/户籍，以及迁出批次当前状态和使用情况。只有服务端从候选令牌解析出的主键会进入返回值。
+`AiResolutionService.validateForConfirmation(...)` 是未映射到 HTTP 的 S4-B 事务校验原语，采用 `Propagation.MANDATORY`，无外层事务时拒绝调用。调用方必须在同一事务中继续完成正式 DRAFT 创建和材料绑定；校验锁与后续写入直到该外层事务提交/回滚才释放。该原语锁定任务、解析会话、候选、person、household、相关 residence/member 和迁出批次，并重新检查：任务状态/版本、token 归属/过期/confirmable、当前权限/DataScope、person.version/status/current residence/member、household.version/status/regionCode/成员/户籍，以及迁出批次当前状态和使用情况。只有服务端从候选令牌解析出的主键会进入返回值。当前不存在草稿确认 HTTP 接口。
+
+内部校验的令牌错误契约：不存在 token、跨用户/跨任务 token 及不存在/错类型 candidateToken 返回统一 404，避免暴露实体是否存在；仍保留的过期/撤销会话和 `NEEDS_CORRECTION` 返回 409。权限丢失或实体越权按统一 404，权限范围快照、任务或实体状态变化安全返回 409。安全保留期清理后已经删除的 token 记录按“不存在”处理。
 
 ## 版本完整性与审计项
 
@@ -45,4 +49,4 @@ V4_016 为 `person` 添加 `BIGINT NOT NULL DEFAULT 0` 版本。PersonMapper 普
 
 ## 数据库迁移
 
-`doc/database/migrations/V4_016_s4a_entity_resolution.sql` 新增 person.version、`ai_resolution_session` 与 `ai_resolution_candidate`。迁移不改 `business_application`、`migration_in` 或 `application_material`。本轮仅通过 H2 集成测试和 SQL 源码静态审查；不连接团队共享 MySQL。
+`doc/database/migrations/V4_016_s4a_entity_resolution.sql` 新增 person.version、`ai_resolution_session` 与 `ai_resolution_candidate`。本次不改写 V4_016，新增顺序迁移 `V4_017_s4a_resolution_retention_indexes.sql`，为过期与撤销清理条件各加一条复合索引。迁移不改 `business_application`、`migration_in` 或 `application_material`。本轮仅通过 H2 集成测试和 SQL 源码静态审查；不连接团队共享 MySQL，也不声称迁移已在真实数据库执行。
