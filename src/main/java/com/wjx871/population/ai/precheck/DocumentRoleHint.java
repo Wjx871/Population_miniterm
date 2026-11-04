@@ -1,0 +1,12 @@
+package com.wjx871.population.ai.precheck;
+
+public enum DocumentRoleHint {
+    IDENTITY_CARD_FRONT,
+    IDENTITY_CARD_BACK,
+    HOUSEHOLD_REGISTER_PAGE,
+    ADDRESS_PROOF,
+    TRANSFER_CERTIFICATE,
+    CROSS_DISTRICT_TRANSFER,
+    APPLICATION_FORM,
+    UNKNOWN
+}
