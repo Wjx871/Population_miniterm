@@ -101,8 +101,76 @@ class S2RmiClientConcurrencyIntegrationTest {
             client.aggregate(unavailableRequest);
             fail("Expected a controlled error after stopping the independent RMI server.");
         } catch (PopulationRemoteCallException exception) {
-            assertThat(exception.getErrorCode()).isEqualTo("REMOTE_UNAVAILABLE");
+            assertThat(exception.getErrorCode())
+                    .as("safe exception chain: " + safeCauseTypes(exception)
+                            + "; cause frame methods: " + safeFrameMethods(exception.getCause()))
+                    .isEqualTo("REMOTE_UNAVAILABLE");
+            assertThat(safeFrameMethods(exception.getCause())).contains("lookup");
         }
+    }
+
+    @Test
+    void unavailableBeforeServerStartsIsClassifiedAsRemoteUnavailable() throws Exception {
+        int registryPort = freePort();
+        int objectPort = freePortOtherThan(registryPort);
+        PopulationMetricsClient client = PopulationMetricsClientFactory.create(registryPort, objectPort);
+        PopulationMetricsRequest request = request("server-not-started", "trace-not-started", 1, 1, 1, 1);
+
+        PopulationRemoteCallException exception = assertThrows(
+                PopulationRemoteCallException.class, () -> client.aggregate(request));
+
+        assertThat(exception.getErrorCode()).isEqualTo("REMOTE_UNAVAILABLE");
+        assertThat(safeCauseTypes(exception)).contains("ConnectException");
+    }
+
+    @Test
+    void gracefulServerShutdownRunsHookAndReportsRemoteUnavailable() throws Exception {
+        int registryPort = freePort();
+        int objectPort = freePortOtherThan(registryPort);
+        Path serverLog = Path.of("target", "s2-rmi-graceful-stop-" + UUID.randomUUID() + ".log").toAbsolutePath();
+        serverProcess = startServer(registryPort, objectPort, 0, serverLog, true);
+        PopulationMetricsClient client = PopulationMetricsClientFactory.create(registryPort, objectPort);
+        PopulationMetricsRequest request = request("graceful-stop", "trace-graceful-stop", 1, 1, 1, 1);
+        assertThat(client.aggregate(request).getRequestId()).isEqualTo(request.getRequestId());
+
+        try (var processInput = serverProcess.getOutputStream()) {
+            processInput.write("STOP\n".getBytes(StandardCharsets.UTF_8));
+            processInput.flush();
+        }
+        assertThat(serverProcess.waitFor(5, TimeUnit.SECONDS)).isTrue();
+        assertThat(serverProcess.exitValue()).isZero();
+        assertThat(Files.readString(serverLog, StandardCharsets.UTF_8))
+                .contains("S2 RMI graceful shutdown requested")
+                .contains("S2 RMI shutdown hook started")
+                .contains("S2 RMI shutdown hook finished");
+
+        PopulationMetricsRequest unavailableRequest = request(
+                "gracefully-stopped-service", "trace-gracefully-stopped", 1, 1, 1, 1);
+        PopulationRemoteCallException exception = assertThrows(
+                PopulationRemoteCallException.class, () -> client.aggregate(unavailableRequest));
+        assertThat(exception.getErrorCode()).isEqualTo("REMOTE_UNAVAILABLE");
+    }
+
+    @Test
+    void forcedServerTerminationReportsRemoteUnavailableWithoutShutdownHook() throws Exception {
+        int registryPort = freePort();
+        int objectPort = freePortOtherThan(registryPort);
+        Path serverLog = Path.of("target", "s2-rmi-forced-stop-" + UUID.randomUUID() + ".log").toAbsolutePath();
+        serverProcess = startServer(registryPort, objectPort, 0, serverLog);
+        PopulationMetricsClient client = PopulationMetricsClientFactory.create(registryPort, objectPort);
+        PopulationMetricsRequest request = request("forced-stop", "trace-forced-stop", 1, 1, 1, 1);
+        assertThat(client.aggregate(request).getRequestId()).isEqualTo(request.getRequestId());
+
+        serverProcess.destroyForcibly();
+        assertThat(serverProcess.waitFor(5, TimeUnit.SECONDS)).isTrue();
+        assertThat(Files.readString(serverLog, StandardCharsets.UTF_8))
+                .doesNotContain("S2 RMI shutdown hook started");
+
+        PopulationMetricsRequest unavailableRequest = request(
+                "forcibly-stopped-service", "trace-forcibly-stopped", 1, 1, 1, 1);
+        PopulationRemoteCallException exception = assertThrows(
+                PopulationRemoteCallException.class, () -> client.aggregate(unavailableRequest));
+        assertThat(exception.getErrorCode()).isEqualTo("REMOTE_UNAVAILABLE");
     }
 
     @Test
@@ -147,6 +215,11 @@ class S2RmiClientConcurrencyIntegrationTest {
     }
 
     private Process startServer(int registryPort, int objectPort, long delayMillis, Path logFile) throws Exception {
+        return startServer(registryPort, objectPort, delayMillis, logFile, false);
+    }
+
+    private Process startServer(int registryPort, int objectPort, long delayMillis, Path logFile,
+                                boolean testStdinShutdown) throws Exception {
         Files.createDirectories(logFile.getParent());
         String java = Path.of(System.getProperty("java.home"), "bin",
                 System.getProperty("os.name").toLowerCase().contains("win") ? "java.exe" : "java").toString();
@@ -158,6 +231,7 @@ class S2RmiClientConcurrencyIntegrationTest {
                 "-Ds2.rmi.registry-port=" + registryPort,
                 "-Ds2.rmi.object-port=" + objectPort,
                 "-Ds2.rmi.demo-delay-millis=" + delayMillis,
+                "-Ds2.rmi.test-stdin-shutdown=" + testStdinShutdown,
                 "-cp", classPath, RmiServerMain.class.getName())
                 .redirectErrorStream(true)
                 .redirectOutput(logFile.toFile())
@@ -192,6 +266,25 @@ class S2RmiClientConcurrencyIntegrationTest {
         assertThat(result.getFloatingRegistrationCount()).isEqualTo(request.getFloatingRegistrationCount());
         assertThat(result.getActiveKeyPopulationCount()).isEqualTo(request.getActiveKeyPopulationCount());
         assertThat(result.getActiveHouseholdCount()).isEqualTo(request.getActiveHouseholdCount());
+    }
+
+    private static String safeCauseTypes(Throwable failure) {
+        List<String> types = new ArrayList<>();
+        for (Throwable current = failure; current != null && types.size() < 16; current = current.getCause()) {
+            types.add(current.getClass().getName());
+        }
+        return String.join(" -> ", types);
+    }
+
+    private static List<String> safeFrameMethods(Throwable failure) {
+        List<String> methods = new ArrayList<>();
+        for (StackTraceElement frame : failure.getStackTrace()) {
+            if (methods.size() >= 16) {
+                break;
+            }
+            methods.add(frame.getMethodName());
+        }
+        return methods;
     }
 
     private static int freePort() throws IOException {

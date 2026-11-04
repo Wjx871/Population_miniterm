@@ -11,13 +11,16 @@ import lombok.extern.log4j.Log4j2;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.io.EOFException;
 import java.net.ConnectException;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.rmi.ConnectIOException;
+import java.rmi.NoSuchObjectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-
 import java.util.concurrent.TimeUnit;
 
 @Log4j2
@@ -47,6 +50,7 @@ public class RmiInvocationHandler implements InvocationHandler {
         String traceId = request == null ? null : request.getTraceId();
         long started = System.nanoTime();
         String interfaceName = PopulationMetricsClient.class.getName();
+        String failureStage = "registry_lookup";
         try (S2TraceContext.Scope ignored = S2TraceContext.open(traceId)) {
 
             log.info("S2 proxy resolving interface={} method={} registryHost={} registryPort={} expectedObjectPort={}",
@@ -59,6 +63,7 @@ public class RmiInvocationHandler implements InvocationHandler {
             Method remoteMethod = PopulationMetricsRemote.class.getMethod(method.getName(), method.getParameterTypes());
             log.info("S2 proxy before interface={} method={} registryPort={} stubDescriptor={}",
                     interfaceName, method.getName(), registryPort, stubReference);
+            failureStage = "remote_method_invocation";
             Object result = remoteMethod.invoke(remote, args);
             log.info("S2 proxy after interface={} method={} elapsedMs={} outcome=SUCCESS",
                     interfaceName, method.getName(), elapsedMillis(started));
@@ -71,25 +76,34 @@ public class RmiInvocationHandler implements InvocationHandler {
                 throw cause;
             }
             if (cause instanceof RemoteException remoteException) {
-                throw classify(interfaceName, method, traceId, started, remoteException);
+                throw classify(interfaceName, method, failureStage, started, remoteException);
             }
             log.error("S2 proxy after interface={} method={} traceId={} elapsedMs={} outcome=FAILED errorClass={}",
                     interfaceName, method.getName(), traceId, elapsedMillis(started), cause.getClass().getSimpleName());
             throw cause;
         } catch (NotBoundException | RemoteException exception) {
-            throw classify(interfaceName, method, traceId, started, exception);
+            throw classify(interfaceName, method, failureStage, started, exception);
         }
     }
 
-    private PopulationRemoteCallException classify(String interfaceName, Method method, String traceId, long started,
-                                                   Throwable exception) {
+    PopulationRemoteCallException classify(String interfaceName, Method method, String failureStage,
+                                           long started, Throwable exception) {
         String code = contains(exception, SocketTimeoutException.class)
                 ? "REMOTE_TIMEOUT"
-                : contains(exception, ConnectException.class) || contains(exception, NotBoundException.class)
-                ? "REMOTE_UNAVAILABLE" : "REMOTE_FAILURE";
-        log.warn("S2 proxy after interface={} method={} traceId={} elapsedMs={} outcome=FAILED errorCode={} errorClass={}",
-                interfaceName, method.getName(), traceId, elapsedMillis(started), code, exception.getClass().getSimpleName());
+                : isUnavailableTransport(exception) ? "REMOTE_UNAVAILABLE" : "REMOTE_FAILURE";
+        log.warn("S2 proxy after interface={} method={} failureStage={} elapsedMs={} outcome=FAILED errorCode={} errorTypes={}",
+                interfaceName, method.getName(), failureStage, elapsedMillis(started), code,
+                safeExceptionTypes(exception));
         return new PopulationRemoteCallException(code, exception);
+    }
+
+    private boolean isUnavailableTransport(Throwable throwable) {
+        return contains(throwable, ConnectException.class)
+                || contains(throwable, ConnectIOException.class)
+                || contains(throwable, NoSuchObjectException.class)
+                || contains(throwable, NotBoundException.class)
+                || contains(throwable, EOFException.class)
+                || contains(throwable, SocketException.class);
     }
 
     private boolean contains(Throwable throwable, Class<? extends Throwable> type) {
@@ -99,6 +113,17 @@ public class RmiInvocationHandler implements InvocationHandler {
             }
         }
         return false;
+    }
+
+    private String safeExceptionTypes(Throwable throwable) {
+        StringBuilder types = new StringBuilder();
+        for (Throwable current = throwable; current != null && types.length() < 512; current = current.getCause()) {
+            if (!types.isEmpty()) {
+                types.append(" -> ");
+            }
+            types.append(current.getClass().getName());
+        }
+        return types.toString();
     }
 
     private long elapsedMillis(long started) {

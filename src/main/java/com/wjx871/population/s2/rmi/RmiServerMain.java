@@ -5,6 +5,10 @@ import com.wjx871.population.s2.aggregation.PopulationMetricsRemote;
 import com.wjx871.population.s2.trace.S2TraceContext;
 import lombok.extern.log4j.Log4j2;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -50,6 +54,7 @@ public final class RmiServerMain {
 
         CountDownLatch stopped = new CountDownLatch(1);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("S2 RMI shutdown hook started");
             try {
                 registry.unbind(RmiPorts.BINDING_NAME);
             } catch (Exception ignored) {
@@ -62,7 +67,28 @@ public final class RmiServerMain {
                 // Shutdown is best-effort after the process has stopped accepting calls.
             }
             stopped.countDown();
+            log.info("S2 RMI shutdown hook finished");
         }, "s2-rmi-shutdown"));
+        if (Boolean.getBoolean("s2.rmi.test-stdin-shutdown")) {
+            startTestShutdownControl();
+        }
         stopped.await();
+    }
+
+    private static void startTestShutdownControl() {
+        Thread control = new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(System.in, StandardCharsets.UTF_8))) {
+                if ("STOP".equals(reader.readLine())) {
+                    log.info("S2 RMI graceful shutdown requested");
+                    System.exit(0);
+                }
+            } catch (IOException exception) {
+                log.warn("S2 RMI test shutdown control failed errorClass={}",
+                        exception.getClass().getSimpleName());
+            }
+        }, "s2-rmi-test-shutdown-control");
+        control.setDaemon(true);
+        control.start();
     }
 }
