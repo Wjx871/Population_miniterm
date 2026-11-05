@@ -32,9 +32,9 @@
 - 人员版本与主链路专项：`PersonMapperTest`、`Phase03MigrationIntegrationTest`、`Phase04CancellationIntegrationTest`，合计 76 项通过，0 失败；包含人员 CAS/递增、迁入迁出递增、注销递增与 #21 create/update/execute 拒绝测试。
 - S2 RMI 回归：`S2RmiClientConcurrencyIntegrationTest` 6 项、`S2RmiHttpEndToEndIntegrationTest` 1 项、`RmiInvocationHandlerClassificationTest` 1 项，8 项通过，0 失败。
 - 上述人员/迁入/注销/S2 合并定向回归命令共 84 项通过，0 失败。
-- S4-B 定向回归：`AiConfirmIntegrationTest`、`ApplicationMaterialFeatureOffIntegrationTest`、`AiPrecheckIntegrationTest`、S2 RMI、迁入/审批/撤销和脱敏测试合计 145 项通过，0 失败、0 错误、0 跳过。
-- S4-B 完整 `mvnw.cmd test`：555 项通过，0 失败、0 错误、0 跳过；BUILD SUCCESS，耗时约 2 分 15 秒。
-- S4-A 的完整回归记录为 545 项；该数字属于 S4-A 阶段。S3 最终报告的 527 项属于 S3 阶段，分别记录，不与本轮 S4-B 的 555 项混用。
+- S4-B 定向回归：`AiConfirmIntegrationTest`、`ApplicationMaterialSubmitConcurrencyIntegrationTest`、`ApplicationMaterialFeatureOffIntegrationTest`、`AiPrecheckIntegrationTest`、S2 RMI、迁入/审批/撤销和脱敏测试合计 165 项通过，0 失败、0 错误、0 跳过。
+- S4-B 完整 `mvnw.cmd test`：567 项通过，0 失败、0 错误、0 跳过；BUILD SUCCESS，耗时 5 分 42 秒。
+- S4-A 的完整回归记录为 545 项；该数字属于 S4-A 阶段。S3 最终报告的 527 项属于 S3 阶段，分别记录，不与本轮 S4-B 的 567 项混用。
 - `git diff --check`：本轮提交前通过。
 
 一次中间全量运行发现测试夹具将 `next_attempt_at` 设为任务创建的当前时刻，worker 在极短间隔内读取时偶尔仍判为未到期。夹具现在将其固定为过去一秒；S4-A 定向测试与最终全量运行均通过。生产任务受理与 worker 领取规则未放宽。
@@ -48,7 +48,7 @@
 - 审计 #21：已在创建、更新、执行三处增加服务端精确校验；最终回归结果及测试名见审计台账。
 - 审计 #33：保持 `OPEN`，等待权威区划层级规则，不推导前缀关系。
 - 审计 #3 长事务：保持 `OPEN`。
-- S3 `demo-and-verification.md` 已注明 527 项是 S3 阶段最终报告；S4-A 完整回归为 545 项；本轮 S4-B 完整回归为 555 项，按阶段分别记录。
+- S3 `demo-and-verification.md` 已注明 527 项是 S3 阶段最终报告；S4-A 完整回归为 545 项；本轮 S4-B 完整回归为 567 项，按阶段分别记录。
 - S4-B 本轮只声明 Java/H2/Mock 本地实施与测试；RabbitMQ、Python、前端和真实 MySQL 均未验收。
 
 ## S4-B 演示步骤
@@ -65,8 +65,8 @@
 
 ## S4-B 自动化验证
 
-- S4-B 专项 H2/Mock：`AiConfirmIntegrationTest` 和 `ApplicationMaterialFeatureOffIntegrationTest`；覆盖并发同键、摘要/原始 OCR 变化、严格 JSON、任务/权限、显式材料替代选择、DRAFT/提交/L3 核验、BOUND 与 S3 reaper 并发、事务回滚、清理失败后由新清理服务实例恢复、AI 关闭后的持久化绑定读取与新存储解析器恢复，以及普通材料行为。
+- S4-B 专项 H2/Mock：`AiConfirmIntegrationTest`、`ApplicationMaterialSubmitConcurrencyIntegrationTest` 和 `ApplicationMaterialFeatureOffIntegrationTest`；覆盖确认同/异 key 并发、摘要/原始 OCR 变化、非法 JSON/嵌套绑定、跨用户/跨任务/过期/错误状态材料、文件缺失/大小/SHA 不匹配、材料角色防冒充、缺件 warning 后由现有 submit 拒绝、DRAFT/提交/L3 核验、BOUND 与 S3 reaper 并发、删除回滚、清理失败后由新清理服务实例恢复、AI 关闭后的持久化绑定读取与新存储解析器恢复、普通材料回归，以及 submit 与普通/AI_STAGE 删除和普通上传的确定性锁竞争。
 - S4-A/S3：`AiPrecheckIntegrationTest` 覆盖预览摘要、令牌状态及 S3 生命周期；S4-B 清理新增 CONSUMED session 保留期用例。
-- S4-B 定向回归 145 项、完整 Maven 回归 555 项均通过；`git diff --check` 通过。commit SHA 与 refs 核验见最终提交记录。H2/Mock 结果不等于真实 MySQL、RabbitMQ、Python 或前端联调验收。
+- S4-B 定向回归 165 项、完整 Maven 回归 567 项均通过；`git diff --check` 通过。commit SHA 与 refs 核验见最终提交记录。H2/Mock 结果不等于真实 MySQL、RabbitMQ、Python 或前端联调验收。
 
 当前外部验收状态：RabbitMQ `NOT_VERIFIED`、Python `NOT_VERIFIED`、前端 `NOT_VERIFIED`、V4_018 真实 MySQL `NOT_VERIFIED`；审计 #3/#33 `OPEN`，#21 `FIXED_VERIFIED`。

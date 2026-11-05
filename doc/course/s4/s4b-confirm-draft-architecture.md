@@ -30,6 +30,8 @@
 3. 按 stageMaterialId 字典序锁定用户拥有且属于该 task 的暂存材料，确认 READY、未过期、MIGRATION_IN、文件存在并匹配大小/SHA。
 4. 显式 Bean Validation 服务端构造的 `MigrationInRequest`，调用既有 `MigrationService.createIn()`；同事务写材料、绑定、审计、回执，并把解析会话置为 CONSUMED。
 
+申请提交与草稿材料修改也共享申请行锁。`ApprovalService.submit()`、`MaterialService.upload()`、`MaterialService.delete()` 均在各自外层事务中调用 `ApplicationService.requireForUpdate()`，由 `BusinessApplicationMapper.selectByIdForUpdate` 锁定 `business_application` 行；该方法使用 `Propagation.MANDATORY`，不会另开或提前结束事务。三条路径先取得申请行锁，再读取当前状态和执行材料检查/修改；submit 在锁内验证必需材料并使用原有 version CAS 改为 `UNDER_REVIEW`。AI_STAGE 删除在申请锁之后锁定 binding/stage，事务提交后才触发文件清理。申请行锁保持至外层事务提交或回滚，因此竞争操作醒来后会读取新状态与材料集合。其他写入路径已逐一核查：`MaterialService.verify()` 只在 `UNDER_REVIEW` 修改核验字段，不增删必需材料；`AiConfirmService` 只在同一事务内创建全新的 DRAFT 并绑定材料，未提交前申请不可见。
+
 `ai_confirmation_receipt.task_id` 唯一，`(owner_user_id,task_id,idempotency_key)` 唯一；task 行锁串行化并发，数据库唯一约束作为最终防线。同用户/任务/key/请求摘要相同返回原 applicationId；同 key 不同请求 `409 IDEMPOTENCY_KEY_REUSED`；同 task 新 key `409 TASK_ALREADY_CONSUMED`。首次响应 `201`；重放 `200`，返回 `creationStatus=DRAFT` 和实时 `currentStatus`。回放先验证当前认证、权限和任务所有权，不再次校验过期 session、不复制/绑定文件。
 
 安全错误：缺少/未知/跨用户任务、候选或材料 `404`；权限不足 `403`；缺候选/不完整 schema 或字段 `422`；过期/撤销/不可确认令牌、状态与版本变化、幂等冲突、材料不可用 `409`。错误和日志不返回 token、路径、对象键或敏感字段值。

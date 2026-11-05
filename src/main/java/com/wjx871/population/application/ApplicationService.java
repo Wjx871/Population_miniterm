@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 @Service
 @RequiredArgsConstructor
@@ -137,6 +138,16 @@ public class ApplicationService {
 
     public BusinessApplication require(Long id) {
         return mapper.selectById(id).orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "申请不存在"));
+    }
+
+    /**
+     * Acquires the application row lock inside the caller's transaction. Callers that mutate draft materials
+     * and submit the application must use this shared lock before reading application state.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public BusinessApplication requireForUpdate(Long id) {
+        return mapper.selectByIdForUpdate(id)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "申请不存在"));
     }
 
     public void assertCanView(BusinessApplication value, AuthenticatedUser user) {

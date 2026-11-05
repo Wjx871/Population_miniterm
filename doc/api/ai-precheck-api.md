@@ -162,11 +162,13 @@ V4_015 只向 `HOUSEHOLD_MANAGER` 和 `SYSTEM_ADMIN` 授予 AI 预审创建/查�
 
 首次成功返回 `201`，含 applicationId、applicationNo、migrationDetailId、创建状态 DRAFT、当前申请状态、正式材料摘要与缺件 warnings。相同用户/任务/key/规范化请求回放返回 `200` 和原回执；回执在权限与任务归属核验后读取，不依赖解析令牌仍有效。回执返回 `creationStatus=DRAFT` 及实时 `currentStatus`。同 key 不同请求返回 `409 IDEMPOTENCY_KEY_REUSED`；同任务换 key 再确认返回 `409 TASK_ALREADY_CONSUMED`。幂等回执按任务唯一；任务行锁和数据库唯一约束共同防止并发创建多份草稿。
 
-当前 S4-A 规定含 warning 的会话不可确认，所以 `acknowledgedAlerts` 必须为空；不能借此绕过 `NEEDS_CORRECTION`。缺少显式 person/targetHousehold 候选返回 `422 CANDIDATE_SELECTION_REQUIRED`；越权/不存在任务、候选或暂存材料统一 `404`；权限不足 `403`；过期/撤销/不可确认会话、字段摘要、实体或业务状态变化均安全返回 `409`。
+当前 S4-A 规定含 warning 的会话不可确认，所以 `acknowledgedAlerts` 必须为空；不能借此绕过 `NEEDS_CORRECTION`。缺失或格式无效的 `selectedCandidates` 返回安全的 `422 INVALID_CONFIRM_REQUEST`；越权/不存在任务、候选或暂存材料统一 `404`；权限不足 `403`；过期/撤销/不可确认会话、字段摘要、实体或业务状态变化均安全返回 `409`。
 
 ### 正式材料绑定
 
 `materialBindings` 的 `stageMaterialId` 必须属于当前用户及当前成功任务、业务类型为 `MIGRATION_IN`、状态为未过期 `READY`，且文件真实存在并通过大小/SHA-256 校验。绑定顺序按 stage ID 排序。UNKNOWN 必须由用户显式选择白名单标准码；APPLICATION_FORM 不能改标为 MIGRATION_PROOF。`householdEvidenceType` 只接受 `HOUSEHOLD_BOOK` 或 `ADDRESS_PROOF`：两类均有时必须显式选择其一；仅有一类时自动选唯一项；均缺失时允许 DRAFT 并返回 warning。Java 计算 requiredFlag，每条必需规则只选一个确定性代表文件；所有 AI 绑定材料的 verifyStatus 均为 PENDING。
+
+输入结构限制：`selectedCandidates` 必须是对象且包含预览签发的 person/targetHousehold token；`materialBindings` 可省略或为空，最多 10 个非空对象，每项必须含有效 `stageMaterialId`，可选 `materialType` 只能使用服务端白名单；同一请求不能重复绑定 stage ID。未知 JSON 属性、重复 JSON 键和错误 JSON 类型返回 `400 INVALID_CONFIRM_REQUEST`；空嵌套项、缺必填字段、非法 token 或数组重复项返回安全的 `422`。这些校验在创建业务申请前完成，非法请求不会写 DRAFT 或幂等回执。
 
 正式材料保留受控的 `AI_STAGE` 来源和不透明 stage 引用，并由数据库绑定表解析真实暂存对象键。读取适配器不依赖受 `population.ai.precheck.enabled` 条件控制的 `AiPrivateFileStorageService`。AI 关闭后既有绑定材料仍可通过正式材料权限下载；客户端不能传路径或对象键。BOUND 状态不会被 S3 暂存清理器选择。删除 DRAFT/RETURNED 材料时先在数据库事务中移除正式材料并把绑定标为 RELEASE_PENDING；提交后清理私有对象。失败后保留可重试记录，清理任务可在进程重启后恢复。普通 LOCAL 材料仍使用原存储行为。
 

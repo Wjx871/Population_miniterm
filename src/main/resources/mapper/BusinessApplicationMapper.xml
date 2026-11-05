@@ -15,6 +15,12 @@
     a.applicant_department_id,a.applicant_region_code,a.target_person_id,a.target_household_id,a.status,a.reason,a.remark,
     a.submitted_at,a.completed_at,a.version,a.created_at,a.updated_at</sql>
   <select id="selectById" resultMap="map">SELECT <include refid="columns"/> FROM business_application a JOIN sys_user u ON u.user_id=a.applicant_user_id WHERE a.application_id=#{applicationId}</select>
+  <select id="selectByIdForUpdate" resultMap="map">
+    SELECT a.application_id,a.application_no,a.business_type,a.title,a.applicant_user_id,NULL AS applicant_name,
+      a.applicant_department_id,a.applicant_region_code,a.target_person_id,a.target_household_id,a.status,a.reason,a.remark,
+      a.submitted_at,a.completed_at,a.version,a.created_at,a.updated_at
+    FROM business_application a WHERE a.application_id=#{applicationId} FOR UPDATE
+  </select>
   <sql id="filters"><where>
     <if test="applicationNo != null">AND a.application_no LIKE CONCAT('%',#{applicationNo},'%')</if>
     <if test="businessType != null">AND a.business_type=#{businessType}</if><if test="status != null">AND a.status=#{status}</if>

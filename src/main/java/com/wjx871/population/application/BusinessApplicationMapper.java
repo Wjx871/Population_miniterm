@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Param;
 public interface BusinessApplicationMapper {
     int insert(BusinessApplication application);
     Optional<BusinessApplication> selectById(Long applicationId);
+    Optional<BusinessApplication> selectByIdForUpdate(Long applicationId);
     long countByQuery(ApplicationQuery query);
     List<BusinessApplication> selectByQuery(ApplicationQuery query);
     int updateDraft(@Param("application") BusinessApplication application, @Param("expectedVersion") int expectedVersion);

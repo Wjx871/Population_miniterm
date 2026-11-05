@@ -38,7 +38,7 @@ public class MaterialService {
         if (type == null || type.isBlank() || type.length() > 50 || name == null || name.isBlank() || name.length() > 200) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "材料类型或名称不合法");
         }
-        BusinessApplication app = applications.require(applicationId);
+        BusinessApplication app = applications.requireForUpdate(applicationId);
         AuthenticatedUser user = CurrentUserContext.requireUser();
         applications.assertOwner(app, user);
         if (!materialEditable(app.getStatus())) throw conflict("只有草稿或退回补正申请可以上传材料");
@@ -85,7 +85,7 @@ public class MaterialService {
     @Transactional
     public void delete(Long id) {
         ApplicationMaterial material = require(id);
-        BusinessApplication app = applications.require(material.getApplicationId());
+        BusinessApplication app = applications.requireForUpdate(material.getApplicationId());
         AuthenticatedUser user = CurrentUserContext.requireUser();
         applications.assertOwner(app, user);
         if (!materialEditable(app.getStatus())) throw conflict("仅草稿或退回补正申请可以删除材料");

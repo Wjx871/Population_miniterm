@@ -11,16 +11,16 @@ public record AiConfirmRequest(
         @NotBlank @Size(max = 20) String requestSchemaVersion,
         @NotNull Long taskVersion,
         @NotBlank @Size(max = 80) String resolutionToken,
-        @Valid SelectedCandidates selectedCandidates,
+        @NotNull @Valid SelectedCandidates selectedCandidates,
         @NotBlank @Pattern(regexp = "[A-Za-z0-9._-]{1,128}") String idempotencyKey,
-        @Size(max = 40) List<@Valid ConfirmedField> confirmedFields,
+        @Size(max = 40) List<@NotNull @Valid ConfirmedField> confirmedFields,
         @Size(max = 20) List<@NotBlank @Size(max = 80) String> acknowledgedAlerts,
-        @Size(max = 10) List<@Valid MaterialBinding> materialBindings,
+        @Size(max = 10) List<@NotNull @Valid MaterialBinding> materialBindings,
         @Pattern(regexp = "HOUSEHOLD_BOOK|ADDRESS_PROOF") String householdEvidenceType
 ) {
     public record SelectedCandidates(
-            @Size(max = 80) String person,
-            @Size(max = 80) String targetHousehold
+            @NotBlank @Pattern(regexp = "pc_[A-Za-z0-9_-]{24,64}") @Size(max = 80) String person,
+            @NotBlank @Pattern(regexp = "hc_[A-Za-z0-9_-]{24,64}") @Size(max = 80) String targetHousehold
     ) { }
 
     public record ConfirmedField(

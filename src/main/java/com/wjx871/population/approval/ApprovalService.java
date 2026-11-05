@@ -32,7 +32,7 @@ public class ApprovalService {
 
     @Transactional
     public void submit(Long applicationId, HttpServletRequest request) {
-        BusinessApplication a = applications.require(applicationId);
+        BusinessApplication a = applications.requireForUpdate(applicationId);
         AuthenticatedUser u = CurrentUserContext.requireUser();
         applications.assertOwner(a, u);
         stateMachine.requireResubmittable(a.getStatus());

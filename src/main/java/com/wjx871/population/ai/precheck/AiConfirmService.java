@@ -32,6 +32,7 @@ import java.time.format.DateTimeParseException;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -57,6 +58,9 @@ import org.springframework.transaction.annotation.Transactional;
 @ConditionalOnProperty(prefix = "population.ai.precheck", name = "enabled", havingValue = "true")
 public class AiConfirmService {
     private static final Pattern CONTROL = Pattern.compile("[\\p{Cc}\\p{Cf}]");
+    private static final Pattern PERSON_CANDIDATE_TOKEN = Pattern.compile("pc_[A-Za-z0-9_-]{24,64}");
+    private static final Pattern HOUSEHOLD_CANDIDATE_TOKEN = Pattern.compile("hc_[A-Za-z0-9_-]{24,64}");
+    private static final Pattern STAGE_MATERIAL_ID = Pattern.compile("stg_[A-Fa-f0-9]{32}");
     private static final Set<String> CONFIRM_FIELD_CODES = Set.of(
             "person.name", "person.idCard", "household.householdNo", "household.address",
             "migration.migrationType", "migration.toRegionCode", "migration.transferBatchNo",
@@ -168,11 +172,28 @@ public class AiConfirmService {
                 || blank(request.selectedCandidates().targetHousehold())) {
             throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "CANDIDATE_SELECTION_REQUIRED");
         }
+        if (!PERSON_CANDIDATE_TOKEN.matcher(request.selectedCandidates().person()).matches()
+                || !HOUSEHOLD_CANDIDATE_TOKEN.matcher(request.selectedCandidates().targetHousehold()).matches()) {
+            throw unprocessable("INVALID_CANDIDATE_SELECTION");
+        }
         if (request.resolutionToken() == null || request.resolutionToken().length() > 80) {
             throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "INVALID_RESOLUTION_TOKEN");
         }
         if (request.idempotencyKey() == null || !request.idempotencyKey().matches("[A-Za-z0-9._-]{1,128}")) {
             throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "INVALID_IDEMPOTENCY_KEY");
+        }
+        List<MaterialBinding> bindings = request.materialBindings();
+        if (bindings != null) {
+            if (bindings.size() > 10) throw unprocessable("INVALID_MATERIAL_BINDINGS");
+            Set<String> stageIds = new HashSet<>();
+            for (MaterialBinding binding : bindings) {
+                if (binding == null || blank(binding.stageMaterialId())
+                        || !STAGE_MATERIAL_ID.matcher(binding.stageMaterialId()).matches()
+                        || binding.materialType() != null && binding.materialType().length() > 50) {
+                    throw unprocessable("INVALID_MATERIAL_BINDING");
+                }
+                if (!stageIds.add(binding.stageMaterialId())) throw unprocessable("DUPLICATE_STAGE_MATERIAL_ID");
+            }
         }
     }
 

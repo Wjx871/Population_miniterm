@@ -286,11 +286,229 @@ class AiConfirmIntegrationTest {
         Map<String, Object> noPerson = new LinkedHashMap<>(body);
         noPerson.put("selectedCandidates", Map.of("person", "", "targetHousehold", token(scenario.preview(), "household")));
         confirm(scenario.taskId(), householdToken, noPerson).andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.message").value("CANDIDATE_SELECTION_REQUIRED"));
+                .andExpect(jsonPath("$.message").value("INVALID_CONFIRM_REQUEST"));
         confirm(scenario.taskId(), viewerToken, body).andExpect(status().isForbidden());
         confirm(scenario.taskId(), adminToken, body).andExpect(status().isNotFound());
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_confirmation_receipt WHERE task_id=?",
                 Integer.class, scenario.taskId())).isZero();
+    }
+
+    @Test
+    void malformedNestedInputsReturnClientErrorsBeforeCreatingDraft() throws Exception {
+        Scenario scenario = scenario("confirm-invalid-nested", List.of("UNKNOWN"));
+        int applicationsBefore = jdbc.queryForObject("SELECT COUNT(*) FROM business_application", Integer.class);
+
+        Map<String, Object> nullBinding = confirmBody(scenario, "invalid-null-binding", List.of(), List.of(), null);
+        nullBinding.put("materialBindings", java.util.Collections.singletonList(null));
+        confirm(scenario.taskId(), householdToken, nullBinding).andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("INVALID_CONFIRM_REQUEST"));
+
+        Map<String, Object> missingStageId = confirmBody(scenario, "invalid-missing-stage", List.of(), List.of(), null);
+        missingStageId.put("materialBindings", List.of(Map.of("materialType", "IDENTITY_PROOF")));
+        confirm(scenario.taskId(), householdToken, missingStageId).andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("INVALID_CONFIRM_REQUEST"));
+
+        Map<String, Object> duplicateStageId = confirmBody(scenario, "invalid-duplicate-stage",
+                List.of(material(scenario.stageIds().get(0), "IDENTITY_PROOF"),
+                        material(scenario.stageIds().get(0), "IDENTITY_PROOF")), List.of(), null);
+        confirm(scenario.taskId(), householdToken, duplicateStageId).andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("DUPLICATE_STAGE_MATERIAL_ID"));
+
+        Map<String, Object> wrongSelectedType = confirmBody(scenario, "invalid-selected-type", List.of(), List.of(), null);
+        wrongSelectedType.put("selectedCandidates", 42);
+        confirm(scenario.taskId(), householdToken, wrongSelectedType).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("INVALID_CONFIRM_REQUEST"));
+
+        Map<String, Object> invalidSelectedToken = confirmBody(scenario, "invalid-selected-token", List.of(), List.of(), null);
+        invalidSelectedToken.put("selectedCandidates", Map.of("person", "not-a-token",
+                "targetHousehold", token(scenario.preview(), "household")));
+        confirm(scenario.taskId(), householdToken, invalidSelectedToken).andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("INVALID_CONFIRM_REQUEST"));
+
+        Map<String, Object> wrongBindingsType = confirmBody(scenario, "invalid-bindings-type", List.of(), List.of(), null);
+        wrongBindingsType.put("materialBindings", "not-an-array");
+        confirm(scenario.taskId(), householdToken, wrongBindingsType).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("INVALID_CONFIRM_REQUEST"));
+
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM business_application", Integer.class))
+                .isEqualTo(applicationsBefore);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_confirmation_receipt WHERE task_id=?",
+                Integer.class, scenario.taskId())).isZero();
+    }
+
+    @Test
+    void stageBindingRejectsForeignOwnerOtherTaskExpiredAndUnavailableStates() throws Exception {
+        Scenario scenario = scenario("confirm-stage-ownership", List.of("UNKNOWN", "UNKNOWN", "UNKNOWN"));
+        int applicationsBefore = jdbc.queryForObject("SELECT COUNT(*) FROM business_application", Integer.class);
+
+        String foreignOwnerStage = scenario.stageIds().get(0);
+        Long otherOwnerId = authService.loadUser("admin").userId();
+        jdbc.update("UPDATE ai_stage_material SET owner_user_id=? WHERE stage_material_id=?", otherOwnerId, foreignOwnerStage);
+        confirmWithStage(scenario, foreignOwnerStage, "foreign-owner-stage")
+                .andExpect(status().isNotFound());
+        jdbc.update("UPDATE ai_stage_material SET owner_user_id=? WHERE stage_material_id=?",
+                authService.loadUser("household").userId(), foreignOwnerStage);
+
+        Scenario otherTask = scenario("confirm-stage-other-task", List.of("UNKNOWN"));
+        confirmWithStage(scenario, otherTask.stageIds().get(0), "foreign-task-stage")
+                .andExpect(status().isNotFound());
+
+        String unavailableStage = scenario.stageIds().get(1);
+        for (String invalidStatus : List.of("BOUND", "CANCELLED", "IN_USE")) {
+            jdbc.update("UPDATE ai_stage_material SET status=? WHERE stage_material_id=?", invalidStatus, unavailableStage);
+            confirmWithStage(scenario, unavailableStage, "unavailable-" + invalidStatus)
+                    .andExpect(status().isConflict()).andExpect(jsonPath("$.message").value("MATERIAL_NOT_READY"));
+            jdbc.update("UPDATE ai_stage_material SET status='READY' WHERE stage_material_id=?", unavailableStage);
+        }
+
+        String expiredStage = scenario.stageIds().get(2);
+        jdbc.update("UPDATE ai_stage_material SET expires_at=? WHERE stage_material_id=?",
+                Timestamp.valueOf(LocalDateTime.now().minusSeconds(1)), expiredStage);
+        confirmWithStage(scenario, expiredStage, "expired-stage")
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.message").value("MATERIAL_NOT_READY"));
+
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM business_application", Integer.class))
+                .isEqualTo(applicationsBefore);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_confirmation_receipt WHERE task_id=?",
+                Integer.class, scenario.taskId())).isZero();
+    }
+
+    @Test
+    void stagedFileMustExistAndMatchRecordedSizeAndShaBeforeDraftCreation() throws Exception {
+        Scenario scenario = scenario("confirm-stage-file-integrity", List.of("UNKNOWN", "UNKNOWN", "UNKNOWN"));
+        int applicationsBefore = jdbc.queryForObject("SELECT COUNT(*) FROM business_application", Integer.class);
+
+        String missingStage = scenario.stageIds().get(0);
+        String originalKey = objectKey(missingStage);
+        jdbc.update("UPDATE ai_stage_material SET stored_object_key=? WHERE stage_material_id=?",
+                generatedObjectKey(), missingStage);
+        confirmWithStage(scenario, missingStage, "missing-stage-file")
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.message").value("MATERIAL_NOT_READY"));
+        jdbc.update("UPDATE ai_stage_material SET stored_object_key=? WHERE stage_material_id=?", originalKey, missingStage);
+
+        String wrongSizeStage = scenario.stageIds().get(1);
+        jdbc.update("UPDATE ai_stage_material SET file_size=file_size+1 WHERE stage_material_id=?", wrongSizeStage);
+        jdbc.update("UPDATE ai_precheck_task_material SET file_size=file_size+1 WHERE task_id=? AND stage_material_id=?",
+                scenario.taskId(), wrongSizeStage);
+        confirmWithStage(scenario, wrongSizeStage, "wrong-stage-size")
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.message").value("MATERIAL_NOT_READY"));
+
+        String hashMismatchStage = scenario.stageIds().get(2);
+        String otherFileKey = objectKey(hashMismatchStage);
+        assertThat(rowSize(missingStage)).isEqualTo(rowSize(hashMismatchStage));
+        assertThat(rowSha(missingStage)).isNotEqualTo(rowSha(hashMismatchStage));
+        jdbc.update("UPDATE ai_stage_material SET stored_object_key=? WHERE stage_material_id=?",
+                generatedObjectKey(), hashMismatchStage);
+        jdbc.update("UPDATE ai_stage_material SET stored_object_key=? WHERE stage_material_id=?",
+                otherFileKey, missingStage);
+        confirmWithStage(scenario, missingStage, "wrong-stage-sha")
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.message").value("MATERIAL_NOT_READY"));
+
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM business_application", Integer.class))
+                .isEqualTo(applicationsBefore);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_confirmation_receipt WHERE task_id=?",
+                Integer.class, scenario.taskId())).isZero();
+    }
+
+    @Test
+    void unknownAndApplicationFormRolesCannotBypassMaterialClassification() throws Exception {
+        int applicationsBefore = jdbc.queryForObject("SELECT COUNT(*) FROM business_application", Integer.class);
+
+        Scenario applicationForm = scenario("confirm-application-form-role", List.of("APPLICATION_FORM"));
+        confirmWithBindings(applicationForm, "application-form-as-migration-proof",
+                List.of(material(applicationForm.stageIds().get(0), "MIGRATION_PROOF")))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("APPLICATION_FORM_TYPE_CANNOT_BE_RECLASSIFIED"));
+
+        Scenario unknown = scenario("confirm-unknown-role", List.of("UNKNOWN"));
+        confirmWithBindings(unknown, "unknown-without-classification",
+                List.of(Map.of("stageMaterialId", unknown.stageIds().get(0))))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("MATERIAL_TYPE_REQUIRED_OR_UNSUPPORTED"));
+
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM business_application", Integer.class))
+                .isEqualTo(applicationsBefore);
+
+        String manualJson = "{\"personId\":9801,\"migrationType\":\"OUTSIDE_CITY\","
+                + "\"fromAddress\":\"人工迁出地\",\"toRegionCode\":\"110105\",\"toHouseholdId\":9801,"
+                + "\"inDate\":\"2026-11-05\",\"reason\":\"人工迁入入口回归\",\"title\":\"人工迁入回归\"}";
+        MvcResult manual = mvc.perform(post("/api/migrations/in/applications")
+                        .header("Authorization", bearer(householdToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content(manualJson))
+                .andExpect(status().isCreated()).andReturn();
+        long applicationId = objectMapper.readTree(manual.getResponse().getContentAsString())
+                .path("data").path("applicationId").asLong();
+        assertThat(jdbc.queryForObject("SELECT status FROM business_application WHERE application_id=?",
+                String.class, applicationId)).isEqualTo("DRAFT");
+    }
+
+    @Test
+    void crossDistrictDraftWarnsAboutMissingTransferProofAndExistingSubmitRejectsIt() throws Exception {
+        String transferBatchNo = "S4B-BATCH-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        seedCompletedTransferBatch(transferBatchNo);
+        Scenario scenario = scenario("confirm-cross-district-missing-proof",
+                List.of("IDENTITY_CARD_FRONT", "ADDRESS_PROOF"), MigrationType.IN_CITY_CROSS_DISTRICT,
+                transferBatchNo);
+        List<Map<String, Object>> bindings = List.of(
+                material(scenario.stageIds().get(0), "IDENTITY_PROOF"),
+                material(scenario.stageIds().get(1), "ADDRESS_PROOF"));
+        Map<String, Object> body = confirmBody(scenario, "cross-district-no-transfer-proof", bindings, List.of(), null);
+        replaceField(body, "migration.migrationType", MigrationType.IN_CITY_CROSS_DISTRICT.name());
+        addField(body, "migration.transferBatchNo", transferBatchNo);
+
+        MvcResult result = confirm(scenario.taskId(), householdToken, body).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.warnings").value(org.hamcrest.Matchers.hasItem("MISSING_MIGRATION_PROOF")))
+                .andReturn();
+        long applicationId = objectMapper.readTree(result.getResponse().getContentAsString())
+                .path("data").path("applicationId").asLong();
+        mvc.perform(post("/api/applications/{id}/submit", applicationId)
+                        .header("Authorization", bearer(householdToken)))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.message").value("缺少必需材料：MIGRATION_PROOF"));
+        assertThat(jdbc.queryForObject("SELECT status FROM business_application WHERE application_id=?",
+                String.class, applicationId)).isEqualTo("DRAFT");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_approval_request WHERE application_id=?",
+                Integer.class, applicationId)).isZero();
+    }
+
+    @Test
+    void sameTaskDifferentIdempotencyKeysInParallelCreateAtMostOneDraft() throws Exception {
+        Scenario scenario = scenario("confirm-concurrent-different-keys", List.of("UNKNOWN"));
+        Map<String, Object> firstBody = confirmBody(scenario, "different-key-first", List.of(), List.of(), null);
+        Map<String, Object> secondBody = confirmBody(scenario, "different-key-second", List.of(), List.of(), null);
+        int applicationsBefore = jdbc.queryForObject("SELECT COUNT(*) FROM business_application", Integer.class);
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            var first = executor.submit(() -> {
+                ready.countDown();
+                assertThat(start.await(5, TimeUnit.SECONDS)).isTrue();
+                return confirm(scenario.taskId(), householdToken, firstBody).andReturn();
+            });
+            var second = executor.submit(() -> {
+                ready.countDown();
+                assertThat(start.await(5, TimeUnit.SECONDS)).isTrue();
+                return confirm(scenario.taskId(), householdToken, secondBody).andReturn();
+            });
+            assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+            MvcResult firstResult = first.get(15, TimeUnit.SECONDS);
+            MvcResult secondResult = second.get(15, TimeUnit.SECONDS);
+            assertThat(List.of(firstResult.getResponse().getStatus(), secondResult.getResponse().getStatus()))
+                    .containsExactlyInAnyOrder(201, 409);
+            MvcResult rejected = firstResult.getResponse().getStatus() == 409 ? firstResult : secondResult;
+            assertThat(objectMapper.readTree(rejected.getResponse().getContentAsString()).path("message").asText())
+                    .isEqualTo("TASK_ALREADY_CONSUMED");
+        } finally {
+            executor.shutdownNow();
+        }
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM business_application", Integer.class))
+                .isEqualTo(applicationsBefore + 1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_confirmation_receipt WHERE task_id=?",
+                Integer.class, scenario.taskId())).isOne();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM migration_in WHERE application_id IN "
+                        + "(SELECT application_id FROM ai_confirmation_receipt WHERE task_id=?)",
+                Integer.class, scenario.taskId())).isOne();
     }
 
     @Test
@@ -453,15 +671,20 @@ class AiConfirmIntegrationTest {
     }
 
     private Scenario scenario(String key, List<String> roles) throws Exception {
+        return scenario(key, roles, MigrationType.OUTSIDE_CITY, null);
+    }
+
+    private Scenario scenario(String key, List<String> roles, MigrationType migrationType, String transferBatchNo)
+            throws Exception {
         List<String> stageIds = new ArrayList<>();
         int index = 0;
         for (String role : roles) stageIds.add(upload(role, key + "-" + index, index++));
-        String taskId = createSuccessfulTask(key, stageIds);
+        String taskId = createSuccessfulTask(key, stageIds, migrationType);
         long version = taskVersion(taskId);
         JsonNode preview = previewData(taskId, List.of(
                 correction("person.name", "解析测试甲"),
                 correction("person.idCard", "110105198001010016"),
-                correction("household.householdNo", "S4A-H-ALPHA")));
+                correction("household.householdNo", "S4A-H-ALPHA")), migrationType, "110105", transferBatchNo);
         return new Scenario(taskId, version, preview, List.copyOf(stageIds));
     }
 
@@ -477,8 +700,12 @@ class AiConfirmIntegrationTest {
     }
 
     private String createSuccessfulTask(String key, List<String> stageIds) throws Exception {
+        return createSuccessfulTask(key, stageIds, MigrationType.OUTSIDE_CITY);
+    }
+
+    private String createSuccessfulTask(String key, List<String> stageIds, MigrationType migrationType) throws Exception {
         AiTaskCreateRequest body = new AiTaskCreateRequest("1.0", "DOCUMENT_PRECHECK", "MIGRATION_IN",
-                "OUTSIDE_CITY", stageIds, key + "-task-key");
+                migrationType.name(), stageIds, key + "-task-key");
         MvcResult accepted = mvc.perform(post("/api/ai/tasks").header("Authorization", bearer(householdToken))
                         .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isAccepted()).andReturn();
@@ -495,8 +722,14 @@ class AiConfirmIntegrationTest {
     }
 
     private JsonNode previewData(String taskId, List<AiResolutionPreviewRequest.Correction> corrections) throws Exception {
+        return previewData(taskId, corrections, MigrationType.OUTSIDE_CITY, "110105", null);
+    }
+
+    private JsonNode previewData(String taskId, List<AiResolutionPreviewRequest.Correction> corrections,
+                                 MigrationType migrationType, String toRegionCode, String transferBatchNo)
+            throws Exception {
         AiResolutionPreviewRequest request = new AiResolutionPreviewRequest("1.0", taskVersion(taskId), corrections,
-                MigrationType.OUTSIDE_CITY, "110105", null);
+                migrationType, toRegionCode, transferBatchNo);
         MvcResult result = mvc.perform(post("/api/ai/tasks/{id}/resolution-preview", taskId)
                         .header("Authorization", bearer(householdToken)).contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -535,11 +768,51 @@ class AiConfirmIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(body)));
     }
 
+    private ResultActions confirmWithStage(Scenario scenario, String stageId, String key) throws Exception {
+        return confirmWithBindings(scenario, key, List.of(material(stageId, "IDENTITY_PROOF")));
+    }
+
+    private ResultActions confirmWithBindings(Scenario scenario, String key, List<Map<String, Object>> bindings)
+            throws Exception {
+        return confirm(scenario.taskId(), householdToken, confirmBody(scenario, key, bindings, List.of(), null));
+    }
+
+    private String generatedObjectKey() {
+        return "obj_" + UUID.randomUUID().toString().replace("-", "") + ".pdf";
+    }
+
+    private void seedCompletedTransferBatch(String batchNo) {
+        AuthenticatedUser owner = authService.loadUser("household");
+        String applicationNo = "S4BBATCH-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        LocalDateTime now = LocalDateTime.now();
+        jdbc.update("INSERT INTO business_application(application_no,business_type,title,applicant_user_id,"
+                        + "applicant_department_id,applicant_region_code,target_person_id,target_household_id,status,reason,"
+                        + "version,created_at,updated_at) VALUES(?,'MIGRATION_OUT','synthetic completed transfer',?,?,?,?,9801,"
+                        + "'COMPLETED','S4-B synthetic transfer fixture',1,?,?)",
+                applicationNo, owner.userId(), owner.departmentId(), owner.regionCode(), 9801L,
+                Timestamp.valueOf(now), Timestamp.valueOf(now));
+        Long applicationId = jdbc.queryForObject("SELECT application_id FROM business_application WHERE application_no=?",
+                Long.class, applicationNo);
+        jdbc.update("INSERT INTO migration_out(application_id,person_id,migration_type,from_region_code,"
+                        + "from_household_id,from_address_snapshot,to_region_code,to_address,out_date,reason,"
+                        + "transfer_batch_no,business_status,version) VALUES(?,9801,'IN_CITY_CROSS_DISTRICT','110105',"
+                        + "9801,'synthetic previous address','110105','synthetic destination',DATE '2026-11-01',"
+                        + "'synthetic transfer',?,'COMPLETED',1)", applicationId, batchNo);
+    }
+
     private void replaceField(Map<String, Object> body, String fieldCode, String value) {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> fields = (List<Map<String, Object>>) body.get("confirmedFields");
         fields.stream().filter(field -> fieldCode.equals(field.get("fieldCode"))).findFirst()
                 .orElseThrow().put("value", value);
+    }
+
+    private void addField(Map<String, Object> body, String fieldCode, String value) {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> fields = (List<Map<String, Object>>) body.get("confirmedFields");
+        List<Map<String, Object>> changed = new ArrayList<>(fields);
+        changed.add(field(fieldCode, value));
+        body.put("confirmedFields", changed);
     }
 
     private Map<String, Object> material(String stageId, String type) {
