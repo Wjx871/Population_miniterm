@@ -52,7 +52,8 @@ public class AiResolutionRetentionCleaner {
         LocalDateTime cutoff = LocalDateTime.now().minus(properties.getResolutionSessionRetention());
         Timestamp cutoffTimestamp = Timestamp.valueOf(cutoff);
         List<Long> ids = jdbc.query("SELECT resolution_id FROM ai_resolution_session "
-                        + "WHERE (status='ACTIVE' AND expires_at<?) OR (status='REVOKED' AND updated_at<?) "
+                        + "WHERE (status='ACTIVE' AND expires_at<?) "
+                        + "OR (status IN ('REVOKED','CONSUMED') AND updated_at<?) "
                         + "ORDER BY resolution_id LIMIT ?",
                 (rs, row) -> rs.getLong(1), cutoffTimestamp, cutoffTimestamp,
                 properties.getResolutionCleanupBatchSize());
@@ -60,7 +61,8 @@ public class AiResolutionRetentionCleaner {
 
         String placeholders = String.join(",", java.util.Collections.nCopies(ids.size(), "?"));
         String sql = "DELETE FROM ai_resolution_session WHERE resolution_id IN (" + placeholders + ") "
-                + "AND ((status='ACTIVE' AND expires_at<?) OR (status='REVOKED' AND updated_at<?))";
+                + "AND ((status='ACTIVE' AND expires_at<?) "
+                + "OR (status IN ('REVOKED','CONSUMED') AND updated_at<?))";
         List<Object> parameters = new ArrayList<>(ids);
         parameters.add(cutoffTimestamp);
         parameters.add(cutoffTimestamp);

@@ -1,7 +1,5 @@
 package com.wjx871.population.ai.precheck;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wjx871.population.ai.precheck.AiResolutionPreviewRequest.Correction;
 import com.wjx871.population.common.BusinessException;
 import com.wjx871.population.household.Household;
@@ -9,7 +7,6 @@ import com.wjx871.population.household.HouseholdMapper;
 import com.wjx871.population.migration.MigrationMapper;
 import com.wjx871.population.migration.MigrationOut;
 import com.wjx871.population.migration.MigrationType;
-import com.wjx871.population.person.IdCardValidator;
 import com.wjx871.population.person.Person;
 import com.wjx871.population.person.PersonMapper;
 import com.wjx871.population.person.PersonStatus;
@@ -31,12 +28,9 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -55,19 +49,13 @@ public class AiResolutionService {
     private static final String TASK_TYPE = "DOCUMENT_PRECHECK";
     private static final String BUSINESS_TYPE = "MIGRATION_IN";
     private static final int MAX_HOUSEHOLD_CANDIDATES = 50;
-    private static final Pattern CONTROL = Pattern.compile("[\\p{Cc}\\p{Cf}]");
-    private static final Set<String> CORRECTABLE_FIELDS = Set.of(
-            "person.name", "person.idCard", "household.householdNo", "household.address");
-    private static final Set<String> RESOLUTION_FIELDS = CORRECTABLE_FIELDS;
-
     private final AiPrecheckTaskService tasks;
     private final AiPrecheckProperties properties;
     private final JdbcTemplate jdbc;
-    private final ObjectMapper objectMapper;
+    private final AiResolutionInputCanonicalizer inputCanonicalizer;
     private final PersonMapper persons;
     private final HouseholdMapper households;
     private final MigrationMapper migrations;
-    private final IdCardValidator idCards;
     private final SensitiveDataMaskingService masking;
 
     @Transactional
@@ -84,22 +72,23 @@ public class AiResolutionService {
         }
         if (!"SUCCEEDED".equals(task.status())) throw conflict("TASK_NOT_READY_FOR_RESOLUTION");
         if (request.taskVersion() != task.version()) throw conflict("TASK_VERSION_MISMATCH");
+        if (jdbc.queryForObject("SELECT COUNT(*) FROM ai_confirmation_receipt WHERE task_id=?",
+                Integer.class, taskId) > 0) throw conflict("TASK_ALREADY_CONSUMED");
         if (request.migrationType() == null || !request.migrationType().name().equals(task.migrationType())) {
             throw conflict("MIGRATION_CONTEXT_MISMATCH");
         }
 
-        String toRegionCode = normalizeRequired(request.toRegionCode(), 20, "INVALID_TO_REGION_CODE");
-        String batchNo = normalizeOptional(request.transferBatchNo(), 40, "INVALID_TRANSFER_BATCH_NO");
-        Map<String, String> corrections = normalizeCorrections(request.corrections());
-        ExtractedFields extracted = extractFields(task.resultJson());
-        ResolvedInputs inputs = resolveInputs(extracted, corrections);
+        AiResolutionInputCanonicalizer.Canonicalized canonicalized = inputCanonicalizer.canonicalize(
+                task, request.migrationType(), request.toRegionCode(), request.transferBatchNo(), request.corrections());
+        String toRegionCode = canonicalized.toRegionCode();
+        String batchNo = canonicalized.transferBatchNo();
+        AiResolutionInputCanonicalizer.ResolvedInputs inputs = canonicalized.inputs();
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expiresAt = now.plus(properties.getResolutionTokenTtl());
         String token = opaqueToken("res_");
         String scopeDigest = digest(scopeCanonical(user));
-        String requestDigest = digest(inputCanonical(task, request.migrationType(), toRegionCode, batchNo,
-                inputs, extracted.conflictingFields()));
+        String requestDigest = canonicalized.digest();
 
         // The task row lock serializes previews for this owner/task across JVMs.
         int revokedCount = jdbc.update("UPDATE ai_resolution_session SET status='REVOKED', updated_at=CURRENT_TIMESTAMP "
@@ -227,7 +216,7 @@ public class AiResolutionService {
                 session.toRegionCode(), session.transferBatchNo(), session.requestDigest(), session.scopeDigest());
     }
 
-    private PersonResolution resolvePerson(DataScopeCriteria scope, ResolvedInputs inputs,
+    private PersonResolution resolvePerson(DataScopeCriteria scope, AiResolutionInputCanonicalizer.ResolvedInputs inputs,
                                            List<AiResolutionPreviewView.Warning> warnings) {
         if (inputs.personName() == null || inputs.personIdCard() == null) return new PersonResolution(List.of());
         Person person = persons.selectScopedByIdCard(inputs.personIdCard(), scope).orElse(null);
@@ -250,7 +239,8 @@ public class AiResolutionService {
         return new PersonResolution(List.of(new PersonCandidate(person, personStateDigest(person.getPersonId(), person, false))));
     }
 
-    private HouseholdResolution resolveHouseholds(DataScopeCriteria scope, ResolvedInputs inputs, String toRegionCode,
+    private HouseholdResolution resolveHouseholds(DataScopeCriteria scope,
+                                                   AiResolutionInputCanonicalizer.ResolvedInputs inputs, String toRegionCode,
                                                  List<AiResolutionPreviewView.Warning> warnings) {
         if (inputs.householdNo() != null) {
             Household household = households.findScopedByNo(inputs.householdNo(), scope).orElse(null);
@@ -444,10 +434,19 @@ public class AiResolutionService {
         if (user == null || user.userId() == null) {
             throw new BusinessException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED");
         }
-        if (user.permissions() == null || !user.permissions().contains("ai:precheck:view")
+        if (user.permissions() == null || !user.permissions().contains("ai:precheck:confirm")
                 || !user.permissions().contains("migration:in:create")) {
-            throw notFound();
+            throw new BusinessException(HttpStatus.FORBIDDEN, "无迁入确认权限");
         }
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void markConsumed(String resolutionToken) {
+        if (resolutionToken == null || resolutionToken.length() > 80) throw notFound();
+        int updated = jdbc.update("UPDATE ai_resolution_session SET status='CONSUMED',updated_at=CURRENT_TIMESTAMP "
+                        + "WHERE resolution_token_sha256=? AND status='ACTIVE'",
+                sha256(resolutionToken));
+        if (updated != 1) throw conflict("RESOLUTION_EXPIRED");
     }
 
     private DataScopeCriteria confirmationScope(AuthenticatedUser user) {
@@ -478,153 +477,11 @@ public class AiResolutionService {
         }
     }
 
-    private Map<String, String> normalizeCorrections(List<Correction> corrections) {
-        Map<String, String> values = new LinkedHashMap<>();
-        if (corrections == null) return values;
-        for (Correction correction : corrections) {
-            if (correction == null || correction.fieldCode() == null || !CORRECTABLE_FIELDS.contains(correction.fieldCode())) {
-                throw bad("UNSUPPORTED_CORRECTION_FIELD");
-            }
-            if (values.containsKey(correction.fieldCode())) throw bad("DUPLICATE_CORRECTION_FIELD");
-            values.put(correction.fieldCode(), normalizeField(correction.fieldCode(), correction.value(), true));
-        }
-        return values;
-    }
-
-    private ExtractedFields extractFields(String resultJson) {
-        Map<String, Set<String>> found = new LinkedHashMap<>();
-        if (resultJson != null) {
-            try {
-                JsonNode root = objectMapper.readTree(resultJson);
-                JsonNode materials = root.path("materials");
-                if (materials.isArray()) {
-                    for (JsonNode material : materials) {
-                        JsonNode fields = material.path("fields");
-                        if (!fields.isArray()) continue;
-                        for (JsonNode field : fields) {
-                            String code = field.path("fieldCode").asText(null);
-                            if (!RESOLUTION_FIELDS.contains(code) || !"PRESENT".equals(field.path("fieldStatus").asText())) continue;
-                            JsonNode value = field.get("value");
-                            if (value == null || !value.isValueNode() || value.isNull()) continue;
-                            String normalized = normalizeField(code, value.asText(), false);
-                            if (normalized != null) found.computeIfAbsent(code, ignored -> new TreeSet<>()).add(normalized);
-                        }
-                    }
-                }
-            } catch (Exception exception) {
-                // Persisted task output is untrusted input here; a malformed result becomes a correction request.
-                return new ExtractedFields(Map.of(), Set.of("person.name", "person.idCard", "household.householdNo"));
-            }
-        }
-        Map<String, String> one = new LinkedHashMap<>();
-        Set<String> conflicts = new LinkedHashSet<>();
-        found.forEach((code, values) -> {
-            if (values.size() > 1) conflicts.add(code);
-            else if (!values.isEmpty()) one.put(code, values.iterator().next());
-        });
-        return new ExtractedFields(Map.copyOf(one), Set.copyOf(conflicts));
-    }
-
-    private ResolvedInputs resolveInputs(ExtractedFields extracted, Map<String, String> corrections) {
-        Map<String, String> values = new LinkedHashMap<>(extracted.values());
-        values.putAll(corrections);
-        List<AiResolutionPreviewView.Warning> warnings = new ArrayList<>();
-        for (String conflictField : extracted.conflictingFields()) {
-            if (!corrections.containsKey(conflictField)) warnings.add(warning("OCR_FIELD_CONFLICT", conflictField));
-        }
-        String name = values.get("person.name");
-        String identity = values.get("person.idCard");
-        String householdNo = values.get("household.householdNo");
-        String address = values.get("household.address");
-        if (name == null) warnings.add(warning("PERSON_NAME_REQUIRED", "person.name"));
-        if (identity == null) warnings.add(warning("PERSON_IDENTITY_REQUIRED", "person.idCard"));
-        if (householdNo == null && address == null) {
-            warnings.add(warning("TARGET_HOUSEHOLD_IDENTIFIER_REQUIRED", "household.householdNo", "household.address"));
-        }
-        return new ResolvedInputs(name, identity, householdNo, address, deduplicateWarnings(warnings));
-    }
-
-    private String normalizeField(String code, String value, boolean correction) {
-        if (value == null) return null;
-        String normalized = java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFC).trim();
-        if (normalized.isEmpty()) return null;
-        if (CONTROL.matcher(normalized).find()) {
-            if (correction) throw bad("INVALID_CORRECTION_VALUE");
-            return null;
-        }
-        normalized = normalized.replaceAll("\\s+", " ");
-        switch (code) {
-            case "person.name" -> {
-                if (normalized.length() > 50) return invalidValue(correction);
-                return normalized;
-            }
-            case "person.idCard" -> {
-                String identity = normalized.toUpperCase(Locale.ROOT).replace(" ", "");
-                try {
-                    return idCards.parse(identity).normalized();
-                } catch (BusinessException exception) {
-                    return invalidValue(correction);
-                }
-            }
-            case "household.householdNo" -> {
-                if (normalized.length() > 30) return invalidValue(correction);
-                return normalized;
-            }
-            case "household.address" -> {
-                if (normalized.length() > 255 || normalized.indexOf('%') >= 0 || normalized.indexOf('_') >= 0) {
-                    return invalidValue(correction);
-                }
-                return normalized;
-            }
-            default -> {
-                return invalidValue(correction);
-            }
-        }
-    }
-
-    private String invalidValue(boolean correction) {
-        if (correction) throw bad("INVALID_CORRECTION_VALUE");
-        return null;
-    }
-
     private String normalizeName(String value) {
         return value == null ? null : java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFC)
                 .trim().replaceAll("\\s+", " ");
     }
 
-    private String normalizeRequired(String value, int max, String code) {
-        String normalized = value == null ? null : java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFC).trim();
-        if (normalized == null || normalized.isEmpty() || normalized.length() > max || CONTROL.matcher(normalized).find()) {
-            throw bad(code);
-        }
-        return normalized;
-    }
-
-    private String normalizeOptional(String value, int max, String code) {
-        if (value == null || value.isBlank()) return null;
-        return normalizeRequired(value, max, code);
-    }
-
-    private String inputCanonical(AiPrecheckTaskService.TaskRow task, MigrationType migrationType,
-                                  String region, String batch, ResolvedInputs inputs, Set<String> conflicts) {
-        Map<String, Object> canonical = new LinkedHashMap<>();
-        canonical.put("schema", REQUEST_VERSION);
-        canonical.put("taskId", task.taskId());
-        canonical.put("taskVersion", task.version());
-        canonical.put("migrationType", migrationType.name());
-        canonical.put("toRegionCode", region);
-        canonical.put("transferBatchNo", batch);
-        canonical.put("person.name", inputs.personName());
-        canonical.put("person.idCard", inputs.personIdCard());
-        canonical.put("household.householdNo", inputs.householdNo());
-        canonical.put("household.address", inputs.householdAddress());
-        canonical.put("conflicts", conflicts.stream().sorted().toList());
-        try {
-            return objectMapper.writeValueAsString(canonical);
-        } catch (Exception exception) {
-            throw new IllegalStateException("Unable to canonicalize resolution input");
-        }
-    }
 
     private String opaqueToken(String prefix) {
         byte[] random = new byte[32];
@@ -676,9 +533,6 @@ public class AiResolutionService {
                                       String migrationType, String toRegionCode, String transferBatchNo,
                                       String requestDigest, String scopeDigest) { }
 
-    private record ExtractedFields(Map<String, String> values, Set<String> conflictingFields) { }
-    private record ResolvedInputs(String personName, String personIdCard, String householdNo, String householdAddress,
-                                  List<AiResolutionPreviewView.Warning> warnings) { }
     private record PersonCandidate(Person entity, String stateDigest) { }
     private record PersonResolution(List<PersonCandidate> candidates) { }
     private record HouseholdCandidate(Household entity, String stateDigest) { }

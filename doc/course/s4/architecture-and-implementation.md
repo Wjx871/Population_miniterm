@@ -2,12 +2,22 @@
 
 ## 状态边界
 
-- S4-A：Java 本地实现，使用隔离 H2 与确定性 Python Mock。
-- S4-B：未施工；本轮没有创建正式迁入 DRAFT 的 HTTP 入口。
+- S4-A：已结项，Java 实现使用隔离 H2 与确定性 Python Mock。
+- S4-B：本分支完成人工确认、幂等创建迁入 DRAFT 和暂存材料正式绑定；等待独立复核，不表示整合验收完成。
 - 真实 Python 联调、真实 RabbitMQ 联调、前端联调：`NOT_VERIFIED`。
 - S3 的 RabbitMQ 验收仍为 `NOT_VERIFIED`，不能视为整合验收完成。
 - 审计 #3 长事务：`OPEN`。
 - 审计 #33 区划层级冲突：`OPEN`，等待权威区划规则。
+
+## S4-B 实施摘要
+
+S4-B 新增 `POST /api/ai/tasks/{taskId}/confirm`。确认服务持有任务行锁，在单个数据库事务内调用 S4-A `validateForConfirmation()`，校验完整 OCR/冲突摘要、当前权限/DataScope、候选及业务状态，随后调用既有 `MigrationService.createIn()`。服务端对构造的 `MigrationInRequest` 显式执行 Bean Validation；Application、迁入详情、材料、绑定、回执、审计和 session CONSUMED 状态共同提交或回滚。
+
+确认回执表对 taskId 唯一，并以 userId/taskId/idempotencyKey 与请求摘要支持同键重放和不同 key 防重。初次成功返回 201；同一请求重放返回 200，回执保留创建状态 DRAFT 并附当前状态。`householdEvidenceType` 在 HOUSEHOLD_BOOK 与 ADDRESS_PROOF 同时绑定时要求用户显式选择；Java 只为满足各规则的确定性代表材料设置 requiredFlag。缺件仅返回 warning，提交仍由原迁入校验拦截。
+
+正式材料使用 `AI_STAGE` 存储来源与受控 stage 引用；对象键只由绑定表和 stage 行解析。独立于 AI feature 条件的适配器在预审关闭后仍能读取已绑定对象。BOUND 不属于 S3 reaper 清理条件。删除草稿绑定材料先提交数据库解绑，再清理文件；失败时 RELEASE_PENDING 记录由独立清理任务在重启后重试。LOCAL 人工上传继续使用原文件存储。
+
+具体请求、错误契约、V4_018 表结构、升级口径和测试命令见 [S4-B 架构说明](s4b-confirm-draft-architecture.md) 与 [S4-B 演示和验证记录](s4b-demo-and-verification.md)。V4_018 未在真实 MySQL 执行；本轮只声明隔离 H2 和静态 SQL 核查。
 
 ## 解析入口与输入
 
@@ -29,7 +39,7 @@
 
 `resolutionToken`、person candidateToken、household candidateToken 分别使用 256-bit SecureRandom 值与不同前缀。数据库只保存 SHA-256 摘要。候选记录绑定父 session、实体类型、服务端主键、实体版本、实体状态与状态摘要。candidateToken 只有与本次 resolutionToken 同时使用才可解析。
 
-令牌数据默认保留 30 天。每小时最多清理 100 条满足以下条件的 session：`ACTIVE` 且 `expires_at` 已超过 30 天，或 `REVOKED` 且撤销更新时间已超过 30 天。删除 session 后由外键级联删除其 candidate；不清理 `ai_precheck_audit` 或任何人员、家庭户、迁入及材料数据。可用 `AI_RESOLUTION_CLEANUP_ENABLED`、`AI_RESOLUTION_SESSION_RETENTION`、`AI_RESOLUTION_CLEANUP_BATCH_SIZE` 和 `AI_RESOLUTION_CLEANUP_POLL_MS` 调整；默认启用、`P30D`、100 条、3600000 毫秒。失败日志只记录异常类型，调度任务捕获清理异常。
+令牌数据默认保留 30 天。每小时最多清理 100 条满足以下条件的 session：`ACTIVE` 且 `expires_at` 已超过 30 天，或 `REVOKED/CONSUMED` 且状态更新时间已超过 30 天。删除 session 后由外键级联删除其 candidate；确认回执、材料绑定和 `ai_precheck_audit` 均不由该 cleaner 删除，也不改动任何人员、家庭户、迁入及材料业务数据。可用 `AI_RESOLUTION_CLEANUP_ENABLED`、`AI_RESOLUTION_SESSION_RETENTION`、`AI_RESOLUTION_CLEANUP_BATCH_SIZE` 和 `AI_RESOLUTION_CLEANUP_POLL_MS` 调整；默认启用、`P30D`、100 条、3600000 毫秒。失败日志只记录异常类型，调度任务捕获清理异常。
 
 同一用户/任务重跑预览时，服务在持有 `ai_precheck_task` 行锁的事务内撤销旧 ACTIVE session、创建新 session 并写入候选。该数据库锁串行化跨 JVM 的重新预览；旧候选不会被复用。默认令牌 TTL 为 5 分钟，可由 `AI_RESOLUTION_TOKEN_TTL` 配置。请求摘要绑定规范化修正/识别字段、任务版本、迁入类型、目标区划和批次；权限摘要绑定 userId、当前权限、DataScope、部门、当前区划与授权区划集合。
 
@@ -37,7 +47,7 @@ person 候选快照包含 person.version/status/current_status_code 与所有 re
 
 `AiResolutionService.validateForConfirmation(...)` 是未映射到 HTTP 的 S4-B 事务校验原语，采用 `Propagation.MANDATORY`，无外层事务时拒绝调用。调用方必须在同一事务中继续完成正式 DRAFT 创建和材料绑定；校验锁与后续写入直到该外层事务提交/回滚才释放。该原语锁定任务、解析会话、候选、person、household、相关 residence/member 和迁出批次，并重新检查：任务状态/版本、token 归属/过期/confirmable、当前权限/DataScope、person.version/status/current residence/member、household.version/status/regionCode/成员/户籍，以及迁出批次当前状态和使用情况。只有服务端从候选令牌解析出的主键会进入返回值。当前不存在草稿确认 HTTP 接口。
 
-内部校验的令牌错误契约：不存在 token、跨用户/跨任务 token 及不存在/错类型 candidateToken 返回统一 404，避免暴露实体是否存在；仍保留的过期/撤销会话和 `NEEDS_CORRECTION` 返回 409。权限丢失或实体越权按统一 404，权限范围快照、任务或实体状态变化安全返回 409。安全保留期清理后已经删除的 token 记录按“不存在”处理。
+内部校验的令牌错误契约：不存在 token、跨用户/跨任务 token 及不存在/错类型 candidateToken 返回统一 404，避免暴露实体是否存在；仍保留的过期/撤销会话和 `NEEDS_CORRECTION` 返回 409。缺少 `ai:precheck:confirm` 或 `migration:in:create` 返回 403；越权实体按统一 404，权限范围快照、任务或实体状态变化安全返回 409。安全保留期清理后已经删除的 token 记录按“不存在”处理。
 
 ## 版本完整性与审计项
 

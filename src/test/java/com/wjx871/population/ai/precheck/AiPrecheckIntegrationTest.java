@@ -364,7 +364,7 @@ class AiPrecheckIntegrationTest {
                 });
 
         List<String> revokedPermissions = new ArrayList<>(owner.permissions());
-        revokedPermissions.remove("migration:in:create");
+        revokedPermissions.remove("ai:precheck:confirm");
         AuthenticatedUser noLongerAuthorized = new AuthenticatedUser(owner.userId(), owner.username(), owner.passwordHash(),
                 owner.realName(), owner.userStatus(), owner.roleId(), owner.roleCode(), owner.roleName(), owner.roleLevel(),
                 owner.dataScope(), owner.roleStatus(), owner.departmentId(), owner.departmentName(), owner.regionCode(),
@@ -372,8 +372,8 @@ class AiPrecheckIntegrationTest {
         assertThatThrownBy(() -> withUser(noLongerAuthorized, () -> resolutionService.validateForConfirmation(
                 ownerTaskId, ownerVersion, resolutionToken, personToken, householdCandidate)))
                 .isInstanceOfSatisfying(BusinessException.class, exception -> {
-                    assertThat(exception.getStatus()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
-                    assertThat(exception.getMessage()).isEqualTo("实体不存在或超出数据范围");
+                    assertThat(exception.getStatus()).isEqualTo(org.springframework.http.HttpStatus.FORBIDDEN);
+                    assertThat(exception.getMessage()).isEqualTo("无迁入确认权限");
                 });
     }
 
@@ -416,6 +416,25 @@ class AiPrecheckIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM household", Integer.class)).isEqualTo(householdCount);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM migration_in", Integer.class)).isEqualTo(migrationCount);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM application_material", Integer.class)).isEqualTo(materialCount);
+    }
+
+    @Test
+    void consumedResolutionSessionsAreCleanedOnlyAfterRetentionWithoutDeletingReceiptsOrBindings() throws Exception {
+        resetResolutionFixture();
+        insertResolutionFixture();
+        String taskId = createSuccessfulTask(householdToken, "resolution-retention-consumed");
+        properties.setResolutionSessionRetention(java.time.Duration.ofDays(30));
+        properties.setResolutionCleanupBatchSize(100);
+        LocalDateTime now = LocalDateTime.now();
+        long oldConsumed = insertResolutionSessionForCleanup(taskId, "CONSUMED", now.minusDays(40), now.minusDays(31));
+        long recentConsumed = insertResolutionSessionForCleanup(taskId, "CONSUMED", now.minusDays(40), now.minusDays(29));
+        assertThat(resolutionRetentionCleaner.cleanupExpiredBatch()).isEqualTo(1);
+        assertThat(sessionExists(oldConsumed)).isFalse();
+        assertThat(candidateCount(oldConsumed)).isZero();
+        assertThat(sessionExists(recentConsumed)).isTrue();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_confirmation_receipt WHERE task_id=?",
+                Integer.class, taskId)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_stage_material_binding", Integer.class)).isZero();
     }
 
     @Test
