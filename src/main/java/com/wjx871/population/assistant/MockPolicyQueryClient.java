@@ -137,7 +137,7 @@ public class MockPolicyQueryClient implements PolicyQueryClient {
                     List.of("cancellation-guide"),
                     List.of(new PythonCitation(
                             "cancellation-guide", "注销指南", "办理边界", "注销", "PROJECT_GUIDE",
-                            "人员或家庭户注销需要按规定创建注销申请、提交材料并经过审批。",
+                            "人员或家庭户注销需要按规定创建注销申请、提交材料并经过审批。助手不能代为注销人员、执行注销或绕过审批。",
                             "V1", "2026-01-01", "2027-12-31", request.regionCode(), DEFAULT_RETRIEVED_AT
                     )),
                     DEFAULT_KB_VERSION, DEFAULT_MODEL_VERSION, DEFAULT_RETRIEVAL_VERSION,
@@ -239,7 +239,7 @@ public class MockPolicyQueryClient implements PolicyQueryClient {
                     List.of(
                             new PythonCitation(
                                     "migration-out-guide", "户籍迁出指南", "办理步骤", "迁出", "PROJECT_GUIDE",
-                                    "1. 从迁出申请入口创建申请；2. 填写迁出人员与去向信息；3. 上传必要材料并提交审批。",
+                                    "1. 创建迁出申请；2. 填写业务信息并按页面要求提供材料；3. 提交审批；4. 根据审批意见补正或继续；5. 审批完成后在授权范围内执行后续办理。",
                                     "V1", "2026-01-01", "2027-12-31", request.regionCode(), DEFAULT_RETRIEVED_AT
                             ),
                             new PythonCitation(
@@ -260,7 +260,7 @@ public class MockPolicyQueryClient implements PolicyQueryClient {
                     List.of(
                             new PythonCitation(
                                     "residence-permit-guide", "居住证指南", "到期处理", "居住证", "PROJECT_GUIDE",
-                                    "居住证临近或已经到期时，应先在居住证管理或到期提醒页面查看当前状态，再依据页面允许的业务入口发起签注、续办或其他申请。",
+                                    "居住证临近或已经到期时，应先在居住证管理或到期提醒页面查看当前状态，再依据页面允许的业务入口发起签注、续办或其他申请。不要直接修改证件状态。",
                                     "V1", "2026-01-01", "2027-12-31", request.regionCode(), DEFAULT_RETRIEVED_AT
                             ),
                             new PythonCitation(
@@ -281,12 +281,12 @@ public class MockPolicyQueryClient implements PolicyQueryClient {
                     List.of(
                             new PythonCitation(
                                     "household-followup-guide", "家庭户新增成员与异常处理指引", "新增成员前核对", "家庭户", "SYSTEM_GUIDE",
-                                    "家庭户新增成员前，应先定位目标家庭户，并核对家庭户状态和成员关系是否符合办理要求。",
+                                    "家庭户新增成员前，应先定位目标家庭户，并核对家庭户状态和成员关系是否满足页面校验要求。",
                                     "V1", "2026-01-01", "2027-12-31", request.regionCode(), DEFAULT_RETRIEVED_AT
                             ),
                             new PythonCitation(
                                     "household-guide", "家庭户管理指南", "新增成员办理", "家庭户", "PROJECT_GUIDE",
-                                    "家庭户建立、变更与新增成员需在家庭户管理模块按权限核对信息并办理。",
+                                    "家庭户新增成员应先在系统中定位目标家庭户，再按页面要求填写成员基础信息并提交业务申请。办理前请核对家庭户状态和成员关系；材料以实际申请页面要求为准。",
                                     "V1", "2026-01-01", "2027-12-31", request.regionCode(), DEFAULT_RETRIEVED_AT
                             )
                     ),
@@ -323,7 +323,7 @@ public class MockPolicyQueryClient implements PolicyQueryClient {
                     List.of(
                             new PythonCitation(
                                     "approval-guide", "申请审批指南", "审批通过与办结", "审批", "PROJECT_GUIDE",
-                                    "审批通过表示申请的审批环节已经完成，不必然代表全部业务已经办结。迁入、迁出、证件等业务可能仍需由具备相应权限的工作人员执行后续系统操作。",
+                                    "审批通过表示申请的审批环节已经完成，不必然代表全部业务已经办结。迁入、迁出、证件等业务可能仍需由具备相应权限的工作人员执行后续系统操作；请以申请详情中的业务状态和可执行操作为准。",
                                     "V1", "2026-01-01", "2027-12-31", request.regionCode(), DEFAULT_RETRIEVED_AT
                             ),
                             new PythonCitation(
@@ -350,12 +350,12 @@ public class MockPolicyQueryClient implements PolicyQueryClient {
         return List.of(
                 new PythonCitation(
                         "migration-in-guide", "户籍迁入指南", "材料与信息", "迁入", "PROJECT_GUIDE",
-                        "请按迁入申请页面展示的必填项和材料清单准备、上传。正式要求请以主管部门最新规定为准。",
+                        "请按迁入申请页面展示的必填项和材料清单准备、上传。由于不同实际情形可能不同，内置指南不预设统一材料名称或时限；正式要求请以主管部门最新规定为准。",
                         "V1", "2026-01-01", "2027-12-31", regionCode, DEFAULT_RETRIEVED_AT
                 ),
                 new PythonCitation(
                         "migration-materials-followup-guide", "户籍迁入材料与追问指引", "材料不全处理", "迁入", "SYSTEM_GUIDE",
-                        "材料不全时，可先核对已准备项并在申请草稿阶段补齐，确认无误后再提交审批。",
+                        "办理户籍迁入时，如申请页面提示材料或必填信息不完整，应先保留已确认的内容，再按页面清单补充。材料不全不应通过跳过校验或绕过审批处理。",
                         "V1", "2026-01-01", "2027-12-31", regionCode, DEFAULT_RETRIEVED_AT
                 )
         );

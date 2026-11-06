@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -136,6 +137,13 @@ public class PolicyTaskAgentService {
             return new OptionalPythonAgentOutcome(null, "PYTHON_ANSWER_REWRITE_FAILED");
         }
 
+        List<PolicyAssistantService.Citation> trustedCitations = fusedCitations.stream()
+                .filter(policyService::isTrustedRegisteredCitation)
+                .toList();
+        boolean allFusedTrusted = !trustedCitations.isEmpty()
+                && trustedCitations.size() == fusedCitations.size()
+                && primary.allSourcesRegistryVerified();
+
         Set<String> distinctSections = new LinkedHashSet<>();
         for (String usedId : primary.citationIdsUsed()) {
             fusedCitations.stream()
@@ -144,16 +152,21 @@ public class PolicyTaskAgentService {
                     .ifPresent(c -> distinctSections.add(c.section()));
         }
         String evidenceStatus = PolicyPythonResponseValidator.computeConservativeEvidenceStatus(
-                primary.evidenceLevel(), primary.allSourcesRegistryVerified(), distinctSections.size()
+                primary.evidenceLevel(), allFusedTrusted, distinctSections.size()
         );
         if ("INSUFFICIENT".equals(evidenceStatus)) {
             return new OptionalPythonAgentOutcome(null, "PYTHON_EVIDENCE_EVALUATED_INSUFFICIENT");
         }
 
-        List<String> conditions = sectionValues(fusedCitations, "办理说明", "使用范围", "办理边界");
-        List<String> materials = sectionValues(fusedCitations, "材料", "信息");
-        List<String> steps = sectionValues(fusedCitations, "步骤", "后续处理", "驳回", "到期");
-        List<String> warnings = sectionValues(fusedCitations, "注意事项", "办理边界", "无关问题");
+        // Only extract authoritative conditions, materials, and steps from trusted registered sources.
+        // Unverified external excerpts must never be elevated into mandatory material requirements.
+        List<String> conditions = sectionValues(trustedCitations, "办理说明", "使用范围", "办理边界");
+        List<String> materials = sectionValues(trustedCitations, "材料", "信息");
+        List<String> steps = sectionValues(trustedCitations, "步骤", "后续处理", "驳回", "到期");
+        List<String> warnings = sectionValues(trustedCitations, "注意事项", "办理边界", "无关问题");
+        if (!allFusedTrusted) {
+            warnings = merge(warnings, List.of("包含未纳入本地可信注册表的外部参考来源，外部摘录不作为强制办理或材料要求，请以申请页面及主管部门正式规定为准。"));
+        }
         String statusExplanation = null;
         if (asksStatus(raw)) {
             statusExplanation = explainBusinessStatus(raw);
@@ -238,11 +251,39 @@ public class PolicyTaskAgentService {
         List<String> materials = sectionValues(citations, "材料", "信息");
         List<String> steps = sectionValues(citations, "步骤", "后续处理", "驳回", "到期");
         List<String> warnings = sectionValues(citations, "注意事项", "办理边界", "无关问题");
+        String statusExplanation = null;
         if (asksStatus(raw)) {
-            steps = merge(steps, List.of(explainBusinessStatus(raw)));
+            statusExplanation = explainBusinessStatus(raw);
+            steps = merge(steps, List.of(statusExplanation));
         }
         List<AllowedAction> nextActions = getAllowedActions(intent, CurrentUserContext.requireUser());
-        String answerSummary = buildSummary(intent, evidence.status, conditions, materials, steps, warnings);
+
+        String answerSummary;
+        String finalMode;
+        String finalSourceMode;
+        String finalModelVersion;
+
+        Optional<String> remappedLegacy = (PolicyAssistantService.SOURCE_MODE_JAVA_LEGACY_AI.equals(primary.sourceMode())
+                && PolicyAssistantService.MODE_AI_ASSISTED.equals(primary.mode())
+                && !"INSUFFICIENT".equals(evidence.status))
+                ? PolicyAssistantService.remapLegacyAnswerCitations(primary.answer(), primary.citations(), citations)
+                : Optional.empty();
+
+        if (remappedLegacy.isPresent()) {
+            answerSummary = remappedLegacy.get();
+            if (statusExplanation != null && !answerSummary.contains(statusExplanation)) {
+                answerSummary = answerSummary + "\n\n" + statusExplanation;
+            }
+            finalMode = PolicyAssistantService.MODE_AI_ASSISTED;
+            finalSourceMode = PolicyAssistantService.SOURCE_MODE_JAVA_LEGACY_AI;
+            finalModelVersion = primary.modelVersion();
+        } else {
+            answerSummary = buildSummary(intent, evidence.status, conditions, materials, steps, warnings);
+            finalMode = PolicyAssistantService.MODE_RETRIEVAL_ONLY;
+            finalSourceMode = PolicyAssistantService.SOURCE_MODE_JAVA_LOCAL_FALLBACK;
+            finalModelVersion = null;
+        }
+
         List<String> trace = new ArrayList<>(List.of(
                 "已识别办理事项：" + intent.label,
                 "已改写为独立问题",
@@ -267,12 +308,12 @@ public class PolicyTaskAgentService {
                 evidence.status,
                 !"SUFFICIENT".equals(evidence.status),
                 List.copyOf(trace),
-                primary.mode(),
-                primary.sourceMode(),
+                finalMode,
+                finalSourceMode,
                 primary.confidence(),
                 traceId,
                 PolicyAssistantService.LOCAL_KB_VERSION,
-                PolicyAssistantService.SOURCE_MODE_JAVA_LEGACY_AI.equals(primary.sourceMode()) ? primary.modelVersion() : null,
+                finalModelVersion,
                 null,
                 null,
                 primary.elapsedMs()

@@ -39,19 +39,37 @@ public class PolicyWorkflowService {
                         List.of("classify_intent", "search_policy", "check_evidence"),
                         policy, List.of(), "INSUFFICIENT", "未找到足够的内置指南依据，无法生成核验建议。", null);
             }
-            String evidenceStatus = policy.evidenceLevel() != null
+
+            List<PolicyAssistantService.Citation> trustedCitations = policy.citations().stream()
+                    .filter(policyService::isTrustedRegisteredCitation)
+                    .toList();
+            boolean allSourcesTrusted = !trustedCitations.isEmpty()
+                    && trustedCitations.size() == policy.citations().size()
+                    && policy.allSourcesRegistryVerified();
+
+            String rawEvidenceStatus = policy.evidenceLevel() != null
                     ? policy.evidenceLevel()
                     : (policy.confidence() >= .28 ? "SUFFICIENT" : "PARTIAL");
+            String evidenceStatus = (!allSourcesTrusted && "SUFFICIENT".equals(rawEvidenceStatus))
+                    ? "PARTIAL"
+                    : rawEvidenceStatus;
+
             List<ChecklistItem> items = new ArrayList<>();
             items.add(new ChecklistItem("办理事项", "已识别",
                     "当前识别为“" + intent.label + "”。请在当前权限范围内继续办理。", false));
-            items.add(new ChecklistItem("政策依据", "已检索 " + policy.citations().size() + " 条",
-                    "以下材料和步骤仅依据此次检索到的业务指南生成。", false));
-            policy.citations().stream()
+            if (allSourcesTrusted) {
+                items.add(new ChecklistItem("政策依据", "已检索 " + trustedCitations.size() + " 条",
+                        "以下材料和步骤仅依据此次检索到的业务指南生成。", false));
+            } else {
+                items.add(new ChecklistItem("政策依据", "含未核验外部来源（保守等级 PARTIAL）",
+                        "未核验外部摘录不作为强制办理或材料要求；以下清单仅采纳经本地注册表核实的内置业务指南。", true));
+            }
+            // Only trusted registered local sources may generate material or process checklist items.
+            trustedCitations.stream()
                     .filter(c -> c.section().contains("材料") || c.section().contains("信息"))
                     .findFirst()
                     .ifPresent(c -> items.add(new ChecklistItem("材料核对", "待用户确认", c.summary(), true)));
-            policy.citations().stream()
+            trustedCitations.stream()
                     .filter(c -> c.section().contains("步骤") || c.section().contains("办理说明") || c.section().contains("后续"))
                     .findFirst()
                     .ifPresent(c -> items.add(new ChecklistItem("办理流程", "待按步骤办理", c.summary(), true)));

@@ -102,7 +102,7 @@ class PolicyPythonAdapterIntegrationTest {
     }
 
     // =========================================================================
-    // A. 成功路径 & 约束一（可信来源注册表与保守证据等级）
+    // A. 成功路径 & 约束一（可信来源注册表、正文摘录核验与保守证据等级）
     // =========================================================================
 
     @Test
@@ -243,8 +243,26 @@ class PolicyPythonAdapterIntegrationTest {
     }
 
     @Test
-    void constraint1_externalUnregisteredSourcesKeepConservativePartialEvidenceEvenWhenPythonClaimsSufficient() {
-        pythonProperties.setMockMode(PolicyPythonProperties.MockMode.EXTERNAL_UNREGISTERED_SOURCE);
+    void constraint1_externalUnregisteredSourcesKeepConservativePartialEvidenceAndNeverEnterMandatoryChecklist() {
+        // F & G: External unregistered source with fabricated mandatory material requirement
+        mockPolicyQueryClient.setCustomHandler(req -> new Response(
+                "1.0", req.requestId(), req.traceId(), "ANSWERED",
+                "根据外部扩展政策汇编，迁入申请需核验条件[[ext-migration-policy-2026]]并提交额外材料[[ext-migration-checklist-2026]]。",
+                List.of("ext-migration-policy-2026", "ext-migration-checklist-2026"),
+                List.of(
+                        new PythonCitation(
+                                "ext-migration-policy-2026", "外部迁入政策汇编", "办理说明", "迁入", "EXTERNAL_POLICY",
+                                "外部扩展政策仅供参考，正式办理要求以主管部门规定为准。",
+                                "2026.11", "2026-01-01", "2027-12-31", req.regionCode(), "2026-11-05T10:00:00+08:00"
+                        ),
+                        new PythonCitation(
+                                "ext-migration-checklist-2026", "外部迁入材料说明", "材料与信息", "迁入", "EXTERNAL_POLICY",
+                                "必须提交50万元定期存款冻结证明及公证处无犯罪记录原件。",
+                                "2026.11", "2026-01-01", "2027-12-31", req.regionCode(), "2026-11-05T10:00:00+08:00"
+                        )
+                ),
+                "kb-ext-1", "model-ext-1", "ret-ext-1", "rerank-ext-1", "SUFFICIENT", 10L
+        ));
 
         var response = taskAgentService.execute("办理户籍迁入需要什么材料？", List.of());
 
@@ -253,19 +271,131 @@ class PolicyPythonAdapterIntegrationTest {
         assertThat(response.evidenceStatus()).isEqualTo("PARTIAL");
         assertThat(response.needHumanHelp()).isTrue();
         assertThat(response.answerSummary()).contains("[1]").contains("[2]");
+        // Unverified external excerpt must NEVER be promoted into requiredMaterials, conditions, or steps
+        assertThat(response.requiredMaterials())
+                .isEmpty();
+        assertThat(response.conditions()).isEmpty();
+        assertThat(response.warnings())
+                .anyMatch(w -> w.contains("外部参考来源") && w.contains("不作为强制办理或材料要求"));
+
+        // Also check PolicyWorkflowService checklist: external forged requirement must not enter checklist
+        var workflow = workflowService.generateChecklist("我要办理户籍迁入", false);
+        assertThat(workflow.evidenceStatus()).isEqualTo("PARTIAL");
+        assertThat(workflow.checklist())
+                .noneMatch(item -> "材料核对".equals(item.name()))
+                .noneMatch(item -> item.guidance().contains("50万元定期存款冻结证明"))
+                .anyMatch(item -> "政策依据".equals(item.name()) && item.status().contains("含未核验外部来源"));
     }
 
     @Test
-    void constraint1_tamperedRegisteredSourceMetadataIsRejectedAndFallsBackToJavaLocal() {
+    void constraint1_tamperedRegisteredSourceMetadataOrTitleIsRejectedAndFallsBackToJavaLocal() {
+        // E1: Tampered version
         pythonProperties.setMockMode(PolicyPythonProperties.MockMode.TAMPERED_REGISTERED_SOURCE);
+        var versionTamperedResp = taskAgentService.execute("办理户籍迁入需要什么材料？", List.of());
 
-        var response = taskAgentService.execute("办理户籍迁入需要什么材料？", List.of());
+        assertThat(versionTamperedResp.mode()).isEqualTo("RETRIEVAL_ONLY");
+        assertThat(versionTamperedResp.sourceMode()).isEqualTo("JAVA_LOCAL_FALLBACK");
+        assertThat(versionTamperedResp.knowledgeBaseVersion()).isEqualTo("LOCAL_MD_V1");
+        assertThat(versionTamperedResp.modelVersion()).isNull();
+        assertThat(versionTamperedResp.citations()).noneMatch(c -> "TAMPERED_V999".equals(c.version()));
 
-        assertThat(response.mode()).isEqualTo("RETRIEVAL_ONLY");
-        assertThat(response.sourceMode()).isEqualTo("JAVA_LOCAL_FALLBACK");
-        assertThat(response.knowledgeBaseVersion()).isEqualTo("LOCAL_MD_V1");
-        assertThat(response.modelVersion()).isNull();
-        assertThat(response.citations()).noneMatch(c -> "TAMPERED_V999".equals(c.version()));
+        // E2: Tampered title on registered sourceId
+        mockPolicyQueryClient.setCustomHandler(req -> new Response(
+                "1.0", req.requestId(), req.traceId(), "ANSWERED",
+                "请按迁入指南[[migration-in-guide]]办理。",
+                List.of("migration-in-guide"),
+                List.of(new PythonCitation(
+                        "migration-in-guide", "伪造的户籍迁入标题", "材料与信息", "迁入", "PROJECT_GUIDE",
+                        "请按迁入申请页面展示的必填项和材料清单准备、上传。",
+                        "V1", "2026-01-01", "2027-12-31", req.regionCode(), null
+                )),
+                "kb-1", "m-1", "r-1", "rr-1", "SUFFICIENT", 5L
+        ));
+        var titleTamperedResp = taskAgentService.execute("办理户籍迁入需要什么材料？", List.of());
+        assertThat(titleTamperedResp.mode()).isEqualTo("RETRIEVAL_ONLY");
+        assertThat(titleTamperedResp.sourceMode()).isEqualTo("JAVA_LOCAL_FALLBACK");
+        assertThat(titleTamperedResp.citations()).noneMatch(c -> "伪造的户籍迁入标题".equals(c.title()));
+    }
+
+    @Test
+    void constraint1_registeredSourceExcerptVerificationRejectsTamperedTextCrossSectionTextAndSpoofedSuffixes() {
+        // A: Legal local excerpt with normalized whitespace and ASCII punctuation passes
+        mockPolicyQueryClient.setCustomHandler(req -> new Response(
+                "1.0", req.requestId(), req.traceId(), "ANSWERED",
+                "请准备迁入材料[[migration-in-guide]]，若材料不全请先保留已确认内容[[migration-materials-followup-guide]]。",
+                List.of("migration-in-guide", "migration-materials-followup-guide"),
+                List.of(
+                        new PythonCitation(
+                                "migration-in-guide", "户籍迁入指南", "材料与信息", "迁入", "PROJECT_GUIDE",
+                                "请按迁入申请页面展示的必填项和材料清单准备、上传。\n由于不同实际情形可能不同,内置指南不预设统一材料名称或时限;正式要求请以主管部门最新规定为准。",
+                                "V1", "2026-01-01", "2027-12-31", req.regionCode(), null
+                        ),
+                        new PythonCitation(
+                                "migration-materials-followup-guide", "户籍迁入材料与追问指引", "材料不全处理", "迁入", "SYSTEM_GUIDE",
+                                "办理户籍迁入时，如申请页面提示材料或必填信息不完整，应先保留已确认的内容，再按页面清单补充。",
+                                "V1", "2026-01-01", "2027-12-31", req.regionCode(), null
+                        )
+                ),
+                "kb-norm-1", "m-1", "r-1", "rr-1", "SUFFICIENT", 6L
+        ));
+        var validNormalizedResp = taskAgentService.execute("办理户籍迁入需要什么材料？", List.of());
+        assertThat(validNormalizedResp.sourceMode()).isEqualTo("PYTHON_HYBRID_RAG");
+        assertThat(validNormalizedResp.evidenceStatus()).isEqualTo("SUFFICIENT");
+        assertThat(validNormalizedResp.needHumanHelp()).isFalse();
+
+        // B: Registered document and section exist, but excerpt content is tampered/fabricated
+        mockPolicyQueryClient.setCustomHandler(req -> new Response(
+                "1.0", req.requestId(), req.traceId(), "ANSWERED",
+                "请按迁入指南[[migration-in-guide]]准备材料。",
+                List.of("migration-in-guide"),
+                List.of(new PythonCitation(
+                        "migration-in-guide", "户籍迁入指南", "材料与信息", "迁入", "PROJECT_GUIDE",
+                        "请携带房产证原件及500元押金前往现场窗口当场落户。",
+                        "V1", "2026-01-01", "2027-12-31", req.regionCode(), null
+                )),
+                "kb-tampered-excerpt", "m-1", "r-1", "rr-1", "SUFFICIENT", 6L
+        ));
+        var tamperedExcerptResp = taskAgentService.execute("办理户籍迁入需要什么材料？", List.of());
+        assertThat(tamperedExcerptResp.mode()).isEqualTo("RETRIEVAL_ONLY");
+        assertThat(tamperedExcerptResp.sourceMode()).isEqualTo("JAVA_LOCAL_FALLBACK");
+        assertThat(tamperedExcerptResp.citations()).noneMatch(c -> c.summary().contains("500元押金"));
+
+        // C: sourceId uses a legal registered prefix plus a forged suffix (e.g. "-forged", ".v2", "_extra")
+        for (String spoofedId : List.of("migration-in-guide-forged", "migration-in-guide.v2", "migration-in-guide_extra")) {
+            mockPolicyQueryClient.setCustomHandler(req -> new Response(
+                    "1.0", req.requestId(), req.traceId(), "ANSWERED",
+                    "请按迁入指南[[" + spoofedId + "]]准备材料。",
+                    List.of(spoofedId),
+                    List.of(new PythonCitation(
+                            spoofedId, "户籍迁入指南", "材料与信息", "迁入", "PROJECT_GUIDE",
+                            "请按迁入申请页面展示的必填项和材料清单准备、上传。",
+                            "V1", "2026-01-01", "2027-12-31", req.regionCode(), null
+                    )),
+                    "kb-spoof", "m-1", "r-1", "rr-1", "SUFFICIENT", 6L
+            ));
+            var spoofedSuffixResp = taskAgentService.execute("办理户籍迁入需要什么材料？", List.of());
+            assertThat(spoofedSuffixResp.mode()).as("mode for %s", spoofedId).isEqualTo("RETRIEVAL_ONLY");
+            assertThat(spoofedSuffixResp.sourceMode()).as("sourceMode for %s", spoofedId).isEqualTo("JAVA_LOCAL_FALLBACK");
+            assertThat(spoofedSuffixResp.citations()).noneMatch(c -> spoofedId.equals(c.logicalPath()));
+        }
+
+        // D: Document and section exist, but excerpt belongs to a DIFFERENT section of the same document
+        // ("户籍迁入由具备迁入申请权限的工作人员在“迁入申请”入口发起。" belongs to "办理说明", NOT "材料与信息")
+        mockPolicyQueryClient.setCustomHandler(req -> new Response(
+                "1.0", req.requestId(), req.traceId(), "ANSWERED",
+                "请按迁入指南[[migration-in-guide]]办理。",
+                List.of("migration-in-guide"),
+                List.of(new PythonCitation(
+                        "migration-in-guide", "户籍迁入指南", "材料与信息", "迁入", "PROJECT_GUIDE",
+                        "户籍迁入由具备迁入申请权限的工作人员在“迁入申请”入口发起。系统会校验申请信息的完整性，并生成待审批业务。",
+                        "V1", "2026-01-01", "2027-12-31", req.regionCode(), null
+                )),
+                "kb-wrong-section", "m-1", "r-1", "rr-1", "SUFFICIENT", 6L
+        ));
+        var wrongSectionResp = taskAgentService.execute("办理户籍迁入需要什么材料？", List.of());
+        assertThat(wrongSectionResp.mode()).isEqualTo("RETRIEVAL_ONLY");
+        assertThat(wrongSectionResp.sourceMode()).isEqualTo("JAVA_LOCAL_FALLBACK");
+        assertThat(wrongSectionResp.knowledgeBaseVersion()).isEqualTo("LOCAL_MD_V1");
     }
 
     // =========================================================================
@@ -364,7 +494,7 @@ class PolicyPythonAdapterIntegrationTest {
                         new PythonCitation("migration-in-guide", "户籍迁入指南", "材料与信息", "迁入", "PROJECT_GUIDE",
                                 "请按迁入申请页面展示的必填项和材料清单准备、上传。", "V1", "2026-01-01", "2027-12-31", req.regionCode(), null),
                         new PythonCitation("cancellation-guide", "注销指南", "办理边界", "注销", "PROJECT_GUIDE",
-                                "人员或家庭户注销需要按规定创建注销申请。", "V1", "2026-01-01", "2027-12-31", req.regionCode(), null)
+                                "人员或家庭户注销需要按规定创建注销申请、提交材料并经过审批。", "V1", "2026-01-01", "2027-12-31", req.regionCode(), null)
                 ),
                 "kb-python-99", "py-model-99", "py-ret-99", "py-rerank-99", "SUFFICIENT", 12L
         ));
@@ -558,7 +688,7 @@ class PolicyPythonAdapterIntegrationTest {
                             new PythonCitation("migration-in-guide", "户籍迁入指南", "材料与信息", "迁入", "PROJECT_GUIDE",
                                     "请按迁入申请页面展示的必填项和材料清单准备、上传。", "V1", "2026-01-01", "2027-12-31", req.regionCode(), null),
                             new PythonCitation("migration-materials-followup-guide", "户籍迁入材料与追问指引", "材料不全处理", "迁入", "SYSTEM_GUIDE",
-                                    "材料不全时可先保存已确认项。", "V1", "2026-01-01", "2027-12-31", req.regionCode(), null)
+                                    "办理户籍迁入时，如申请页面提示材料或必填信息不完整，应先保留已确认的内容，再按页面清单补充。", "V1", "2026-01-01", "2027-12-31", req.regionCode(), null)
                     ),
                     "kb-concurrent", "model-1", "ret-1", "rerank-1", "SUFFICIENT", 3L
             );

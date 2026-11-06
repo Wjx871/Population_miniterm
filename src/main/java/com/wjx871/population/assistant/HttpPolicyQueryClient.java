@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wjx871.population.s2.trace.S2TraceContext;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -12,10 +11,22 @@ import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.OptionalLong;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +34,6 @@ import org.springframework.stereotype.Component;
 public class HttpPolicyQueryClient implements PolicyQueryClient {
     public static final int MAX_RESPONSE_BYTES = 64 * 1024;
     public static final int MAX_REQUEST_BYTES = 32 * 1024;
-    private static final int STREAM_BUFFER_SIZE = 4096;
 
     private final PolicyPythonProperties properties;
     private final ObjectMapper objectMapper;
@@ -46,6 +56,10 @@ public class HttpPolicyQueryClient implements PolicyQueryClient {
         byte[] payload = serializeRequest(request);
 
         Duration requestTimeout = properties.effectiveRequestTimeout();
+        Duration connectTimeout = properties.effectiveConnectTimeout();
+        if (connectTimeout.compareTo(requestTimeout) > 0) {
+            connectTimeout = requestTimeout;
+        }
         long deadlineNanos = System.nanoTime() + requestTimeout.toNanos();
 
         HttpRequest httpRequest = HttpRequest.newBuilder(targetUri)
@@ -58,94 +72,239 @@ public class HttpPolicyQueryClient implements PolicyQueryClient {
                 .POST(HttpRequest.BodyPublishers.ofByteArray(payload))
                 .build();
 
-        HttpResponse<InputStream> response;
+        BoundedBodySubscriber bodySubscriber = new BoundedBodySubscriber(MAX_RESPONSE_BYTES, deadlineNanos);
+        CompletableFuture<HttpResponse<byte[]>> responseFuture;
         try {
-            response = clientFor(properties.effectiveConnectTimeout())
-                    .send(httpRequest, HttpResponse.BodyHandlers.ofInputStream());
-        } catch (HttpConnectTimeoutException e) {
-            throw new PolicyPythonClientException("PYTHON_CONNECT_TIMEOUT", true);
-        } catch (HttpTimeoutException e) {
-            throw new PolicyPythonClientException("PYTHON_REQUEST_TIMEOUT", true);
-        } catch (ConnectException e) {
-            throw new PolicyPythonClientException("PYTHON_CONNECT_FAILED", true);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new PolicyPythonClientException("PYTHON_INTERRUPTED", true);
-        } catch (IOException e) {
-            throw new PolicyPythonClientException("PYTHON_IO_ERROR", true);
+            responseFuture = clientFor(connectTimeout).sendAsync(httpRequest, responseInfo -> {
+                if (System.nanoTime() > deadlineNanos) {
+                    bodySubscriber.failAndCancel(new PolicyPythonClientException("PYTHON_REQUEST_TIMEOUT", true));
+                    return bodySubscriber;
+                }
+                int status = responseInfo.statusCode();
+                if (status != 200) {
+                    bodySubscriber.failAndCancel(statusException(status));
+                    return bodySubscriber;
+                }
+                OptionalLong contentLength = responseInfo.headers().firstValueAsLong("Content-Length");
+                if (contentLength.isPresent() && contentLength.getAsLong() > MAX_RESPONSE_BYTES) {
+                    bodySubscriber.failAndCancel(new PolicyPythonClientException("PYTHON_RESPONSE_TOO_LARGE", false));
+                    return bodySubscriber;
+                }
+                return bodySubscriber;
+            });
         } catch (Exception e) {
-            throw new PolicyPythonClientException("PYTHON_CLIENT_ERROR", false);
+            bodySubscriber.cancelSubscription();
+            throw classifyAsyncException(e);
         }
 
-        try (InputStream bodyStream = response.body()) {
-            int status = response.statusCode();
-            if (status >= 300 && status < 400) {
-                throw new PolicyPythonClientException("PYTHON_HTTP_REDIRECT_REJECTED", false);
-            }
-            if (status == 401) {
-                throw new PolicyPythonClientException("PYTHON_HTTP_401", false);
-            }
-            if (status == 403) {
-                throw new PolicyPythonClientException("PYTHON_HTTP_403", false);
-            }
-            if (status == 429) {
-                throw new PolicyPythonClientException("PYTHON_HTTP_429", true);
-            }
-            if (status >= 500 && status < 600) {
-                throw new PolicyPythonClientException("PYTHON_HTTP_5XX", true);
-            }
-            if (status != 200) {
-                throw new PolicyPythonClientException("PYTHON_HTTP_" + status, false);
-            }
+        long remainingNanos = deadlineNanos - System.nanoTime();
+        if (remainingNanos <= 0L) {
+            bodySubscriber.failAndCancel(new PolicyPythonClientException("PYTHON_REQUEST_TIMEOUT", true));
+            responseFuture.cancel(true);
+            throw new PolicyPythonClientException("PYTHON_REQUEST_TIMEOUT", true);
+        }
 
-            OptionalLong contentLength = response.headers().firstValueAsLong("Content-Length");
-            if (contentLength.isPresent() && contentLength.getAsLong() > MAX_RESPONSE_BYTES) {
-                throw new PolicyPythonClientException("PYTHON_RESPONSE_TOO_LARGE", false);
-            }
+        HttpResponse<byte[]> response;
+        try {
+            response = responseFuture.get(remainingNanos, TimeUnit.NANOSECONDS);
+        } catch (TimeoutException e) {
+            bodySubscriber.failAndCancel(new PolicyPythonClientException("PYTHON_REQUEST_TIMEOUT", true));
+            responseFuture.cancel(true);
+            throw new PolicyPythonClientException("PYTHON_REQUEST_TIMEOUT", true);
+        } catch (InterruptedException e) {
+            bodySubscriber.failAndCancel(new PolicyPythonClientException("PYTHON_INTERRUPTED", true));
+            responseFuture.cancel(true);
+            Thread.currentThread().interrupt();
+            throw new PolicyPythonClientException("PYTHON_INTERRUPTED", true);
+        } catch (ExecutionException e) {
+            bodySubscriber.cancelSubscription();
+            responseFuture.cancel(true);
+            throw classifyAsyncException(e.getCause());
+        } catch (Exception e) {
+            bodySubscriber.cancelSubscription();
+            responseFuture.cancel(true);
+            throw classifyAsyncException(e);
+        }
 
-            byte[] bodyBytes = readBoundedStream(bodyStream, deadlineNanos);
-            try {
-                return objectMapper.readValue(bodyBytes, PolicyPythonContracts.Response.class);
-            } catch (Exception e) {
-                throw new PolicyPythonClientException("PYTHON_INVALID_JSON", false);
-            }
-        } catch (PolicyPythonClientException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new PolicyPythonClientException("PYTHON_STREAM_IO_ERROR", true);
+        byte[] bodyBytes = response.body();
+        if (bodyBytes == null || bodyBytes.length == 0) {
+            throw new PolicyPythonClientException("PYTHON_EMPTY_RESPONSE", false);
+        }
+        try {
+            return objectMapper.readValue(bodyBytes, PolicyPythonContracts.Response.class);
+        } catch (Exception e) {
+            throw new PolicyPythonClientException("PYTHON_INVALID_JSON", false);
         }
     }
 
-    private byte[] readBoundedStream(InputStream bodyStream, long deadlineNanos) throws IOException {
-        if (bodyStream == null) {
-            throw new PolicyPythonClientException("PYTHON_EMPTY_RESPONSE", false);
+    private PolicyPythonClientException statusException(int status) {
+        if (status >= 300 && status < 400) {
+            return new PolicyPythonClientException("PYTHON_HTTP_REDIRECT_REJECTED", false);
         }
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream(Math.min(4096, MAX_RESPONSE_BYTES));
-        byte[] chunk = new byte[STREAM_BUFFER_SIZE];
-        int totalRead = 0;
-        while (true) {
-            if (System.nanoTime() > deadlineNanos) {
-                throw new PolicyPythonClientException("PYTHON_REQUEST_TIMEOUT", true);
-            }
-            int read;
-            try {
-                read = bodyStream.read(chunk);
-            } catch (HttpTimeoutException e) {
-                throw new PolicyPythonClientException("PYTHON_REQUEST_TIMEOUT", true);
-            }
-            if (read == -1) {
+        if (status == 401) {
+            return new PolicyPythonClientException("PYTHON_HTTP_401", false);
+        }
+        if (status == 403) {
+            return new PolicyPythonClientException("PYTHON_HTTP_403", false);
+        }
+        if (status == 429) {
+            return new PolicyPythonClientException("PYTHON_HTTP_429", true);
+        }
+        if (status >= 500 && status < 600) {
+            return new PolicyPythonClientException("PYTHON_HTTP_5XX", true);
+        }
+        return new PolicyPythonClientException("PYTHON_HTTP_" + status, false);
+    }
+
+    private PolicyPythonClientException classifyAsyncException(Throwable throwable) {
+        Throwable curr = throwable;
+        while (curr instanceof ExecutionException || curr instanceof CompletionException) {
+            if (curr.getCause() == null) {
                 break;
             }
-            totalRead += read;
-            if (totalRead > MAX_RESPONSE_BYTES) {
-                throw new PolicyPythonClientException("PYTHON_RESPONSE_TOO_LARGE", false);
+            curr = curr.getCause();
+        }
+        if (curr instanceof PolicyPythonClientException pce) {
+            return pce;
+        }
+        if (curr instanceof HttpConnectTimeoutException) {
+            return new PolicyPythonClientException("PYTHON_CONNECT_TIMEOUT", true);
+        }
+        if (curr instanceof HttpTimeoutException || curr instanceof TimeoutException) {
+            return new PolicyPythonClientException("PYTHON_REQUEST_TIMEOUT", true);
+        }
+        if (curr instanceof ConnectException) {
+            return new PolicyPythonClientException("PYTHON_CONNECT_FAILED", true);
+        }
+        if (curr instanceof InterruptedException) {
+            Thread.currentThread().interrupt();
+            return new PolicyPythonClientException("PYTHON_INTERRUPTED", true);
+        }
+        if (curr instanceof IOException) {
+            // Check nested cause in case JDK HttpClient wrapped a PolicyPythonClientException inside IOException
+            Throwable cause = curr.getCause();
+            while (cause != null) {
+                if (cause instanceof PolicyPythonClientException pce) {
+                    return pce;
+                }
+                if (cause instanceof HttpConnectTimeoutException) {
+                    return new PolicyPythonClientException("PYTHON_CONNECT_TIMEOUT", true);
+                }
+                if (cause instanceof HttpTimeoutException || cause instanceof TimeoutException) {
+                    return new PolicyPythonClientException("PYTHON_REQUEST_TIMEOUT", true);
+                }
+                if (cause instanceof ConnectException) {
+                    return new PolicyPythonClientException("PYTHON_CONNECT_FAILED", true);
+                }
+                cause = cause.getCause();
             }
-            buffer.write(chunk, 0, read);
+            return new PolicyPythonClientException("PYTHON_IO_ERROR", true);
         }
-        if (totalRead == 0) {
-            throw new PolicyPythonClientException("PYTHON_EMPTY_RESPONSE", false);
+        return new PolicyPythonClientException("PYTHON_CLIENT_ERROR", false);
+    }
+
+    static final class BoundedBodySubscriber implements HttpResponse.BodySubscriber<byte[]> {
+        private final int maxBytes;
+        private final long deadlineNanos;
+        private final CompletableFuture<byte[]> bodyFuture = new CompletableFuture<>();
+        private final ByteArrayOutputStream buffer;
+        private final AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
+        private final AtomicBoolean done = new AtomicBoolean(false);
+        private int totalRead = 0;
+
+        BoundedBodySubscriber(int maxBytes, long deadlineNanos) {
+            this.maxBytes = maxBytes;
+            this.deadlineNanos = deadlineNanos;
+            this.buffer = new ByteArrayOutputStream(Math.min(4096, maxBytes));
         }
-        return buffer.toByteArray();
+
+        @Override
+        public CompletionStage<byte[]> getBody() {
+            return bodyFuture;
+        }
+
+        @Override
+        public void onSubscribe(Flow.Subscription subscription) {
+            Objects.requireNonNull(subscription, "subscription");
+            if (!subscriptionRef.compareAndSet(null, subscription)) {
+                subscription.cancel();
+                return;
+            }
+            if (done.get()) {
+                subscription.cancel();
+                return;
+            }
+            if (System.nanoTime() > deadlineNanos) {
+                failAndCancel(new PolicyPythonClientException("PYTHON_REQUEST_TIMEOUT", true));
+                return;
+            }
+            subscription.request(Long.MAX_VALUE);
+        }
+
+        @Override
+        public void onNext(List<ByteBuffer> items) {
+            Objects.requireNonNull(items, "items");
+            if (done.get()) {
+                return;
+            }
+            if (System.nanoTime() > deadlineNanos) {
+                failAndCancel(new PolicyPythonClientException("PYTHON_REQUEST_TIMEOUT", true));
+                return;
+            }
+            synchronized (buffer) {
+                for (ByteBuffer buf : items) {
+                    if (buf == null || !buf.hasRemaining()) {
+                        continue;
+                    }
+                    int len = buf.remaining();
+                    if (totalRead + len > maxBytes) {
+                        failAndCancel(new PolicyPythonClientException("PYTHON_RESPONSE_TOO_LARGE", false));
+                        return;
+                    }
+                    byte[] chunk = new byte[len];
+                    buf.get(chunk);
+                    buffer.write(chunk, 0, len);
+                    totalRead += len;
+                }
+            }
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            Objects.requireNonNull(throwable, "throwable");
+            if (done.compareAndSet(false, true)) {
+                bodyFuture.completeExceptionally(throwable);
+            }
+        }
+
+        @Override
+        public void onComplete() {
+            if (done.compareAndSet(false, true)) {
+                if (System.nanoTime() > deadlineNanos) {
+                    bodyFuture.completeExceptionally(new PolicyPythonClientException("PYTHON_REQUEST_TIMEOUT", true));
+                    return;
+                }
+                synchronized (buffer) {
+                    bodyFuture.complete(buffer.toByteArray());
+                }
+            }
+        }
+
+        void failAndCancel(Throwable cause) {
+            done.set(true);
+            cancelSubscription();
+            bodyFuture.completeExceptionally(cause);
+        }
+
+        void cancelSubscription() {
+            Flow.Subscription sub = subscriptionRef.get();
+            if (sub != null) {
+                try {
+                    sub.cancel();
+                } catch (Throwable ignored) {
+                }
+            }
+        }
     }
 
     private byte[] serializeRequest(PolicyPythonContracts.Request request) {

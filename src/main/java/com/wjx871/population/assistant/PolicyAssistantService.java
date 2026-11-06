@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +55,7 @@ public class PolicyAssistantService {
 
     public static final String LOCAL_KB_VERSION = "LOCAL_MD_V1";
 
-    private static final String NOTICE = "回答依据系统内置业务指南，正式办理要求请以主管部门最新规定为准。";
+    static final String NOTICE = "回答依据系统内置业务指南，正式办理要求请以主管部门最新规定为准。";
     static final String REFUSAL = "该助手仅提供办理政策和系统使用指引，不查询或修改人口敏感数据。";
     static final String INSUFFICIENT_GUIDE_MESSAGE = "当前内置业务指南未提供足够依据来确认这个问题。请换用户籍迁入、迁出、居住证、家庭户、注销或审批办理相关的问题咨询。";
     static final String SERVICE_ERROR_MESSAGE = "政策问答服务暂时不可用，请稍后重试或联系业务人员协助办理。";
@@ -68,6 +69,7 @@ public class PolicyAssistantService {
                     + "|系统密钥|bearer\\s+[a-z0-9._-]+|eyJ[a-zA-Z0-9_-]{10,}\\.[a-zA-Z0-9_-]{10,}|api[_-]?key|access[_-]?token|password\\s*[:=])"
     );
     private static final Pattern UNRELATED = Pattern.compile("量子|天气|股票|编程|代码|游戏|旅游|菜谱");
+    private static final Pattern LEGACY_INDEX_MARKER_PATTERN = Pattern.compile("\\[(\\d+)\\]");
 
     private final ObjectMapper objectMapper;
     private final PolicyPythonProperties pythonProperties;
@@ -146,16 +148,17 @@ public class PolicyAssistantService {
         String section = "概述";
         StringBuilder text = new StringBuilder();
         Set<String> sectionsInDoc = new LinkedHashSet<>();
+        Map<String, String> sectionContentsInDoc = new LinkedHashMap<>();
         for (String line : markdown.split("\\R")) {
             if (line.startsWith("## ")) {
-                add(meta, section, text, sectionsInDoc);
+                add(meta, section, text, sectionsInDoc, sectionContentsInDoc);
                 section = line.substring(3).trim();
                 text.setLength(0);
             } else {
                 text.append(line).append('\n');
             }
         }
-        add(meta, section, text, sectionsInDoc);
+        add(meta, section, text, sectionsInDoc, sectionContentsInDoc);
 
         String title = meta.getOrDefault("title", "业务办理指南");
         String category = meta.getOrDefault("category", "业务办理");
@@ -164,12 +167,22 @@ public class PolicyAssistantService {
         String logicalPath = meta.getOrDefault("logicalPath", "policy-guide");
         if (!sectionsInDoc.isEmpty()) {
             registeredSources.put(logicalPath, new RegisteredSourceMeta(
-                    logicalPath, title, category, sourceType, version, Set.copyOf(sectionsInDoc)
+                    logicalPath,
+                    title,
+                    category,
+                    sourceType,
+                    version,
+                    Set.copyOf(sectionsInDoc),
+                    Map.copyOf(sectionContentsInDoc)
             ));
         }
     }
 
-    private void add(Map<String, String> meta, String section, StringBuilder text, Set<String> sectionsInDoc) {
+    private void add(Map<String, String> meta,
+                     String section,
+                     StringBuilder text,
+                     Set<String> sectionsInDoc,
+                     Map<String, String> sectionContentsInDoc) {
         String content = text.toString().trim();
         if (!content.isBlank()) {
             chunks.add(new Chunk(
@@ -182,6 +195,7 @@ public class PolicyAssistantService {
                     content
             ));
             sectionsInDoc.add(section);
+            sectionContentsInDoc.merge(section, content, (oldVal, newVal) -> oldVal + "\n" + newVal);
         }
     }
 
@@ -213,6 +227,25 @@ public class PolicyAssistantService {
 
     public Map<String, RegisteredSourceMeta> getRegisteredSources() {
         return Collections.unmodifiableMap(registeredSources);
+    }
+
+    public boolean isTrustedRegisteredCitation(Citation citation) {
+        if (citation == null || citation.logicalPath() == null) {
+            return false;
+        }
+        RegisteredSourceMeta meta = registeredSources.get(citation.logicalPath());
+        if (meta == null) {
+            return false;
+        }
+        if (!Objects.equals(meta.title(), citation.title())
+                || !Objects.equals(meta.category(), citation.category())
+                || !Objects.equals(meta.sourceType(), citation.sourceType())
+                || !Objects.equals(meta.version(), citation.version())
+                || !meta.sections().contains(citation.section())) {
+            return false;
+        }
+        String sectionText = meta.sectionContents() == null ? null : meta.sectionContents().get(citation.section());
+        return PolicyPythonResponseValidator.isExcerptTraceableToSection(citation.summary(), sectionText);
     }
 
     void setSimulateLocalSearchFailure(boolean simulateLocalSearchFailure) {
@@ -564,7 +597,7 @@ public class PolicyAssistantService {
     }
 
     private Optional<String> tryAi(String question, List<Citation> citations, String traceId) {
-        if (!aiEnabled || apiKey == null || apiKey.isBlank()) {
+        if (!aiEnabled || apiKey == null || apiKey.isBlank() || citations == null || citations.isEmpty()) {
             return Optional.empty();
         }
         try {
@@ -586,12 +619,91 @@ public class PolicyAssistantService {
                     .build();
             JsonNode node = objectMapper.readTree(legacyHttpClient.send(request, HttpResponse.BodyHandlers.ofString()).body());
             String answer = node.path("choices").path(0).path("message").path("content").asText();
-            return answer.isBlank() ? Optional.empty() : Optional.of(answer + "\n\n" + NOTICE);
+            Optional<String> validated = validateLegacyAiAnswer(answer, citations.size(), configuredSecrets());
+            if (validated.isEmpty()) {
+                log.warn("Policy legacy AI response failed safety/citation check; using retrieval-only fallback: traceId={}", traceId);
+                return Optional.empty();
+            }
+            return Optional.of(validated.get() + "\n\n" + NOTICE);
         } catch (Exception e) {
             log.warn("Policy legacy AI unavailable; using retrieval-only fallback: traceId={} errorType={}",
                     traceId, e.getClass().getSimpleName());
             return Optional.empty();
         }
+    }
+
+    static Optional<String> validateLegacyAiAnswer(String rawAnswer, int citationCount, List<String> configuredSecrets) {
+        if (rawAnswer == null || rawAnswer.isBlank() || citationCount <= 0) {
+            return Optional.empty();
+        }
+        String trimmed = rawAnswer.trim();
+        if (!PolicyPythonResponseValidator.isSafeAnswerText(trimmed, 2000, configuredSecrets)) {
+            return Optional.empty();
+        }
+        if (trimmed.contains("[[") || trimmed.contains("]]")) {
+            return Optional.empty();
+        }
+        Matcher matcher = LEGACY_INDEX_MARKER_PATTERN.matcher(trimmed);
+        boolean hasMarker = false;
+        while (matcher.find()) {
+            hasMarker = true;
+            int idx;
+            try {
+                idx = Integer.parseInt(matcher.group(1));
+            } catch (NumberFormatException e) {
+                return Optional.empty();
+            }
+            if (idx < 1 || idx > citationCount) {
+                return Optional.empty();
+            }
+        }
+        if (!hasMarker) {
+            return Optional.empty();
+        }
+        return Optional.of(trimmed);
+    }
+
+    public static Optional<String> remapLegacyAnswerCitations(String legacyAnswer,
+                                                              List<Citation> originalCitations,
+                                                              List<Citation> fusedCitations) {
+        if (legacyAnswer == null || legacyAnswer.isBlank()
+                || originalCitations == null || originalCitations.isEmpty()
+                || fusedCitations == null || fusedCitations.isEmpty()) {
+            return Optional.empty();
+        }
+        Map<String, Integer> fusedIndexByKey = new LinkedHashMap<>();
+        for (Citation fc : fusedCitations) {
+            fusedIndexByKey.put(fc.logicalPath() + "#" + fc.section(), fc.index());
+        }
+        Map<Integer, Integer> oldToNewIndex = new LinkedHashMap<>();
+        for (Citation oc : originalCitations) {
+            Integer newIdx = fusedIndexByKey.get(oc.logicalPath() + "#" + oc.section());
+            if (newIdx != null) {
+                oldToNewIndex.put(oc.index(), newIdx);
+            }
+        }
+        Matcher matcher = LEGACY_INDEX_MARKER_PATTERN.matcher(legacyAnswer);
+        StringBuffer sb = new StringBuffer();
+        boolean hasMarker = false;
+        while (matcher.find()) {
+            hasMarker = true;
+            int oldIdx;
+            try {
+                oldIdx = Integer.parseInt(matcher.group(1));
+            } catch (NumberFormatException e) {
+                return Optional.empty();
+            }
+            Integer newIdx = oldToNewIndex.get(oldIdx);
+            if (newIdx == null) {
+                return Optional.empty();
+            }
+            matcher.appendReplacement(sb, "[" + newIdx + "]");
+        }
+        if (!hasMarker) {
+            return Optional.empty();
+        }
+        matcher.appendTail(sb);
+        return Optional.of(sb.toString());
     }
 
     private String composeFallback(List<Citation> citations) {

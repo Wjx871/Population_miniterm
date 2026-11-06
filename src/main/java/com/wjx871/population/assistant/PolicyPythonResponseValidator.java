@@ -22,6 +22,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PolicyPythonResponseValidator {
+    public static final int MIN_NORMALIZED_EXCERPT_LENGTH = 8;
+
     private static final ZoneId APP_ZONE = ZoneId.of("Asia/Shanghai");
     private static final Set<String> ALLOWED_OUTCOMES = Set.of("ANSWERED", "INSUFFICIENT_EVIDENCE");
     private static final Set<String> ALLOWED_EVIDENCE_LEVELS = Set.of("SUFFICIENT", "PARTIAL", "INSUFFICIENT");
@@ -45,7 +47,7 @@ public class PolicyPythonResponseValidator {
             "(?i)(bearer\\s+[a-z0-9._-]+|authorization\\s*:|api[_-]?key\\s*[:=]|secret\\s*[:=]|password\\s*[:=]|auth[_-]?token\\s*[:=]|sk-[a-z0-9]{10,}|eyJ[a-zA-Z0-9_-]{10,}\\.[a-zA-Z0-9_-]{10,})"
     );
     private static final Pattern UNSAFE_COMMAND_OR_ACTION_PATTERN = Pattern.compile(
-            "(?i)(https?://|/internal/|\\b(?:personId|toHouseholdId|applicationId|userId|stageMaterialId)\\s*[:=]|\\bexecuteIn\\b|绕过审批|直接落户|自动审批|已为您(?:直接|自动)?(?:审批|办理|执行|修改|注销)|\\b(?:select|insert|update|delete|drop|alter|truncate)\\b.*\\b(?:from|into|table|set|where)\\b|<script|javascript:|cmd\\.exe|powershell|/bin/sh|\\$\\(|`)"
+            "(?i)(https?://|/internal/|\\b(?:personId|toHouseholdId|applicationId|userId|stageMaterialId)\\s*[:=]|\\bexecuteIn\\b|(?:已为您|可以|可直接|直接|为您|帮你|允许|支持|自动)绕过审批|无需审批|直接落户|自动审批|已为您(?:直接|自动)?(?:审批|办理|执行|修改|注销|绕过)|\\b(?:select|insert|update|delete|drop|alter|truncate)\\b.*\\b(?:from|into|table|set|where)\\b|<script|javascript:|cmd\\.exe|powershell|/bin/sh|\\$\\(|`)"
     );
     private static final Pattern DEFINITIVE_CLAIM_IN_INSUFFICIENT_PATTERN = Pattern.compile(
             "(?i)(\\[\\[[^\\[\\]]+\\]\\]|完全可以办理|立即办结|无需审批|直接通过|必定通过|肯定可以)"
@@ -170,7 +172,7 @@ public class PolicyPythonResponseValidator {
             validateRegionCode(request.regionCode(), c.regionCode());
 
             boolean registryVerified = verifyAgainstTrustedRegistry(
-                    sourceId, title, section, category, sourceType, sourceVersion, registeredSources
+                    sourceId, title, section, category, sourceType, sourceVersion, excerpt, registeredSources
             );
             bySourceId.put(sourceId, new PythonCitation(
                     sourceId, title, section, category, sourceType, excerpt,
@@ -310,27 +312,101 @@ public class PolicyPythonResponseValidator {
         return distinctSectionCount >= 2 ? "SUFFICIENT" : "PARTIAL";
     }
 
+    /**
+     * Deterministic excerpt verification rule:
+     * 1. Trailing truncation ellipsis ("…" or "...") is stripped from the excerpt.
+     * 2. Both excerpt and trusted section text undergo deterministic canonicalization:
+     *    whitespace (ASCII and fullwidth) is removed, and equivalent Chinese/ASCII punctuation
+     *    (:, ;, ,, (, ), quotes) is unified.
+     * 3. Canonicalized excerpt must be at least {@link #MIN_NORMALIZED_EXCERPT_LENGTH} chars
+     *    and must be a contiguous substring of the canonicalized trusted section text.
+     */
+    public static boolean isExcerptTraceableToSection(String excerpt, String trustedSectionText) {
+        if (excerpt == null || trustedSectionText == null) {
+            return false;
+        }
+        String cleanedExcerpt = excerpt.trim();
+        if (cleanedExcerpt.endsWith("…")) {
+            cleanedExcerpt = cleanedExcerpt.substring(0, cleanedExcerpt.length() - 1).trim();
+        } else if (cleanedExcerpt.endsWith("...")) {
+            cleanedExcerpt = cleanedExcerpt.substring(0, cleanedExcerpt.length() - 3).trim();
+        }
+        String normExcerpt = normalizeForExcerptVerification(cleanedExcerpt);
+        String normSection = normalizeForExcerptVerification(trustedSectionText);
+        if (normExcerpt.length() < MIN_NORMALIZED_EXCERPT_LENGTH || normSection.isEmpty()) {
+            return false;
+        }
+        return normSection.contains(normExcerpt);
+    }
+
+    public static String normalizeForExcerptVerification(String text) {
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(text.length());
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (Character.isWhitespace(ch) || ch == '\u3000') {
+                continue;
+            }
+            switch (ch) {
+                case ':' -> sb.append('：');
+                case ';' -> sb.append('；');
+                case ',' -> sb.append('，');
+                case '(' -> sb.append('（');
+                case ')' -> sb.append('）');
+                case '“', '”' -> sb.append('"');
+                default -> sb.append(ch);
+            }
+        }
+        return sb.toString();
+    }
+
+    public static boolean isSafeAnswerText(String value, int maxLen, List<String> configuredSecrets) {
+        if (value == null || value.isBlank() || value.length() > maxLen) {
+            return false;
+        }
+        if (PHYSICAL_PATH_PATTERN.matcher(value).find()
+                || CREDENTIAL_OR_SECRET_PATTERN.matcher(value).find()
+                || UNSAFE_COMMAND_OR_ACTION_PATTERN.matcher(value).find()) {
+            return false;
+        }
+        if (configuredSecrets != null) {
+            for (String secret : configuredSecrets) {
+                if (secret != null && secret.trim().length() >= 4 && value.contains(secret.trim())) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     private boolean verifyAgainstTrustedRegistry(String sourceId,
                                                  String title,
                                                  String section,
                                                  String category,
                                                  String sourceType,
                                                  String sourceVersion,
+                                                 String excerpt,
                                                  Map<String, RegisteredSourceMeta> registeredSources) {
         if (registeredSources == null || registeredSources.isEmpty()) {
             return false;
         }
         RegisteredSourceMeta matched = registeredSources.get(sourceId);
         if (matched == null) {
+            // Prohibit arbitrary suffixes on registered sourceIds or spoofing internal guide titles/types
             for (RegisteredSourceMeta candidate : registeredSources.values()) {
                 String lp = candidate.logicalPath();
-                if (sourceId.startsWith(lp + "-") || sourceId.startsWith(lp + ".")) {
-                    matched = candidate;
-                    break;
+                if (sourceId.startsWith(lp + "-")
+                        || sourceId.startsWith(lp + ".")
+                        || sourceId.startsWith(lp + "_")
+                        || candidate.title().equals(title)) {
+                    throw invalid("PYTHON_CITATION_SOURCE_ID_SPOOFED");
                 }
             }
-        }
-        if (matched == null) {
+            if ("PROJECT_GUIDE".equalsIgnoreCase(sourceType) || "SYSTEM_GUIDE".equalsIgnoreCase(sourceType)) {
+                throw invalid("PYTHON_CITATION_SOURCE_TYPE_SPOOFED");
+            }
             return false;
         }
         if (!matched.title().equals(title)
@@ -339,6 +415,12 @@ public class PolicyPythonResponseValidator {
                 || !matched.version().equals(sourceVersion)
                 || !matched.sections().contains(section)) {
             throw invalid("PYTHON_CITATION_REGISTRY_MISMATCH");
+        }
+        String trustedSectionText = matched.sectionContents() == null
+                ? null
+                : matched.sectionContents().get(section);
+        if (!isExcerptTraceableToSection(excerpt, trustedSectionText)) {
+            throw invalid("PYTHON_CITATION_EXCERPT_MISMATCH");
         }
         return true;
     }

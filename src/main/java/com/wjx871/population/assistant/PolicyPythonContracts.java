@@ -2,6 +2,7 @@ package com.wjx871.population.assistant;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public final class PolicyPythonContracts {
@@ -67,7 +68,18 @@ public final class PolicyPythonContracts {
             String category,
             String sourceType,
             String version,
-            Set<String> sections
+            Set<String> sections,
+            Map<String, String> sectionContents
     ) {
+        public RegisteredSourceMeta(
+                String logicalPath,
+                String title,
+                String category,
+                String sourceType,
+                String version,
+                Set<String> sections
+        ) {
+            this(logicalPath, title, category, sourceType, version, sections, Map.of());
+        }
     }
 }
