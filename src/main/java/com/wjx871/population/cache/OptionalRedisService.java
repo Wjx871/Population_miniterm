@@ -5,11 +5,16 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.types.Expiration;
+import org.springframework.data.redis.connection.RedisStringCommands.SetOption;
 import org.springframework.stereotype.Service;
 
 @Log4j2
@@ -57,6 +62,49 @@ public class OptionalRedisService {
         if (!enabled()) return;
         try { redis.opsForValue().set(key, "1", ttl); }
         catch (RuntimeException ex) { warn(ex); }
+    }
+    /** A false result means confirmed absence, never an unavailable store. */
+    public boolean strictContains(String key) {
+        requireEnabled();
+        try {
+            Boolean exists = redis.hasKey(key);
+            if (exists == null) throw new StrictRedisException("UNCONFIRMED", null);
+            return exists;
+        } catch (StrictRedisException ex) { throw ex; }
+        catch (RuntimeException ex) { throw strictFailure(ex); }
+    }
+
+    /** Atomic SET + absolute expiry; normal completion means a confirmed write. */
+    public void strictPutMarker(String key, Instant expiresAt) {
+        requireEnabled();
+        try {
+            byte[] encodedKey = redis.getStringSerializer().serialize(key);
+            byte[] marker = redis.getStringSerializer().serialize("1");
+            Boolean confirmed = redis.execute((RedisCallback<Boolean>) connection ->
+                    connection.stringCommands().set(encodedKey, marker,
+                            Expiration.unixTimestamp(expiresAt.toEpochMilli(), TimeUnit.MILLISECONDS),
+                            SetOption.UPSERT));
+            if (!Boolean.TRUE.equals(confirmed)) throw new StrictRedisException("UNCONFIRMED", null);
+        } catch (StrictRedisException ex) { throw ex; }
+        catch (RuntimeException ex) { throw strictFailure(ex); }
+    }
+
+    private void requireEnabled() {
+        if (!enabled()) throw new StrictRedisException("DISABLED", null);
+    }
+
+    private StrictRedisException strictFailure(RuntimeException ex) {
+        String category = "STORE_ERROR";
+        Throwable current = ex;
+        for (int depth = 0; current != null && depth < 12; depth++, current = current.getCause()) {
+            String type = current.getClass().getSimpleName();
+            if (type.contains("Timeout")) { category = "TIMEOUT"; break; }
+            if (type.contains("Authentication") || type.contains("Permission") || type.contains("AccessDenied")) {
+                category = "AUTHENTICATION"; break;
+            }
+            if (type.contains("Connection")) category = "CONNECTION";
+        }
+        return new StrictRedisException(category, ex);
     }
     public void evict(String... keys) {
         if (!enabled()) return;

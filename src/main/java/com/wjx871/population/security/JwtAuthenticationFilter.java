@@ -2,6 +2,7 @@ package com.wjx871.population.security;
 
 import com.wjx871.population.auth.AuthService;
 import com.wjx871.population.common.BusinessException;
+import com.wjx871.population.s2.trace.S2TraceContext;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Claims;
@@ -41,9 +42,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        try {
+        try (S2TraceContext.Scope ignored = S2TraceContext.open(request.getHeader(S2TraceContext.TRACE_HEADER))) {
             Claims claims = jwtService.parseClaims(authorization.substring(7));
+            if (claims.getId() == null || claims.getId().isBlank() || claims.getExpiration() == null) {
+                throw new IllegalArgumentException("Missing required JWT claims");
+            }
             if (revocations.isRevoked(claims.getId())) {
+                SecurityContextHolder.clearContext();
                 responseWriter.write(response, HttpServletResponse.SC_UNAUTHORIZED, "身份令牌已撤销");
                 return;
             }

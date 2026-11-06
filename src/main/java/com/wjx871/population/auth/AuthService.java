@@ -6,6 +6,7 @@ import com.wjx871.population.security.AuthenticatedUser;
 import com.wjx871.population.security.DataScope;
 import com.wjx871.population.security.JwtService;
 import com.wjx871.population.security.TokenRevocationService;
+import com.wjx871.population.s2.trace.S2TraceContext;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -43,6 +44,9 @@ public class AuthService implements UserDetailsService {
             throw new BusinessException(HttpStatus.FORBIDDEN, "角色已停用");
         }
 
+        try (S2TraceContext.Scope ignored = S2TraceContext.open(httpRequest.getHeader(S2TraceContext.TRACE_HEADER))) {
+            revocations.requireLoginStore();
+        }
         AuthenticatedUser user = toAuthenticatedUser(systemUser);
         String token = jwtService.createToken(user);
         authMapper.updateLastLogin(user.userId(), operationLogService.clientIp(httpRequest));
@@ -79,7 +83,10 @@ public class AuthService implements UserDetailsService {
         String authorization = request.getHeader("Authorization");
         if (authorization != null && authorization.startsWith("Bearer ")) {
             Claims claims = jwtService.parseClaims(authorization.substring(7));
+            if (claims.getExpiration() == null) throw new BusinessException(HttpStatus.UNAUTHORIZED, "身份令牌无效");
             revocations.revoke(claims.getId(), claims.getExpiration().toInstant());
+        } else {
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "缺少有效身份令牌");
         }
         operationLogService.record(user.userId(), "LOGOUT", "SUCCESS", null, request);
     }
