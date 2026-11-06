@@ -16,6 +16,7 @@
 | 通用证件 | `/api/certificates`,`/api/persons/{id}/certificates` | [certificate-api.md](certificate-api.md) |
 | 重点人口 | `/api/key-populations`,`/api/persons/{id}/key-populations` | [key-population-api.md](key-population-api.md) |
 | 申请、材料、审批 | `/api/applications`,`/api/materials`,`/api/approvals` | [business-application-approval-api.md](business-application-approval-api.md) |
+| 政策办理知识助手（含 S4-C Python 内部契约适配与本地降级，默认关闭远程适配） | `POST /api/assistant/policy/query`,`GET /api/assistant/policy/suggestions`,`POST /api/assistant/policy/check-materials` | [s4c-policy-python-adapter.md](../course/s4/s4c-policy-python-adapter.md) |
 | 导出 | `/api/exports` | [export-audit-api.md](export-audit-api.md) |
 | 综合查询 | `/api/query/persons`,`/households`,`/migration-history` | [query-statistics-api.md](query-statistics-api.md) |
 | 统计 | `/api/statistics` | [query-statistics-api.md](query-statistics-api.md) |

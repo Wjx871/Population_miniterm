@@ -1,17 +1,30 @@
 package com.wjx871.population.assistant;
 
+import com.wjx871.population.s2.trace.S2TraceContext;
 import com.wjx871.population.security.AuthenticatedUser;
 import com.wjx871.population.security.CurrentUserContext;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
 /**
- * Bounded, read-only task agent for policy guidance.  It intentionally has no
+ * Bounded, read-only task agent for policy guidance. It intentionally has no
  * repository, mapper, SQL, mutation, or arbitrary URL capability: every step
  * below is a server-owned allowlisted tool.
  */
+@Slf4j
 @Service
 public class PolicyTaskAgentService {
     private static final int MAX_HISTORY_TURNS = 6;
@@ -22,80 +35,436 @@ public class PolicyTaskAgentService {
     }
 
     public AgentResponse execute(String question, List<ConversationTurn> history) {
-        String raw = question == null ? "" : question.trim();
-        Intent intent = classifyIntent(raw, history);
-        String standaloneQuestion = rewriteQuestion(raw, history, intent);
-        List<String> queries = expandQueries(standaloneQuestion, intent);
-        List<PolicyAssistantService.QueryResponse> responses = queries.stream()
-                .map(policyService::query)
-                .toList();
+        String traceId = S2TraceContext.resolveTraceId(ThreadContext.get("traceId"));
+        return execute(question, history, traceId);
+    }
+
+    public AgentResponse execute(String question, List<ConversationTurn> history, String traceId) {
+        String effectiveTraceId = S2TraceContext.resolveTraceId(
+                traceId != null ? traceId : ThreadContext.get("traceId")
+        );
+        try (S2TraceContext.Scope ignored = S2TraceContext.open(effectiveTraceId)) {
+            String raw = question == null ? "" : question.trim();
+            Intent intent = classifyIntent(raw, history);
+            String standaloneQuestion = rewriteQuestion(raw, history, intent);
+
+            if (policyService.containsSensitiveInput(raw, history) || policyService.isSensitive(standaloneQuestion)) {
+                PolicyAssistantService.QueryResponse refusal = policyService.safeRefusalResponse(effectiveTraceId);
+                return buildSafeRefusalResponse(intent, standaloneQuestion, refusal, effectiveTraceId);
+            }
+
+            List<String> queries = expandQueries(standaloneQuestion, intent);
+            String businessType = intent == Intent.APPLICATION ? null : intent.code;
+            String regionCode = resolveTrustedRegionCode();
+
+            PolicyAssistantService.QueryResponse primary = policyService.queryPrimary(
+                    queries.get(0), history, businessType, regionCode, effectiveTraceId
+            );
+
+            if (PolicyAssistantService.MODE_SAFE_REFUSAL.equals(primary.mode())) {
+                return buildSafeRefusalResponse(intent, standaloneQuestion, primary, effectiveTraceId);
+            }
+            if (PolicyAssistantService.MODE_SERVICE_ERROR.equals(primary.mode())) {
+                return buildServiceErrorResponse(intent, standaloneQuestion, primary, effectiveTraceId);
+            }
+
+            if (PolicyAssistantService.SOURCE_MODE_PYTHON_HYBRID_RAG.equals(primary.sourceMode())) {
+                if (PolicyAssistantService.MODE_RETRIEVAL_ONLY.equals(primary.mode())
+                        && primary.citations().isEmpty()) {
+                    return buildPythonInsufficientResponse(raw, intent, standaloneQuestion, primary, effectiveTraceId);
+                }
+                OptionalPythonAgentOutcome pyOutcome = tryBuildVerifiedPythonAgentResponse(
+                        raw, intent, standaloneQuestion, primary, effectiveTraceId
+                );
+                if (pyOutcome.response() != null) {
+                    return pyOutcome.response();
+                }
+                log.warn("Policy Python answer discarded after fusion/intent check: traceId={} instanceId={} fallbackReason={}",
+                        effectiveTraceId, S2TraceContext.instanceId(), pyOutcome.fallbackReason());
+                return executeLocalFallback(raw, intent, standaloneQuestion, queries, effectiveTraceId, pyOutcome.fallbackReason());
+            }
+
+            List<PolicyAssistantService.QueryResponse> localResponses = new ArrayList<>(queries.size());
+            localResponses.add(primary);
+            for (int i = 1; i < queries.size(); i++) {
+                PolicyAssistantService.QueryResponse secondary = policyService.queryLocalOnly(
+                        queries.get(i), effectiveTraceId, null
+                );
+                if (!PolicyAssistantService.MODE_SERVICE_ERROR.equals(secondary.mode())) {
+                    localResponses.add(secondary);
+                }
+            }
+            return buildLocalAgentResponse(raw, intent, standaloneQuestion, localResponses, effectiveTraceId);
+        }
+    }
+
+    private OptionalPythonAgentOutcome tryBuildVerifiedPythonAgentResponse(String raw,
+                                                                           Intent intent,
+                                                                           String standaloneQuestion,
+                                                                           PolicyAssistantService.QueryResponse primary,
+                                                                           String traceId) {
+        if (primary.rawPythonAnswer() == null || primary.rawPythonAnswer().isBlank()
+                || primary.citationIdsUsed() == null || primary.citationIdsUsed().isEmpty()
+                || primary.citations() == null || primary.citations().isEmpty()) {
+            return new OptionalPythonAgentOutcome(null, "PYTHON_MISSING_ANSWER_OR_CITATIONS");
+        }
+
+        List<PolicyAssistantService.Citation> fusedCitations = fusePythonCitations(primary.citations(), intent);
+        if (fusedCitations.isEmpty()) {
+            return new OptionalPythonAgentOutcome(null, "PYTHON_CITATIONS_FILTERED_BY_INTENT");
+        }
+
+        Map<String, Integer> indexBySourceId = new LinkedHashMap<>();
+        for (PolicyAssistantService.Citation c : fusedCitations) {
+            indexBySourceId.put(c.logicalPath(), c.index());
+        }
+
+        if (!indexBySourceId.keySet().containsAll(primary.citationIdsUsed())) {
+            return new OptionalPythonAgentOutcome(null, "PYTHON_USED_CITATION_DROPPED_IN_FUSION");
+        }
+
+        String renumberedAnswer;
+        try {
+            Set<String> answerMarkers = PolicyPythonResponseValidator.extractAndValidateAnswerMarkers(primary.rawPythonAnswer());
+            if (answerMarkers.isEmpty() || !indexBySourceId.keySet().containsAll(answerMarkers)) {
+                return new OptionalPythonAgentOutcome(null, "PYTHON_ANSWER_MARKER_UNMAPPED_AFTER_FUSION");
+            }
+            renumberedAnswer = PolicyPythonResponseValidator.rewriteCitationMarkers(
+                    primary.rawPythonAnswer(), indexBySourceId
+            );
+        } catch (Exception e) {
+            return new OptionalPythonAgentOutcome(null, "PYTHON_ANSWER_REWRITE_FAILED");
+        }
+
+        Set<String> distinctSections = new LinkedHashSet<>();
+        for (String usedId : primary.citationIdsUsed()) {
+            fusedCitations.stream()
+                    .filter(c -> usedId.equals(c.logicalPath()))
+                    .findFirst()
+                    .ifPresent(c -> distinctSections.add(c.section()));
+        }
+        String evidenceStatus = PolicyPythonResponseValidator.computeConservativeEvidenceStatus(
+                primary.evidenceLevel(), primary.allSourcesRegistryVerified(), distinctSections.size()
+        );
+        if ("INSUFFICIENT".equals(evidenceStatus)) {
+            return new OptionalPythonAgentOutcome(null, "PYTHON_EVIDENCE_EVALUATED_INSUFFICIENT");
+        }
+
+        List<String> conditions = sectionValues(fusedCitations, "办理说明", "使用范围", "办理边界");
+        List<String> materials = sectionValues(fusedCitations, "材料", "信息");
+        List<String> steps = sectionValues(fusedCitations, "步骤", "后续处理", "驳回", "到期");
+        List<String> warnings = sectionValues(fusedCitations, "注意事项", "办理边界", "无关问题");
+        String statusExplanation = null;
+        if (asksStatus(raw)) {
+            statusExplanation = explainBusinessStatus(raw);
+            steps = merge(steps, List.of(statusExplanation));
+        }
+
+        String answerSummary = renumberedAnswer;
+        if (statusExplanation != null && !answerSummary.contains(statusExplanation)) {
+            answerSummary = answerSummary + "\n\n" + statusExplanation;
+        }
+
+        List<AllowedAction> nextActions = getAllowedActions(intent, CurrentUserContext.requireUser());
+        List<String> trace = new ArrayList<>(List.of(
+                "已识别办理事项：" + intent.label,
+                "已改写为独立问题",
+                "已检索相关业务指南：" + fusedCitations.size() + " 条",
+                "已核验回答依据：" + evidenceStatus
+        ));
+        if (asksStatus(raw)) {
+            trace.add("已解释业务状态流转");
+        }
+        trace.add("已过滤权限内下一步操作");
+
+        double confidence = "SUFFICIENT".equals(evidenceStatus) ? 0.85 : 0.50;
+        AgentResponse agentResponse = new AgentResponse(
+                intent.code,
+                intent.label,
+                standaloneQuestion,
+                answerSummary,
+                conditions,
+                materials,
+                steps,
+                warnings,
+                fusedCitations,
+                nextActions,
+                evidenceStatus,
+                !"SUFFICIENT".equals(evidenceStatus),
+                List.copyOf(trace),
+                PolicyAssistantService.MODE_AI_ASSISTED,
+                PolicyAssistantService.SOURCE_MODE_PYTHON_HYBRID_RAG,
+                confidence,
+                traceId,
+                primary.knowledgeBaseVersion(),
+                primary.modelVersion(),
+                primary.retrievalVersion(),
+                primary.rerankerVersion(),
+                primary.elapsedMs()
+        );
+        return new OptionalPythonAgentOutcome(agentResponse, null);
+    }
+
+    private AgentResponse executeLocalFallback(String raw,
+                                               Intent intent,
+                                               String standaloneQuestion,
+                                               List<String> queries,
+                                               String traceId,
+                                               String fallbackReason) {
+        List<PolicyAssistantService.QueryResponse> localResponses = new ArrayList<>(queries.size());
+        for (int i = 0; i < queries.size(); i++) {
+            PolicyAssistantService.QueryResponse resp = policyService.queryLocalOnly(
+                    queries.get(i), traceId, i == 0 ? fallbackReason : null
+            );
+            if (i == 0 && PolicyAssistantService.MODE_SERVICE_ERROR.equals(resp.mode())) {
+                return buildServiceErrorResponse(intent, standaloneQuestion, resp, traceId);
+            }
+            if (!PolicyAssistantService.MODE_SERVICE_ERROR.equals(resp.mode())) {
+                localResponses.add(resp);
+            }
+        }
+        return buildLocalAgentResponse(raw, intent, standaloneQuestion, localResponses, traceId);
+    }
+
+    private AgentResponse buildLocalAgentResponse(String raw,
+                                                  Intent intent,
+                                                  String standaloneQuestion,
+                                                  List<PolicyAssistantService.QueryResponse> responses,
+                                                  String traceId) {
         PolicyAssistantService.QueryResponse primary = responses.get(0);
-        List<PolicyAssistantService.Citation> citations = fuseCitations(responses, intent);
+        List<PolicyAssistantService.Citation> citations = fuseLocalCitations(responses, intent);
         Evidence evidence = checkEvidence(primary, citations);
-        List<String> conditions = sectionValues(citations, "\u529e\u7406\u8bf4\u660e", "\u4f7f\u7528\u8303\u56f4", "\u529e\u7406\u8fb9\u754c");
-        List<String> materials = sectionValues(citations, "\u6750\u6599", "\u4fe1\u606f");
-        List<String> steps = sectionValues(citations, "\u6b65\u9aa4", "\u540e\u7eed\u5904\u7406", "\u9a73\u56de", "\u5230\u671f");
-        List<String> warnings = sectionValues(citations, "\u6ce8\u610f\u4e8b\u9879", "\u529e\u7406\u8fb9\u754c", "\u65e0\u5173\u95ee\u9898");
+        List<String> conditions = sectionValues(citations, "办理说明", "使用范围", "办理边界");
+        List<String> materials = sectionValues(citations, "材料", "信息");
+        List<String> steps = sectionValues(citations, "步骤", "后续处理", "驳回", "到期");
+        List<String> warnings = sectionValues(citations, "注意事项", "办理边界", "无关问题");
         if (asksStatus(raw)) {
             steps = merge(steps, List.of(explainBusinessStatus(raw)));
         }
         List<AllowedAction> nextActions = getAllowedActions(intent, CurrentUserContext.requireUser());
         String answerSummary = buildSummary(intent, evidence.status, conditions, materials, steps, warnings);
         List<String> trace = new ArrayList<>(List.of(
-                "\u5df2\u8bc6\u522b\u529e\u7406\u4e8b\u9879\uff1a" + intent.label,
-                "\u5df2\u6539\u5199\u4e3a\u72ec\u7acb\u95ee\u9898",
-                "\u5df2\u68c0\u7d22\u76f8\u5173\u4e1a\u52a1\u6307\u5357\uff1a" + citations.size() + " \u6761",
-                "\u5df2\u6838\u9a8c\u56de\u7b54\u4f9d\u636e\uff1a" + evidence.status
+                "已识别办理事项：" + intent.label,
+                "已改写为独立问题",
+                "已检索相关业务指南：" + citations.size() + " 条",
+                "已核验回答依据：" + evidence.status
         ));
-        if (asksStatus(raw)) trace.add("\u5df2\u89e3\u91ca\u4e1a\u52a1\u72b6\u6001\u6d41\u8f6c");
-        trace.add("\u5df2\u8fc7\u6ee4\u6743\u9650\u5185\u4e0b\u4e00\u6b65\u64cd\u4f5c");
-        return new AgentResponse(intent.code, intent.label, standaloneQuestion, answerSummary,
-                conditions, materials, steps, warnings, citations, nextActions, evidence.status,
-                !evidence.status.equals("SUFFICIENT"), List.copyOf(trace), primary.mode(),
-                primary.confidence(), primary.traceId());
+        if (asksStatus(raw)) {
+            trace.add("已解释业务状态流转");
+        }
+        trace.add("已过滤权限内下一步操作");
+        return new AgentResponse(
+                intent.code,
+                intent.label,
+                standaloneQuestion,
+                answerSummary,
+                conditions,
+                materials,
+                steps,
+                warnings,
+                citations,
+                nextActions,
+                evidence.status,
+                !"SUFFICIENT".equals(evidence.status),
+                List.copyOf(trace),
+                primary.mode(),
+                primary.sourceMode(),
+                primary.confidence(),
+                traceId,
+                PolicyAssistantService.LOCAL_KB_VERSION,
+                PolicyAssistantService.SOURCE_MODE_JAVA_LEGACY_AI.equals(primary.sourceMode()) ? primary.modelVersion() : null,
+                null,
+                null,
+                primary.elapsedMs()
+        );
+    }
+
+    private AgentResponse buildPythonInsufficientResponse(String raw,
+                                                          Intent intent,
+                                                          String standaloneQuestion,
+                                                          PolicyAssistantService.QueryResponse primary,
+                                                          String traceId) {
+        List<String> steps = asksStatus(raw) ? List.of(explainBusinessStatus(raw)) : List.of();
+        List<AllowedAction> nextActions = getAllowedActions(intent, CurrentUserContext.requireUser());
+        String answerSummary = buildSummary(intent, "INSUFFICIENT", List.of(), List.of(), steps, List.of());
+        List<String> trace = new ArrayList<>(List.of(
+                "已识别办理事项：" + intent.label,
+                "已改写为独立问题",
+                "已检索相关业务指南：0 条",
+                "已核验回答依据：INSUFFICIENT"
+        ));
+        if (asksStatus(raw)) {
+            trace.add("已解释业务状态流转");
+        }
+        trace.add("已过滤权限内下一步操作");
+        return new AgentResponse(
+                intent.code,
+                intent.label,
+                standaloneQuestion,
+                answerSummary,
+                List.of(),
+                List.of(),
+                steps,
+                List.of(),
+                List.of(),
+                nextActions,
+                "INSUFFICIENT",
+                true,
+                List.copyOf(trace),
+                PolicyAssistantService.MODE_RETRIEVAL_ONLY,
+                PolicyAssistantService.SOURCE_MODE_PYTHON_HYBRID_RAG,
+                0.0,
+                traceId,
+                primary.knowledgeBaseVersion(),
+                primary.modelVersion(),
+                primary.retrievalVersion(),
+                primary.rerankerVersion(),
+                primary.elapsedMs()
+        );
+    }
+
+    private AgentResponse buildSafeRefusalResponse(Intent intent,
+                                                   String standaloneQuestion,
+                                                   PolicyAssistantService.QueryResponse refusal,
+                                                   String traceId) {
+        List<String> trace = List.of(
+                "已识别办理事项：" + intent.label,
+                "已触发敏感信息安全拦截",
+                "已核验回答依据：INSUFFICIENT"
+        );
+        return new AgentResponse(
+                intent.code,
+                intent.label,
+                standaloneQuestion,
+                refusal.answer(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                "INSUFFICIENT",
+                true,
+                trace,
+                PolicyAssistantService.MODE_SAFE_REFUSAL,
+                PolicyAssistantService.SOURCE_MODE_JAVA_SENSITIVE_GUARD,
+                1.0,
+                traceId,
+                null,
+                null,
+                null,
+                null,
+                0L
+        );
+    }
+
+    private AgentResponse buildServiceErrorResponse(Intent intent,
+                                                    String standaloneQuestion,
+                                                    PolicyAssistantService.QueryResponse errorResp,
+                                                    String traceId) {
+        List<AllowedAction> nextActions = getAllowedActions(intent, CurrentUserContext.requireUser());
+        List<String> trace = List.of(
+                "已识别办理事项：" + intent.label,
+                "政策检索服务暂时不可用",
+                "已核验回答依据：INSUFFICIENT",
+                "已过滤权限内下一步操作"
+        );
+        return new AgentResponse(
+                intent.code,
+                intent.label,
+                standaloneQuestion,
+                errorResp.answer(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                nextActions,
+                "INSUFFICIENT",
+                true,
+                trace,
+                PolicyAssistantService.MODE_SERVICE_ERROR,
+                PolicyAssistantService.SOURCE_MODE_SERVICE_ERROR,
+                0.0,
+                traceId,
+                null,
+                null,
+                null,
+                null,
+                errorResp.elapsedMs()
+        );
     }
 
     private Intent classifyIntent(String question, List<ConversationTurn> history) {
         Intent direct = classify(normalize(question));
-        if (direct != Intent.APPLICATION) return direct;
+        if (direct != Intent.APPLICATION) {
+            return direct;
+        }
         return classify(normalize(recentHistory(history)));
     }
 
     private Intent classify(String text) {
-        if (text.contains("\u8fc1\u5165")) return Intent.MIGRATION_IN;
-        if (text.contains("\u8fc1\u51fa")) return Intent.MIGRATION_OUT;
-        if (text.contains("\u5c45\u4f4f\u8bc1") || text.contains("\u7b7e\u6ce8")) return Intent.RESIDENCE_PERMIT;
-        if (text.contains("\u5bb6\u5ead\u6237") || text.contains("\u65b0\u589e\u6210\u5458")) return Intent.HOUSEHOLD;
-        if (text.contains("\u6ce8\u9500")) return Intent.CANCELLATION;
-        if (text.contains("\u5ba1\u6279") || text.contains("\u9a73\u56de") || text.contains("\u9000\u56de")) return Intent.APPROVAL;
-        if (text.contains("\u4eba\u53e3") || text.contains("\u6237\u7c4d")) return Intent.POPULATION;
+        if (text.contains("迁入")) return Intent.MIGRATION_IN;
+        if (text.contains("迁出")) return Intent.MIGRATION_OUT;
+        if (text.contains("居住证") || text.contains("签注")) return Intent.RESIDENCE_PERMIT;
+        if (text.contains("家庭户") || text.contains("新增成员")) return Intent.HOUSEHOLD;
+        if (text.contains("注销")) return Intent.CANCELLATION;
+        if (text.contains("审批") || text.contains("驳回") || text.contains("退回")) return Intent.APPROVAL;
+        if (text.contains("人口") || text.contains("户籍")) return Intent.POPULATION;
         return Intent.APPLICATION;
     }
 
     private String rewriteQuestion(String raw, List<ConversationTurn> history, Intent intent) {
         String context = recentHistory(history);
-        boolean followUp = raw.startsWith("\u90a3") || raw.startsWith("\u5982\u679c") || raw.contains("\u6750\u6599\u4e0d\u5168")
-                || raw.contains("\u54ea\u91cc\u63d0\u4ea4") || raw.contains("\u600e\u4e48\u529e");
-        if (!followUp || context.isBlank()) return raw;
-        return "\u529e\u7406" + intent.label + "\u65f6\uff0c" + raw;
+        boolean followUp = raw.startsWith("那") || raw.startsWith("如果") || raw.contains("材料不全")
+                || raw.contains("哪里提交") || raw.contains("怎么办");
+        if (!followUp || context.isBlank()) {
+            return raw;
+        }
+        return "办理" + intent.label + "时，" + raw;
     }
 
     private List<String> expandQueries(String standalone, Intent intent) {
         List<String> queries = new ArrayList<>();
         queries.add(standalone);
-        if (standalone.contains("\u548c") || standalone.contains("\u3001") || standalone.contains("\u540c\u65f6")) {
-            queries.add("\u529e\u7406" + intent.label + "\u9700\u8981\u7684\u6761\u4ef6\u548c\u6750\u6599");
-            queries.add("\u529e\u7406" + intent.label + "\u7684\u6b65\u9aa4\u548c\u6ce8\u610f\u4e8b\u9879");
+        if (standalone.contains("和") || standalone.contains("、") || standalone.contains("同时")) {
+            queries.add("办理" + intent.label + "需要的条件和材料");
+            queries.add("办理" + intent.label + "的步骤和注意事项");
         }
         return queries.stream().filter(q -> !q.isBlank()).distinct().limit(3).toList();
     }
 
-    private List<PolicyAssistantService.Citation> fuseCitations(List<PolicyAssistantService.QueryResponse> responses, Intent intent) {
+    private List<PolicyAssistantService.Citation> fusePythonCitations(List<PolicyAssistantService.Citation> pyCitations,
+                                                                      Intent intent) {
+        Map<String, WeightedCitation> selected = new LinkedHashMap<>();
+        for (PolicyAssistantService.Citation citation : pyCitations) {
+            if (!matchesIntent(citation, intent)) {
+                continue;
+            }
+            String key = citation.logicalPath();
+            double score = 9.0 - citation.index();
+            WeightedCitation old = selected.get(key);
+            selected.put(key, old == null || score > old.score ? new WeightedCitation(citation, score) : old);
+        }
+        if (selected.isEmpty()) {
+            return List.of();
+        }
+        return renumberCitations(selected.values().stream()
+                .sorted(Comparator.comparingDouble(WeightedCitation::score).reversed())
+                .limit(4)
+                .map(WeightedCitation::citation)
+                .toList());
+    }
+
+    private List<PolicyAssistantService.Citation> fuseLocalCitations(List<PolicyAssistantService.QueryResponse> responses,
+                                                                     Intent intent) {
         Map<String, WeightedCitation> selected = new LinkedHashMap<>();
         for (int queryIndex = 0; queryIndex < responses.size(); queryIndex++) {
             double queryWeight = queryIndex == 0 ? 1.0 : 0.8;
             for (PolicyAssistantService.Citation citation : responses.get(queryIndex).citations()) {
-                if (!matchesIntent(citation, intent)) continue;
+                if (!matchesIntent(citation, intent)) {
+                    continue;
+                }
                 String key = citation.logicalPath() + "#" + citation.section();
                 double score = queryWeight * (5 - citation.index());
                 WeightedCitation old = selected.get(key);
@@ -104,94 +473,243 @@ public class PolicyTaskAgentService {
         }
         if (selected.isEmpty()) {
             responses.stream().flatMap(response -> response.citations().stream()).limit(4)
-                    .forEach(citation -> selected.put(citation.logicalPath() + "#" + citation.section(), new WeightedCitation(citation, 0)));
+                    .forEach(citation -> selected.put(
+                            citation.logicalPath() + "#" + citation.section(),
+                            new WeightedCitation(citation, 0)
+                    ));
         }
-        return selected.values().stream().sorted(Comparator.comparingDouble(WeightedCitation::score).reversed()).limit(4)
-                .map(WeightedCitation::citation).map(c -> new PolicyAssistantService.Citation(0, c.title(), c.section(), c.category(), c.sourceType(), c.version(), c.logicalPath(), c.summary()))
-                .collect(Collectors.collectingAndThen(Collectors.toList(), list -> {
-                    for (int i = 0; i < list.size(); i++) { PolicyAssistantService.Citation c = list.get(i); list.set(i, new PolicyAssistantService.Citation(i + 1, c.title(), c.section(), c.category(), c.sourceType(), c.version(), c.logicalPath(), c.summary())); }
-                    return List.copyOf(list);
-                }));
+        return renumberCitations(selected.values().stream()
+                .sorted(Comparator.comparingDouble(WeightedCitation::score).reversed())
+                .limit(4)
+                .map(WeightedCitation::citation)
+                .toList());
+    }
+
+    private List<PolicyAssistantService.Citation> renumberCitations(List<PolicyAssistantService.Citation> rawList) {
+        List<PolicyAssistantService.Citation> renumbered = new ArrayList<>(rawList.size());
+        for (int i = 0; i < rawList.size(); i++) {
+            PolicyAssistantService.Citation c = rawList.get(i);
+            renumbered.add(new PolicyAssistantService.Citation(
+                    i + 1, c.title(), c.section(), c.category(), c.sourceType(),
+                    c.version(), c.logicalPath(), c.summary(),
+                    c.effectiveFrom(), c.effectiveTo(), c.regionCode(), c.retrievedAt()
+            ));
+        }
+        return List.copyOf(renumbered);
     }
 
     private boolean matchesIntent(PolicyAssistantService.Citation citation, Intent intent) {
-        String category = citation.category();
+        String category = citation.category() == null ? "" : citation.category();
         return switch (intent) {
-            case MIGRATION_IN -> category.contains("\u8fc1\u5165") || category.contains("\u5e38\u89c1\u95ee\u9898") || category.contains("\u7cfb\u7edf\u64cd\u4f5c");
-            case MIGRATION_OUT -> category.contains("\u8fc1\u51fa") || category.contains("\u5e38\u89c1\u95ee\u9898") || category.contains("\u7cfb\u7edf\u64cd\u4f5c");
-            case RESIDENCE_PERMIT -> category.contains("\u5c45\u4f4f\u8bc1") || category.contains("\u5e38\u89c1\u95ee\u9898") || category.contains("\u7cfb\u7edf\u64cd\u4f5c");
-            case HOUSEHOLD -> category.contains("\u5bb6\u5ead\u6237") || category.contains("\u5e38\u89c1\u95ee\u9898") || category.contains("\u7cfb\u7edf\u64cd\u4f5c");
-            case CANCELLATION -> category.contains("\u6ce8\u9500") || category.contains("\u5e38\u89c1\u95ee\u9898") || category.contains("\u7cfb\u7edf\u64cd\u4f5c");
-            case APPROVAL -> category.contains("\u5ba1\u6279") || category.contains("\u5e38\u89c1\u95ee\u9898") || category.contains("\u7cfb\u7edf\u64cd\u4f5c");
-            case POPULATION -> category.contains("\u4eba\u53e3") || category.contains("\u5e38\u89c1\u95ee\u9898") || category.contains("\u7cfb\u7edf\u64cd\u4f5c");
+            case MIGRATION_IN -> category.contains("迁入") || category.contains("常见问题") || category.contains("系统操作");
+            case MIGRATION_OUT -> category.contains("迁出") || category.contains("常见问题") || category.contains("系统操作");
+            case RESIDENCE_PERMIT -> category.contains("居住证") || category.contains("常见问题") || category.contains("系统操作");
+            case HOUSEHOLD -> category.contains("家庭户") || category.contains("常见问题") || category.contains("系统操作");
+            case CANCELLATION -> category.contains("注销") || category.contains("常见问题") || category.contains("系统操作");
+            case APPROVAL -> category.contains("审批") || category.contains("常见问题") || category.contains("系统操作");
+            case POPULATION -> category.contains("人口") || category.contains("常见问题") || category.contains("系统操作");
             default -> true;
         };
     }
 
-    private String buildSummary(Intent intent, String evidenceStatus, List<String> conditions, List<String> materials, List<String> steps, List<String> warnings) {
-        if ("INSUFFICIENT".equals(evidenceStatus)) return "\u5f53\u524d\u77e5\u8bc6\u5e93\u6ca1\u6709\u8db3\u591f\u4f9d\u636e\u786e\u8ba4\u8fd9\u4e2a\u95ee\u9898\uff0c\u8bf7\u8054\u7cfb\u4e1a\u52a1\u4eba\u5458\u6216\u67e5\u9605\u6700\u65b0\u89c4\u5b9a\u3002";
-        String detail = java.util.stream.Stream.of(materials, conditions, steps, warnings).flatMap(Collection::stream).findFirst().orElse("\u8bf7\u53c2\u8003\u4e0b\u65b9\u653f\u7b56\u4f9d\u636e\u3002");
-        int sentenceEnd = detail.indexOf('\u3002');
-        if (sentenceEnd >= 0) detail = detail.substring(0, sentenceEnd + 1);
-        if (detail.length() > 120) detail = detail.substring(0, 120) + "\u2026";
-        String prefix = "\u5df2\u8bc6\u522b\u4e3a\u201c" + intent.label + "\u201d\u4efb\u52a1\u3002";
-        return "PARTIAL".equals(evidenceStatus) ? prefix + detail + "\u5176\u4f59\u5185\u5bb9\u8bf7\u4ee5\u4e3b\u7ba1\u90e8\u95e8\u6700\u65b0\u8981\u6c42\u4e3a\u51c6\u3002" : prefix + detail;
+    private String buildSummary(Intent intent, String evidenceStatus,
+                                List<String> conditions, List<String> materials,
+                                List<String> steps, List<String> warnings) {
+        if ("INSUFFICIENT".equals(evidenceStatus)) {
+            return "当前知识库没有足够依据确认这个问题，请联系业务人员或查阅最新规定。";
+        }
+        String detail = java.util.stream.Stream.of(materials, conditions, steps, warnings)
+                .flatMap(Collection::stream)
+                .findFirst()
+                .orElse("请参考下方政策依据。");
+        int sentenceEnd = detail.indexOf('。');
+        if (sentenceEnd >= 0) {
+            detail = detail.substring(0, sentenceEnd + 1);
+        }
+        if (detail.length() > 120) {
+            detail = detail.substring(0, 120) + "…";
+        }
+        String prefix = "已识别为“" + intent.label + "”任务。";
+        return "PARTIAL".equals(evidenceStatus)
+                ? prefix + detail + "其余内容请以主管部门最新要求为准。"
+                : prefix + detail;
     }
 
-    private Evidence checkEvidence(PolicyAssistantService.QueryResponse primary, List<PolicyAssistantService.Citation> citations) {
-        if (citations.isEmpty() || primary.confidence() < .15) return new Evidence("INSUFFICIENT");
-        Set<String> sections = citations.stream().map(PolicyAssistantService.Citation::section).collect(Collectors.toSet());
+    private Evidence checkEvidence(PolicyAssistantService.QueryResponse primary,
+                                   List<PolicyAssistantService.Citation> citations) {
+        if (citations.isEmpty() || primary.confidence() < .15) {
+            return new Evidence("INSUFFICIENT");
+        }
+        Set<String> sections = citations.stream()
+                .map(PolicyAssistantService.Citation::section)
+                .collect(Collectors.toSet());
         return new Evidence(primary.confidence() >= .28 && sections.size() >= 2 ? "SUFFICIENT" : "PARTIAL");
     }
 
     private List<String> sectionValues(List<PolicyAssistantService.Citation> citations, String... sectionNames) {
-        return citations.stream().filter(c -> Arrays.stream(sectionNames).anyMatch(s -> c.section().contains(s)))
-                .map(c -> c.summary()).distinct().limit(3).toList();
+        return citations.stream()
+                .filter(c -> Arrays.stream(sectionNames).anyMatch(s -> c.section().contains(s)))
+                .map(PolicyAssistantService.Citation::summary)
+                .distinct()
+                .limit(3)
+                .toList();
     }
 
     private List<AllowedAction> getAllowedActions(Intent intent, AuthenticatedUser user) {
-        return actionsFor(intent).stream().filter(action -> user.permissions().contains(action.permission))
-                .map(action -> new AllowedAction(action.label, action.path)).toList();
+        return actionsFor(intent).stream()
+                .filter(action -> user.permissions().contains(action.permission))
+                .map(action -> new AllowedAction(action.label, action.path))
+                .toList();
     }
 
     private List<ActionDefinition> actionsFor(Intent intent) {
         return switch (intent) {
-            case MIGRATION_IN -> List.of(new ActionDefinition("\u53d1\u8d77\u8fc1\u5165\u7533\u8bf7", "/migrations/in/apply", "migration:in:create"), new ActionDefinition("\u67e5\u770b\u8fc1\u5165\u4e1a\u52a1", "/migrations/in", "migration:view"));
-            case MIGRATION_OUT -> List.of(new ActionDefinition("\u53d1\u8d77\u8fc1\u51fa\u7533\u8bf7", "/migrations/out/apply", "migration:out:create"), new ActionDefinition("\u67e5\u770b\u8fc1\u51fa\u4e1a\u52a1", "/migrations/out", "migration:view"));
-            case RESIDENCE_PERMIT -> List.of(new ActionDefinition("\u67e5\u770b\u5c45\u4f4f\u8bc1", "/residence-permits", "residence-permit:view"), new ActionDefinition("\u67e5\u770b\u5230\u671f\u63d0\u9192", "/residence-permits/expiring", "residence-permit:expiry:view"));
-            case HOUSEHOLD -> List.of(new ActionDefinition("\u8fdb\u5165\u5bb6\u5ead\u6237\u7ba1\u7406", "/households", "household:view"));
-            case CANCELLATION -> List.of(new ActionDefinition("\u8fdb\u5165\u6ce8\u9500\u7ba1\u7406", "/cancellations", "cancellation:view"));
-            case APPROVAL -> List.of(new ActionDefinition("\u67e5\u770b\u6211\u7684\u7533\u8bf7", "/applications", "application:view"), new ActionDefinition("\u8fdb\u5165\u5f85\u5ba1\u6279\u5217\u8868", "/approvals", "approval:view"));
-            case POPULATION -> List.of(new ActionDefinition("\u4eba\u53e3\u7efc\u5408\u67e5\u8be2", "/queries/comprehensive", "population:view"));
-            default -> List.of(new ActionDefinition("\u67e5\u770b\u6211\u7684\u7533\u8bf7", "/applications", "application:view"));
+            case MIGRATION_IN -> List.of(
+                    new ActionDefinition("发起迁入申请", "/migrations/in/apply", "migration:in:create"),
+                    new ActionDefinition("查看迁入业务", "/migrations/in", "migration:view")
+            );
+            case MIGRATION_OUT -> List.of(
+                    new ActionDefinition("发起迁出申请", "/migrations/out/apply", "migration:out:create"),
+                    new ActionDefinition("查看迁出业务", "/migrations/out", "migration:view")
+            );
+            case RESIDENCE_PERMIT -> List.of(
+                    new ActionDefinition("查看居住证", "/residence-permits", "residence-permit:view"),
+                    new ActionDefinition("查看到期提醒", "/residence-permits/expiring", "residence-permit:expiry:view")
+            );
+            case HOUSEHOLD -> List.of(
+                    new ActionDefinition("进入家庭户管理", "/households", "household:view")
+            );
+            case CANCELLATION -> List.of(
+                    new ActionDefinition("进入注销管理", "/cancellations", "cancellation:view")
+            );
+            case APPROVAL -> List.of(
+                    new ActionDefinition("查看我的申请", "/applications", "application:view"),
+                    new ActionDefinition("进入待审批列表", "/approvals", "approval:view")
+            );
+            case POPULATION -> List.of(
+                    new ActionDefinition("人口综合查询", "/queries/comprehensive", "population:view")
+            );
+            default -> List.of(
+                    new ActionDefinition("查看我的申请", "/applications", "application:view")
+            );
         };
     }
 
-    private boolean asksStatus(String question) { return question.contains("\u5ba1\u6279") || question.contains("\u9a73\u56de") || question.contains("\u529e\u7ed3") || question.contains("\u72b6\u6001"); }
-    private String explainBusinessStatus(String question) {
-        if (question.contains("\u9a73\u56de") || question.contains("\u9000\u56de")) return "\u7533\u8bf7\u88ab\u9a73\u56de\u540e\uff1a\u5148\u67e5\u770b\u5ba1\u6279\u610f\u89c1\uff0c\u8865\u5145\u6216\u4fee\u6b63\u6750\u6599\u540e\u518d\u6309\u6d41\u7a0b\u63d0\u4ea4\u3002";
-        return "\u4e1a\u52a1\u72b6\u6001\u4e3a\uff1a\u7533\u8bf7\u5df2\u63d0\u4ea4 \u2192 \u7b49\u5f85\u5ba1\u6279 \u2192 \u5ba1\u6279\u901a\u8fc7 \u2192 \u7b49\u5f85\u4e13\u4e1a\u4e1a\u52a1\u6267\u884c \u2192 \u4e1a\u52a1\u529e\u7ed3\u3002\u5ba1\u6279\u901a\u8fc7\u4e0d\u7b49\u4e8e\u4e1a\u52a1\u5df2\u529e\u7ed3\u3002";
+    private boolean asksStatus(String question) {
+        return question.contains("审批") || question.contains("驳回")
+                || question.contains("办结") || question.contains("状态");
     }
-    private static List<String> merge(List<String> left, List<String> right) { return java.util.stream.Stream.concat(left.stream(), right.stream()).distinct().toList(); }
-    private static String recentHistory(List<ConversationTurn> history) { if (history == null) return ""; return history.stream().filter(Objects::nonNull).filter(t -> "user".equals(t.role)).map(ConversationTurn::content).filter(Objects::nonNull).skip(Math.max(0, history.size() - MAX_HISTORY_TURNS)).collect(Collectors.joining(" ")); }
-    private static String normalize(String value) { return value.replaceAll("\\s+", "").toLowerCase(Locale.ROOT); }
+
+    private String explainBusinessStatus(String question) {
+        if (question.contains("驳回") || question.contains("退回")) {
+            return "申请被驳回后：先查看审批意见，补充或修正材料后再按流程提交。";
+        }
+        return "业务状态为：申请已提交 → 等待审批 → 审批通过 → 等待专业业务执行 → 业务办结。审批通过不等于业务已办结。";
+    }
+
+    private String resolveTrustedRegionCode() {
+        AuthenticatedUser user = CurrentUserContext.getUserOrNull();
+        if (user == null || user.regionCode() == null || user.regionCode().isBlank()) {
+            return null;
+        }
+        return user.regionCode().trim();
+    }
+
+    private static List<String> merge(List<String> left, List<String> right) {
+        return java.util.stream.Stream.concat(left.stream(), right.stream()).distinct().toList();
+    }
+
+    private static String recentHistory(List<ConversationTurn> history) {
+        if (history == null) {
+            return "";
+        }
+        return history.stream()
+                .filter(Objects::nonNull)
+                .filter(t -> "user".equals(t.role))
+                .map(ConversationTurn::content)
+                .filter(Objects::nonNull)
+                .skip(Math.max(0, history.size() - MAX_HISTORY_TURNS))
+                .collect(Collectors.joining(" "));
+    }
+
+    private static String normalize(String value) {
+        return value.replaceAll("\\s+", "").toLowerCase(Locale.ROOT);
+    }
 
     private enum Intent {
-        MIGRATION_IN("MIGRATION_IN", "\u6237\u7c4d\u8fc1\u5165"), MIGRATION_OUT("MIGRATION_OUT", "\u6237\u7c4d\u8fc1\u51fa"),
-        RESIDENCE_PERMIT("RESIDENCE_PERMIT", "\u5c45\u4f4f\u8bc1\u529e\u7406"), HOUSEHOLD("HOUSEHOLD", "\u5bb6\u5ead\u6237\u529e\u7406"),
-        CANCELLATION("CANCELLATION", "\u6ce8\u9500\u4e1a\u52a1"), APPROVAL("APPROVAL", "\u7533\u8bf7\u5ba1\u6279"),
-        POPULATION("POPULATION", "\u4eba\u53e3\u6237\u7c4d"), APPLICATION("APPLICATION", "\u4e1a\u52a1\u529e\u7406\u54a8\u8be2");
-        final String code; final String label;
-        Intent(String code, String label) { this.code = code; this.label = label; }
+        MIGRATION_IN("MIGRATION_IN", "户籍迁入"),
+        MIGRATION_OUT("MIGRATION_OUT", "户籍迁出"),
+        RESIDENCE_PERMIT("RESIDENCE_PERMIT", "居住证办理"),
+        HOUSEHOLD("HOUSEHOLD", "家庭户办理"),
+        CANCELLATION("CANCELLATION", "注销业务"),
+        APPROVAL("APPROVAL", "申请审批"),
+        POPULATION("POPULATION", "人口户籍"),
+        APPLICATION("APPLICATION", "业务办理咨询");
+
+        final String code;
+        final String label;
+
+        Intent(String code, String label) {
+            this.code = code;
+            this.label = label;
+        }
     }
-    private record WeightedCitation(PolicyAssistantService.Citation citation, double score) { }
-    private record Evidence(String status) { }
-    private record ActionDefinition(String label, String path, String permission) { }
-    public record ConversationTurn(String role, String content) { }
-    public record AllowedAction(String label, String path) { }
-    public record AgentResponse(String intent, String intentLabel, String standaloneQuestion, String answerSummary,
-                                List<String> conditions, List<String> requiredMaterials, List<String> steps, List<String> warnings,
-                                List<PolicyAssistantService.Citation> citations, List<AllowedAction> nextActions,
-                                String evidenceStatus, boolean needHumanHelp, List<String> executionTrace, String mode,
-                                double confidence, String traceId) { public String answer() { return answerSummary; } }
+
+    private record OptionalPythonAgentOutcome(AgentResponse response, String fallbackReason) {
+    }
+
+    private record WeightedCitation(PolicyAssistantService.Citation citation, double score) {
+    }
+
+    private record Evidence(String status) {
+    }
+
+    private record ActionDefinition(String label, String path, String permission) {
+    }
+
+    public record ConversationTurn(String role, String content) {
+    }
+
+    public record AllowedAction(String label, String path) {
+    }
+
+    public record AgentResponse(
+            String intent,
+            String intentLabel,
+            String standaloneQuestion,
+            String answerSummary,
+            List<String> conditions,
+            List<String> requiredMaterials,
+            List<String> steps,
+            List<String> warnings,
+            List<PolicyAssistantService.Citation> citations,
+            List<AllowedAction> nextActions,
+            String evidenceStatus,
+            boolean needHumanHelp,
+            List<String> executionTrace,
+            String mode,
+            String sourceMode,
+            double confidence,
+            String traceId,
+            String knowledgeBaseVersion,
+            String modelVersion,
+            String retrievalVersion,
+            String rerankerVersion,
+            Long elapsedMs
+    ) {
+        public AgentResponse(String intent, String intentLabel, String standaloneQuestion, String answerSummary,
+                             List<String> conditions, List<String> requiredMaterials, List<String> steps,
+                             List<String> warnings, List<PolicyAssistantService.Citation> citations,
+                             List<AllowedAction> nextActions, String evidenceStatus, boolean needHumanHelp,
+                             List<String> executionTrace, String mode, double confidence, String traceId) {
+            this(intent, intentLabel, standaloneQuestion, answerSummary, conditions, requiredMaterials,
+                    steps, warnings, citations, nextActions, evidenceStatus, needHumanHelp, executionTrace,
+                    mode, PolicyAssistantService.SOURCE_MODE_JAVA_LOCAL_FALLBACK, confidence, traceId,
+                    PolicyAssistantService.LOCAL_KB_VERSION, null, null, null, 0L);
+        }
+
+        public String answer() {
+            return answerSummary;
+        }
+    }
 }
