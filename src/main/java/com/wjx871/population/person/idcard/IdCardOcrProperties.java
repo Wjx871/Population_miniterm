@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "population.person.idcard.ocr")
 public class IdCardOcrProperties {
 
-    /** 远程 PaddleOCR HTTP 服务地址，例 http://127.0.0.1:8866。留空或 unavailable 时回退 SKIPPED。 */
+    /** 远程 PaddleOCR HTTP 服务地址。留空或不可达时记录 FAILED；只有显式跳过才为 SKIPPED。 */
     private String url = "";
 
     /** 接口路径，默认 /recognize/idcard。 */

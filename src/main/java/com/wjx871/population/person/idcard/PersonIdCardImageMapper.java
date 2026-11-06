@@ -14,6 +14,10 @@ public interface PersonIdCardImageMapper {
 
     Optional<PersonIdCardImage> selectById(@Param("imageId") Long imageId);
 
+    Optional<PersonIdCardImage> selectByIdForUpdate(@Param("imageId") Long imageId);
+
+    Optional<PersonIdCardImage> selectBySha256ForUpdate(@Param("fileSha256") String fileSha256);
+
     Optional<PersonIdCardImage> selectBySha256(@Param("fileSha256") String fileSha256);
 
     Optional<PersonIdCardImage> selectByPersonId(@Param("personId") Long personId);

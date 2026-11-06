@@ -98,7 +98,7 @@ public class PersonService {
         if (request.idCardImageId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "新增人口必须先上传身份证影印本");
         }
-        PersonIdCardImage img = idCardImageMapper.selectById(request.idCardImageId())
+        PersonIdCardImage img = idCardImageMapper.selectByIdForUpdate(request.idCardImageId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "身份证影印本不存在: " + request.idCardImageId()));
         Long userId = CurrentUserContext.requireUser().userId();
         boolean sameUploader = Objects.equals(img.getUserId(), userId);

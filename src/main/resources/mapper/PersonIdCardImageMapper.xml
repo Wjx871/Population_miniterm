@@ -48,6 +48,14 @@
         SELECT * FROM person_idcard_image WHERE file_sha256 = #{fileSha256} LIMIT 1
     </select>
 
+    <select id="selectByIdForUpdate" resultMap="PersonIdCardImageResultMap">
+        SELECT * FROM person_idcard_image WHERE image_id = #{imageId} FOR UPDATE
+    </select>
+
+    <select id="selectBySha256ForUpdate" resultMap="PersonIdCardImageResultMap">
+        SELECT * FROM person_idcard_image WHERE file_sha256 = #{fileSha256} FOR UPDATE
+    </select>
+
     <select id="selectByPersonId" resultMap="PersonIdCardImageResultMap">
         SELECT * FROM person_idcard_image WHERE person_id = #{personId} ORDER BY image_id DESC LIMIT 1
     </select>

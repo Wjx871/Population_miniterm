@@ -2,6 +2,7 @@ package com.wjx871.population.person.idcard;
 
 import java.time.LocalDate;
 import java.util.Map;
+import com.wjx871.population.person.IdCardValidator;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -84,6 +85,12 @@ public class PaddleOcrHttpClient {
             throw new IllegalStateException("OCR response missing 'result' object");
         }
         String idCard = asString(result.get("idCard"));
+        try {
+            if (!(result.get("idCard") instanceof String)) throw new IllegalArgumentException();
+            idCard = new IdCardValidator().parse(idCard).normalized();
+        } catch (RuntimeException invalid) {
+            throw new OcrRequestException("OCR_INVALID_RESPONSE");
+        }
         String name = asString(result.get("name"));
         String address = asString(result.get("address"));
         String gender = asString(result.get("gender"));
@@ -91,11 +98,14 @@ public class PaddleOcrHttpClient {
         String birthRaw = asString(result.get("birthDate"));
         LocalDate birth = null;
         if (birthRaw != null && !birthRaw.isBlank()) {
-            try { birth = LocalDate.parse(birthRaw); } catch (RuntimeException ignored) { /* 留空 */ }
+            try { birth = LocalDate.parse(birthRaw); }
+            catch (RuntimeException invalid) { throw new OcrRequestException("OCR_INVALID_RESPONSE"); }
         }
         Double confidence = null;
         Object conf = result.get("confidence");
         if (conf instanceof Number n) confidence = n.doubleValue();
+        if (conf != null && (!(conf instanceof Number) || !Double.isFinite(confidence)
+                || confidence < 0 || confidence > 1)) throw new OcrRequestException("OCR_INVALID_RESPONSE");
 
         return new IdCardOcrProperties.OcrResult(idCard, name, birth, gender, ethnicity, address, confidence, root.toString());
     }

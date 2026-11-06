@@ -2,11 +2,14 @@ package com.wjx871.population.material;
 
 import com.wjx871.population.common.BusinessException;
 import java.io.IOException; import java.io.InputStream; import java.nio.file.*; import java.security.*; import java.util.*;
+import java.io.OutputStream;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value; import org.springframework.core.io.Resource; import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus; import org.springframework.stereotype.Service; import org.springframework.web.multipart.MultipartFile;
 
 /** Local storage with generated names, canonical path checks and SHA-256 hashing. */
 @Service
+@Log4j2
 public class LocalFileStorageService {
     private static final Set<String> EXTENSIONS=Set.of("pdf","jpg","jpeg","png");
     private static final Set<String> TYPES=Set.of("application/pdf","image/jpeg","image/png");
@@ -24,9 +27,33 @@ public class LocalFileStorageService {
         String type=Optional.ofNullable(file.getContentType()).orElse("").toLowerCase(Locale.ROOT); if(!TYPES.contains(type)) throw bad("不允许的文件类型");
         String stored=UUID.randomUUID().toString().replace("-","")+"."+ext; Path target=root.resolve(stored).normalize();
         if(!target.startsWith(root)) throw bad("非法文件路径");
-        try(InputStream input=file.getInputStream()) { MessageDigest digest=MessageDigest.getInstance("SHA-256");
-            byte[] bytes=input.readAllBytes(); String hash=HexFormat.of().formatHex(digest.digest(bytes)); Files.write(target,bytes,StandardOpenOption.CREATE_NEW); return new StoredFile(safeOriginal,stored,target.toString(),type,file.getSize(),hash);
+        try { byte[] bytes;
+            // Finish and close the input before creating a file: even close() failure must not orphan it.
+            try(InputStream input=file.getInputStream()) { bytes=input.readAllBytes(); }
+            MessageDigest digest=MessageDigest.getInstance("SHA-256"); String hash=HexFormat.of().formatHex(digest.digest(bytes)); writeNewFile(target,bytes); return new StoredFile(safeOriginal,stored,target.toString(),type,file.getSize(),hash);
         } catch(IOException|NoSuchAlgorithmException e){ throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR,"文件保存失败"); }
+    }
+    private void writeNewFile(Path target, byte[] bytes) throws IOException {
+        boolean created = false;
+        try (OutputStream output = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
+            created = true;
+            writeBytes(output, bytes);
+        } catch (IOException | RuntimeException failure) {
+            // CREATE_NEW failure grants no ownership: never remove a pre-existing file.
+            if (created) {
+                try { Files.deleteIfExists(target); }
+                catch (IOException cleanupFailure) {
+                    log.error("UPLOAD_PARTIAL_FILE_COMPENSATION_FAILED file={}", target.getFileName());
+                    throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, "文件保存补偿失败，请联系管理员");
+                }
+            }
+            throw failure;
+        }
+    }
+
+    /** I/O boundary also allows deterministic partial-write fault injection. */
+    protected void writeBytes(OutputStream output, byte[] bytes) throws IOException {
+        output.write(bytes);
     }
     public Resource load(String stored) { try { Path p=root.resolve(stored).normalize(); if(!p.startsWith(root)||!Files.isRegularFile(p)) throw new IOException(); return new UrlResource(p.toUri()); } catch(Exception e){ throw new BusinessException(HttpStatus.NOT_FOUND,"材料文件不存在"); } }
     public void delete(String stored) { try { Path p=root.resolve(stored).normalize(); if(!p.startsWith(root)) throw new IOException(); Files.deleteIfExists(p); } catch(IOException e){ throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR,"物理文件删除失败"); } }
