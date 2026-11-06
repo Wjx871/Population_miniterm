@@ -63,6 +63,14 @@
 | 错目标 / 错人员批次 | 完成迁出后分别用不同目标代码、不同人员创建迁入并审批执行 | 创建草稿成功；`executeIn` 返回 409；申请和迁移仍 APPROVED，无新户籍/已完成迁入 | `validateBatch` 的目标代码、人员检查生效，失败后事务无部分写入 | A：现有批次基本匹配与执行原子性仍有效 |
 | 已消费批次再提交 | 迁入完成后以另一个人员再次提交相同 batch | 数据库唯一约束映射成 409；新申请行回滚，已完成迁入仍仅一条 | `migration_in.transfer_batch_no UNIQUE`；`findCompletedBatch` / `countCompletedInBatch` SQL | A：重复批次被数据库阻止；错误文案未说明具体批次冲突 |
 
+## 本轮验证结果
+
+- 未修改代码基线：`Phase03MigrationIntegrationTest` 36 项通过，0 失败/错误/跳过。
+- 新增表征类：6 项通过，0 失败/错误/跳过。
+- 迁移、区划、审批、权限、S4-B 与 S5-A2 组合回归：103 项通过，0 失败/错误/跳过。
+- 全量 `mvnw.cmd test`：736 项通过，0 失败/错误/跳过。该结果包括最终的无效批次执行拒绝断言。
+- H2 2.3.232 只在本地内存库运行；JDK 21.0.7、Maven Wrapper 3.9.16。未连接团队 MySQL/Redis/RabbitMQ，没有执行真实数据库迁移或部署。
+
 ## A/B/C/D 分类
 
 - **A — 旧问题已由后续实现消除：** 迁入按区划精确查 residence 从而允许同一人跨区重复登记的旧描述不适用于当前迁移链。当前实现按人全局查并有唯一约束。现有 `countActiveResidenceInRegion` 仍用于流动人口执行，不代表迁移查询。
