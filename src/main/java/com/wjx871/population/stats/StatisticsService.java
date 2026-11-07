@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import com.wjx871.population.security.DataScopeCriteria;
+import com.wjx871.population.security.SensitiveDataMaskingService;
 
 /**
  * 统计信息业务逻辑服务。
@@ -21,6 +22,7 @@ import com.wjx871.population.security.DataScopeCriteria;
 public class StatisticsService {
 
     private final StatisticsMapper statisticsMapper;
+    private final SensitiveDataMaskingService masking;
 
     /**
      * 获取核心卡片数字面板汇总。
@@ -88,7 +90,18 @@ public class StatisticsService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getRecentLogs() {
         List<Map<String, Object>> logs = statisticsMapper.selectRecentLogs(DataScopeCriteria.current());
-        return safeRows(logs);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map<String, Object> row : safeRows(logs)) {
+            if (row == null) {
+                continue;
+            }
+            Map<String, Object> response = new LinkedHashMap<>(row);
+            Object detail = row.get("detail");
+            // Audit logs always use fixed masking, including users with full sensitive-data access.
+            response.put("detail", masking.auditDetail(detail instanceof String text ? text : null));
+            result.add(response);
+        }
+        return result;
     }
 
     private List<Map<String, Object>> safeRows(List<Map<String, Object>> rows) {

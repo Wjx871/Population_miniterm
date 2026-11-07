@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import com.wjx871.population.security.AuthenticatedUser;
 import com.wjx871.population.security.DataScope;
 import com.wjx871.population.security.DataScopeCriteria;
+import com.wjx871.population.security.SensitiveDataMaskingService;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @org.junit.jupiter.api.Tag("unit")
 class StatisticsServiceTest {
     private final StatisticsMapper mapper = mock(StatisticsMapper.class);
-    private final StatisticsService service = new StatisticsService(mapper);
+    private final StatisticsService service = new StatisticsService(mapper, new SensitiveDataMaskingService());
 
     @BeforeEach
     void authenticate() {
@@ -90,5 +91,39 @@ class StatisticsServiceTest {
         org.mockito.Mockito.verify(mapper).countKeyPopulationByType(scope);
         org.mockito.Mockito.verify(mapper).countCertificateByStatus(scope);
         org.mockito.Mockito.verify(mapper).selectRecentLogs(scope);
+    }
+
+    @Test
+    void logResponseCopiesImmutableRowsAndPreservesOtherFields() {
+        Map<String, Object> original = Map.of("id", 70L, "detail", "Bearer synthetic-test-token",
+                "operator", "synthetic", "type", "TEST", "targetTable", "synthetic",
+                "result", "SUCCESS", "time", "2090-01-01T12:00:00");
+        when(mapper.selectRecentLogs(org.mockito.ArgumentMatchers.any())).thenReturn(List.of(original));
+
+        Map<String, Object> response = service.getRecentLogs().get(0);
+
+        Map<String, Object> expected = new java.util.HashMap<>(original);
+        expected.put("detail", "Bearer ***");
+        assertThat(response).containsExactlyInAnyOrderEntriesOf(expected);
+        assertThat(response).hasSameSizeAs(original);
+        assertThat("Bearer synthetic-test-token".equals(original.get("detail"))).as("mapper row unchanged").isTrue();
+    }
+
+    @Test
+    void emptyAndUnexpectedRowsDoNotBreakTheLogList() {
+        String masked = "id=1101**********0016 phone=138****8000 Bearer *** password=***";
+        when(mapper.selectRecentLogs(org.mockito.ArgumentMatchers.any())).thenReturn(java.util.Arrays.asList(
+                null, Map.of("id", 1L), Map.of("id", 2L, "detail", 42),
+                Map.of("id", 3L, "detail", ""), Map.of("id", 4L, "detail", masked)));
+
+        List<Map<String, Object>> response = service.getRecentLogs();
+
+        assertThat(response).hasSize(4);
+        assertThat(response.get(0)).containsEntry("detail", null);
+        assertThat(response.get(1)).containsEntry("detail", null);
+        assertThat(response.get(2)).containsEntry("detail", "");
+        assertThat(response.get(3)).containsEntry("detail", masked);
+        when(mapper.selectRecentLogs(org.mockito.ArgumentMatchers.any())).thenReturn(null);
+        assertThat(service.getRecentLogs()).isEmpty();
     }
 }
