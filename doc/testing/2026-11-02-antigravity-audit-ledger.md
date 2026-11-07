@@ -75,7 +75,7 @@
 | 67 | HIGH | 综合档案抽屉 prop 名与组件声明失配 | FRONTEND_HANDOFF | `ComprehensiveProfileDrawer.vue`/`DetailDrawer` 绑定需前端核验；本轮未改前端。 | 前端组 |
 | 68 | HIGH | 综合查询未关联流动登记/居住证/迁移字段 | OPEN | `Phase11QueryMapper` 当前结果列仍缺少对应联表字段；本轮未改。 | 后端 |
 | 69 | HIGH | 迁移历史方向参数绑定到迁移类型 | FRONTEND_HANDOFF | 前端方向查询参数需与后端契约核对；本轮未改前端。 | 前端组 |
-| 70 | MEDIUM | 统计日志明细可能返回未脱敏 detail | OPEN | `StatisticsMapper.selectRecentLogs` 直接选出 `l.detail`，Service 未二次脱敏；本轮未改。 | 后端 |
+| 70 | MEDIUM | 统计日志明细可能返回未脱敏 detail | CODE_CANDIDATE | 2026-11-07 动态 RED：真实 JWT/Security/JDBC、隔离 H2 经测试专用 CHAR 方言适配后，历史日志 HTTP 200 返回原 detail，1 项预期失败；原样 H2 的 CHAR(1) 截断不计为完整泄露证据。`StatisticsService.getRecentLogs()` 在响应副本上复用 `auditDetail()`，管理员固定脱敏、NULL/普通/已脱敏文本兼容，数据库未改写；log:view 与四类 DataScope 保持。Issue70 HTTP 11 项、专项 40、全量 810，失败/错误/跳过均 0。实现 `4a188f0b7231279a7d7cf453eb16a13af007b434`；[证据及限制](../development/issue70-statistics-log-redaction.md)。真实 MySQL/前端未验证，等待 ChatGPT 独立复核，不关闭。 | 后端/独立复核 |
 | 71 | MEDIUM | 综合查询 REGION 仅按户籍过滤漏流动人口 | OPEN | `Phase11QueryMapper` REGION 分支仍需确认并纳入流动人口授权区划；本轮未改。 | 后端 |
 | 72 | MEDIUM | 零人口圆环图渲染异常 | FRONTEND_HANDOFF | 图表空数据展示；本轮未改前端。 | 前端组 |
 | 73 | LOW | 迁徙趋势包含未办结草稿 | FIXED_VERIFIED | 趋势统计限定已办结迁入/迁出；`StatisticsScopeIntegrationTest`；`8509d78`。 | 后端已完成 |

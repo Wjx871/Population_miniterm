@@ -279,4 +279,3 @@ class Issue70StatisticsLogRedactionIntegrationTest {
         }
     }
 }
-
