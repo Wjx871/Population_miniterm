@@ -5,6 +5,7 @@
 ## 基线与范围
 
 - 精确基线：`a1cff942f7f9d7370ad7e4858133435ca2b70115`。
+- 实现、测试及验证文档提交：`e96acbb2a9abf0abdd1e5b6bd57589efc9939123`（父提交即上述精确基线）；随后仅补充审计 #43 与本提交引用。
 - 施工分支：`fix/20261107-issue43-keypopulation-submit-permission`。
 - 独立 worktree：`C:\Users\jxgm\.codex\worktrees\issue43-keypopulation-submit\小学期`。
 - 生产变更仅限 `src/main/java/com/wjx871/population/keypopulation/KeyPopulationWorkflow.java`。

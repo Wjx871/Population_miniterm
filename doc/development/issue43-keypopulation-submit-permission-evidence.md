@@ -2,6 +2,8 @@
 
 日期：2026-11-07（Asia/Shanghai）。状态：CODE_CANDIDATE。
 
+实现/测试提交：`e96acbb2a9abf0abdd1e5b6bd57589efc9939123`，父提交为精确基线 `a1cff942f7f9d7370ad7e4858133435ca2b70115`。所有测试完成后才提交，后续提交仅补充 #43 审计状态及本 SHA 引用，生产/测试源码不变。
+
 ## RED：未修改生产代码
 
 精确基线 `a1cff942f7f9d7370ad7e4858133435ca2b70115`；运行 RED 时 `git diff -- src/main/java` 为空，只新增回归测试和文档。
@@ -257,3 +259,5 @@ Maven exit=0；797 项（历史 770 + 本轮新增 27），失败 0、错误 0�
 JaCoCo 因执行数据文件缺失跳过覆盖率报告；不报告覆盖率。测试以 JDK 21.0.7 执行、release 17 编译，H2 的限制见主文档。
 
 新增测试源码 SHA256：`089c0d2b7549e76ee63c8b88ed99e1e8a7560b3af614364d8b128c3a3d85c125`；首次 RED、完整 RED、GREEN 专项及完整回归使用同一份测试源码，修复后未放宽断言。
+
+完整回归结束、实现提交完成后再次直接核验：上述远端四引用、本地 integration/S3/main 与 Snapshot 跟踪引用均未变化；原 main 的工作区仍仅 ` M .gitignore`，字节哈希仍一致。实现提交之后生产及测试源码 diff 为空。`git diff --check` 通过。
