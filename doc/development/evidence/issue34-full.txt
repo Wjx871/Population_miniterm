@@ -1,0 +1,101 @@
+Command: .\mvnw.cmd test
+Environment: Java 21.0.7; default H2 suites; explicit MySQL IT excluded.
+RED reproduction class intentionally skipped outside -Dissue34.red=true on old baseline.
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 16.89 s -- in com.wjx871.population.ai.precheck.AiConfirmIntegrationTest
+[INFO] Tests run: 36, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 10.73 s -- in com.wjx871.population.ai.precheck.AiPrecheckIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in com.wjx871.population.ai.precheck.DocumentAnalysisResponseValidatorTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.060 s -- in com.wjx871.population.application.Phase12ApplicationReturnIntegrationTest
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.142 s -- in com.wjx871.population.approval.Phase02ApprovalIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.079 s -- in com.wjx871.population.assistant.PolicyAssistantServiceTest
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.338 s -- in com.wjx871.population.assistant.PolicyPythonAdapterIntegrationTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.824 s -- in com.wjx871.population.assistant.PolicyPythonHttpStubIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.wjx871.population.assistant.PolicyWorkflowServiceTest
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.492 s -- in com.wjx871.population.auth.AuthRbacIntegrationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.517 s -- in com.wjx871.population.cache.OptionalRedisServiceTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.173 s -- in com.wjx871.population.cache.S5A1StrictRedisServiceTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.164 s -- in com.wjx871.population.cancellation.CancellationMaterialRequirementServiceTest
+[INFO] Tests run: 33, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.444 s -- in com.wjx871.population.cancellation.Phase04CancellationIntegrationTest
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.427 s -- in com.wjx871.population.certificate.Phase09CertificateIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.069 s -- in com.wjx871.population.common.GlobalExceptionHandlerDeadlockTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.346 s -- in com.wjx871.population.dashboard.DashboardMapperTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.087 s -- in com.wjx871.population.dashboard.DashboardServiceTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.010 s -- in com.wjx871.population.export.ExportDataScopeAuditIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.112 s -- in com.wjx871.population.export.ExportFileServiceFormulaInjectionTest
+[INFO] Tests run: 34, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.609 s -- in com.wjx871.population.export.Phase06ExportAuditIntegrationTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.941 s -- in com.wjx871.population.floating.FloatingSelfScopeAuditIntegrationTest
+ISSUE34 GREEN open=DRAFT HTTP=409 noSideEffects=true generic=[{application_id=2, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=2, person_id=9340001, floating_id=1, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN open=SUBMITTED HTTP=409 noSideEffects=true generic=[{application_id=4, target_person_id=9340001, status=SUBMITTED, applicant_user_id=2}] professional=[{application_id=4, person_id=9340001, floating_id=2, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN open=UNDER_REVIEW HTTP=409 noSideEffects=true generic=[{application_id=6, target_person_id=9340001, status=UNDER_REVIEW, applicant_user_id=2}] professional=[{application_id=6, person_id=9340001, floating_id=3, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN open=APPROVED HTTP=409 noSideEffects=true generic=[{application_id=8, target_person_id=9340001, status=APPROVED, applicant_user_id=2}] professional=[{application_id=8, person_id=9340001, floating_id=4, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN open=RETURNED HTTP=409 noSideEffects=true generic=[{application_id=10, target_person_id=9340001, status=RETURNED, applicant_user_id=2}] professional=[{application_id=10, person_id=9340001, floating_id=5, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN open=RESUBMITTED HTTP=409 noSideEffects=true generic=[{application_id=12, target_person_id=9340001, status=RESUBMITTED, applicant_user_id=2}] professional=[{application_id=12, person_id=9340001, floating_id=6, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN concurrency round=1 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=16, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=16, person_id=9340001, floating_id=8, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN concurrency round=2 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=18, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=18, person_id=9340001, floating_id=9, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN concurrency round=3 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=20, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=20, person_id=9340001, floating_id=10, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN concurrency round=4 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=22, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=22, person_id=9340001, floating_id=11, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN concurrency round=5 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=24, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=24, person_id=9340001, floating_id=12, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN concurrency round=6 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=26, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=26, person_id=9340001, floating_id=13, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN concurrency round=7 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=28, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=28, person_id=9340001, floating_id=14, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN concurrency round=8 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=30, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=30, person_id=9340001, floating_id=15, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN concurrency round=9 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=32, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=32, person_id=9340001, floating_id=16, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN concurrency round=10 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=34, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=34, person_id=9340001, floating_id=17, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN terminal=REJECTED HTTP=201 generic=[{application_id=43, target_person_id=9340001, status=REJECTED, applicant_user_id=2}, {application_id=44, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=43, person_id=9340001, floating_id=21, apply_type=FIRST_ISSUE, business_status=DRAFT}, {application_id=44, person_id=9340001, floating_id=21, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN terminal=WITHDRAWN HTTP=201 generic=[{application_id=46, target_person_id=9340001, status=WITHDRAWN, applicant_user_id=2}, {application_id=47, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=46, person_id=9340001, floating_id=22, apply_type=FIRST_ISSUE, business_status=DRAFT}, {application_id=47, person_id=9340001, floating_id=22, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN terminal=CANCELLED HTTP=201 generic=[{application_id=49, target_person_id=9340001, status=CANCELLED, applicant_user_id=2}, {application_id=50, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=49, person_id=9340001, floating_id=23, apply_type=FIRST_ISSUE, business_status=DRAFT}, {application_id=50, person_id=9340001, floating_id=23, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN terminal=COMPLETED HTTP=201 generic=[{application_id=52, target_person_id=9340001, status=COMPLETED, applicant_user_id=2}, {application_id=53, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=52, person_id=9340001, floating_id=24, apply_type=FIRST_ISSUE, business_status=DRAFT}, {application_id=53, person_id=9340001, floating_id=24, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 GREEN rollback HTTP=500,201 committedDrafts=1 generic=[{application_id=75, target_person_id=9340001, status=DRAFT, applicant_user_id=3}] professional=[{application_id=75, person_id=9340001, floating_id=33, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+[INFO] Tests run: 35, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.36 s -- in com.wjx871.population.floating.Issue34FirstIssueExclusivityTest
+[WARNING] Tests run: 3, Failures: 0, Errors: 0, Skipped: 3, Time elapsed: 0 s -- in com.wjx871.population.floating.Issue34FirstIssueRedTest
+[INFO] Tests run: 40, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.39 s -- in com.wjx871.population.floating.Phase05FloatingResidenceIntegrationTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.642 s -- in com.wjx871.population.household.Phase08HouseholdMasterDataIntegrationTest
+[INFO] Tests run: 27, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.781 s -- in com.wjx871.population.keypopulation.Issue43KeyPopulationSubmitPermissionIntegrationTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.913 s -- in com.wjx871.population.keypopulation.Phase10KeyPopulationGateIntegrationTest
+[INFO] Tests run: 56, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.975 s -- in com.wjx871.population.keypopulation.Phase10KeyPopulationIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.876 s -- in com.wjx871.population.material.ApplicationMaterialFeatureOffIntegrationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.942 s -- in com.wjx871.population.material.ApplicationMaterialSubmitConcurrencyIntegrationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in com.wjx871.population.material.Issue3OwnedFileCompensationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.042 s -- in com.wjx871.population.migration.Issue33CrossDistrictCharacterizationIntegrationTest
+[INFO] Tests run: 36, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.22 s -- in com.wjx871.population.migration.Phase03MigrationIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.920 s -- in com.wjx871.population.person.idcard.Issue3CommitOutcomeIntegrationTest
+[INFO] Tests run: 29, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.853 s -- in com.wjx871.population.person.idcard.Issue3OcrTransactionIntegrationTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.106 s -- in com.wjx871.population.person.idcard.Phase14PersonIdCardImageIntegrationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.192 s -- in com.wjx871.population.person.idcard.Phase14PersonIdCardOcrIntegrationTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.wjx871.population.person.IdCardValidatorTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.058 s -- in com.wjx871.population.person.PersonMapperTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.275 s -- in com.wjx871.population.person.PersonRegionOwnershipAuditIntegrationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.891 s -- in com.wjx871.population.person.Phase08PersonIdentityIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in com.wjx871.population.PopulationMinitermApplicationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.087 s -- in com.wjx871.population.query.ComprehensiveQueryMapperTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.115 s -- in com.wjx871.population.query.ComprehensiveQueryServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.183 s -- in com.wjx871.population.query.Phase11QueryValidationTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.262 s -- in com.wjx871.population.query.QueryDashboardPermissionIntegrationTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.730 s -- in com.wjx871.population.reference.Phase09AdminRegionIntegrationTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.596 s -- in com.wjx871.population.reference.Phase09DataDictionaryIntegrationTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.966 s -- in com.wjx871.population.reference.ReferenceCacheIsolationIntegrationTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.992 s -- in com.wjx871.population.reference.ReferenceCacheTransactionIntegrationTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.508 s -- in com.wjx871.population.release.BackendV1ReleaseAuditTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in com.wjx871.population.resident.ResidentMapperTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.100 s -- in com.wjx871.population.review.SecondaryBackendDataValidationTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.wjx871.population.s2.aggregation.PopulationMetricsCalculatorTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.wjx871.population.s2.rmi.RmiInvocationHandlerClassificationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.158 s -- in com.wjx871.population.s2.S2AggregationFacadeTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in com.wjx871.population.s2.S2RemoteDisabledIntegrationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.659 s -- in com.wjx871.population.s2.S2RmiClientConcurrencyIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.888 s -- in com.wjx871.population.s2.S2RmiHttpEndToEndIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.949 s -- in com.wjx871.population.s2.S2StatisticsApiIntegrationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.202 s -- in com.wjx871.population.security.Phase11TokenRevocationTest
+[INFO] Tests run: 27, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.179 s -- in com.wjx871.population.security.RevocationConfigurationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.wjx871.population.security.RevocationEventsTest
+[INFO] Tests run: 23, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.680 s -- in com.wjx871.population.security.S5A1StrictRevocationHttpIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0 s -- in com.wjx871.population.security.SensitiveDataMaskingServiceTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.041 s -- in com.wjx871.population.security.TokenRevocationServiceConsistencyTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.952 s -- in com.wjx871.population.stats.Issue70StatisticsLogRedactionIntegrationTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.330 s -- in com.wjx871.population.stats.StatisticsScopeCacheIntegrationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.wjx871.population.stats.StatisticsScopeIntegrationTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.094 s -- in com.wjx871.population.stats.StatisticsServiceTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.083 s -- in com.wjx871.population.stats.UnifiedStatisticsScopeCacheTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.475 s -- in com.wjx871.population.transaction.CoreTransactionBoundaryIntegrationTest
+[WARNING] Tests run: 848, Failures: 0, Errors: 0, Skipped: 3
+[INFO] BUILD SUCCESS
+[INFO] Total time:  02:55 min
+Raw log SHA256: f088794ee0ef2a4c13cd96d3d02de4131df250f1e1f38673cb039c46176f0279

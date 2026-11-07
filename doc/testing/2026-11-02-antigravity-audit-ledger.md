@@ -39,7 +39,7 @@
 | 31 | CRITICAL | SELF 可绕过归属校验读取他人流动/居住证 | FIXED_VERIFIED | 服务层按来源申请人校验 SELF；`FloatingSelfScopeAuditIntegrationTest` 覆盖本人允许、他人拒绝及列表/详情；`6541a05`。 | 后端已完成 |
 | 32 | HIGH | 流动关闭与居住证签注锁顺序形成 MySQL 死锁 | FIXED_VERIFIED | 本轮旧实现捕获 8.4.8 `1213/40001` 等待环；修复后 MySQL 10/10 轮关闭 200、签注 409、死锁计数不增；`MySql84CriticalAcceptanceIT.closeThenEndorseLocksFloatingBeforePermitWithoutDeadlock`，`2bfa038`。 | 后端已完成 |
 | 33 | HIGH | 同市跨区户籍冲突只按区划精确相等判断 | OPEN | `countActiveResidenceInRegion` 与 `MigrationMapper.xml` 仍按 `region_code=#{region}` 精确匹配。仓库 admin_region 有层级表和合成种子，但没有权威完整区划数据或可证明“同市”归属规则；本轮不推断编码前缀/长度、不修改查询。需业务提供权威区划数据与边界规则后再修复。 | 后端/业务规则提供方 |
-| 34 | HIGH | 居住证申请缺少在途排他检查 | OPEN | 首次申领路径检查当前 ACTIVE 证件，但未按人员/流动登记拒绝已有同类未结申请；本轮未改。 | 后端 |
+| 34 | HIGH | 居住证申请缺少在途排他检查 | CODE_CANDIDATE | 真实HTTP/H2旧版6场景复现双201；保留登记/人员父锁后按通用申请人员与未结状态排他，含RETURNED/APPROVED及兼容RESUBMITTED，权限验证先于查询。新增H2 35项与MySQL8.4 RR 35项通过，两者10轮并发均单201/单409；MySQL #32门禁10轮无1213；全量845通过/0失败/0错误/3个RED方法跳过。无新迁移、不清理历史重复；边界与证据见 `doc/development/issue34-permit-first-issue-exclusivity.md`。等待独立复核。 | 后端/独立复核 |
 | 35 | MEDIUM | 居住证到期预警页签复用停滞 | FRONTEND_HANDOFF | 前端 Tab/列表刷新问题；本轮未改前端。 | 前端组 |
 | 36 | MEDIUM | 申领弹窗可选不合资格人员 | FRONTEND_HANDOFF | 候选项筛选属前端；后端执行仍校验有效登记与申领日期；本轮未改前端。 | 前端组 |
 | 37 | MEDIUM | 居住证到期任务全量加载结果集 | OPEN | `ResidencePermitExpiryService` 仍批量读取待处理 ID 后逐条处理，无分页；本轮未改。 | 后端 |

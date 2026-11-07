@@ -1,0 +1,8 @@
+Protected refs checked before construction and after all source changes; exact values unchanged.
+758014cbcccdfe820efb2a6fae73bc3168030484	refs/heads/feat/20261103-s3-rabbitmq-async-precheck
+836cf5d658ff4fd3e290de3087afca6d611185e8	refs/heads/integration/20261101-backend-p0-security
+b54579b6b7f8b1feeda60f43906da05fb2ffda99	refs/heads/main
+d6b0b87b74af7a413214d7da9dd30b075cec882b	refs/heads/snapshot/20261103-pre-course-upgrade-backend
+Original checkout only modified path: .gitignore
+Original .gitignore SHA256 before and after: 8399B5DE049E3989E123B747D457A02A5D8EDADF6A57867B57F1BD760FA68DE3
+No main/integration/S3/snapshot merge, push, reset or worktree cleanup performed.

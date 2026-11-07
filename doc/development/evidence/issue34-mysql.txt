@@ -1,0 +1,74 @@
+MySQL 8.4.8, dedicated loopback 127.0.0.1:13394, default REPEATABLE-READ, non-root app user.
+Command: .\mvnw.cmd -Dtest=Issue34MySql84IT test
+All test methods verify MySQL 1213 count remains unchanged in @AfterEach.
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL RR GREEN open=DRAFT HTTP=409 noSideEffects=true generic=[{application_id=700038, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700038, person_id=9340001, floating_id=700002, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL RR GREEN open=SUBMITTED HTTP=409 noSideEffects=true generic=[{application_id=700040, target_person_id=9340001, status=SUBMITTED, applicant_user_id=2}] professional=[{application_id=700040, person_id=9340001, floating_id=700003, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL RR GREEN open=UNDER_REVIEW HTTP=409 noSideEffects=true generic=[{application_id=700042, target_person_id=9340001, status=UNDER_REVIEW, applicant_user_id=2}] professional=[{application_id=700042, person_id=9340001, floating_id=700004, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL RR GREEN open=APPROVED HTTP=409 noSideEffects=true generic=[{application_id=700044, target_person_id=9340001, status=APPROVED, applicant_user_id=2}] professional=[{application_id=700044, person_id=9340001, floating_id=700005, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL RR GREEN open=RETURNED HTTP=409 noSideEffects=true generic=[{application_id=700046, target_person_id=9340001, status=RETURNED, applicant_user_id=2}] professional=[{application_id=700046, person_id=9340001, floating_id=700006, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL RR GREEN open=RESUBMITTED HTTP=409 noSideEffects=true generic=[{application_id=700048, target_person_id=9340001, status=RESUBMITTED, applicant_user_id=2}] professional=[{application_id=700048, person_id=9340001, floating_id=700007, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL lockWait table=floating_population type=RECORD mode=X,REC_NOT_GAP requestingTx=4887 blockingTx=4886
+ISSUE34 MYSQL RR GREEN concurrency round=1 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=700052, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700052, person_id=9340001, floating_id=700009, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL lockWait table=floating_population type=RECORD mode=X,REC_NOT_GAP requestingTx=4940 blockingTx=4939
+ISSUE34 MYSQL RR GREEN concurrency round=2 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=700054, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700054, person_id=9340001, floating_id=700010, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL lockWait table=floating_population type=RECORD mode=X,REC_NOT_GAP requestingTx=4993 blockingTx=4992
+ISSUE34 MYSQL RR GREEN concurrency round=3 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=700056, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700056, person_id=9340001, floating_id=700011, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL lockWait table=floating_population type=RECORD mode=X,REC_NOT_GAP requestingTx=5045 blockingTx=5044
+ISSUE34 MYSQL RR GREEN concurrency round=4 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=700058, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700058, person_id=9340001, floating_id=700012, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL lockWait table=floating_population type=RECORD mode=X,REC_NOT_GAP requestingTx=5099 blockingTx=5098
+ISSUE34 MYSQL RR GREEN concurrency round=5 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=700060, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700060, person_id=9340001, floating_id=700013, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL lockWait table=floating_population type=RECORD mode=X,REC_NOT_GAP requestingTx=5150 blockingTx=5149
+ISSUE34 MYSQL RR GREEN concurrency round=6 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=700062, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700062, person_id=9340001, floating_id=700014, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL lockWait table=floating_population type=RECORD mode=X,REC_NOT_GAP requestingTx=5204 blockingTx=5203
+ISSUE34 MYSQL RR GREEN concurrency round=7 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=700064, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700064, person_id=9340001, floating_id=700015, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL lockWait table=floating_population type=RECORD mode=X,REC_NOT_GAP requestingTx=5255 blockingTx=5254
+ISSUE34 MYSQL RR GREEN concurrency round=8 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=700066, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700066, person_id=9340001, floating_id=700016, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL lockWait table=floating_population type=RECORD mode=X,REC_NOT_GAP requestingTx=5309 blockingTx=5308
+ISSUE34 MYSQL RR GREEN concurrency round=9 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=700068, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700068, person_id=9340001, floating_id=700017, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL lockWait table=floating_population type=RECORD mode=X,REC_NOT_GAP requestingTx=5360 blockingTx=5359
+ISSUE34 MYSQL RR GREEN concurrency round=10 HTTP=[201, 409] success=1 conflict=1 generic=[{application_id=700070, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700070, person_id=9340001, floating_id=700018, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL RR GREEN terminal=REJECTED HTTP=201 generic=[{application_id=700079, target_person_id=9340001, status=REJECTED, applicant_user_id=2}, {application_id=700080, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700079, person_id=9340001, floating_id=700022, apply_type=FIRST_ISSUE, business_status=DRAFT}, {application_id=700080, person_id=9340001, floating_id=700022, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL RR GREEN terminal=WITHDRAWN HTTP=201 generic=[{application_id=700082, target_person_id=9340001, status=WITHDRAWN, applicant_user_id=2}, {application_id=700083, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700082, person_id=9340001, floating_id=700023, apply_type=FIRST_ISSUE, business_status=DRAFT}, {application_id=700083, person_id=9340001, floating_id=700023, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL RR GREEN terminal=CANCELLED HTTP=201 generic=[{application_id=700085, target_person_id=9340001, status=CANCELLED, applicant_user_id=2}, {application_id=700086, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700085, person_id=9340001, floating_id=700024, apply_type=FIRST_ISSUE, business_status=DRAFT}, {application_id=700086, person_id=9340001, floating_id=700024, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL RR GREEN terminal=COMPLETED HTTP=201 generic=[{application_id=700088, target_person_id=9340001, status=COMPLETED, applicant_user_id=2}, {application_id=700089, target_person_id=9340001, status=DRAFT, applicant_user_id=2}] professional=[{application_id=700088, person_id=9340001, floating_id=700025, apply_type=FIRST_ISSUE, business_status=DRAFT}, {application_id=700089, person_id=9340001, floating_id=700025, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL lockWait table=floating_population type=RECORD mode=X,REC_NOT_GAP requestingTx=6187 blockingTx=6186
+ISSUE34 MYSQL RR GREEN rollback HTTP=500,201 committedDrafts=1 generic=[{application_id=700111, target_person_id=9340001, status=DRAFT, applicant_user_id=5}] professional=[{application_id=700111, person_id=9340001, floating_id=700034, apply_type=FIRST_ISSUE, business_status=DRAFT}]
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+ISSUE34 MYSQL identity version=8.4.8 port=13394 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue34_3cccd9ef
+[INFO] Tests run: 35, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 31.73 s -- in com.wjx871.population.floating.Issue34MySql84IT
+[INFO] Tests run: 35, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+Raw log SHA256: de58e17abb4ce1fac19c832e40e707eaf90a6dcd95b3d093492a64e7ddc6001a

@@ -1,0 +1,6 @@
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+business_application	1	idx_application_target_person	1	target_person_id	A	3	NULL	NULL	YES	BTREE			YES	NULL
+mysql_1213_total
+0
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	business_application	NULL	ref	idx_application_status_created,idx_application_target_person	idx_application_target_person	9	const	2	4.69	Using where
