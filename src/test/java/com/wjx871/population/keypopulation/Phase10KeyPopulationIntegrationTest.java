@@ -4,7 +4,7 @@ package com.wjx871.population.keypopulation;import com.fasterxml.jackson.databin
 @Test@Order(1)void emptyPagination(){fetch("/api/key-populations","viewer",200);}
 @Test@Order(2)void viewerCannotApply()throws Exception{postJson("/api/key-populations/register-applications","viewer",registerBody(10001,"OTHER"),403);}
 @Test@Order(3)void missingPerson()throws Exception{postJson("/api/key-populations/register-applications","population",registerBody(99999,"OTHER"),404);}
-@Test@Order(4)void cancelledPerson()throws Exception{postJson("/api/key-populations/register-applications","population",registerBody(10002,"OTHER"),409);}
+@Test@Order(4)void cancelledPerson()throws Exception{postJson("/api/key-populations/register-applications","population",registerBody(10002,"OTHER"),404);}
 @Test@Order(5)void invalidType()throws Exception{postJson("/api/key-populations/register-applications","population",registerBody(10001,"INVALID"),400);}
 @Test@Order(6)void crossRegionCreate()throws Exception{postJson("/api/key-populations/register-applications","population",registerBody(10003,"OTHER"),404);}
 @Test@Order(7)void createRegisterDraft()throws Exception{String b=postJson("/api/key-populations/register-applications","population",registerBody(10001,"OTHER"),201);registerApp=json.readTree(b).path("data").path("application").path("applicationId").asLong();assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM key_population",Integer.class)).isZero();}

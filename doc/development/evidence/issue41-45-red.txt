@@ -1,0 +1,387 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.wjx871:population-miniterm >-------------------
+[INFO] Building population-miniterm 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.14:prepare-agent (coverage-agent) @ population-miniterm ---
+[INFO] argLine set to -javaagent:C:\\Users\\jxgm\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.14\\org.jacoco.agent-0.8.14-runtime.jar=destfile=C:\\Users\\jxgm\\.codex\\worktrees\\issue41-45-keypopulation-scope\\Сѧ��\\target\\jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ population-miniterm ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 42 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ population-miniterm ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 321 source files with javac [debug parameters release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ population-miniterm ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ population-miniterm ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 86 source files with javac [debug parameters release 17] to target\test-classes
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Issue4145KeyPopulationScopeHttpIntegrationTest.java:[290,234] ���һ������ʹ���˲�׼ȷ�ı������͵� varargs �����ķ� varargs ����; 
+  ���� varargs ����, Ӧʹ�� java.lang.Object
+  ���ڷ� varargs ����, Ӧʹ�� java.lang.Object[], ����Ҳ�������ƴ˾���
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java:[76,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java:[76,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java:[76,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java:[76,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/cache/OptionalRedisServiceTest.java: C:\Users\jxgm\.codex\worktrees\issue41-45-keypopulation-scope\Сѧ��\src\test\java\com\wjx871\population\cache\OptionalRedisServiceTest.javaʹ�û򸲸����ѹ�ʱ�� API��
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/cache/OptionalRedisServiceTest.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:deprecation ���±��롣
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java: ĳЩ�����ļ�����ʹ�û򸲸��˱��Ϊ��ɾ�����ѹ�ʱ API��
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/cache/S5A1StrictRedisServiceTest.java: ĳЩ�����ļ�ʹ����δ�����򲻰�ȫ�Ĳ�����
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/Сѧ��/src/test/java/com/wjx871/population/cache/S5A1StrictRedisServiceTest.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:unchecked ���±��롣
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ population-miniterm ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.3)
+
+2026-11-08 14:34:04.111 INFO  [traceId= instanceId=] [background-preinit] org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2026-11-08 14:34:04.200 INFO  [traceId= instanceId=] [main] com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest - Starting Issue4145KeyPopulationScopeHttpIntegrationTest using Java 21.0.7 with PID 38952 (started by jxgm in C:\Users\jxgm\.codex\worktrees\issue41-45-keypopulation-scope\Сѧ��)
+2026-11-08 14:34:04.207 INFO  [traceId= instanceId=] [main] com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest - No active profile set, falling back to 1 default profile: "default"
+2026-11-08 14:34:06.218 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-11-08 14:34:06.224 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-11-08 14:34:06.306 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 55 ms. Found 0 Redis repository interfaces.
+2026-11-08 14:34:07.802 INFO  [traceId= instanceId=] [main] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 0 (http)
+2026-11-08 14:34:07.830 INFO  [traceId= instanceId=] [main] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-auto-1"]
+2026-11-08 14:34:07.833 INFO  [traceId= instanceId=] [main] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-11-08 14:34:07.833 INFO  [traceId= instanceId=] [main] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.42]
+2026-11-08 14:34:07.939 INFO  [traceId= instanceId=] [main] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-11-08 14:34:07.940 INFO  [traceId= instanceId=] [main] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 3704 ms
+2026-11-08 14:34:08.043 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-11-08 14:34:08.454 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:94e0b6c3-cc43-4613-afc0-e7cc3cfd0060 user=SA
+2026-11-08 14:34:08.458 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-11-08 14:34:10.842 INFO  [traceId= instanceId=] [main] com.wjx871.population.assistant.PolicyAssistantService - Policy knowledge base loaded: 56 chunks across 19 registered sources
+2026-11-08 14:34:11.522 INFO  [traceId= instanceId=] [main] org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name authService
+2026-11-08 14:34:12.642 INFO  [traceId= instanceId=] [main] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-auto-1"]
+2026-11-08 14:34:12.657 INFO  [traceId= instanceId=] [main] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 1676 (http) with context path '/'
+2026-11-08 14:34:12.675 INFO  [traceId= instanceId=] [main] com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest - Started Issue4145KeyPopulationScopeHttpIntegrationTest in 9.089 seconds (process running for 11.951)
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (C:\Users\jxgm\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.6\byte-buddy-agent-1.17.6.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+2026-11-08 14:34:13.699 INFO  [traceId= instanceId=] [main] org.springframework.boot.web.embedded.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-08 14:34:13.700 INFO  [traceId= instanceId=] [tomcat-shutdown] org.apache.coyote.http11.Http11NioProtocol - Pausing ProtocolHandler ["http-nio-auto-1-1676"]
+2026-11-08 14:34:13.715 INFO  [traceId= instanceId=] [tomcat-shutdown] org.springframework.boot.web.embedded.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-11-08 14:34:13.716 INFO  [traceId= instanceId=] [main] org.apache.coyote.http11.Http11NioProtocol - Stopping ProtocolHandler ["http-nio-auto-1"]
+2026-11-08 14:34:13.748 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-11-08 14:34:13.751 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+[ERROR] Tests run: 3, Failures: 0, Errors: 3, Skipped: 0, Time elapsed: 11.77 s <<< FAILURE! -- in com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest
+[ERROR] com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest.inactiveResidenceDoesNotGrantAnyCurrentScope -- Time elapsed: 0.952 s <<< ERROR!
+org.springframework.dao.DataIntegrityViolationException: 
+PreparedStatementCallback; SQL [INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED')]; NULL not allowed for column "sort_no"; SQL statement:
+INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED') [23502-232]
+	at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:97)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1556)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:972)
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1016)
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1026)
+	at com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest.fixture(Issue4145KeyPopulationScopeHttpIntegrationTest.java:38)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+Caused by: org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException: NULL not allowed for column "sort_no"; SQL statement:
+INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED') [23502-232]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:520)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489)
+	at org.h2.message.DbException.get(DbException.java:223)
+	at org.h2.message.DbException.get(DbException.java:199)
+	at org.h2.table.Column.validateConvertUpdateSequence(Column.java:402)
+	at org.h2.table.Table.convertInsertRow(Table.java:963)
+	at org.h2.command.dml.Insert.insertRows(Insert.java:167)
+	at org.h2.command.dml.Insert.update(Insert.java:135)
+	at org.h2.command.dml.DataChangeStatement.update(DataChangeStatement.java:74)
+	at org.h2.command.CommandContainer.update(CommandContainer.java:139)
+	at org.h2.command.Command.executeUpdate(Command.java:304)
+	at org.h2.command.Command.executeUpdate(Command.java:248)
+	at org.h2.jdbc.JdbcPreparedStatement.executeUpdateInternal(JdbcPreparedStatement.java:213)
+	at org.h2.jdbc.JdbcPreparedStatement.executeUpdate(JdbcPreparedStatement.java:172)
+	at com.zaxxer.hikari.pool.ProxyPreparedStatement.executeUpdate(ProxyPreparedStatement.java:61)
+	at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeUpdate(HikariProxyPreparedStatement.java)
+	at org.springframework.jdbc.core.JdbcTemplate.lambda$update$2(JdbcTemplate.java:977)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+	... 7 more
+
+[ERROR] com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest.cancelledOriginalManagerCanCreateSubmitAndExplicitlyExecuteRelease(boolean)[1] -- Time elapsed: 0.009 s <<< ERROR!
+org.springframework.dao.DataIntegrityViolationException: 
+PreparedStatementCallback; SQL [INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED')]; NULL not allowed for column "sort_no"; SQL statement:
+INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED') [23502-232]
+	at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:97)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1556)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:972)
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1016)
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1026)
+	at com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest.fixture(Issue4145KeyPopulationScopeHttpIntegrationTest.java:38)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+Caused by: org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException: NULL not allowed for column "sort_no"; SQL statement:
+INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED') [23502-232]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:520)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489)
+	at org.h2.message.DbException.get(DbException.java:223)
+	at org.h2.message.DbException.get(DbException.java:199)
+	at org.h2.table.Column.validateConvertUpdateSequence(Column.java:402)
+	at org.h2.table.Table.convertInsertRow(Table.java:963)
+	at org.h2.command.dml.Insert.insertRows(Insert.java:167)
+	at org.h2.command.dml.Insert.update(Insert.java:135)
+	at org.h2.command.dml.DataChangeStatement.update(DataChangeStatement.java:74)
+	at org.h2.command.CommandContainer.update(CommandContainer.java:139)
+	at org.h2.command.Command.executeUpdate(Command.java:304)
+	at org.h2.command.Command.executeUpdate(Command.java:248)
+	at org.h2.jdbc.JdbcPreparedStatement.executeUpdateInternal(JdbcPreparedStatement.java:213)
+	at org.h2.jdbc.JdbcPreparedStatement.executeUpdate(JdbcPreparedStatement.java:172)
+	at com.zaxxer.hikari.pool.ProxyPreparedStatement.executeUpdate(ProxyPreparedStatement.java:61)
+	at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeUpdate(HikariProxyPreparedStatement.java)
+	at org.springframework.jdbc.core.JdbcTemplate.lambda$update$2(JdbcTemplate.java:977)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+	... 39 more
+
+[ERROR] com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest.cancelledOriginalManagerCanCreateSubmitAndExplicitlyExecuteRelease(boolean)[2] -- Time elapsed: 0.009 s <<< ERROR!
+org.springframework.dao.DataIntegrityViolationException: 
+PreparedStatementCallback; SQL [INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED')]; NULL not allowed for column "sort_no"; SQL statement:
+INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED') [23502-232]
+	at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:97)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1556)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:972)
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1016)
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1026)
+	at com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest.fixture(Issue4145KeyPopulationScopeHttpIntegrationTest.java:38)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+Caused by: org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException: NULL not allowed for column "sort_no"; SQL statement:
+INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED') [23502-232]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:520)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489)
+	at org.h2.message.DbException.get(DbException.java:223)
+	at org.h2.message.DbException.get(DbException.java:199)
+	at org.h2.table.Column.validateConvertUpdateSequence(Column.java:402)
+	at org.h2.table.Table.convertInsertRow(Table.java:963)
+	at org.h2.command.dml.Insert.insertRows(Insert.java:167)
+	at org.h2.command.dml.Insert.update(Insert.java:135)
+	at org.h2.command.dml.DataChangeStatement.update(DataChangeStatement.java:74)
+	at org.h2.command.CommandContainer.update(CommandContainer.java:139)
+	at org.h2.command.Command.executeUpdate(Command.java:304)
+	at org.h2.command.Command.executeUpdate(Command.java:248)
+	at org.h2.jdbc.JdbcPreparedStatement.executeUpdateInternal(JdbcPreparedStatement.java:213)
+	at org.h2.jdbc.JdbcPreparedStatement.executeUpdate(JdbcPreparedStatement.java:172)
+	at com.zaxxer.hikari.pool.ProxyPreparedStatement.executeUpdate(ProxyPreparedStatement.java:61)
+	at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeUpdate(HikariProxyPreparedStatement.java)
+	at org.springframework.jdbc.core.JdbcTemplate.lambda$update$2(JdbcTemplate.java:977)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+	... 39 more
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Errors: 
+[ERROR]   Issue4145KeyPopulationScopeHttpIntegrationTest.fixture:38 ? DataIntegrityViolation PreparedStatementCallback; SQL [INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED')]; NULL not allowed for column "sort_no"; SQL statement:
+INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED') [23502-232]
+[ERROR]   Issue4145KeyPopulationScopeHttpIntegrationTest.fixture:38 ? DataIntegrityViolation PreparedStatementCallback; SQL [INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED')]; NULL not allowed for column "sort_no"; SQL statement:
+INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED') [23502-232]
+[ERROR]   Issue4145KeyPopulationScopeHttpIntegrationTest.fixture:38 ? DataIntegrityViolation PreparedStatementCallback; SQL [INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED')]; NULL not allowed for column "sort_no"; SQL statement:
+INSERT INTO sys_department(department_id,department_code,department_name,region_code,status) VALUES(?,?,?,?,'ENABLED') [23502-232]
+[INFO] 
+[ERROR] Tests run: 3, Failures: 0, Errors: 3, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  37.541 s
+[INFO] Finished at: 2026-11-08T14:34:14+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.3:test (default-test) on project population-miniterm: 
+[ERROR] 
+[ERROR] See C:\Users\jxgm\.codex\worktrees\issue41-45-keypopulation-scope\Сѧ��\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

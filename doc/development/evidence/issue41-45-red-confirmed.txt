@@ -1,0 +1,376 @@
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.wjx871:population-miniterm >-------------------
+[INFO] Building population-miniterm 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.14:prepare-agent (coverage-agent) @ population-miniterm ---
+[INFO] argLine set to -javaagent:C:\\Users\\jxgm\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.14\\org.jacoco.agent-0.8.14-runtime.jar=destfile=C:\\Users\\jxgm\\.codex\\worktrees\\issue41-45-keypopulation-scope\\小学期\\target\\jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ population-miniterm ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 42 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ population-miniterm ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 321 source files with javac [debug parameters release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ population-miniterm ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ population-miniterm ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 86 source files with javac [debug parameters release 17] to target\test-classes
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/keypopulation/Issue4145KeyPopulationScopeHttpIntegrationTest.java:[291,234] 最后一个参数使用了不准确的变量类型的 varargs 方法的非 varargs 调用; 
+  对于 varargs 调用, 应使用 java.lang.Object
+  对于非 varargs 调用, 应使用 java.lang.Object[], 这样也可以抑制此警告
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.SpyBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java:[76,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java:[76,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java:[76,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java:[76,6] org.springframework.boot.test.mock.mockito 中的 org.springframework.boot.test.mock.mockito.MockBean 已过时, 且标记为待删除
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/cache/OptionalRedisServiceTest.java: C:\Users\jxgm\.codex\worktrees\issue41-45-keypopulation-scope\小学期\src\test\java\com\wjx871\population\cache\OptionalRedisServiceTest.java使用或覆盖了已过时的 API。
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/cache/OptionalRedisServiceTest.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java: 某些输入文件额外使用或覆盖了标记为待删除的已过时 API。
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/cache/S5A1StrictRedisServiceTest.java: 某些输入文件使用了未经检查或不安全的操作。
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue41-45-keypopulation-scope/小学期/src/test/java/com/wjx871/population/cache/S5A1StrictRedisServiceTest.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ population-miniterm ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8
+[INFO] Running com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.3)
+
+2026-11-08 14:37:00.158 INFO  [traceId= instanceId=] [background-preinit] org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2026-11-08 14:37:00.237 INFO  [traceId= instanceId=] [main] com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest - Starting Issue4145KeyPopulationScopeHttpIntegrationTest using Java 21.0.7 with PID 11100 (started by jxgm in C:\Users\jxgm\.codex\worktrees\issue41-45-keypopulation-scope\小学期)
+2026-11-08 14:37:00.241 INFO  [traceId= instanceId=] [main] com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest - No active profile set, falling back to 1 default profile: "default"
+2026-11-08 14:37:02.129 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-11-08 14:37:02.133 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-11-08 14:37:02.236 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 75 ms. Found 0 Redis repository interfaces.
+2026-11-08 14:37:03.766 INFO  [traceId= instanceId=] [main] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 0 (http)
+2026-11-08 14:37:03.796 INFO  [traceId= instanceId=] [main] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-auto-1"]
+2026-11-08 14:37:03.802 INFO  [traceId= instanceId=] [main] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-11-08 14:37:03.803 INFO  [traceId= instanceId=] [main] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.42]
+2026-11-08 14:37:03.909 INFO  [traceId= instanceId=] [main] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-11-08 14:37:03.910 INFO  [traceId= instanceId=] [main] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 3630 ms
+2026-11-08 14:37:04.029 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-11-08 14:37:04.458 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:6c688e12-0290-492e-97be-6c73c4d16e10 user=SA
+2026-11-08 14:37:04.458 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-11-08 14:37:07.012 INFO  [traceId= instanceId=] [main] com.wjx871.population.assistant.PolicyAssistantService - Policy knowledge base loaded: 56 chunks across 19 registered sources
+2026-11-08 14:37:07.854 INFO  [traceId= instanceId=] [main] org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name authService
+2026-11-08 14:37:08.797 INFO  [traceId= instanceId=] [main] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-auto-1"]
+2026-11-08 14:37:08.817 INFO  [traceId= instanceId=] [main] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 5419 (http) with context path '/'
+2026-11-08 14:37:08.829 INFO  [traceId= instanceId=] [main] com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest - Started Issue4145KeyPopulationScopeHttpIntegrationTest in 9.208 seconds (process running for 11.942)
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (C:\Users\jxgm\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.6\byte-buddy-agent-1.17.6.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+2026-11-08 14:37:09.771 INFO  [traceId= instanceId=] [http-nio-auto-1-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-08 14:37:09.775 INFO  [traceId= instanceId=] [http-nio-auto-1-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-11-08 14:37:09.775 INFO  [traceId= instanceId=] [http-nio-auto-1-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 0 ms
+ISSUE4145_HTTP method=GET path=/api/auth/me status=200 body={"code":200,"message":"ok","data":{"userId":414510,"username":"i4145u414510","realName":"Synthetic user","roleCode":"I4145R414510","roleName":"Synthetic role","roleLevel":"L2","dataScope":"REGION","departmentId":414510,"departmentName":"Synthetic department","regionCode":"110101","permissions":["application:create","application:submit","application:view","cancellation:execute","cancellation:person:create","key-population:apply","key-population:execute","key-population:view"]},"timestamp":1794119830492}
+ISSUE4145_HTTP method=GET path=/api/auth/me status=200 body={"code":200,"message":"ok","data":{"userId":414511,"username":"i4145u414511","realName":"Synthetic user","roleCode":"I4145R414511","roleName":"Synthetic role","roleLevel":"L2","dataScope":"REGION","departmentId":414511,"departmentName":"Synthetic department","regionCode":"110105","permissions":["application:create","application:submit","application:view","cancellation:execute","cancellation:person:create","key-population:apply","key-population:execute","key-population:view"]},"timestamp":1794119830504}
+ISSUE4145_HTTP method=POST path=/api/key-populations/register-applications status=201 body={"code":201,"message":"created","data":{"application":{"applicationId":1,"applicationNo":"APP-20261108-55572218A9A1","businessType":"KEY_POPULATION_REGISTER","title":"Synthetic register","applicantUserId":414511,"applicantName":"Synthetic user","applicantDepartmentId":414511,"applicantRegionCode":"110105","targetPersonId":414510,"targetHouseholdId":null,"status":"DRAFT","reason":"Synthetic register","remark":null,"submittedAt":null,"completedAt":null,"version":0,"createdAt":"2026-11-08T14:37:10.613107","updatedAt":"2026-11-08T14:37:10.613107"},"detailId":1,"operationType":"REGISTER","recordId":null,"personId":414510,"populationType":"OTHER","attentionLevel":"MEDIUM","reason":"Synthetic register","eventDate":"2026-07-13","responsibleDepartmentId":414511,"responsibleUserId":414511,"businessStatus":"DRAFT","version":0,"executable":false},"timestamp":1794119830622}
+ISSUE4145_MATERIAL_FIXTURE app=1 types=[KEY_POPULATION_BASIS, SITUATION_DESCRIPTION] DB-verified=true no-physical-upload=true
+ISSUE4145_HTTP method=POST path=/api/key-populations/register-applications/1/submit status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119830663}
+ISSUE4145_HTTP method=POST path=/api/approvals/1/approve status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119830688}
+ISSUE4145_HTTP method=POST path=/api/key-populations/register-applications/1/execute status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119830708}
+2026-11-08 14:37:10.742 WARN  [traceId=8b69a1c4-c7bb-4334-a261-d4455392eb88 instanceId=74216525-28fd-44fa-90d4-84f492366651] [http-nio-auto-1-exec-10] org.springframework.data.web.config.SpringDataJacksonConfiguration$PageModule$WarningLoggingModifier - Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
+	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
+
+ISSUE4145_HTTP method=GET path=/api/key-populations?personId=414510 status=200 body={"code":200,"message":"ok","data":{"content":[{"recordId":1,"personId":414510,"personName":"Synthetic person","idCard":"1101**********4510","phone":"138****5678","address":null,"regionCode":"110101","populationType":"OTHER","attentionLevel":"MEDIUM","registerReason":"Synthetic register","registerDate":"2026-07-13","responsibleDepartmentId":414511,"responsibleUserId":414511,"status":"ACTIVE","releaseReason":null,"releaseDate":null,"sourceApplicationId":1,"version":0,"createdAt":"2026-11-08T14:37:10.708932","updatedAt":"2026-11-08T14:37:10.708932"}],"pageable":{"pageNumber":0,"pageSize":20,"sort":{"empty":true,"unsorted":true,"sorted":false},"offset":0,"unpaged":false,"paged":true},"totalPages":1,"totalElements":1,"last":true,"size":20,"number":0,"sort":{"empty":true,"unsorted":true,"sorted":false},"first":true,"numberOfElements":1,"empty":false},"timestamp":1794119830738}
+ISSUE4145_HTTP method=GET path=/api/persons/414510/key-populations status=200 body={"code":200,"message":"ok","data":{"content":[{"recordId":1,"personId":414510,"personName":"Synthetic person","idCard":"1101**********4510","phone":"138****5678","address":null,"regionCode":"110101","populationType":"OTHER","attentionLevel":"MEDIUM","registerReason":"Synthetic register","registerDate":"2026-07-13","responsibleDepartmentId":414511,"responsibleUserId":414511,"status":"ACTIVE","releaseReason":null,"releaseDate":null,"sourceApplicationId":1,"version":0,"createdAt":"2026-11-08T14:37:10.708932","updatedAt":"2026-11-08T14:37:10.708932"}],"pageable":{"pageNumber":0,"pageSize":20,"sort":{"empty":true,"unsorted":true,"sorted":false},"offset":0,"unpaged":false,"paged":true},"totalPages":1,"totalElements":1,"last":true,"size":20,"number":0,"sort":{"empty":true,"unsorted":true,"sorted":false},"first":true,"numberOfElements":1,"empty":false},"timestamp":1794119830763}
+ISSUE4145_HTTP method=GET path=/api/key-populations/1 status=200 body={"code":200,"message":"ok","data":{"recordId":1,"personId":414510,"personName":"Synthetic person","idCard":"1101**********4510","phone":"138****5678","address":null,"regionCode":"110101","populationType":"OTHER","attentionLevel":"MEDIUM","registerReason":"Synthetic register","registerDate":"2026-07-13","responsibleDepartmentId":414511,"responsibleUserId":414511,"status":"ACTIVE","releaseReason":null,"releaseDate":null,"sourceApplicationId":1,"version":0,"createdAt":"2026-11-08T14:37:10.708932","updatedAt":"2026-11-08T14:37:10.708932"},"timestamp":1794119830773}
+ISSUE4145_HTTP method=GET path=/api/key-populations/1/history status=200 body={"code":200,"message":"ok","data":[{"historyId":1,"recordId":1,"personId":414510,"eventType":"REGISTERED","previousStatus":null,"newStatus":"ACTIVE","reason":"Synthetic register","sourceApplicationId":1,"operatorId":414511,"occurredAt":"2026-11-08T14:37:10.708932","snapshotJson":"{\"populationType\":\"OTHER\",\"attentionLevel\":\"MEDIUM\",\"status\":\"ACTIVE\"}"}],"timestamp":1794119830783}
+ISSUE4145_HTTP method=POST path=/api/key-populations/1/release-applications status=201 body={"code":201,"message":"created","data":{"application":{"applicationId":2,"applicationNo":"APP-20261108-442C5725E06D","businessType":"KEY_POPULATION_RELEASE","title":"Synthetic release","applicantUserId":414510,"applicantName":"Synthetic user","applicantDepartmentId":414510,"applicantRegionCode":"110101","targetPersonId":414510,"targetHouseholdId":null,"status":"DRAFT","reason":"Synthetic release","remark":null,"submittedAt":null,"completedAt":null,"version":0,"createdAt":"2026-11-08T14:37:10.802886","updatedAt":"2026-11-08T14:37:10.802886"},"detailId":2,"operationType":"RELEASE","recordId":1,"personId":414510,"populationType":"OTHER","attentionLevel":"MEDIUM","reason":"Synthetic release","eventDate":"2026-07-14","responsibleDepartmentId":414511,"responsibleUserId":414511,"businessStatus":"DRAFT","version":0,"executable":false},"timestamp":1794119830805}
+ISSUE4145_HTTP method=POST path=/api/key-populations/register-applications status=409 body={"code":409,"message":"该人员已有同类型 ACTIVE 记录","data":null,"timestamp":1794119830817}
+ISSUE4145_MATERIAL_FIXTURE app=3 types=[KEY_POPULATION_BASIS, SITUATION_DESCRIPTION] DB-verified=true no-physical-upload=true
+ISSUE4145_HTTP method=POST path=/api/applications/3/submit status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119830839}
+ISSUE4145_MATERIAL_FIXTURE app=4 types=[KEY_POPULATION_BASIS, SITUATION_DESCRIPTION] DB-verified=true no-physical-upload=true
+ISSUE4145_HTTP method=POST path=/api/key-populations/register-applications/4/submit status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119830860}
+ISSUE4145_HTTP method=GET path=/api/key-populations?personId=414510 status=200 body={"code":200,"message":"ok","data":{"content":[{"recordId":1,"personId":414510,"personName":"Synthetic person","idCard":"110105198000414510","phone":"13812345678","address":null,"regionCode":"110101","populationType":"OTHER","attentionLevel":"MEDIUM","registerReason":"Synthetic register","registerDate":"2026-07-13","responsibleDepartmentId":414511,"responsibleUserId":414511,"status":"ACTIVE","releaseReason":null,"releaseDate":null,"sourceApplicationId":1,"version":0,"createdAt":"2026-11-08T14:37:10.708932","updatedAt":"2026-11-08T14:37:10.708932"}],"pageable":{"pageNumber":0,"pageSize":20,"sort":{"empty":true,"unsorted":true,"sorted":false},"offset":0,"unpaged":false,"paged":true},"totalPages":1,"totalElements":1,"last":true,"size":20,"number":0,"sort":{"empty":true,"unsorted":true,"sorted":false},"first":true,"numberOfElements":1,"empty":false},"timestamp":1794119830931}
+ISSUE4145_HTTP method=GET path=/api/key-populations?personId=414510&regionCode=110101 status=200 body={"code":200,"message":"ok","data":{"content":[{"recordId":1,"personId":414510,"personName":"Synthetic person","idCard":"110105198000414510","phone":"13812345678","address":null,"regionCode":"110101","populationType":"OTHER","attentionLevel":"MEDIUM","registerReason":"Synthetic register","registerDate":"2026-07-13","responsibleDepartmentId":414511,"responsibleUserId":414511,"status":"ACTIVE","releaseReason":null,"releaseDate":null,"sourceApplicationId":1,"version":0,"createdAt":"2026-11-08T14:37:10.708932","updatedAt":"2026-11-08T14:37:10.708932"}],"pageable":{"pageNumber":0,"pageSize":20,"sort":{"empty":true,"unsorted":true,"sorted":false},"offset":0,"unpaged":false,"paged":true},"totalPages":1,"totalElements":1,"last":true,"size":20,"number":0,"sort":{"empty":true,"unsorted":true,"sorted":false},"first":true,"numberOfElements":1,"empty":false},"timestamp":1794119830946}
+ISSUE45_OLD_OR_NEW_MATRIX {list-total=1, person-total=1, detail=200, history=200, release-create=201, register-create=409, generic-submit=200, specialized-submit=200, explicit-history-region-total=1} projection="110101"
+ISSUE4145_HTTP method=GET path=/api/auth/me status=200 body={"code":200,"message":"ok","data":{"userId":414520,"username":"i4145u414520","realName":"Synthetic user","roleCode":"I4145R414520","roleName":"Synthetic role","roleLevel":"L2","dataScope":"REGION","departmentId":414520,"departmentName":"Synthetic department","regionCode":"110101","permissions":["application:create","application:submit","application:view","cancellation:execute","cancellation:person:create","key-population:apply","key-population:execute","key-population:view"]},"timestamp":1794119831188}
+ISSUE4145_HTTP method=GET path=/api/auth/me status=200 body={"code":200,"message":"ok","data":{"userId":414521,"username":"i4145u414521","realName":"Synthetic user","roleCode":"I4145R414521","roleName":"Synthetic role","roleLevel":"L2","dataScope":"REGION","departmentId":414521,"departmentName":"Synthetic department","regionCode":"110105","permissions":["application:create","application:submit","application:view","cancellation:execute","cancellation:person:create","key-population:apply","key-population:execute","key-population:view"]},"timestamp":1794119831192}
+ISSUE4145_HTTP method=POST path=/api/key-populations/register-applications status=201 body={"code":201,"message":"created","data":{"application":{"applicationId":5,"applicationNo":"APP-20261108-EC90CC3BD796","businessType":"KEY_POPULATION_REGISTER","title":"Synthetic register","applicantUserId":414520,"applicantName":"Synthetic user","applicantDepartmentId":414520,"applicantRegionCode":"110101","targetPersonId":414520,"targetHouseholdId":null,"status":"DRAFT","reason":"Synthetic register","remark":null,"submittedAt":null,"completedAt":null,"version":0,"createdAt":"2026-11-08T14:37:11.214298","updatedAt":"2026-11-08T14:37:11.214298"},"detailId":5,"operationType":"REGISTER","recordId":null,"personId":414520,"populationType":"OTHER","attentionLevel":"MEDIUM","reason":"Synthetic register","eventDate":"2026-07-13","responsibleDepartmentId":414520,"responsibleUserId":414520,"businessStatus":"DRAFT","version":0,"executable":false},"timestamp":1794119831217}
+ISSUE4145_MATERIAL_FIXTURE app=5 types=[KEY_POPULATION_BASIS, SITUATION_DESCRIPTION] DB-verified=true no-physical-upload=true
+ISSUE4145_HTTP method=POST path=/api/key-populations/register-applications/5/submit status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119831234}
+ISSUE4145_HTTP method=POST path=/api/approvals/4/approve status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119831251}
+ISSUE4145_HTTP method=POST path=/api/key-populations/register-applications/5/execute status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119831267}
+ISSUE41_DB stage=before-cancellation person=[{person_id=414520, current_status_code=REGISTERED, version=0}] residence=[{residence_id=2, person_id=414520, region_code=110101, status=ACTIVE, version=0}] key=[{key_id=2, person_id=414520, status=ACTIVE, source_application_id=5}] archive=[] source=[{business_type=KEY_POPULATION_REGISTER, target_person_id=414520, applicant_region_code=110101, status=COMPLETED}]
+ISSUE4145_HTTP method=POST path=/api/cancellations/person/applications status=201 body={"code":201,"message":"created","data":{"applicationId":6,"applicationNo":"APP-20261108-D69FC786B088","cancellationId":1,"cancellationNo":"CNL-20261108-907E8E5C7DBC","status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794119831292}
+ISSUE4145_MATERIAL_FIXTURE app=6 types=[APPLICANT_IDENTITY_PROOF, HOUSEHOLD_BOOK, SETTLEMENT_ABROAD_PROOF] DB-verified=true no-physical-upload=true
+ISSUE4145_HTTP method=POST path=/api/applications/6/submit status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119831309}
+ISSUE4145_HTTP method=POST path=/api/approvals/5/approve status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119831327}
+ISSUE4145_HTTP method=POST path=/api/cancellations/person/applications/6/execute status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119831349}
+ISSUE41_DB stage=after-cancellation person=[{person_id=414520, current_status_code=CANCELLED, version=1}] residence=[] key=[{key_id=2, person_id=414520, status=ACTIVE, source_application_id=5}] archive=[{original_registration_id=2, person_id=414520, region_code_snapshot=110101, archive_type=PERSON_CANCELLATION, application_id=6}] source=[{business_type=KEY_POPULATION_REGISTER, target_person_id=414520, applicant_region_code=110101, status=COMPLETED}]
+ISSUE4145_HTTP method=GET path=/api/key-populations/2 status=200 body={"code":200,"message":"ok","data":{"recordId":2,"personId":414520,"personName":"Synthetic person","idCard":"1101**********4520","phone":"138****5678","address":null,"regionCode":null,"populationType":"OTHER","attentionLevel":"MEDIUM","registerReason":"Synthetic register","registerDate":"2026-07-13","responsibleDepartmentId":414520,"responsibleUserId":414520,"status":"ACTIVE","releaseReason":null,"releaseDate":null,"sourceApplicationId":5,"version":0,"createdAt":"2026-11-08T14:37:11.265625","updatedAt":"2026-11-08T14:37:11.265625"},"timestamp":1794119831361}
+ISSUE4145_HTTP method=POST path=/api/key-populations/2/release-applications status=201 body={"code":201,"message":"created","data":{"application":{"applicationId":7,"applicationNo":"APP-20261108-BAD53CB42214","businessType":"KEY_POPULATION_RELEASE","title":"Synthetic release","applicantUserId":414520,"applicantName":"Synthetic user","applicantDepartmentId":414520,"applicantRegionCode":"110101","targetPersonId":414520,"targetHouseholdId":null,"status":"DRAFT","reason":"Synthetic release","remark":null,"submittedAt":null,"completedAt":null,"version":0,"createdAt":"2026-11-08T14:37:11.37155","updatedAt":"2026-11-08T14:37:11.37155"},"detailId":6,"operationType":"RELEASE","recordId":2,"personId":414520,"populationType":"OTHER","attentionLevel":"MEDIUM","reason":"Synthetic release","eventDate":"2026-07-14","responsibleDepartmentId":414520,"responsibleUserId":414520,"businessStatus":"DRAFT","version":0,"executable":false},"timestamp":1794119831371}
+ISSUE4145_MATERIAL_FIXTURE app=7 types=[KEY_POPULATION_BASIS, SITUATION_DESCRIPTION] DB-verified=true no-physical-upload=true
+ISSUE4145_HTTP method=POST path=/api/key-populations/release-applications/7/submit status=403 body={"code":403,"message":"超出人员数据范围","data":null,"timestamp":1794119831388}
+ISSUE41_STAGES query=200 draft=201 materials=2 generic=false submit=403 status=DRAFT approvals=0
+ISSUE4145_HTTP method=GET path=/api/auth/me status=200 body={"code":200,"message":"ok","data":{"userId":414530,"username":"i4145u414530","realName":"Synthetic user","roleCode":"I4145R414530","roleName":"Synthetic role","roleLevel":"L2","dataScope":"REGION","departmentId":414530,"departmentName":"Synthetic department","regionCode":"110101","permissions":["application:create","application:submit","application:view","cancellation:execute","cancellation:person:create","key-population:apply","key-population:execute","key-population:view"]},"timestamp":1794119831588}
+ISSUE4145_HTTP method=GET path=/api/auth/me status=200 body={"code":200,"message":"ok","data":{"userId":414531,"username":"i4145u414531","realName":"Synthetic user","roleCode":"I4145R414531","roleName":"Synthetic role","roleLevel":"L2","dataScope":"REGION","departmentId":414531,"departmentName":"Synthetic department","regionCode":"110105","permissions":["application:create","application:submit","application:view","cancellation:execute","cancellation:person:create","key-population:apply","key-population:execute","key-population:view"]},"timestamp":1794119831594}
+ISSUE4145_HTTP method=POST path=/api/key-populations/register-applications status=201 body={"code":201,"message":"created","data":{"application":{"applicationId":8,"applicationNo":"APP-20261108-6FAA866E060F","businessType":"KEY_POPULATION_REGISTER","title":"Synthetic register","applicantUserId":414530,"applicantName":"Synthetic user","applicantDepartmentId":414530,"applicantRegionCode":"110101","targetPersonId":414530,"targetHouseholdId":null,"status":"DRAFT","reason":"Synthetic register","remark":null,"submittedAt":null,"completedAt":null,"version":0,"createdAt":"2026-11-08T14:37:11.604872","updatedAt":"2026-11-08T14:37:11.604872"},"detailId":7,"operationType":"REGISTER","recordId":null,"personId":414530,"populationType":"OTHER","attentionLevel":"MEDIUM","reason":"Synthetic register","eventDate":"2026-07-13","responsibleDepartmentId":414530,"responsibleUserId":414530,"businessStatus":"DRAFT","version":0,"executable":false},"timestamp":1794119831604}
+ISSUE4145_MATERIAL_FIXTURE app=8 types=[KEY_POPULATION_BASIS, SITUATION_DESCRIPTION] DB-verified=true no-physical-upload=true
+ISSUE4145_HTTP method=POST path=/api/key-populations/register-applications/8/submit status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119831621}
+ISSUE4145_HTTP method=POST path=/api/approvals/6/approve status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119831638}
+ISSUE4145_HTTP method=POST path=/api/key-populations/register-applications/8/execute status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119831650}
+ISSUE41_DB stage=before-cancellation person=[{person_id=414530, current_status_code=REGISTERED, version=0}] residence=[{residence_id=3, person_id=414530, region_code=110101, status=ACTIVE, version=0}] key=[{key_id=3, person_id=414530, status=ACTIVE, source_application_id=8}] archive=[] source=[{business_type=KEY_POPULATION_REGISTER, target_person_id=414530, applicant_region_code=110101, status=COMPLETED}]
+ISSUE4145_HTTP method=POST path=/api/cancellations/person/applications status=201 body={"code":201,"message":"created","data":{"applicationId":9,"applicationNo":"APP-20261108-6374BCF03862","cancellationId":2,"cancellationNo":"CNL-20261108-CDBF13CC6BE3","status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794119831663}
+ISSUE4145_MATERIAL_FIXTURE app=9 types=[APPLICANT_IDENTITY_PROOF, HOUSEHOLD_BOOK, SETTLEMENT_ABROAD_PROOF] DB-verified=true no-physical-upload=true
+ISSUE4145_HTTP method=POST path=/api/applications/9/submit status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119831680}
+ISSUE4145_HTTP method=POST path=/api/approvals/7/approve status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119831694}
+ISSUE4145_HTTP method=POST path=/api/cancellations/person/applications/9/execute status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794119831704}
+ISSUE41_DB stage=after-cancellation person=[{person_id=414530, current_status_code=CANCELLED, version=1}] residence=[] key=[{key_id=3, person_id=414530, status=ACTIVE, source_application_id=8}] archive=[{original_registration_id=3, person_id=414530, region_code_snapshot=110101, archive_type=PERSON_CANCELLATION, application_id=9}] source=[{business_type=KEY_POPULATION_REGISTER, target_person_id=414530, applicant_region_code=110101, status=COMPLETED}]
+ISSUE4145_HTTP method=GET path=/api/key-populations/3 status=200 body={"code":200,"message":"ok","data":{"recordId":3,"personId":414530,"personName":"Synthetic person","idCard":"1101**********4530","phone":"138****5678","address":null,"regionCode":null,"populationType":"OTHER","attentionLevel":"MEDIUM","registerReason":"Synthetic register","registerDate":"2026-07-13","responsibleDepartmentId":414530,"responsibleUserId":414530,"status":"ACTIVE","releaseReason":null,"releaseDate":null,"sourceApplicationId":8,"version":0,"createdAt":"2026-11-08T14:37:11.646819","updatedAt":"2026-11-08T14:37:11.646819"},"timestamp":1794119831721}
+ISSUE4145_HTTP method=POST path=/api/key-populations/3/release-applications status=201 body={"code":201,"message":"created","data":{"application":{"applicationId":10,"applicationNo":"APP-20261108-759CCE73EE11","businessType":"KEY_POPULATION_RELEASE","title":"Synthetic release","applicantUserId":414530,"applicantName":"Synthetic user","applicantDepartmentId":414530,"applicantRegionCode":"110101","targetPersonId":414530,"targetHouseholdId":null,"status":"DRAFT","reason":"Synthetic release","remark":null,"submittedAt":null,"completedAt":null,"version":0,"createdAt":"2026-11-08T14:37:11.734118","updatedAt":"2026-11-08T14:37:11.734118"},"detailId":8,"operationType":"RELEASE","recordId":3,"personId":414530,"populationType":"OTHER","attentionLevel":"MEDIUM","reason":"Synthetic release","eventDate":"2026-07-14","responsibleDepartmentId":414530,"responsibleUserId":414530,"businessStatus":"DRAFT","version":0,"executable":false},"timestamp":1794119831734}
+ISSUE4145_MATERIAL_FIXTURE app=10 types=[KEY_POPULATION_BASIS, SITUATION_DESCRIPTION] DB-verified=true no-physical-upload=true
+ISSUE4145_HTTP method=POST path=/api/applications/10/submit status=403 body={"code":403,"message":"超出人员数据范围","data":null,"timestamp":1794119831752}
+ISSUE41_STAGES query=200 draft=201 materials=2 generic=true submit=403 status=DRAFT approvals=0
+2026-11-08 14:37:11.771 INFO  [traceId= instanceId=] [main] org.springframework.boot.web.embedded.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-08 14:37:11.775 INFO  [traceId= instanceId=] [tomcat-shutdown] org.apache.coyote.http11.Http11NioProtocol - Pausing ProtocolHandler ["http-nio-auto-1-5419"]
+2026-11-08 14:37:11.788 INFO  [traceId= instanceId=] [tomcat-shutdown] org.springframework.boot.web.embedded.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-11-08 14:37:11.788 INFO  [traceId= instanceId=] [main] org.apache.coyote.http11.Http11NioProtocol - Stopping ProtocolHandler ["http-nio-auto-1"]
+2026-11-08 14:37:11.827 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-11-08 14:37:11.832 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+[ERROR] Tests run: 3, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 13.73 s <<< FAILURE! -- in com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest
+[ERROR] com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest.inactiveResidenceDoesNotGrantAnyCurrentScope -- Time elapsed: 2.145 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting map:
+  {"detail"=200, "explicit-history-region-total"=1, "generic-submit"=200, "history"=200, "list-total"=1, "person-total"=1, "register-create"=409, "release-create"=201, "specialized-submit"=200}
+to contain entries:
+  ["list-total"=0]
+but the following map entries had different values:
+  ["list-total"=1 (expected: 0)]
+	at com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest.inactiveResidenceDoesNotGrantAnyCurrentScope(Issue4145KeyPopulationScopeHttpIntegrationTest.java:117)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest.cancelledOriginalManagerCanCreateSubmitAndExplicitlyExecuteRelease(boolean)[1] -- Time elapsed: 0.390 s <<< FAILURE!
+java.lang.AssertionError: HTTP 403 FORBIDDEN {"code":403,"message":"超出人员数据范围","data":null,"timestamp":1794119831388}
+	at com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest.expect(Issue4145KeyPopulationScopeHttpIntegrationTest.java:291)
+	at com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest.cancelledOriginalManagerCanCreateSubmitAndExplicitlyExecuteRelease(Issue4145KeyPopulationScopeHttpIntegrationTest.java:81)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest.cancelledOriginalManagerCanCreateSubmitAndExplicitlyExecuteRelease(boolean)[2] -- Time elapsed: 0.367 s <<< FAILURE!
+java.lang.AssertionError: HTTP 403 FORBIDDEN {"code":403,"message":"超出人员数据范围","data":null,"timestamp":1794119831752}
+	at com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest.expect(Issue4145KeyPopulationScopeHttpIntegrationTest.java:291)
+	at com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest.cancelledOriginalManagerCanCreateSubmitAndExplicitlyExecuteRelease(Issue4145KeyPopulationScopeHttpIntegrationTest.java:81)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   Issue4145KeyPopulationScopeHttpIntegrationTest.cancelledOriginalManagerCanCreateSubmitAndExplicitlyExecuteRelease:81->expect:291 HTTP 403 FORBIDDEN {"code":403,"message":"超出人员数据范围","data":null,"timestamp":1794119831388}
+[ERROR]   Issue4145KeyPopulationScopeHttpIntegrationTest.cancelledOriginalManagerCanCreateSubmitAndExplicitlyExecuteRelease:81->expect:291 HTTP 403 FORBIDDEN {"code":403,"message":"超出人员数据范围","data":null,"timestamp":1794119831752}
+[ERROR]   Issue4145KeyPopulationScopeHttpIntegrationTest.inactiveResidenceDoesNotGrantAnyCurrentScope:117 
+Expecting map:
+  {"detail"=200, "explicit-history-region-total"=1, "generic-submit"=200, "history"=200, "list-total"=1, "person-total"=1, "register-create"=409, "release-create"=201, "specialized-submit"=200}
+to contain entries:
+  ["list-total"=0]
+but the following map entries had different values:
+  ["list-total"=1 (expected: 0)]
+[INFO] 
+[ERROR] Tests run: 3, Failures: 3, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  37.556 s
+[INFO] Finished at: 2026-11-08T14:37:12+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.3:test (default-test) on project population-miniterm: There are test failures.
+[ERROR] 
+[ERROR] See C:\Users\jxgm\.codex\worktrees\issue41-45-keypopulation-scope\小学期\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

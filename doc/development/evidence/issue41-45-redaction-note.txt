@@ -1,0 +1,4 @@
+Only the failed Phase10 MockMvc dump in green-attempt3 contained a synthetic test JWT; redacted before Git delivery.
+Original retained privately: C:\Users\jxgm\.codex\tmp\issue41-45-original-evidence-c3be7bec717047a78556576700a66d27\issue41-45-green-attempt3.txt
+Original SHA256: 16907c316cea8077e75cfe2dd6a5f90e9b1f96374e6eedd64ba54ac24884482d
+Formal RED and final full logs are unmodified.

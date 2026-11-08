@@ -46,11 +46,11 @@
 | 38 | LOW | 关闭流动登记与签注的级联锁不一致 | FIXED_VERIFIED | 与 #32 同一等待环；锁流动登记先于居住证行，`lockPermit` 不再锁 JOIN 表；同一 MySQL 十轮门禁通过；`2bfa038`。 | 后端已完成 |
 | 39 | HIGH | 解除申请被错误要求提交建档依据 | NOT_REPRODUCED | 当前 API 文档明确解除材料规则同建档；前端建档/解除共用必需材料与核验 helper；`Phase10KeyPopulationIntegrationTest.releaseMissingMaterials` 验证缺材料拒绝。无业务代码改动。 | 后端按现有契约 |
 | 40 | HIGH | 重点人口/统计状态值不匹配导致统计恒为零 | FIXED_VERIFIED | 统计 SQL 使用业务 ACTIVE 状态并传入范围；`StatisticsScopeIntegrationTest`、`DashboardMapperTest`；`8509d78`。 | 后端已完成 |
-| 41 | HIGH | 注销人员的重点人口记录不能由 REGION 用户解除 | OPEN | `KeyPopulationWorkflow.validate` 使用 `personScopedStatus`；`KeyPopulationMapper.xml` 的 REGION `personScope` 仅查 residence，而注销流程会移除当前户籍。当前为静态复核，未做端到端动态复现或修复。 | 后端 |
+| 41 | HIGH | 注销人员的重点人口记录不能由 REGION 用户解除 | CODE_CANDIDATE | 精确基线真实 HTTP 已复现：注销归档后查询/草稿成功，两入口提交 403。候选改为 recordId 管理范围，注销历史责任仅依据该记录已完成 REGISTER 申请/明细/建档历史及最近有效注销归档，双方区划均须在当前授权集合内；批准及显式执行复核当前权限。见 `doc/development/issue41-45-keypopulation-scope.md`，待独立复核，未合并。 | 后端 |
 | 42 | HIGH | 建档执行后未把生成记录 ID 写回申请详情 | NOT_REPRODUCED | `key_population` 保存 `source_application_id`，可由申请反查生成记录；现有设计把 `key_population_application.record_id` 用于解除目标。未找到接口契约要求反向回填，现有执行与历史测试可按 source app 关联。 | 后端/产品仅在契约变化时处理 |
 | 43 | MEDIUM | 通用提交路由可能绕过重点人口专属 apply 权限 | CODE_CANDIDATE | 2026-11-07 本轮动态复现：真实 JWT/DB 撤销 apply 后，REGISTER/RELEASE 自有 DRAFT 及真实 RETURNED 经通用路由均 200，旧矩阵 27 项中 10 项预期 RED。`KeyPopulationWorkflow.validate()` 在写入前统一要求 `application:submit` 和 `key-population:apply`，专用注解保留。`Issue43KeyPopulationSubmitPermissionIntegrationTest` 的 `revokedApplyDraftCannotUseGenericSubmit`、`revokedApplyReturnedCannotResubmit`、`approvalServiceRequiresBothPermissionsFromRealLoadedUser` 等 27 项 GREEN；专项 148、全量 797，失败/错误/跳过均 0；拒绝后 11 表业务快照不变。实现/测试提交 `e96acbb2a9abf0abdd1e5b6bd57589efc9939123`；[证据](../development/issue43-keypopulation-submit-permission-evidence.md)。仅 H2 验证，真实 MySQL 未验证，等待独立复核，不关闭。 | 后端/独立复核 |
 | 44 | MEDIUM | 在途重点人口重复申请查询遗漏 RETURNED | FIXED_VERIFIED | 旧 H2 复现 RETURNED 建档/解除重复请求都返回 201，并复现并发双 201；现已计入 RETURNED、对人员/记录父行加锁；11 项 Phase10 测试通过；`8d78575`。 | 后端已完成 |
-| 45 | MEDIUM | 重点人口人员区划关联未限定 ACTIVE 户籍 | OPEN | `KeyPopulationMapper.xml` 范围/区划子查询仍可读取非 ACTIVE residence；本轮静态核对，未改。 | 后端 |
+| 45 | MEDIUM | 重点人口人员区划关联未限定 ACTIVE 户籍 | CODE_CANDIDATE | 精确基线真实 HTTP 已复现 INACTIVE 户籍参与查询/提交/区划显示。候选统一当前户籍为 ACTIVE，REGION 空集合拒绝，取消无关业务申请的 REGION 兜底；列表/count/详情/历史共用范围。见 `doc/development/issue41-45-keypopulation-scope.md`，待独立复核，未合并。 | 后端 |
 | 46 | LOW | 重点人口建档日期没有禁用日期范围 | FRONTEND_HANDOFF | `KeyPopulationRegisterCreate.vue` 日期选择交互；本轮未改前端。 | 前端组 |
 | 47 | LOW | 解除创建页直接显示英文枚举 | FRONTEND_HANDOFF | `KeyPopulationReleaseCreate.vue` 展示文案；本轮未改前端。 | 前端组 |
 | 48 | LOW | 历史列表直接展示操作人数字 ID | FRONTEND_HANDOFF | `KeyPopulationHistory.vue` 文案/显示映射；本轮未改前端。 | 前端组 |
