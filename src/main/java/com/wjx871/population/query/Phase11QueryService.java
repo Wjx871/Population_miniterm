@@ -38,6 +38,7 @@ public class Phase11QueryService {
         rows.forEach(v -> {
             v.setMaskedIdentityNo(masking.identityAlways(v.getMaskedIdentityNo()));
             v.setMaskedPhone(masking.phoneAlways(v.getMaskedPhone()));
+            v.setMaskedPermitNo(masking.permitAlways(v.getMaskedPermitNo()));
             v.setCurrentAddress(masking.address(v.getCurrentAddress()));
         });
         return new PageImpl<>(rows, PageRequest.of(page, size), mapper.countPersons(q, scope));

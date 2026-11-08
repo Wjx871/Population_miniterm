@@ -23,12 +23,15 @@
             EXISTS (
               SELECT 1 FROM residence rs
               WHERE rs.person_id = p.person_id
+                AND rs.status = 'ACTIVE'
                 AND rs.region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach>
             )
             OR EXISTS (
-              SELECT 1 FROM business_application a
-              WHERE a.target_person_id = p.person_id
-                AND a.applicant_region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach>
+              SELECT 1 FROM floating_population fs
+              WHERE fs.person_id = p.person_id
+                AND fs.status = 'ACTIVE'
+                AND fs.current_flag = 1
+                AND fs.current_region_code IN <foreach collection="scope.regionCodes" item="regionCodeItem" open="(" separator="," close=")">#{regionCodeItem}</foreach>
             )
           )
         </otherwise>
@@ -123,7 +126,13 @@
         )
       </if>
       <if test="personStatus != null">AND p.current_status_code = #{personStatus}</if>
-      <if test="regionCode != null">AND r.region_code = #{regionCode}</if>
+      <if test="regionCode != null">AND (r.region_code = #{regionCode} OR EXISTS (
+        SELECT 1 FROM floating_population rf
+        WHERE rf.person_id = p.person_id
+          AND rf.status = 'ACTIVE'
+          AND rf.current_flag = 1
+          AND rf.current_region_code = #{regionCode}
+      ))</if>
       <if test="residenceStatus != null">AND r.status = #{residenceStatus}</if>
       <if test="floatingStatus != null">AND f.status = #{floatingStatus}</if>
       <if test="permitStatus != null">AND rp.status = #{permitStatus}</if>

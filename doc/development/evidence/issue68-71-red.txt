@@ -1,0 +1,98 @@
+# Issue #68/#71 旧版 RED 证据（生产代码未修改）
+
+- 精确基线：5e6ca5082e98a78ab012cd108738b0efcabdcadf
+- 分支：fix/20261108-issue68-71-comprehensive-query-scope
+- 测试类：Issue6871ComprehensiveQueryIntegrationTest
+- 执行命令：.\mvnw.cmd -Dtest=Issue6871ComprehensiveQueryIntegrationTest test
+- 结果：Tests run: 5, Failures: 3, Errors: 0, Skipped: 0（BUILD FAILURE）
+- 完整日志：issue68-71-red-full.txt
+
+## #68
+
+目标人员 Q6871_full 的数据库快照（同一隔离 H2 数据库）：
+
+```text
+person_id=28, residence_status=ACTIVE, residence_region=980101,
+floating_id=16, floating_status=ACTIVE, floating_current=1, floating_region=980101,
+arrival_date=2025-03-01,
+permit_id=4, permit_no=JZP-2026-0001, permit_status=ACTIVE, permit_current=1,
+valid_until=2027-03-01,
+last_in=2026-06-15, last_out=2026-06-15
+```
+
+旧版 `GET /api/query/persons?name=Q6871_full&page=0&size=10` 返回 HTTP 200，
+`totalElements=1`，但该行：
+
+```text
+floatingId=null, floatingStatus=null, arrivalDate=null,
+permitId=null, maskedPermitNo=null, permitStatus=null, permitValidUntil=null,
+lastMigrationDirection=null, lastMigrationDate=null
+```
+
+同一次运行中还对 Q6871_none 做了无关联空值检查；旧版因缺少投影无法进入该分支。
+结论：数据库确有当前流动登记、当前居住证和同日 COMPLETED 迁入/迁出，但 Phase11
+查询未投影，属于 #68 精确 RED，不是数据缺失。
+
+## #71
+
+REGION A 用户真实授权集合（AuthService 由 admin_region 树计算）：
+980000、980100、980101。REGION B 用户：981000、981100、981101。
+
+旧版 `GET /api/query/persons?name=Q6871&page=0&size=100&sort=personId,ASC`
+以 REGION A 用户执行，HTTP 200，`totalElements=2`，content 仅有：
+
+```text
+Q6871_resA     (A 区 ACTIVE 户籍)
+Q6871_crossAB  (A 区 ACTIVE 户籍 + B 区当前流动)
+```
+
+缺少 `Q6871_floatA`。数据库中 `Q6871_floatA`：
+
+```text
+name=Q6871_floatA, residence_status=null, residence_region=null,
+floating_status=ACTIVE, floating_current=1, floating_region=980101
+```
+
+即真实的 A 区 ACTIVE/current_flag=1 流动登记，未获 Phase11 REGION 可见性。
+结论：old `personScope` 的 `r.region_code` 只覆盖当前 ACTIVE 户籍，属于 #71 精确 RED。
+
+旧版第二套 `GET /api/queries/persons?keyword=Q6871&page=0&size=100` 以同一 REGION A
+用户执行，返回 8 个名字：
+
+```text
+Q6871_permitOnlyA, Q6871_inactiveResA, Q6871_crossAB, Q6871_historyAppA,
+Q6871_nullFlagA, Q6871_closedA, Q6871_floatA, Q6871_resA
+```
+
+其中 `closedA`、`nullFlagA`、`historyAppA`、`inactiveResA`、`permitOnlyA` 均无 A 区
+当前 ACTIVE 户籍或当前有效流动登记。旧版第二套的 `business_application` 兜底和任意状态
+`residence` 关联造成了可证明的列表历史数据越权；该问题与 Phase11 的漏查是不同缺陷。
+档案详情复用同一 `personScope`，但本轮 RED 主证据以列表 8 人响应为准，不单独宣称详情
+动态结果。
+
+## 旧版各场景可见性记录（不能归为同一种漏洞）
+
+| 场景 | 旧 Phase11 REGION A | 旧第二套 REGION A | 判定 |
+|---|---|---|---|
+| A 区 ACTIVE 户籍（resA） | 可见 | 可见 | 正常 |
+| 无户籍、A 区 ACTIVE/current=1 流动（floatA） | **不可见** | 可见（业务申请兜底） | #71 漏查 |
+| 只有 A 区 CLOSED 流动（closedA） | 不可见 | **可见** | 第二套历史越权 |
+| A 区 status=ACTIVE/current_flag=NULL（nullFlagA） | 不可见 | **可见** | 第二套历史越权 |
+| 只有 A 区历史业务申请（historyAppA） | 不可见 | **可见（列表）** | 第二套历史越权 |
+| A 户籍 + B 当前流动（crossAB） | A 可见（户籍）；B 应经流动可见 | A 可见 | 正确的双区划场景 |
+| 只有 A 区 INACTIVE 户籍（inactiveResA） | 不可见 | **可见（任意状态 residence）** | 第二套历史越权 |
+| 只有 A 区 ACTIVE/current=1 居住证（permitOnlyA） | 不可见 | **可见（业务申请兜底）** | 居住证不单独授权 |
+| B 区 ACTIVE 户籍（resB） | 不可见 | 不可见 | 正常隔离 |
+
+## 测试执行摘要
+
+```text
+[ERROR] Tests run: 5, Failures: 3, Errors: 0, Skipped: 0
+[ERROR] Issue6871ComprehensiveQueryIntegrationTest.issue68... expected: 16L but was: 0L
+[ERROR] Issue6871ComprehensiveQueryIntegrationTest.issue71Phase11... missing Q6871_floatA
+[ERROR] Issue6871ComprehensiveQueryIntegrationTest.issue71Second... found Q6871_closedA / nullFlagA / historyAppA / inactiveResA / permitOnlyA
+[INFO] BUILD FAILURE
+```
+
+完整 Maven 输出见 `issue68-71-red-full.txt`（Surefire XML 中的 system-out 还保留了
+实际 HTTP 响应和数据库快照）。

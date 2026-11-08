@@ -1,0 +1,22 @@
+# Issue #68/#71 H2 GREEN 摘要
+
+- 命令：.\mvnw.cmd -Dtest=Issue6871ComprehensiveQueryIntegrationTest test
+- 环境：随机端口 Spring Boot + 真实 JWT + 真实 MyBatis Mapper + 隔离 H2（MODE=MySQL）
+- 结果：Tests run: 6, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS
+- 完整日志：issue68-71-h2-green-full.txt
+- 覆盖方法：
+  - issue68Phase11SummaryIncludesCurrentFloatingPermitAndLatestCompletedMigration
+  - issue71Phase11RegionScopeUsesOnlyActiveResidenceOrCurrentFloating
+  - issue71SecondInterfaceRegionScopeHasNoHistoricalFallback
+  - phase11CountMatchesListAcrossPagesWithoutDuplicates
+  - phase11SelfAndDepartmentScopesKeepExistingApplicationSemantics
+  - permissionAndEmptyRegionScopeFailClosedOnBothInterfaces
+
+## 权限正反例与脱敏断言
+
+- `q6871_region_a` / `q6871_region_b`：REGION 正例，A/B 授权集合互不包含；`Q6871_floatA` 仅 A 可见，`Q6871_resB` 仅 B 可见。
+- `q6871_noview`：无 `population:view`，`/api/query/persons` 与 `/api/queries/persons` 均 403。
+- `q6871_empty_region`：REGION 但 `admin_region` 无匹配根，`DataScopeCriteria.current()` 返回 403（fail-closed）。
+- `q6871_self` / `q6871_dept`：SELF 只由本人业务申请命中，DEPARTMENT 只由部门业务申请命中，ALL 命中全部；既有语义未回归。
+- 脱敏断言：`maskedIdentityNo` 保持“前 4 位 + 10 个星号 + 后 4 位”；`maskedPhone=138****8000`；`maskedPermitNo=JZP-****0001`；`currentAddress=110101示例东区（详细地址已隐藏）`。
+- 查询不修改业务状态：`floating_population`、`residence_permit`、`migration_in`、`migration_out` 行数与 `residence.status` 在查询前后一致。

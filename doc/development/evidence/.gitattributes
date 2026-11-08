@@ -1,1 +1,3 @@
 issue41-45-*.txt -text -whitespace
+issue68-71-*.txt -text -whitespace
+issue68-71-*.sql -text -whitespace

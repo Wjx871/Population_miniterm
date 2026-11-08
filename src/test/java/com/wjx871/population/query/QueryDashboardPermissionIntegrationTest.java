@@ -100,6 +100,9 @@ class QueryDashboardPermissionIntegrationTest {
         mockMvc.perform(get("/api/queries/persons").header("Authorization", bearer(token)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
+        mockMvc.perform(get("/api/query/persons").header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
         mockMvc.perform(get("/api/dashboard/overview").header("Authorization", bearer(token)))
                 .andExpect(status().isForbidden());
         mockMvc.perform(get("/api/dashboard/charts").header("Authorization", bearer(token)))
@@ -117,12 +120,16 @@ class QueryDashboardPermissionIntegrationTest {
                 .andExpect(jsonPath("$.code").value(200));
         mockMvc.perform(get("/api/queries/persons").header("Authorization", bearer(token)))
                 .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/query/persons").header("Authorization", bearer(token)))
+                .andExpect(status().isForbidden());
     }
 
     @Test
     void bothPermissionsAllowQueryAndDashboard() throws Exception {
         String token = tokenFor("m5_both");
         mockMvc.perform(get("/api/queries/persons").header("Authorization", bearer(token)))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/query/persons").header("Authorization", bearer(token)))
                 .andExpect(status().isOk());
         mockMvc.perform(get("/api/dashboard/overview").header("Authorization", bearer(token)))
                 .andExpect(status().isOk());
@@ -132,6 +139,8 @@ class QueryDashboardPermissionIntegrationTest {
     void neitherPermissionDeniesBoth() throws Exception {
         String token = tokenFor("m5_none");
         mockMvc.perform(get("/api/queries/persons").header("Authorization", bearer(token)))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/query/persons").header("Authorization", bearer(token)))
                 .andExpect(status().isForbidden());
         mockMvc.perform(get("/api/dashboard/overview").header("Authorization", bearer(token)))
                 .andExpect(status().isForbidden());

@@ -1,0 +1,51 @@
+# Issue #68/#71 MySQL 8.4 实测证据
+
+- 实例：MySQL Community Server 8.4.8
+- 端点：127.0.0.1:13392（独立临时实例，非 3306）
+- 隔离级别：REPEATABLE-READ
+- schema：population_miniterm_mysql_gate_issue6871_71879d0412
+- 应用账号：i6871_71879d0412@127.0.0.1（非 root，仅该 schema 的 SELECT/INSERT/UPDATE/DELETE）
+- sql_mode：ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+- 测试类：Issue6871MySqlIT
+- 结果：Tests run: 7, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS（见 issue68-71-mysql-full.txt）
+- 实际 Mapper SQL 由 MyBatis DEBUG 输出保留在同一日志中；参数化后的 EXPLAIN SQL 见 issue68-71-mysql-explain.sql，执行计划见 issue68-71-mysql-explain.txt。
+
+## 实际 SQL（MyBatis DEBUG 摘录）
+
+列表查询（参数 Q6871_full）：
+
+```sql
+SELECT p.person_id,p.name,...,
+       f.floating_id,f.status floating_status,f.arrival_date,
+       rp.permit_id,rp.permit_no masked_permit_no,rp.status permit_status,rp.valid_until permit_valid_until,
+       CASE ... END last_migration_date,
+       CASE ... END last_migration_direction
+FROM person p
+LEFT JOIN residence r ON r.person_id=p.person_id AND r.status='ACTIVE'
+LEFT JOIN household h ON h.household_id=r.household_id
+LEFT JOIN person hp ON hp.person_id=h.head_person_id
+LEFT JOIN household_member hm ON hm.household_id=h.household_id AND hm.person_id=p.person_id AND hm.status='ACTIVE'
+LEFT JOIN floating_population f ON f.person_id=p.person_id AND f.status='ACTIVE' AND f.current_flag=1
+LEFT JOIN residence_permit rp ON rp.person_id=p.person_id AND rp.status='ACTIVE' AND rp.current_flag=1
+LEFT JOIN (SELECT person_id,MAX(in_date) last_in_date FROM migration_in WHERE business_status='COMPLETED' GROUP BY person_id) latest_in ON latest_in.person_id=p.person_id
+LEFT JOIN (SELECT person_id,MAX(out_date) last_out_date FROM migration_out WHERE business_status='COMPLETED' GROUP BY person_id) latest_out ON latest_out.person_id=p.person_id
+WHERE p.name LIKE CONCAT('%',?,'%')
+GROUP BY ...
+ORDER BY p.person_id DESC LIMIT ? OFFSET ?
+```
+
+COUNT 查询使用同一 FROM/JOIN 与 WHERE，外层为 `COUNT(DISTINCT p.person_id)`；两处 GROUP BY 列包含全部非聚合投影并显式包含 latest_in.last_in_date/latest_out.last_out_date，MySQL 8.4 在 ONLY_FULL_GROUP_BY 下执行成功。
+
+## EXPLAIN 观察
+
+- `residence`：`uk_residence_person(person_id)` 被用作 eq_ref；实际索引清单含 `idx_residence_person_id`、`idx_residence_household_id`。
+- `floating_population`：`uk_floating_person_current(person_id,current_flag)` 被用作 eq_ref；`idx_floating_region_status(current_region_code,status)` 存在。
+- `residence_permit`：`uk_permit_person_current(person_id,current_flag)` 被用作 eq_ref；`idx_permit_region_status_expiry(issue_region_code,status,valid_until)` 存在。
+- `migration_in/out`：派生聚合使用 `idx_migration_in_person_id` / `idx_migration_out_person_id` 的索引扫描（小数据集上的实际计划）；现有 `idx_migration_in_query(in_date,business_status,migration_type,person_id)` 与 `idx_migration_out_query` 保留。
+- 列表主表 `p` 在 `name LIKE '%...%'`（前后通配）下为全表扫描，这是既有查询契约；未新增索引，也没有把该现象隐藏为“索引已优化”。
+- 本轮未发现 SQL 语法错误、ONLY_FULL_GROUP_BY 错误、count 与列表不一致或分页重复；测试断言与日志见上。
+
+## 执行时间
+
+- Maven 门禁总耗时约 39.5 秒（含 Spring Boot 启动与 7 项测试）。
+- 实例在证据采集完成后正常 shutdown，未访问或修改 3306，未复用其他测试实例的库或账号。

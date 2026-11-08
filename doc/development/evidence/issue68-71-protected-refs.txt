@@ -1,0 +1,30 @@
+# Issue #68/#71 保护引用核验（2026-11-08）
+
+施工前远端与本地基线核验：
+
+```text
+git ls-remote origin refs/heads/integration/20261101-backend-p0-security
+5e6ca5082e98a78ab012cd108738b0efcabdcadf
+
+git ls-remote origin refs/heads/main
+b54579b6b7f8b1feeda60f43906da05fb2ffda99
+
+git ls-remote origin refs/heads/feat/20261103-s3-rabbitmq-async-precheck
+758014cbcccdfe820efb2a6fae73bc3168030484
+
+git ls-remote origin refs/heads/snapshot/20261103-pre-course-upgrade-backend
+d6b0b87b74af7a413214d7da9dd30b075cec882b
+
+git rev-parse main
+d7fc1192967a13c7d80d2b60fdc12749fd5218df
+
+Get-FileHash -Algorithm SHA256 .gitignore
+8399B5DE049E3989E123B747D457A02A5D8EDADF6A57867B57F1BD760FA68DE3
+```
+
+其他现场保护：
+
+- #81/#83 worktree、进程、登记、分支未检查、未清理、未操作。
+- #43 本地/远端分支、历史审计证据未清理、未修改。
+- 未合并个人 integration，未合并共享 main，未 force push，未重写历史，未部署。
+- 本轮仅新建 `fix/20261108-issue68-71-comprehensive-query-scope` worktree/分支并提交。
