@@ -5,6 +5,7 @@
 - 测试类：Issue6871ComprehensiveQueryIntegrationTest
 - 执行命令：.\mvnw.cmd -Dtest=Issue6871ComprehensiveQueryIntegrationTest test
 - 结果：Tests run: 5, Failures: 3, Errors: 0, Skipped: 0（BUILD FAILURE）
+- 说明：RED 采集时测试类尚未加入 SELF/DEPARTMENT 回归方法；该补充不改变 #68/#71 的三项 RED 结论。
 - 完整日志：issue68-71-red-full.txt
 
 ## #68
