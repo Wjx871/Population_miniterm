@@ -1,0 +1,6 @@
+binary=C:\Program Files\MySQL\MySQL Server 8.4\bin\mysqld.exe  Ver 8.4.8 for Win64 on x86_64 (MySQL Community Server - GPL)
+port=7191
+datadir=C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue22_20261109T170840855Z_03c3b6a2d62a494fa0cdfc020dae0912\data
+isolation=REPEATABLE-READ
+schema=population_miniterm_mysql_gate_issue22_03c3b6a2d62a
+appUser=i22_03c3b6a2d62a

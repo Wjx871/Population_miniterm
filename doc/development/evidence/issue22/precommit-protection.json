@@ -1,0 +1,31 @@
+{
+  "remoteProtectedRefs": {
+    "refs/heads/feat/20261103-s3-rabbitmq-async-precheck": "758014cbcccdfe820efb2a6fae73bc3168030484",
+    "refs/heads/fix/20261107-issue43-keypopulation-submit-permission": "8b0730fa474c8b533ab8f3b571bd1bf73b4e65f2",
+    "refs/heads/fix/20261107-issue81-83-admin-region-hierarchy": "f5c3a959cf99f69fed8e8640d845a99b23428563",
+    "refs/heads/integration/20261101-backend-p0-security": "3f2730882583fdb0cfb3b5aafb50583ea1aecade",
+    "refs/heads/main": "b54579b6b7f8b1feeda60f43906da05fb2ffda99",
+    "refs/heads/snapshot/20261103-pre-course-upgrade-backend": "d6b0b87b74af7a413214d7da9dd30b075cec882b"
+  },
+  "localProtectedRefs": {
+    "refs/heads/integration/20261101-backend-p0-security": "3f2730882583fdb0cfb3b5aafb50583ea1aecade",
+    "refs/heads/feat/20261103-s3-rabbitmq-async-precheck": "758014cbcccdfe820efb2a6fae73bc3168030484",
+    "refs/heads/fix/20261107-issue43-keypopulation-submit-permission": "8b0730fa474c8b533ab8f3b571bd1bf73b4e65f2",
+    "refs/heads/fix/20261107-issue81-83-admin-region-hierarchy": "f5c3a959cf99f69fed8e8640d845a99b23428563"
+  },
+  "originalLocalMainHead": "d7fc1192967a13c7d80d2b60fdc12749fd5218df",
+  "originalGitignoreSHA256": "8399B5DE049E3989E123B747D457A02A5D8EDADF6A57867B57F1BD760FA68DE3",
+  "originalStatusGlobalExcludesDisabled": [
+    " M .gitignore",
+    "?? .agent-teams/",
+    "?? .claude/"
+  ],
+  "gateDefaultClassesExist": [
+    "Issue22MySql84IT",
+    "Phase03MigrationIntegrationTest",
+    "Issue19MigrationBatchReuseIntegrationTest",
+    "Issue15HouseholdDateBoundaryIntegrationTest",
+    "CoreTransactionBoundaryIntegrationTest"
+  ],
+  "powershellParse": "passed"
+}

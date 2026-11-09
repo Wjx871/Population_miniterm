@@ -1,0 +1,42 @@
+[
+  {
+    "name": "com.wjx871.population.household.Issue15HouseholdDateBoundaryIntegrationTest",
+    "tests": "24",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "15.835"
+  },
+  {
+    "name": "com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest",
+    "tests": "13",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "4.645"
+  },
+  {
+    "name": "com.wjx871.population.migration.Issue22ArchiveAffectedRowsIntegrationTest",
+    "tests": "6",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "3.905"
+  },
+  {
+    "name": "com.wjx871.population.migration.Phase03MigrationIntegrationTest",
+    "tests": "36",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "14.297"
+  },
+  {
+    "name": "com.wjx871.population.transaction.CoreTransactionBoundaryIntegrationTest",
+    "tests": "14",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "3.071"
+  }
+]

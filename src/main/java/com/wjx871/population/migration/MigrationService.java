@@ -71,7 +71,7 @@ public class MigrationService {
   if(lastActiveMember){Long expectedHead=household.getHeadPersonId();if(expectedHead!=null&&(!isHouseholdHead||mapper.countActiveHeads(household.getHouseholdId())!=1||mapper.countActiveHead(household.getHouseholdId(),expectedHead)!=1))throw conflict("家庭户主指针与有效成员关系不一致");if(expectedHead==null&&mapper.countActiveHeads(household.getHouseholdId())!=0)throw conflict("家庭户主指针与有效成员关系不一致");}
   materials.validateVerified(id);
   ResidenceArchive archive=archive(application,migration,residence,household,user.userId());
-  mapper.insertArchive(archive);
+  if(mapper.insertArchive(archive)!=1)throw conflict("ARCHIVE_INSERT_ROW_COUNT_MISMATCH");
   hook.afterArchiveInserted();
   if(mapper.deleteResidence(residence.getResidenceId(),residence.getVersion())==0)ApplicationService.conflict();
   hook.afterResidenceDeleted();

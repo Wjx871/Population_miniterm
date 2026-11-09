@@ -1,0 +1,11 @@
+Baseline production MigrationService unchanged: 3f2730882583fdb0cfb3b5aafb50583ea1aecade
+Command: .\mvnw.cmd -Dtest=Issue22ArchiveAffectedRowsIntegrationTest#zeroRowSqlRejectsBeforeHookAndPreservesAllBusinessRows test
+Evidence: real MyBatis INSERT SELECT with test-only AND 1=0, MockMvc servlet HTTP dispatch (no TCP listener).
+ISSUE22 mode=ZERO_SQL physicalRows=[0] returnedRows=[0] transactionCompletion=0 HTTP=200 body={"code":200,"message":"ok","data":null,"timestamp":1794243646442} BEFORE=archive=0,residence=1,application=APPROVED,out={business_status=APPROVED, version=2, transfer_batch_no=null},person={current_status_code=REGISTERED, version=0},household={head_person_id=101, status=ACTIVE, version=0},members=[{person_id=101, relationship=HEAD, status=ACTIVE, version=0}, {person_id=103, relationship=CHILD, status=ACTIVE, version=0}],executeLogs=0,successAudit=0 AFTER=archive=0,residence=0,application=COMPLETED,out={business_status=COMPLETED, version=3, transfer_batch_no=null},person={current_status_code=MIGRATED_OUT, version=1},household={head_person_id=103, status=ACTIVE, version=1},members=[{person_id=101, relationship=HEAD, status=LEFT, version=1}, {person_id=103, relationship=HEAD, status=ACTIVE, version=1}],executeLogs=1,successAudit=1 unchanged=false SQL=INSERT INTO residence_archive(original_registration_id,person_id,household_id,application_id,migration_out_id,archive_type,archive_reason,person_name_snapshot,identity_no_snapshot,household_no_snapshot,registered_address_snapshot,region_code_snapshot,register_type_code_snapshot,register_date_snapshot,start_date_snapshot,end_date_snapshot,original_status,archived_by,archived_at) SELECT ?,?,?,?,?,?,?,p.name,p.id_card,h.household_no,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP FROM person p JOIN household h ON h.household_id=? WHERE p.person_id=? AND 1=0 /* issue22 controlled zero-row SQL fault */
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 13.51 s <<< FAILURE! -- in com.wjx871.population.migration.Issue22ArchiveAffectedRowsIntegrationTest
+expected: 409
+ but was: 200
+expected: 409
+ but was: 200
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0
+[INFO] Total time:  34.547 s

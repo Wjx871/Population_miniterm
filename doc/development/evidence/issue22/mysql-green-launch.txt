@@ -1,0 +1,14 @@
+ISSUE22_MYSQL_RUN=C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue22_20261109T170452890Z_2bb55ad7d55c433a9fabd939ddbcbf2d
+MYSQL_TEST=Issue22MySql84IT EXIT=0 SCHEMA=population_miniterm_mysql_gate_issue22_2bb55ad7d55c LOG=C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue22_20261109T170452890Z_2bb55ad7d55c433a9fabd939ddbcbf2d\Issue22MySql84IT.maven.log
+MYSQL_FIXTURE_EXCLUSION=Phase03MigrationIntegrationTest#duplicateHistoricalMembershipsRejectMigrationInWithoutPartialActivation (existing unique pair prevents duplicate setup; covered in H2)
+MYSQL_TEST=Phase03MigrationIntegrationTest EXIT=0 SCHEMA=population_miniterm_mysql_gate_issue22_2bb55ad7d55c_1 LOG=C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue22_20261109T170452890Z_2bb55ad7d55c433a9fabd939ddbcbf2d\Phase03MigrationIntegrationTest.maven.log
+MYSQL_TEST=Issue19MigrationBatchReuseIntegrationTest EXIT=0 SCHEMA=population_miniterm_mysql_gate_issue22_2bb55ad7d55c_2 LOG=C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue22_20261109T170452890Z_2bb55ad7d55c433a9fabd939ddbcbf2d\Issue19MigrationBatchReuseIntegrationTest.maven.log
+MYSQL_TEST=Issue22HouseholdDateBoundaryIntegrationTest EXIT=1 SCHEMA=population_miniterm_mysql_gate_issue22_2bb55ad7d55c_3 LOG=C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue22_20261109T170452890Z_2bb55ad7d55c433a9fabd939ddbcbf2d\Issue22HouseholdDateBoundaryIntegrationTest.maven.log
+MYSQL_TEST=CoreTransactionBoundaryIntegrationTest EXIT=0 SCHEMA=population_miniterm_mysql_gate_issue22_2bb55ad7d55c_4 LOG=C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue22_20261109T170452890Z_2bb55ad7d55c433a9fabd939ddbcbf2d\CoreTransactionBoundaryIntegrationTest.maven.log
+ISSUE22_MYSQL_SHUTDOWN=confirmed pid=31140
+Exception: D:\学习用\大二下\小学期-issue22-archive-rowcount\scripts\windows\tests\issue22-mysql84-gate.ps1:256
+Line |
+ 256 |  … nt -gt 0) { throw ('Maven gate failed: ' + ($failedClasses -join ',') …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Maven gate failed: Issue22HouseholdDateBoundaryIntegrationTest; inspect
+     | C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue22_20261109T170452890Z_2bb55ad7d55c433a9fabd939ddbcbf2d

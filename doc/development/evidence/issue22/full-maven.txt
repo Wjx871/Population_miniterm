@@ -1,0 +1,86 @@
+Command: .\mvnw.cmd test
+Raw log: target/issue22-full-maven.log
+Raw log SHA256=54e899c598014576a189075b8935ebf588127bd18a8b78bb49824856985153c1
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 17.86 s -- in com.wjx871.population.ai.precheck.AiConfirmIntegrationTest
+[INFO] Tests run: 36, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 11.09 s -- in com.wjx871.population.ai.precheck.AiPrecheckIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.wjx871.population.ai.precheck.DocumentAnalysisResponseValidatorTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.118 s -- in com.wjx871.population.application.Phase12ApplicationReturnIntegrationTest
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.087 s -- in com.wjx871.population.approval.Phase02ApprovalIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.077 s -- in com.wjx871.population.assistant.PolicyAssistantServiceTest
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.420 s -- in com.wjx871.population.assistant.PolicyPythonAdapterIntegrationTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.783 s -- in com.wjx871.population.assistant.PolicyPythonHttpStubIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.wjx871.population.assistant.PolicyWorkflowServiceTest
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.476 s -- in com.wjx871.population.auth.AuthRbacIntegrationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.599 s -- in com.wjx871.population.cache.OptionalRedisServiceTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.156 s -- in com.wjx871.population.cache.S5A1StrictRedisServiceTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.199 s -- in com.wjx871.population.cancellation.CancellationMaterialRequirementServiceTest
+[INFO] Tests run: 33, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.482 s -- in com.wjx871.population.cancellation.Phase04CancellationIntegrationTest
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.437 s -- in com.wjx871.population.certificate.Phase09CertificateIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.066 s -- in com.wjx871.population.common.GlobalExceptionHandlerDeadlockTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.493 s -- in com.wjx871.population.dashboard.DashboardMapperTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.088 s -- in com.wjx871.population.dashboard.DashboardServiceTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.038 s -- in com.wjx871.population.export.ExportDataScopeAuditIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.119 s -- in com.wjx871.population.export.ExportFileServiceFormulaInjectionTest
+[INFO] Tests run: 34, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.564 s -- in com.wjx871.population.export.Phase06ExportAuditIntegrationTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.923 s -- in com.wjx871.population.floating.FloatingSelfScopeAuditIntegrationTest
+[INFO] Tests run: 35, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.69 s -- in com.wjx871.population.floating.Issue34FirstIssueExclusivityTest
+[WARNING] Tests run: 3, Failures: 0, Errors: 0, Skipped: 3, Time elapsed: 0 s -- in com.wjx871.population.floating.Issue34FirstIssueRedTest
+[INFO] Tests run: 40, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.66 s -- in com.wjx871.population.floating.Phase05FloatingResidenceIntegrationTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.903 s -- in com.wjx871.population.household.Issue15HouseholdDateBoundaryIntegrationTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.601 s -- in com.wjx871.population.household.Phase08HouseholdMasterDataIntegrationTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.390 s -- in com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest
+[INFO] Tests run: 27, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.715 s -- in com.wjx871.population.keypopulation.Issue43KeyPopulationSubmitPermissionIntegrationTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.819 s -- in com.wjx871.population.keypopulation.Phase10KeyPopulationGateIntegrationTest
+[INFO] Tests run: 56, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.935 s -- in com.wjx871.population.keypopulation.Phase10KeyPopulationIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.906 s -- in com.wjx871.population.material.ApplicationMaterialFeatureOffIntegrationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.946 s -- in com.wjx871.population.material.ApplicationMaterialSubmitConcurrencyIntegrationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in com.wjx871.population.material.Issue3OwnedFileCompensationTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.725 s -- in com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.706 s -- in com.wjx871.population.migration.Issue22ArchiveAffectedRowsIntegrationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.793 s -- in com.wjx871.population.migration.Issue33CrossDistrictCharacterizationIntegrationTest
+[INFO] Tests run: 36, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 11.94 s -- in com.wjx871.population.migration.Phase03MigrationIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.884 s -- in com.wjx871.population.person.idcard.Issue3CommitOutcomeIntegrationTest
+[INFO] Tests run: 29, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.015 s -- in com.wjx871.population.person.idcard.Issue3OcrTransactionIntegrationTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.947 s -- in com.wjx871.population.person.idcard.Phase14PersonIdCardImageIntegrationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.058 s -- in com.wjx871.population.person.idcard.Phase14PersonIdCardOcrIntegrationTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.wjx871.population.person.IdCardValidatorTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.067 s -- in com.wjx871.population.person.PersonMapperTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.157 s -- in com.wjx871.population.person.PersonRegionOwnershipAuditIntegrationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.882 s -- in com.wjx871.population.person.Phase08PersonIdentityIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in com.wjx871.population.PopulationMinitermApplicationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.068 s -- in com.wjx871.population.query.ComprehensiveQueryMapperTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.098 s -- in com.wjx871.population.query.ComprehensiveQueryServiceTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.273 s -- in com.wjx871.population.query.Issue6871ComprehensiveQueryIntegrationTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.165 s -- in com.wjx871.population.query.Phase11QueryValidationTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.246 s -- in com.wjx871.population.query.QueryDashboardPermissionIntegrationTest
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.484 s -- in com.wjx871.population.reference.Issue8183HierarchyHttpTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.674 s -- in com.wjx871.population.reference.Phase09AdminRegionIntegrationTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.582 s -- in com.wjx871.population.reference.Phase09DataDictionaryIntegrationTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.869 s -- in com.wjx871.population.reference.ReferenceCacheIsolationIntegrationTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.904 s -- in com.wjx871.population.reference.ReferenceCacheTransactionIntegrationTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.551 s -- in com.wjx871.population.release.BackendV1ReleaseAuditTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.036 s -- in com.wjx871.population.resident.ResidentMapperTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.120 s -- in com.wjx871.population.review.SecondaryBackendDataValidationTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.wjx871.population.s2.aggregation.PopulationMetricsCalculatorTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in com.wjx871.population.s2.rmi.RmiInvocationHandlerClassificationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.175 s -- in com.wjx871.population.s2.S2AggregationFacadeTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in com.wjx871.population.s2.S2RemoteDisabledIntegrationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.239 s -- in com.wjx871.population.s2.S2RmiClientConcurrencyIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.913 s -- in com.wjx871.population.s2.S2RmiHttpEndToEndIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.859 s -- in com.wjx871.population.s2.S2StatisticsApiIntegrationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.170 s -- in com.wjx871.population.security.Phase11TokenRevocationTest
+[INFO] Tests run: 27, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.167 s -- in com.wjx871.population.security.RevocationConfigurationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.wjx871.population.security.RevocationEventsTest
+[INFO] Tests run: 23, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.412 s -- in com.wjx871.population.security.S5A1StrictRevocationHttpIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.wjx871.population.security.SensitiveDataMaskingServiceTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.050 s -- in com.wjx871.population.security.TokenRevocationServiceConsistencyTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.899 s -- in com.wjx871.population.stats.Issue70StatisticsLogRedactionIntegrationTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.262 s -- in com.wjx871.population.stats.StatisticsScopeCacheIntegrationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in com.wjx871.population.stats.StatisticsScopeIntegrationTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.093 s -- in com.wjx871.population.stats.StatisticsServiceTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.085 s -- in com.wjx871.population.stats.UnifiedStatisticsScopeCacheTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.373 s -- in com.wjx871.population.transaction.CoreTransactionBoundaryIntegrationTest
+[WARNING] Tests run: 943, Failures: 0, Errors: 0, Skipped: 3
+[INFO] BUILD SUCCESS
+[INFO] Total time:  03:20 min
+[INFO] Finished at: 2026-11-10T01:12:56+08:00

@@ -1,0 +1,6 @@
+Raw log SHA256=e4d44101d798c30310cd6ef6dd732f9a7c75d5eb51c86530a5692959155441c4
+2026-11-10 01:09:17.064 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@a0825c1
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 20.06 s -- in com.wjx871.population.household.Issue15HouseholdDateBoundaryIntegrationTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+[INFO] Total time:  39.326 s
