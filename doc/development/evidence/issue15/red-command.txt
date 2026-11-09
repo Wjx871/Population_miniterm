@@ -1,0 +1,1 @@
+Command: .\mvnw.cmd -Dtest=Issue15HouseholdDateBoundaryIntegrationTest -Dsurefire.reportsDirectory=doc/development/evidence/issue15/h2-red-surefire test

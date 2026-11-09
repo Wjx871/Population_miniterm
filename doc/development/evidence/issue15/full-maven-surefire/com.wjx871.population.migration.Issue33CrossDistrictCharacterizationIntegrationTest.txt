@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.wjx871.population.migration.Issue33CrossDistrictCharacterizationIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.232 s -- in com.wjx871.population.migration.Issue33CrossDistrictCharacterizationIntegrationTest

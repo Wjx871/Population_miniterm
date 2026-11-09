@@ -1,0 +1,33 @@
+Remote after implementation and isolated verification:
+758014cbcccdfe820efb2a6fae73bc3168030484	refs/heads/feat/20261103-s3-rabbitmq-async-precheck
+8b0730fa474c8b533ab8f3b571bd1bf73b4e65f2	refs/heads/fix/20261107-issue43-keypopulation-submit-permission
+f5c3a959cf99f69fed8e8640d845a99b23428563	refs/heads/fix/20261107-issue81-83-admin-region-hierarchy
+4482522897b2000fb80cef903443a875c44d6c92	refs/heads/integration/20261101-backend-p0-security
+b54579b6b7f8b1feeda60f43906da05fb2ffda99	refs/heads/main
+d6b0b87b74af7a413214d7da9dd30b075cec882b	refs/heads/snapshot/20261103-pre-course-upgrade-backend
+Main workspace HEAD=d7fc1192967a13c7d80d2b60fdc12749fd5218df
+Main .gitignore SHA256=8399B5DE049E3989E123B747D457A02A5D8EDADF6A57867B57F1BD760FA68DE3
+Main status:
+ M .gitignore
+?? .agent-teams/
+Worktrees:
+worktree D:/学习用/大二下/小学期
+HEAD d7fc1192967a13c7d80d2b60fdc12749fd5218df
+branch refs/heads/main
+
+worktree C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/小学期
+HEAD 4482522897b2000fb80cef903443a875c44d6c92
+branch refs/heads/fix/20261109-issue15-household-date-boundary
+
+worktree C:/Users/jxgm/.codex/worktrees/issue81-83-admin-region/小学期
+HEAD f5c3a959cf99f69fed8e8640d845a99b23428563
+branch refs/heads/fix/20261107-issue81-83-admin-region-hierarchy
+
+worktree C:/Users/jxgm/.codex/worktrees/s3-rabbitmq-async-precheck/小学期
+HEAD 758014cbcccdfe820efb2a6fae73bc3168030484
+branch refs/heads/feat/20261103-s3-rabbitmq-async-precheck
+
+worktree D:/学习用/大二下/小学期-integration-20261101-backend-p0-security
+HEAD 4482522897b2000fb80cef903443a875c44d6c92
+branch refs/heads/integration/20261101-backend-p0-security
+

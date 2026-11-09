@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.wjx871.population.floating.Issue34FirstIssueExclusivityTest
+-------------------------------------------------------------------------------
+Tests run: 35, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 14.88 s -- in com.wjx871.population.floating.Issue34FirstIssueExclusivityTest

@@ -1,0 +1,28 @@
+-------------------------------------------------------------------------------
+Test set: com.wjx871.population.migration.Phase03MigrationIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 36, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 34.04 s <<< FAILURE! -- in com.wjx871.population.migration.Phase03MigrationIntegrationTest
+com.wjx871.population.migration.Phase03MigrationIntegrationTest.duplicateHistoricalMembershipsRejectMigrationInWithoutPartialActivation -- Time elapsed: 0.400 s <<< ERROR!
+org.springframework.dao.DuplicateKeyException: StatementCallback; SQL [INSERT INTO household_member(household_id,person_id,relationship,join_date,status,version) VALUES(101,102,'OTHER',DATE '2020-01-01','LEFT',0),(101,102,'CHILD',DATE '2021-01-01','MOVED_OUT',0)]; Duplicate entry '101-102' for key 'household_member.uk_household_member_pair'
+	at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:95)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1556)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:408)
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:567)
+	at com.wjx871.population.migration.Phase03MigrationIntegrationTest.duplicateHistoricalMembershipsRejectMigrationInWithoutPartialActivation(Phase03MigrationIntegrationTest.java:21)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+Caused by: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry '101-102' for key 'household_member.uk_household_member_pair'
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:109)
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:114)
+	at com.mysql.cj.jdbc.StatementImpl.executeUpdateInternal(StatementImpl.java:1500)
+	at com.mysql.cj.jdbc.StatementImpl.executeLargeUpdate(StatementImpl.java:2322)
+	at com.mysql.cj.jdbc.StatementImpl.executeUpdate(StatementImpl.java:1370)
+	at com.zaxxer.hikari.pool.ProxyStatement.executeUpdate(ProxyStatement.java:120)
+	at com.zaxxer.hikari.pool.HikariProxyStatement.executeUpdate(HikariProxyStatement.java)
+	at org.springframework.jdbc.core.JdbcTemplate$1UpdateStatementCallback.doInStatement(JdbcTemplate.java:555)
+	at org.springframework.jdbc.core.JdbcTemplate$1UpdateStatementCallback.doInStatement(JdbcTemplate.java:552)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:393)
+	... 5 more
+

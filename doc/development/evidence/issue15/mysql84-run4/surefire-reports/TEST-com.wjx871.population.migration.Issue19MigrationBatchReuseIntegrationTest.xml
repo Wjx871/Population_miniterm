@@ -1,0 +1,441 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest" time="18.658" tests="13" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="java.specification.version" value="21"/>
+    <property name="sun.cpu.isalist" value="amd64"/>
+    <property name="sun.jnu.encoding" value="GBK"/>
+    <property name="java.class.path" value="C:\Users\jxgm\.codex\worktrees\issue15-household-date-boundary\小学期\target\test-classes;C:\Users\jxgm\.codex\worktrees\issue15-household-date-boundary\小学期\target\classes;C:\Users\jxgm\.m2\repository\org\mybatis\spring\boot\mybatis-spring-boot-starter\3.0.5\mybatis-spring-boot-starter-3.0.5.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter\3.5.3\spring-boot-starter-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot\3.5.3\spring-boot-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-autoconfigure\3.5.3\spring-boot-autoconfigure-3.5.3.jar;C:\Users\jxgm\.m2\repository\jakarta\annotation\jakarta.annotation-api\2.1.1\jakarta.annotation-api-2.1.1.jar;C:\Users\jxgm\.m2\repository\org\yaml\snakeyaml\2.4\snakeyaml-2.4.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-jdbc\3.5.3\spring-boot-starter-jdbc-3.5.3.jar;C:\Users\jxgm\.m2\repository\com\zaxxer\HikariCP\6.3.0\HikariCP-6.3.0.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-jdbc\6.2.8\spring-jdbc-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\mybatis\spring\boot\mybatis-spring-boot-autoconfigure\3.0.5\mybatis-spring-boot-autoconfigure-3.0.5.jar;C:\Users\jxgm\.m2\repository\org\mybatis\mybatis\3.5.19\mybatis-3.5.19.jar;C:\Users\jxgm\.m2\repository\org\mybatis\mybatis-spring\3.0.5\mybatis-spring-3.0.5.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-validation\3.5.3\spring-boot-starter-validation-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\apache\tomcat\embed\tomcat-embed-el\10.1.42\tomcat-embed-el-10.1.42.jar;C:\Users\jxgm\.m2\repository\org\hibernate\validator\hibernate-validator\8.0.2.Final\hibernate-validator-8.0.2.Final.jar;C:\Users\jxgm\.m2\repository\jakarta\validation\jakarta.validation-api\3.0.2\jakarta.validation-api-3.0.2.jar;C:\Users\jxgm\.m2\repository\org\jboss\logging\jboss-logging\3.6.1.Final\jboss-logging-3.6.1.Final.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\classmate\1.7.0\classmate-1.7.0.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-web\3.5.3\spring-boot-starter-web-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-json\3.5.3\spring-boot-starter-json-3.5.3.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\jackson\datatype\jackson-datatype-jdk8\2.19.1\jackson-datatype-jdk8-2.19.1.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\jackson\datatype\jackson-datatype-jsr310\2.19.1\jackson-datatype-jsr310-2.19.1.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\jackson\module\jackson-module-parameter-names\2.19.1\jackson-module-parameter-names-2.19.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-tomcat\3.5.3\spring-boot-starter-tomcat-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\apache\tomcat\embed\tomcat-embed-core\10.1.42\tomcat-embed-core-10.1.42.jar;C:\Users\jxgm\.m2\repository\org\apache\tomcat\embed\tomcat-embed-websocket\10.1.42\tomcat-embed-websocket-10.1.42.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-web\6.2.8\spring-web-6.2.8.jar;C:\Users\jxgm\.m2\repository\io\micrometer\micrometer-observation\1.15.1\micrometer-observation-1.15.1.jar;C:\Users\jxgm\.m2\repository\io\micrometer\micrometer-commons\1.15.1\micrometer-commons-1.15.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-webmvc\6.2.8\spring-webmvc-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-context\6.2.8\spring-context-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-expression\6.2.8\spring-expression-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-security\3.5.3\spring-boot-starter-security-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-aop\6.2.8\spring-aop-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\security\spring-security-config\6.5.1\spring-security-config-6.5.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\security\spring-security-core\6.5.1\spring-security-core-6.5.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\security\spring-security-crypto\6.5.1\spring-security-crypto-6.5.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\security\spring-security-web\6.5.1\spring-security-web-6.5.1.jar;C:\Users\jxgm\.m2\repository\io\jsonwebtoken\jjwt-api\0.12.6\jjwt-api-0.12.6.jar;C:\Users\jxgm\.m2\repository\io\jsonwebtoken\jjwt-impl\0.12.6\jjwt-impl-0.12.6.jar;C:\Users\jxgm\.m2\repository\io\jsonwebtoken\jjwt-jackson\0.12.6\jjwt-jackson-0.12.6.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\jackson\core\jackson-databind\2.19.1\jackson-databind-2.19.1.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\jackson\core\jackson-annotations\2.19.1\jackson-annotations-2.19.1.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\jackson\core\jackson-core\2.19.1\jackson-core-2.19.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-log4j2\3.5.3\spring-boot-starter-log4j2-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\apache\logging\log4j\log4j-slf4j2-impl\2.26.0\log4j-slf4j2-impl-2.26.0.jar;C:\Users\jxgm\.m2\repository\org\apache\logging\log4j\log4j-core\2.26.0\log4j-core-2.26.0.jar;C:\Users\jxgm\.m2\repository\org\apache\logging\log4j\log4j-jul\2.26.0\log4j-jul-2.26.0.jar;C:\Users\jxgm\.m2\repository\com\lmax\disruptor\4.0.0\disruptor-4.0.0.jar;C:\Users\jxgm\.m2\repository\com\mysql\mysql-connector-j\9.2.0\mysql-connector-j-9.2.0.jar;C:\Users\jxgm\.m2\repository\com\h2database\h2\2.3.232\h2-2.3.232.jar;C:\Users\jxgm\.m2\repository\org\springframework\data\spring-data-commons\3.5.1\spring-data-commons-3.5.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-core\6.2.8\spring-core-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-jcl\6.2.8\spring-jcl-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-beans\6.2.8\spring-beans-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\slf4j\slf4j-api\2.0.17\slf4j-api-2.0.17.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-data-redis\3.5.3\spring-boot-starter-data-redis-3.5.3.jar;C:\Users\jxgm\.m2\repository\io\lettuce\lettuce-core\6.6.0.RELEASE\lettuce-core-6.6.0.RELEASE.jar;C:\Users\jxgm\.m2\repository\redis\clients\authentication\redis-authx-core\0.1.1-beta2\redis-authx-core-0.1.1-beta2.jar;C:\Users\jxgm\.m2\repository\io\netty\netty-common\4.1.122.Final\netty-common-4.1.122.Final.jar;C:\Users\jxgm\.m2\repository\io\netty\netty-handler\4.1.122.Final\netty-handler-4.1.122.Final.jar;C:\Users\jxgm\.m2\repository\io\netty\netty-resolver\4.1.122.Final\netty-resolver-4.1.122.Final.jar;C:\Users\jxgm\.m2\repository\io\netty\netty-buffer\4.1.122.Final\netty-buffer-4.1.122.Final.jar;C:\Users\jxgm\.m2\repository\io\netty\netty-transport-native-unix-common\4.1.122.Final\netty-transport-native-unix-common-4.1.122.Final.jar;C:\Users\jxgm\.m2\repository\io\netty\netty-codec\4.1.122.Final\netty-codec-4.1.122.Final.jar;C:\Users\jxgm\.m2\repository\io\netty\netty-transport\4.1.122.Final\netty-transport-4.1.122.Final.jar;C:\Users\jxgm\.m2\repository\io\projectreactor\reactor-core\3.7.7\reactor-core-3.7.7.jar;C:\Users\jxgm\.m2\repository\org\reactivestreams\reactive-streams\1.0.4\reactive-streams-1.0.4.jar;C:\Users\jxgm\.m2\repository\org\springframework\data\spring-data-redis\3.5.1\spring-data-redis-3.5.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\data\spring-data-keyvalue\3.5.1\spring-data-keyvalue-3.5.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-tx\6.2.8\spring-tx-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-oxm\6.2.8\spring-oxm-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-context-support\6.2.8\spring-context-support-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-aop\3.5.3\spring-boot-starter-aop-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\aspectj\aspectjweaver\1.9.24\aspectjweaver-1.9.24.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-amqp\3.5.3\spring-boot-starter-amqp-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-messaging\6.2.8\spring-messaging-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\amqp\spring-rabbit\3.2.5\spring-rabbit-3.2.5.jar;C:\Users\jxgm\.m2\repository\org\springframework\amqp\spring-amqp\3.2.5\spring-amqp-3.2.5.jar;C:\Users\jxgm\.m2\repository\org\springframework\retry\spring-retry\2.0.12\spring-retry-2.0.12.jar;C:\Users\jxgm\.m2\repository\com\rabbitmq\amqp-client\5.25.0\amqp-client-5.25.0.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-frontend-jaxws\4.1.9\cxf-rt-frontend-jaxws-4.1.9.jar;C:\Users\jxgm\.m2\repository\xml-resolver\xml-resolver\1.2\xml-resolver-1.2.jar;C:\Users\jxgm\.m2\repository\org\ow2\asm\asm\9.10.1\asm-9.10.1.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-core\4.1.9\cxf-core-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\glassfish\jaxb\jaxb-runtime\4.0.5\jaxb-runtime-4.0.5.jar;C:\Users\jxgm\.m2\repository\org\glassfish\jaxb\jaxb-core\4.0.5\jaxb-core-4.0.5.jar;C:\Users\jxgm\.m2\repository\org\glassfish\jaxb\txw2\4.0.5\txw2-4.0.5.jar;C:\Users\jxgm\.m2\repository\com\sun\istack\istack-commons-runtime\4.1.2\istack-commons-runtime-4.1.2.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\woodstox\woodstox-core\7.2.2\woodstox-core-7.2.2.jar;C:\Users\jxgm\.m2\repository\org\codehaus\woodstox\stax2-api\4.3.0\stax2-api-4.3.0.jar;C:\Users\jxgm\.m2\repository\org\apache\ws\xmlschema\xmlschema-core\2.3.3\xmlschema-core-2.3.3.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-bindings-soap\4.1.9\cxf-rt-bindings-soap-4.1.9.jar;C:\Users\jxgm\.m2\repository\jakarta\xml\soap\jakarta.xml.soap-api\3.0.2\jakarta.xml.soap-api-3.0.2.jar;C:\Users\jxgm\.m2\repository\jakarta\xml\ws\jakarta.xml.ws-api\4.0.2\jakarta.xml.ws-api-4.0.2.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-wsdl\4.1.9\cxf-rt-wsdl-4.1.9.jar;C:\Users\jxgm\.m2\repository\wsdl4j\wsdl4j\1.6.3\wsdl4j-1.6.3.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-databinding-jaxb\4.1.9\cxf-rt-databinding-jaxb-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-bindings-xml\4.1.9\cxf-rt-bindings-xml-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-frontend-simple\4.1.9\cxf-rt-frontend-simple-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\eclipse\angus\angus-mail\2.0.3\angus-mail-2.0.3.jar;C:\Users\jxgm\.m2\repository\jakarta\mail\jakarta.mail-api\2.1.3\jakarta.mail-api-2.1.3.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-ws-addr\4.1.9\cxf-rt-ws-addr-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-ws-policy\4.1.9\cxf-rt-ws-policy-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\apache\neethi\neethi\3.2.4\neethi-3.2.4.jar;C:\Users\jxgm\.m2\repository\org\eclipse\angus\angus-activation\2.0.2\angus-activation-2.0.2.jar;C:\Users\jxgm\.m2\repository\jakarta\activation\jakarta.activation-api\2.1.3\jakarta.activation-api-2.1.3.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-transports-http-jetty\4.1.9\cxf-rt-transports-http-jetty-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-transports-http\4.1.9\cxf-rt-transports-http-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\eclipse\jetty\jetty-session\12.0.22\jetty-session-12.0.22.jar;C:\Users\jxgm\.m2\repository\org\eclipse\jetty\ee10\jetty-ee10-servlet\12.0.22\jetty-ee10-servlet-12.0.22.jar;C:\Users\jxgm\.m2\repository\org\eclipse\jetty\jetty-server\12.0.22\jetty-server-12.0.22.jar;C:\Users\jxgm\.m2\repository\org\eclipse\jetty\jetty-util\12.0.22\jetty-util-12.0.22.jar;C:\Users\jxgm\.m2\repository\org\eclipse\jetty\jetty-io\12.0.22\jetty-io-12.0.22.jar;C:\Users\jxgm\.m2\repository\org\eclipse\jetty\jetty-security\12.0.22\jetty-security-12.0.22.jar;C:\Users\jxgm\.m2\repository\org\eclipse\jetty\jetty-http\12.0.22\jetty-http-12.0.22.jar;C:\Users\jxgm\.m2\repository\jakarta\servlet\jakarta.servlet-api\6.0.0\jakarta.servlet-api-6.0.0.jar;C:\Users\jxgm\.m2\repository\org\apache\poi\poi-ooxml\5.4.1\poi-ooxml-5.4.1.jar;C:\Users\jxgm\.m2\repository\org\apache\poi\poi\5.4.1\poi-5.4.1.jar;C:\Users\jxgm\.m2\repository\commons-codec\commons-codec\1.18.0\commons-codec-1.18.0.jar;C:\Users\jxgm\.m2\repository\org\apache\commons\commons-math3\3.6.1\commons-math3-3.6.1.jar;C:\Users\jxgm\.m2\repository\com\zaxxer\SparseBitSet\1.3\SparseBitSet-1.3.jar;C:\Users\jxgm\.m2\repository\org\apache\poi\poi-ooxml-lite\5.4.1\poi-ooxml-lite-5.4.1.jar;C:\Users\jxgm\.m2\repository\org\apache\xmlbeans\xmlbeans\5.3.0\xmlbeans-5.3.0.jar;C:\Users\jxgm\.m2\repository\org\apache\commons\commons-compress\1.27.1\commons-compress-1.27.1.jar;C:\Users\jxgm\.m2\repository\org\apache\commons\commons-lang3\3.17.0\commons-lang3-3.17.0.jar;C:\Users\jxgm\.m2\repository\commons-io\commons-io\2.18.0\commons-io-2.18.0.jar;C:\Users\jxgm\.m2\repository\com\github\virtuald\curvesapi\1.08\curvesapi-1.08.jar;C:\Users\jxgm\.m2\repository\org\apache\logging\log4j\log4j-api\2.26.0\log4j-api-2.26.0.jar;C:\Users\jxgm\.m2\repository\org\apache\commons\commons-collections4\4.4\commons-collections4-4.4.jar;C:\Users\jxgm\.m2\repository\org\projectlombok\lombok\1.18.38\lombok-1.18.38.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-test\3.5.3\spring-boot-starter-test-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-test\3.5.3\spring-boot-test-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-test-autoconfigure\3.5.3\spring-boot-test-autoconfigure-3.5.3.jar;C:\Users\jxgm\.m2\repository\com\jayway\jsonpath\json-path\2.9.0\json-path-2.9.0.jar;C:\Users\jxgm\.m2\repository\jakarta\xml\bind\jakarta.xml.bind-api\4.0.2\jakarta.xml.bind-api-4.0.2.jar;C:\Users\jxgm\.m2\repository\net\minidev\json-smart\2.5.2\json-smart-2.5.2.jar;C:\Users\jxgm\.m2\repository\net\minidev\accessors-smart\2.5.2\accessors-smart-2.5.2.jar;C:\Users\jxgm\.m2\repository\org\assertj\assertj-core\3.27.3\assertj-core-3.27.3.jar;C:\Users\jxgm\.m2\repository\net\bytebuddy\byte-buddy\1.17.6\byte-buddy-1.17.6.jar;C:\Users\jxgm\.m2\repository\org\awaitility\awaitility\4.2.2\awaitility-4.2.2.jar;C:\Users\jxgm\.m2\repository\org\hamcrest\hamcrest\3.0\hamcrest-3.0.jar;C:\Users\jxgm\.m2\repository\org\junit\jupiter\junit-jupiter\5.12.2\junit-jupiter-5.12.2.jar;C:\Users\jxgm\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.12.2\junit-jupiter-api-5.12.2.jar;C:\Users\jxgm\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\jxgm\.m2\repository\org\junit\platform\junit-platform-commons\1.12.2\junit-platform-commons-1.12.2.jar;C:\Users\jxgm\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;C:\Users\jxgm\.m2\repository\org\junit\jupiter\junit-jupiter-params\5.12.2\junit-jupiter-params-5.12.2.jar;C:\Users\jxgm\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.12.2\junit-jupiter-engine-5.12.2.jar;C:\Users\jxgm\.m2\repository\org\junit\platform\junit-platform-engine\1.12.2\junit-platform-engine-1.12.2.jar;C:\Users\jxgm\.m2\repository\org\mockito\mockito-core\5.17.0\mockito-core-5.17.0.jar;C:\Users\jxgm\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.6\byte-buddy-agent-1.17.6.jar;C:\Users\jxgm\.m2\repository\org\objenesis\objenesis\3.3\objenesis-3.3.jar;C:\Users\jxgm\.m2\repository\org\mockito\mockito-junit-jupiter\5.17.0\mockito-junit-jupiter-5.17.0.jar;C:\Users\jxgm\.m2\repository\org\skyscreamer\jsonassert\1.5.3\jsonassert-1.5.3.jar;C:\Users\jxgm\.m2\repository\com\vaadin\external\google\android-json\0.0.20131108.vaadin1\android-json-0.0.20131108.vaadin1.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-test\6.2.8\spring-test-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\xmlunit\xmlunit-core\2.10.2\xmlunit-core-2.10.2.jar;"/>
+    <property name="java.vm.vendor" value="Oracle Corporation"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="spring.test.mockmvc.print" value="NONE"/>
+    <property name="user.variant" value=""/>
+    <property name="java.vendor.url" value="https://java.oracle.com/"/>
+    <property name="user.timezone" value="Asia/Shanghai"/>
+    <property name="os.name" value="Windows 11"/>
+    <property name="java.vm.specification.version" value="21"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="user.country" value="CN"/>
+    <property name="sun.boot.library.path" value="C:\Program Files\Java\jdk-21\bin"/>
+    <property name="sun.java.command" value="C:\Users\jxgm\AppData\Local\Temp\surefire7748280326607076616\surefirebooter-20261110002247724_3.jar C:\Users\jxgm\AppData\Local\Temp\surefire7748280326607076616 2026-11-10T00-22-47_485-jvmRun1 surefire-20261110002247724_1tmp surefire_0-20261110002247724_2tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="C:\Users\jxgm\.codex\worktrees\issue15-household-date-boundary\小学期\target\test-classes;C:\Users\jxgm\.codex\worktrees\issue15-household-date-boundary\小学期\target\classes;C:\Users\jxgm\.m2\repository\org\mybatis\spring\boot\mybatis-spring-boot-starter\3.0.5\mybatis-spring-boot-starter-3.0.5.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter\3.5.3\spring-boot-starter-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot\3.5.3\spring-boot-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-autoconfigure\3.5.3\spring-boot-autoconfigure-3.5.3.jar;C:\Users\jxgm\.m2\repository\jakarta\annotation\jakarta.annotation-api\2.1.1\jakarta.annotation-api-2.1.1.jar;C:\Users\jxgm\.m2\repository\org\yaml\snakeyaml\2.4\snakeyaml-2.4.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-jdbc\3.5.3\spring-boot-starter-jdbc-3.5.3.jar;C:\Users\jxgm\.m2\repository\com\zaxxer\HikariCP\6.3.0\HikariCP-6.3.0.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-jdbc\6.2.8\spring-jdbc-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\mybatis\spring\boot\mybatis-spring-boot-autoconfigure\3.0.5\mybatis-spring-boot-autoconfigure-3.0.5.jar;C:\Users\jxgm\.m2\repository\org\mybatis\mybatis\3.5.19\mybatis-3.5.19.jar;C:\Users\jxgm\.m2\repository\org\mybatis\mybatis-spring\3.0.5\mybatis-spring-3.0.5.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-validation\3.5.3\spring-boot-starter-validation-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\apache\tomcat\embed\tomcat-embed-el\10.1.42\tomcat-embed-el-10.1.42.jar;C:\Users\jxgm\.m2\repository\org\hibernate\validator\hibernate-validator\8.0.2.Final\hibernate-validator-8.0.2.Final.jar;C:\Users\jxgm\.m2\repository\jakarta\validation\jakarta.validation-api\3.0.2\jakarta.validation-api-3.0.2.jar;C:\Users\jxgm\.m2\repository\org\jboss\logging\jboss-logging\3.6.1.Final\jboss-logging-3.6.1.Final.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\classmate\1.7.0\classmate-1.7.0.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-web\3.5.3\spring-boot-starter-web-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-json\3.5.3\spring-boot-starter-json-3.5.3.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\jackson\datatype\jackson-datatype-jdk8\2.19.1\jackson-datatype-jdk8-2.19.1.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\jackson\datatype\jackson-datatype-jsr310\2.19.1\jackson-datatype-jsr310-2.19.1.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\jackson\module\jackson-module-parameter-names\2.19.1\jackson-module-parameter-names-2.19.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-tomcat\3.5.3\spring-boot-starter-tomcat-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\apache\tomcat\embed\tomcat-embed-core\10.1.42\tomcat-embed-core-10.1.42.jar;C:\Users\jxgm\.m2\repository\org\apache\tomcat\embed\tomcat-embed-websocket\10.1.42\tomcat-embed-websocket-10.1.42.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-web\6.2.8\spring-web-6.2.8.jar;C:\Users\jxgm\.m2\repository\io\micrometer\micrometer-observation\1.15.1\micrometer-observation-1.15.1.jar;C:\Users\jxgm\.m2\repository\io\micrometer\micrometer-commons\1.15.1\micrometer-commons-1.15.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-webmvc\6.2.8\spring-webmvc-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-context\6.2.8\spring-context-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-expression\6.2.8\spring-expression-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-security\3.5.3\spring-boot-starter-security-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-aop\6.2.8\spring-aop-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\security\spring-security-config\6.5.1\spring-security-config-6.5.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\security\spring-security-core\6.5.1\spring-security-core-6.5.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\security\spring-security-crypto\6.5.1\spring-security-crypto-6.5.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\security\spring-security-web\6.5.1\spring-security-web-6.5.1.jar;C:\Users\jxgm\.m2\repository\io\jsonwebtoken\jjwt-api\0.12.6\jjwt-api-0.12.6.jar;C:\Users\jxgm\.m2\repository\io\jsonwebtoken\jjwt-impl\0.12.6\jjwt-impl-0.12.6.jar;C:\Users\jxgm\.m2\repository\io\jsonwebtoken\jjwt-jackson\0.12.6\jjwt-jackson-0.12.6.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\jackson\core\jackson-databind\2.19.1\jackson-databind-2.19.1.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\jackson\core\jackson-annotations\2.19.1\jackson-annotations-2.19.1.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\jackson\core\jackson-core\2.19.1\jackson-core-2.19.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-log4j2\3.5.3\spring-boot-starter-log4j2-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\apache\logging\log4j\log4j-slf4j2-impl\2.26.0\log4j-slf4j2-impl-2.26.0.jar;C:\Users\jxgm\.m2\repository\org\apache\logging\log4j\log4j-core\2.26.0\log4j-core-2.26.0.jar;C:\Users\jxgm\.m2\repository\org\apache\logging\log4j\log4j-jul\2.26.0\log4j-jul-2.26.0.jar;C:\Users\jxgm\.m2\repository\com\lmax\disruptor\4.0.0\disruptor-4.0.0.jar;C:\Users\jxgm\.m2\repository\com\mysql\mysql-connector-j\9.2.0\mysql-connector-j-9.2.0.jar;C:\Users\jxgm\.m2\repository\com\h2database\h2\2.3.232\h2-2.3.232.jar;C:\Users\jxgm\.m2\repository\org\springframework\data\spring-data-commons\3.5.1\spring-data-commons-3.5.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-core\6.2.8\spring-core-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-jcl\6.2.8\spring-jcl-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-beans\6.2.8\spring-beans-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\slf4j\slf4j-api\2.0.17\slf4j-api-2.0.17.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-data-redis\3.5.3\spring-boot-starter-data-redis-3.5.3.jar;C:\Users\jxgm\.m2\repository\io\lettuce\lettuce-core\6.6.0.RELEASE\lettuce-core-6.6.0.RELEASE.jar;C:\Users\jxgm\.m2\repository\redis\clients\authentication\redis-authx-core\0.1.1-beta2\redis-authx-core-0.1.1-beta2.jar;C:\Users\jxgm\.m2\repository\io\netty\netty-common\4.1.122.Final\netty-common-4.1.122.Final.jar;C:\Users\jxgm\.m2\repository\io\netty\netty-handler\4.1.122.Final\netty-handler-4.1.122.Final.jar;C:\Users\jxgm\.m2\repository\io\netty\netty-resolver\4.1.122.Final\netty-resolver-4.1.122.Final.jar;C:\Users\jxgm\.m2\repository\io\netty\netty-buffer\4.1.122.Final\netty-buffer-4.1.122.Final.jar;C:\Users\jxgm\.m2\repository\io\netty\netty-transport-native-unix-common\4.1.122.Final\netty-transport-native-unix-common-4.1.122.Final.jar;C:\Users\jxgm\.m2\repository\io\netty\netty-codec\4.1.122.Final\netty-codec-4.1.122.Final.jar;C:\Users\jxgm\.m2\repository\io\netty\netty-transport\4.1.122.Final\netty-transport-4.1.122.Final.jar;C:\Users\jxgm\.m2\repository\io\projectreactor\reactor-core\3.7.7\reactor-core-3.7.7.jar;C:\Users\jxgm\.m2\repository\org\reactivestreams\reactive-streams\1.0.4\reactive-streams-1.0.4.jar;C:\Users\jxgm\.m2\repository\org\springframework\data\spring-data-redis\3.5.1\spring-data-redis-3.5.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\data\spring-data-keyvalue\3.5.1\spring-data-keyvalue-3.5.1.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-tx\6.2.8\spring-tx-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-oxm\6.2.8\spring-oxm-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-context-support\6.2.8\spring-context-support-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-aop\3.5.3\spring-boot-starter-aop-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\aspectj\aspectjweaver\1.9.24\aspectjweaver-1.9.24.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-amqp\3.5.3\spring-boot-starter-amqp-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-messaging\6.2.8\spring-messaging-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\springframework\amqp\spring-rabbit\3.2.5\spring-rabbit-3.2.5.jar;C:\Users\jxgm\.m2\repository\org\springframework\amqp\spring-amqp\3.2.5\spring-amqp-3.2.5.jar;C:\Users\jxgm\.m2\repository\org\springframework\retry\spring-retry\2.0.12\spring-retry-2.0.12.jar;C:\Users\jxgm\.m2\repository\com\rabbitmq\amqp-client\5.25.0\amqp-client-5.25.0.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-frontend-jaxws\4.1.9\cxf-rt-frontend-jaxws-4.1.9.jar;C:\Users\jxgm\.m2\repository\xml-resolver\xml-resolver\1.2\xml-resolver-1.2.jar;C:\Users\jxgm\.m2\repository\org\ow2\asm\asm\9.10.1\asm-9.10.1.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-core\4.1.9\cxf-core-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\glassfish\jaxb\jaxb-runtime\4.0.5\jaxb-runtime-4.0.5.jar;C:\Users\jxgm\.m2\repository\org\glassfish\jaxb\jaxb-core\4.0.5\jaxb-core-4.0.5.jar;C:\Users\jxgm\.m2\repository\org\glassfish\jaxb\txw2\4.0.5\txw2-4.0.5.jar;C:\Users\jxgm\.m2\repository\com\sun\istack\istack-commons-runtime\4.1.2\istack-commons-runtime-4.1.2.jar;C:\Users\jxgm\.m2\repository\com\fasterxml\woodstox\woodstox-core\7.2.2\woodstox-core-7.2.2.jar;C:\Users\jxgm\.m2\repository\org\codehaus\woodstox\stax2-api\4.3.0\stax2-api-4.3.0.jar;C:\Users\jxgm\.m2\repository\org\apache\ws\xmlschema\xmlschema-core\2.3.3\xmlschema-core-2.3.3.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-bindings-soap\4.1.9\cxf-rt-bindings-soap-4.1.9.jar;C:\Users\jxgm\.m2\repository\jakarta\xml\soap\jakarta.xml.soap-api\3.0.2\jakarta.xml.soap-api-3.0.2.jar;C:\Users\jxgm\.m2\repository\jakarta\xml\ws\jakarta.xml.ws-api\4.0.2\jakarta.xml.ws-api-4.0.2.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-wsdl\4.1.9\cxf-rt-wsdl-4.1.9.jar;C:\Users\jxgm\.m2\repository\wsdl4j\wsdl4j\1.6.3\wsdl4j-1.6.3.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-databinding-jaxb\4.1.9\cxf-rt-databinding-jaxb-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-bindings-xml\4.1.9\cxf-rt-bindings-xml-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-frontend-simple\4.1.9\cxf-rt-frontend-simple-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\eclipse\angus\angus-mail\2.0.3\angus-mail-2.0.3.jar;C:\Users\jxgm\.m2\repository\jakarta\mail\jakarta.mail-api\2.1.3\jakarta.mail-api-2.1.3.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-ws-addr\4.1.9\cxf-rt-ws-addr-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-ws-policy\4.1.9\cxf-rt-ws-policy-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\apache\neethi\neethi\3.2.4\neethi-3.2.4.jar;C:\Users\jxgm\.m2\repository\org\eclipse\angus\angus-activation\2.0.2\angus-activation-2.0.2.jar;C:\Users\jxgm\.m2\repository\jakarta\activation\jakarta.activation-api\2.1.3\jakarta.activation-api-2.1.3.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-transports-http-jetty\4.1.9\cxf-rt-transports-http-jetty-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\apache\cxf\cxf-rt-transports-http\4.1.9\cxf-rt-transports-http-4.1.9.jar;C:\Users\jxgm\.m2\repository\org\eclipse\jetty\jetty-session\12.0.22\jetty-session-12.0.22.jar;C:\Users\jxgm\.m2\repository\org\eclipse\jetty\ee10\jetty-ee10-servlet\12.0.22\jetty-ee10-servlet-12.0.22.jar;C:\Users\jxgm\.m2\repository\org\eclipse\jetty\jetty-server\12.0.22\jetty-server-12.0.22.jar;C:\Users\jxgm\.m2\repository\org\eclipse\jetty\jetty-util\12.0.22\jetty-util-12.0.22.jar;C:\Users\jxgm\.m2\repository\org\eclipse\jetty\jetty-io\12.0.22\jetty-io-12.0.22.jar;C:\Users\jxgm\.m2\repository\org\eclipse\jetty\jetty-security\12.0.22\jetty-security-12.0.22.jar;C:\Users\jxgm\.m2\repository\org\eclipse\jetty\jetty-http\12.0.22\jetty-http-12.0.22.jar;C:\Users\jxgm\.m2\repository\jakarta\servlet\jakarta.servlet-api\6.0.0\jakarta.servlet-api-6.0.0.jar;C:\Users\jxgm\.m2\repository\org\apache\poi\poi-ooxml\5.4.1\poi-ooxml-5.4.1.jar;C:\Users\jxgm\.m2\repository\org\apache\poi\poi\5.4.1\poi-5.4.1.jar;C:\Users\jxgm\.m2\repository\commons-codec\commons-codec\1.18.0\commons-codec-1.18.0.jar;C:\Users\jxgm\.m2\repository\org\apache\commons\commons-math3\3.6.1\commons-math3-3.6.1.jar;C:\Users\jxgm\.m2\repository\com\zaxxer\SparseBitSet\1.3\SparseBitSet-1.3.jar;C:\Users\jxgm\.m2\repository\org\apache\poi\poi-ooxml-lite\5.4.1\poi-ooxml-lite-5.4.1.jar;C:\Users\jxgm\.m2\repository\org\apache\xmlbeans\xmlbeans\5.3.0\xmlbeans-5.3.0.jar;C:\Users\jxgm\.m2\repository\org\apache\commons\commons-compress\1.27.1\commons-compress-1.27.1.jar;C:\Users\jxgm\.m2\repository\org\apache\commons\commons-lang3\3.17.0\commons-lang3-3.17.0.jar;C:\Users\jxgm\.m2\repository\commons-io\commons-io\2.18.0\commons-io-2.18.0.jar;C:\Users\jxgm\.m2\repository\com\github\virtuald\curvesapi\1.08\curvesapi-1.08.jar;C:\Users\jxgm\.m2\repository\org\apache\logging\log4j\log4j-api\2.26.0\log4j-api-2.26.0.jar;C:\Users\jxgm\.m2\repository\org\apache\commons\commons-collections4\4.4\commons-collections4-4.4.jar;C:\Users\jxgm\.m2\repository\org\projectlombok\lombok\1.18.38\lombok-1.18.38.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-starter-test\3.5.3\spring-boot-starter-test-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-test\3.5.3\spring-boot-test-3.5.3.jar;C:\Users\jxgm\.m2\repository\org\springframework\boot\spring-boot-test-autoconfigure\3.5.3\spring-boot-test-autoconfigure-3.5.3.jar;C:\Users\jxgm\.m2\repository\com\jayway\jsonpath\json-path\2.9.0\json-path-2.9.0.jar;C:\Users\jxgm\.m2\repository\jakarta\xml\bind\jakarta.xml.bind-api\4.0.2\jakarta.xml.bind-api-4.0.2.jar;C:\Users\jxgm\.m2\repository\net\minidev\json-smart\2.5.2\json-smart-2.5.2.jar;C:\Users\jxgm\.m2\repository\net\minidev\accessors-smart\2.5.2\accessors-smart-2.5.2.jar;C:\Users\jxgm\.m2\repository\org\assertj\assertj-core\3.27.3\assertj-core-3.27.3.jar;C:\Users\jxgm\.m2\repository\net\bytebuddy\byte-buddy\1.17.6\byte-buddy-1.17.6.jar;C:\Users\jxgm\.m2\repository\org\awaitility\awaitility\4.2.2\awaitility-4.2.2.jar;C:\Users\jxgm\.m2\repository\org\hamcrest\hamcrest\3.0\hamcrest-3.0.jar;C:\Users\jxgm\.m2\repository\org\junit\jupiter\junit-jupiter\5.12.2\junit-jupiter-5.12.2.jar;C:\Users\jxgm\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.12.2\junit-jupiter-api-5.12.2.jar;C:\Users\jxgm\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\jxgm\.m2\repository\org\junit\platform\junit-platform-commons\1.12.2\junit-platform-commons-1.12.2.jar;C:\Users\jxgm\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;C:\Users\jxgm\.m2\repository\org\junit\jupiter\junit-jupiter-params\5.12.2\junit-jupiter-params-5.12.2.jar;C:\Users\jxgm\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.12.2\junit-jupiter-engine-5.12.2.jar;C:\Users\jxgm\.m2\repository\org\junit\platform\junit-platform-engine\1.12.2\junit-platform-engine-1.12.2.jar;C:\Users\jxgm\.m2\repository\org\mockito\mockito-core\5.17.0\mockito-core-5.17.0.jar;C:\Users\jxgm\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.6\byte-buddy-agent-1.17.6.jar;C:\Users\jxgm\.m2\repository\org\objenesis\objenesis\3.3\objenesis-3.3.jar;C:\Users\jxgm\.m2\repository\org\mockito\mockito-junit-jupiter\5.17.0\mockito-junit-jupiter-5.17.0.jar;C:\Users\jxgm\.m2\repository\org\skyscreamer\jsonassert\1.5.3\jsonassert-1.5.3.jar;C:\Users\jxgm\.m2\repository\com\vaadin\external\google\android-json\0.0.20131108.vaadin1\android-json-0.0.20131108.vaadin1.jar;C:\Users\jxgm\.m2\repository\org\springframework\spring-test\6.2.8\spring-test-6.2.8.jar;C:\Users\jxgm\.m2\repository\org\xmlunit\xmlunit-core\2.10.2\xmlunit-core-2.10.2.jar;"/>
+    <property name="test" value="Issue19MigrationBatchReuseIntegrationTest"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="C:\Users\jxgm"/>
+    <property name="user.language" value="zh"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2025-04-15"/>
+    <property name="java.home" value="C:\Program Files\Java\jdk-21"/>
+    <property name="file.separator" value="\"/>
+    <property name="basedir" value="C:\Users\jxgm\.codex\worktrees\issue15-household-date-boundary\小学期"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="FILE_LOG_CHARSET" value="UTF-8"/>
+    <property name="java.awt.headless" value="true"/>
+    <property name="surefire.real.class.path" value="C:\Users\jxgm\AppData\Local\Temp\surefire7748280326607076616\surefirebooter-20261110002247724_3.jar"/>
+    <property name="user.script" value=""/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="21.0.7+8-LTS-245"/>
+    <property name="user.name" value="jxgm"/>
+    <property name="stdout.encoding" value="GBK"/>
+    <property name="path.separator" value=";"/>
+    <property name="os.version" value="10.0"/>
+    <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="Java HotSpot(TM) 64-Bit Server VM"/>
+    <property name="localRepository" value="C:\Users\jxgm\.m2\repository"/>
+    <property name="java.vendor.url.bug" value="https://bugreport.java.com/bugreport/"/>
+    <property name="java.io.tmpdir" value="C:\Users\jxgm\AppData\Local\Temp\"/>
+    <property name="com.zaxxer.hikari.pool_number" value="1"/>
+    <property name="java.version" value="21.0.7"/>
+    <property name="user.dir" value="C:\Users\jxgm\.codex\worktrees\issue15-household-date-boundary\小学期"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="PID" value="2712"/>
+    <property name="sun.os.patch.level" value=""/>
+    <property name="CONSOLE_LOG_CHARSET" value="UTF-8"/>
+    <property name="native.encoding" value="GBK"/>
+    <property name="java.library.path" value="C:\Program Files\Java\jdk-21\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\Users\jxgm\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell;C:\Users\jxgm\.codex\tmp\arg0-windows\codex-arg0cgKfQZ;C:\Users\jxgm\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\libheif\libheif\bin;C:\Users\jxgm\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\jxrlib\jxrlib\bin;C:\Users\jxgm\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\poppler\Library\bin;C:\Users\jxgm\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\override;C:\Program Files (x86)\VMware\VMware Workstation\bin\;C:\Program Files\Common Files\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;D:\软件\banzip\Bandizip\;C;\Program Files\NVIDIA Corporation\NVIDIA App\NvDLISR;D:\软件\vivo办公套件\pcsuite\;D:\Mi;C:\Program Files\Git\cmd;D:\MinGW\bin;;C:\Program Files\NVIDIA Corporation\NVIDIA App\NvDLISR;C:\Program Files\CMake\bin;C:\Program Files\Calibre2\;C:\Program Files\nodejs\;C:\Program Files\GitHub CLI\;D:\软件\JMeter\apache-jmeter-5.6.3\bin;C:\Program Files\Java\jdk-21\bin;C:\Users\jxgm\AppData\Local\agy\bin;C:\Users\jxgm\.grok\bin;D:\Anaconda;D:\Anaconda\Scripts;C:\Users\jxgm\AppData\Local\hermes\hermes-agent\venv\Scripts;C:\Users\jxgm\.local\bin;C:\Users\jxgm\AppData\Local\Programs\Python\Python37\Scripts\;C:\Users\jxgm\AppData\Local\Programs\Python\Python37\;C:\Users\jxgm\AppData\Local\Programs\Python\Python314\Scripts\;C:\Users\jxgm\AppData\Local\Programs\Python\Python314\;C:\Users\jxgm\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell;C:\Users\jxgm\AppData\Local\Microsoft\WindowsApps;C:\Users\jxgm\AppData\Local\Programs\Microsoft VS Code\bin;D:\Anaconda\Library\bin;C:\Users\jxgm\AppData\Local\Microsoft\WinGet\Packages\Ninja-build.Ninja_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\Users\jxgm\AppData\Local\Microsoft\WinGet\Packages\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\llvm-mingw-20260324-ucrt-x86_64\bin;D:\Antigravity\bin;C:\Program Files\MySQL\MySQL Server 8.4\bin;C:\Program Files\Tesseract-OCR;C:\Users\jxgm\AppData\Local\Microsoft\WinGet\Packages\BurntSushi.ripgrep.MSVC_Microsoft.Winget.Source_8wekyb3d8bbwe\ripgrep-15.1.0-x86_64-pc-windows-msvc;C:\Users\jxgm\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-8.1.1-full_build\bin;D:\Apps\MiKTeX\miktex\bin\x64\;D:\Apps\StrawberryPerl\perl\bin;D:\Apps\StrawberryPerl\c\bin;D:\Apps\TeXstudio;C:\Users\jxgm\AppData\Roaming\npm;C:\Users\jxgm\whisper.cpp;D:\软件\IntelliJ IDEA 2024.1.7\bin;C:\Users\jxgm\AppData\Local\Pandoc\;D:\软件\vivo办公套件\pcsuite\VClaw\resources\cli;D:\软件\Antigravity IDE\bin;C:\Users\jxgm\AppData\Local\Programs\Antigravity IDE\bin;C:\Users\jxgm\.m2\wrapper\dists\apache-maven-3.9.16\0daed3be3ebd1c706f0e69e8b07c6b73f5cc4ea3dfce72a8d0ec2e849ca2ddb0\bin;C:\Users\jxgm\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\fallback;C:\Users\jxgm\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;C:\Users\jxgm\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\git\cmd;C:\Program Files\WindowsApps\OpenAI.Codex_26.1103.4239.0_x64__2p2nqsd0c76g0\app\resources;."/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="stderr.encoding" value="GBK"/>
+    <property name="java.vendor" value="Oracle Corporation"/>
+    <property name="java.vm.version" value="21.0.7+8-LTS-245"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="65.0"/>
+  </properties>
+  <testcase name="failedDuplicateDraftCreationLeavesNoOrphanApplicationOrDetail" classname="com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest" time="1.755">
+    <system-out><![CDATA[
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.3)
+
+2026-11-10 00:22:51.518 INFO  [traceId= instanceId=] [background-preinit] org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2026-11-10 00:22:51.620 INFO  [traceId= instanceId=] [main] com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest - Starting Issue19MigrationBatchReuseIntegrationTest using Java 21.0.7 with PID 2712 (started by jxgm in C:\Users\jxgm\.codex\worktrees\issue15-household-date-boundary\小学期)
+2026-11-10 00:22:51.633 INFO  [traceId= instanceId=] [main] com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest - No active profile set, falling back to 1 default profile: "default"
+2026-11-10 00:22:53.861 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-11-10 00:22:53.865 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-11-10 00:22:53.959 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 60 ms. Found 0 Redis repository interfaces.
+2026-11-10 00:22:55.387 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-11-10 00:22:56.002 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@7c11f00a
+2026-11-10 00:22:56.005 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-11-10 00:22:57.551 INFO  [traceId= instanceId=] [main] com.wjx871.population.assistant.PolicyAssistantService - Policy knowledge base loaded: 56 chunks across 19 registered sources
+2026-11-10 00:22:58.434 INFO  [traceId= instanceId=] [main] org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name authService
+2026-11-10 00:22:59.698 INFO  [traceId= instanceId=] [main] org.springframework.boot.test.mock.web.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-11-10 00:22:59.700 INFO  [traceId= instanceId=] [main] org.springframework.test.web.servlet.TestDispatcherServlet - Initializing Servlet ''
+2026-11-10 00:22:59.701 INFO  [traceId= instanceId=] [main] org.springframework.test.web.servlet.TestDispatcherServlet - Completed initialization in 1 ms
+2026-11-10 00:22:59.744 INFO  [traceId= instanceId=] [main] com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest - Started Issue19MigrationBatchReuseIntegrationTest in 8.848 seconds (process running for 11.884)
+ISSUE19_HTTP action=创建迁入草稿 Issue19 占用中的草稿 status=201 body={"code":201,"message":"created","data":{"applicationId":2,"applicationNo":"APP-20261110-6B2297C193AF","migrationId":1,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241381402}
+ISSUE19_DUPLICATE_CREATE_HTTP=409 body={"code":409,"message":"迁移批次已被占用，请使用未使用的合法批次","data":null,"timestamp":1794241381500}
+]]></system-out>
+    <system-err><![CDATA[Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (C:\Users\jxgm\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.6\byte-buddy-agent-1.17.6.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+]]></system-err>
+  </testcase>
+  <testcase name="completedMigrationConsumesBatchPermanently" classname="com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest" time="0.636">
+    <system-out><![CDATA[ISSUE19_HTTP action=HTTP 创建同市跨区迁出申请 status=201 body={"code":201,"message":"created","data":{"applicationId":3,"applicationNo":"APP-20261110-BF766C0FE5C4","migrationId":2,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241381858}
+ISSUE19_HTTP action=提交申请 3 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241381907}
+ISSUE19_HTTP action=审批通过 1 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241381942}
+ISSUE19_HTTP action=HTTP 执行同市跨区迁出 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241381987}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=2, application_id=3, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-1D2CE9, version=3}
+ISSUE19_HTTP action=创建迁入草稿 Issue19 完成消费 status=201 body={"code":201,"message":"created","data":{"applicationId":4,"applicationNo":"APP-20261110-A619BC226635","migrationId":2,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241382012}
+ISSUE19_HTTP action=提交申请 4 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241382047}
+ISSUE19_HTTP action=审批通过 2 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241382072}
+ISSUE19_HTTP action=执行迁入并消费批次 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241382113}
+ISSUE19_RED_COMPLETED_IN={business_application.status=COMPLETED, migration_in={in_id=2, business_status=COMPLETED, transfer_batch_no=TR-20261110-1D2CE9, version=3}, approved_logs=[{action=CREATE, from_status=null, to_status=DRAFT}, {action=SUBMIT, from_status=DRAFT, to_status=UNDER_REVIEW}, {action=APPROVE, from_status=UNDER_REVIEW, to_status=APPROVED}, {action=EXECUTE, from_status=APPROVED, to_status=COMPLETED}]}
+ISSUE19_RED_COMPLETED_BATCH_REUSE_HTTP status=409 body={"code":409,"message":"迁移批次已被占用，请使用未使用的合法批次","data":null,"timestamp":1794241382156}
+]]></system-out>
+  </testcase>
+  <testcase name="cancelRecreateCannotBypassMaterialsApprovalOrExecutePermission" classname="com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest" time="0.547">
+    <system-out><![CDATA[ISSUE19_HTTP action=HTTP 创建同市跨区迁出申请 status=201 body={"code":201,"message":"created","data":{"applicationId":5,"applicationNo":"APP-20261110-3B1531F1E4F8","migrationId":3,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241382502}
+ISSUE19_HTTP action=提交申请 5 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241382535}
+ISSUE19_HTTP action=审批通过 3 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241382562}
+ISSUE19_HTTP action=HTTP 执行同市跨区迁出 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241382595}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=3, application_id=5, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-404E63, version=3}
+ISSUE19_HTTP action=创建迁入草稿 Issue19 绕过校验 A status=201 body={"code":201,"message":"created","data":{"applicationId":6,"applicationNo":"APP-20261110-ECA410080A8C","migrationId":3,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241382618}
+ISSUE19_HTTP action=取消 A（绕过校验场景） status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241382638}
+ISSUE19_HTTP action=取消后创建 B status=201 body={"code":201,"message":"created","data":{"applicationId":7,"applicationNo":"APP-20261110-D7065EE84C3D","migrationId":4,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241382658}
+ISSUE19_HTTP action=未提交直接执行 status=409 body={"code":409,"message":"申请尚未批准或已执行","data":null,"timestamp":1794241382674}
+ISSUE19_HTTP action=缺材料提交 status=409 body={"code":409,"message":"缺少必需材料：IDENTITY_PROOF","data":null,"timestamp":1794241382689}
+ISSUE19_HTTP action=无执行权限执行 status=403 body={"code":403,"message":"当前账号无权执行该操作","data":null,"timestamp":1794241382703}
+]]></system-out>
+  </testcase>
+  <testcase name="existingStatusOccupancyObservationMatrix" classname="com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest" time="0.94">
+    <system-out><![CDATA[ISSUE19_HTTP action=创建状态观察草稿 DRAFT status=201 body={"code":201,"message":"created","data":{"applicationId":9,"applicationNo":"APP-20261110-8808E4A78804","migrationId":5,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241383056}
+ISSUE19_RED_STATUS_OCCUPANCY status=DRAFT appStatus=DRAFT migrationStatus=DRAFT secondHttp=409 secondBody={"code":409,"message":"迁移批次已被占用，请使用未使用的合法批次","data":null,"timestamp":1794241383077}
+ISSUE19_HTTP action=创建状态观察草稿 UNDER_REVIEW status=201 body={"code":201,"message":"created","data":{"applicationId":11,"applicationNo":"APP-20261110-6235E1764233","migrationId":6,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241383116}
+ISSUE19_HTTP action=提交申请 11 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383155}
+ISSUE19_RED_STATUS_OCCUPANCY status=UNDER_REVIEW appStatus=UNDER_REVIEW migrationStatus=UNDER_REVIEW secondHttp=409 secondBody={"code":409,"message":"迁移批次已被占用，请使用未使用的合法批次","data":null,"timestamp":1794241383173}
+ISSUE19_HTTP action=创建状态观察草稿 APPROVED status=201 body={"code":201,"message":"created","data":{"applicationId":13,"applicationNo":"APP-20261110-F11164202651","migrationId":7,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241383209}
+ISSUE19_HTTP action=提交申请 13 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383249}
+ISSUE19_HTTP action=审批通过 5 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383277}
+ISSUE19_RED_STATUS_OCCUPANCY status=APPROVED appStatus=APPROVED migrationStatus=APPROVED secondHttp=409 secondBody={"code":409,"message":"迁移批次已被占用，请使用未使用的合法批次","data":null,"timestamp":1794241383294}
+ISSUE19_HTTP action=创建状态观察草稿 REJECTED status=201 body={"code":201,"message":"created","data":{"applicationId":15,"applicationNo":"APP-20261110-DAAE614CD9CF","migrationId":8,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241383326}
+ISSUE19_HTTP action=提交申请 15 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383360}
+ISSUE19_HTTP action=审批驳回 6 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383399}
+ISSUE19_RED_STATUS_OCCUPANCY status=REJECTED appStatus=REJECTED migrationStatus=REJECTED secondHttp=409 secondBody={"code":409,"message":"迁移批次已被占用，请使用未使用的合法批次","data":null,"timestamp":1794241383414}
+ISSUE19_HTTP action=创建状态观察草稿 WITHDRAWN status=201 body={"code":201,"message":"created","data":{"applicationId":17,"applicationNo":"APP-20261110-118A2A45A4D4","migrationId":9,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241383444}
+ISSUE19_HTTP action=提交申请 17 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383478}
+ISSUE19_HTTP action=撤回申请 17 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383503}
+ISSUE19_RED_STATUS_OCCUPANCY status=WITHDRAWN appStatus=WITHDRAWN migrationStatus=WITHDRAWN secondHttp=409 secondBody={"code":409,"message":"迁移批次已被占用，请使用未使用的合法批次","data":null,"timestamp":1794241383519}
+ISSUE19_HTTP action=创建状态观察草稿 RETURNED status=201 body={"code":201,"message":"created","data":{"applicationId":19,"applicationNo":"APP-20261110-07AA0BC0C529","migrationId":10,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241383546}
+ISSUE19_HTTP action=提交申请 19 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383581}
+ISSUE19_HTTP action=审批通过 8 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383606}
+ISSUE19_HTTP action=退回申请 19 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383631}
+ISSUE19_RED_STATUS_OCCUPANCY status=RETURNED appStatus=RETURNED migrationStatus=APPROVED secondHttp=409 secondBody={"code":409,"message":"迁移批次已被占用，请使用未使用的合法批次","data":null,"timestamp":1794241383645}
+]]></system-out>
+  </testcase>
+  <testcase name="repeatedCancelAndNonDraftCancelAreRejected" classname="com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest" time="0.527">
+    <system-out><![CDATA[ISSUE19_HTTP action=HTTP 创建同市跨区迁出申请 status=201 body={"code":201,"message":"created","data":{"applicationId":20,"applicationNo":"APP-20261110-DBF777A6B6D9","migrationId":10,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241383980}
+ISSUE19_HTTP action=提交申请 20 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241384008}
+ISSUE19_HTTP action=审批通过 9 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241384027}
+ISSUE19_HTTP action=HTTP 执行同市跨区迁出 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241384053}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=10, application_id=20, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-744E7B, version=3}
+ISSUE19_HTTP action=创建迁入草稿 Issue19 重复取消 status=201 body={"code":201,"message":"created","data":{"applicationId":21,"applicationNo":"APP-20261110-DD80954D840D","migrationId":11,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241384074}
+ISSUE19_HTTP action=第一次取消 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241384089}
+ISSUE19_HTTP action=重复取消 status=409 body={"code":409,"message":"只有草稿申请可以执行该操作","data":null,"timestamp":1794241384100}
+ISSUE19_HTTP action=创建迁入草稿 Issue19 非草稿取消 status=201 body={"code":201,"message":"created","data":{"applicationId":23,"applicationNo":"APP-20261110-CB13007295E3","migrationId":12,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241384130}
+ISSUE19_HTTP action=提交申请 23 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241384165}
+ISSUE19_HTTP action=非草稿取消 status=409 body={"code":409,"message":"只有草稿申请可以执行该操作","data":null,"timestamp":1794241384174}
+]]></system-out>
+  </testcase>
+  <testcase name="cancelAndCreateInterleavingHasNoDoubleActiveClaim" classname="com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest" time="0.396">
+    <system-out><![CDATA[ISSUE19_HTTP action=创建迁入草稿 Issue19 交错 A 0 status=201 body={"code":201,"message":"created","data":{"applicationId":25,"applicationNo":"APP-20261110-069505772D30","migrationId":13,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241384512}
+ISSUE19_INTERLEAVE round=0 cancelHttp=200 createHttp=409
+ISSUE19_HTTP action=创建迁入草稿 Issue19 交错 A 1 status=201 body={"code":201,"message":"created","data":{"applicationId":27,"applicationNo":"APP-20261110-6AA706DF0B3D","migrationId":14,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241384555}
+ISSUE19_INTERLEAVE round=1 cancelHttp=200 createHttp=409
+]]></system-out>
+  </testcase>
+  <testcase name="updateDraftReleasesOldBatchAndClaimsNewBatch" classname="com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest" time="0.384">
+    <system-out><![CDATA[ISSUE19_HTTP action=创建迁入草稿 Issue19 编辑换批次 status=201 body={"code":201,"message":"created","data":{"applicationId":30,"applicationNo":"APP-20261110-3A01D3E10D00","migrationId":15,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241384899}
+ISSUE19_HTTP action=编辑迁入草稿换批次 status=200 body={"code":200,"message":"ok","data":{"applicationId":30,"applicationNo":"APP-20261110-3A01D3E10D00","migrationId":15,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241384925}
+ISSUE19_HTTP action=旧批次释放后重新创建 status=201 body={"code":201,"message":"created","data":{"applicationId":31,"applicationNo":"APP-20261110-087E1E36097B","migrationId":16,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241384945}
+ISSUE19_EDIT_BATCH old=TR-OBS-EDIT-OLD-888A86 new=TR-OBS-EDIT-NEW-F2ABB7 reuseOldHttp=201 reuseNewHttp=409
+]]></system-out>
+  </testcase>
+  <testcase name="cancelDraftReleasesBatchAndNewDraftCanBeCreated" classname="com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest" time="0.453">
+    <system-out><![CDATA[ISSUE19_HTTP action=HTTP 创建同市跨区迁出申请 status=201 body={"code":201,"message":"created","data":{"applicationId":32,"applicationNo":"APP-20261110-C0DB28FB8BDF","migrationId":16,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241385271}
+ISSUE19_HTTP action=提交申请 32 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241385297}
+ISSUE19_HTTP action=审批通过 11 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241385315}
+ISSUE19_HTTP action=HTTP 执行同市跨区迁出 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241385339}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=16, application_id=32, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-C4F0E3, version=3}
+ISSUE19_RED_COMPLETED_OUT_BATCH=CompletedOut[applicationId=32, batchNo=TR-20261110-C4F0E3]
+ISSUE19_HTTP action=创建迁入草稿 A status=201 body={"code":201,"message":"created","data":{"applicationId":33,"applicationNo":"APP-20261110-1EC435D6CE80","migrationId":17,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241385359}
+ISSUE19_RED_DRAFT_A_AFTER_CREATE={business_application.status=DRAFT, migration_in={in_id=17, business_status=DRAFT, transfer_batch_no=TR-20261110-C4F0E3, version=0}, approved_logs=[{action=CREATE, from_status=null, to_status=DRAFT}]}
+ISSUE19_HTTP action=取消迁入草稿 A status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241385375}
+ISSUE19_RED_DRAFT_A_AFTER_CANCEL={business_application.status=CANCELLED, migration_in={in_id=17, business_status=CANCELLED, transfer_batch_no=TR-20261110-C4F0E3, version=1}, approved_logs=[{action=CREATE, from_status=null, to_status=DRAFT}, {action=CANCEL, from_status=DRAFT, to_status=CANCELLED}]}
+ISSUE19_RED_CANCEL_APPROVAL_LOGS=[{action=CREATE, from_status=null, to_status=DRAFT, operator_user_id=6}, {action=CANCEL, from_status=DRAFT, to_status=CANCELLED, operator_user_id=6}]
+ISSUE19_RED_CANCEL_OPERATION_LOGS=[]
+ISSUE19_RED_OPERATION_LOG_TOTAL=7
+ISSUE19_DIRECT_DUPLICATE unexpected-success
+ISSUE19_RED_DRAFT_B_HTTP status=201 body={"code":201,"message":"created","data":{"applicationId":35,"applicationNo":"APP-20261110-09380E3FBFD2","migrationId":19,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241385409}
+ISSUE19_RED_AFTER_B businessApplicationCount=2 migrationInRowsForBatch=2
+]]></system-out>
+  </testcase>
+  <testcase name="concurrentClaimsAllowOnlyOneActiveDraft" classname="com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest" time="0.867">
+    <system-out><![CDATA[ISSUE19_HTTP action=HTTP 创建同市跨区迁出申请 status=201 body={"code":201,"message":"created","data":{"applicationId":36,"applicationNo":"APP-20261110-DC33657C0BFC","migrationId":17,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241385720}
+ISSUE19_HTTP action=提交申请 36 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241385747}
+ISSUE19_HTTP action=审批通过 12 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241385765}
+ISSUE19_HTTP action=HTTP 执行同市跨区迁出 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241385793}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=17, application_id=36, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-31A883, version=3}
+ISSUE19_CONCURRENT_CLAIM statuses=[409, 201]
+]]></system-out>
+  </testcase>
+  <testcase name="batchMismatchIsRejectedOnExecution" classname="com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest" time="0.475">
+    <system-out><![CDATA[ISSUE19_HTTP action=HTTP 创建同市跨区迁出申请 status=201 body={"code":201,"message":"created","data":{"applicationId":39,"applicationNo":"APP-20261110-A0D52D74050A","migrationId":18,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241386601}
+ISSUE19_HTTP action=提交申请 39 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241386626}
+ISSUE19_HTTP action=审批通过 13 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241386644}
+ISSUE19_HTTP action=HTTP 执行同市跨区迁出 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241386670}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=18, application_id=39, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-E60A64, version=3}
+ISSUE19_HTTP action=创建迁入草稿 Issue19 错人员批次 status=201 body={"code":201,"message":"created","data":{"applicationId":40,"applicationNo":"APP-20261110-38184A2B0784","migrationId":22,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241386688}
+ISSUE19_HTTP action=提交申请 40 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241386717}
+ISSUE19_HTTP action=审批通过 14 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241386738}
+ISSUE19_HTTP action=错人员批次执行 status=409 body={"code":409,"message":"迁移批次不匹配或已使用","data":null,"timestamp":1794241386753}
+]]></system-out>
+  </testcase>
+  <testcase name="cancellationListenerFailureRollsBackApplicationAndDetail" classname="com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest" time="0.42">
+    <system-out><![CDATA[ISSUE19_HTTP action=HTTP 创建同市跨区迁出申请 status=201 body={"code":201,"message":"created","data":{"applicationId":41,"applicationNo":"APP-20261110-14CD8F3EAE5D","migrationId":19,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241387072}
+ISSUE19_HTTP action=提交申请 41 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387097}
+ISSUE19_HTTP action=审批通过 15 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387114}
+ISSUE19_HTTP action=HTTP 执行同市跨区迁出 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387136}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=19, application_id=41, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-9F57DA, version=3}
+ISSUE19_HTTP action=创建迁入草稿 ISSUE19_CANCEL_FAIL status=201 body={"code":201,"message":"created","data":{"applicationId":42,"applicationNo":"APP-20261110-7C2B5BC56B44","migrationId":23,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241387156}
+2026-11-10 00:23:07.171 ERROR [traceId=0a6ca3ec-b861-4efa-8553-04786c8d0f1f instanceId=8f18bb22-4974-4f6d-bba4-a8036d2c8f73] [main] com.wjx871.population.common.GlobalExceptionHandler - Unhandled request exception
+java.lang.IllegalStateException: simulated draft cancellation listener failure
+	at com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest$FaultInjectionConfiguration$1.onDraftCancelled(Issue19MigrationBatchReuseIntegrationTest.java:844)
+	at com.wjx871.population.application.ApplicationService.cancelDraft(ApplicationService.java:116)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:380)
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:728)
+	at com.wjx871.population.application.ApplicationService$$SpringCGLIB$$0.cancelDraft(<generated>)
+	at com.wjx871.population.application.ApplicationController.delete(ApplicationController.java:43)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+	at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.proceed(AuthorizationManagerBeforeMethodInterceptor.java:268)
+	at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.attemptAuthorization(AuthorizationManagerBeforeMethodInterceptor.java:263)
+	at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.invoke(AuthorizationManagerBeforeMethodInterceptor.java:196)
+	at org.springframework.security.config.annotation.method.configuration.DeferringMethodInterceptor.invoke(DeferringMethodInterceptor.java:44)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:728)
+	at com.wjx871.population.application.ApplicationController$$SpringCGLIB$$0.delete(<generated>)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:986)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:891)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doDelete(FrameworkServlet.java:936)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:596)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:165)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:125)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:119)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at com.wjx871.population.security.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:60)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:319)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$4(HandlerMappingIntrospector.java:267)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:240)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:201)
+	at com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest.deleteDraft(Issue19MigrationBatchReuseIntegrationTest.java:612)
+	at com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest.cancellationListenerFailureRollsBackApplicationAndDetail(Issue19MigrationBatchReuseIntegrationTest.java:473)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+ISSUE19_CANCEL_FAILURE_HTTP=500 body={"code":500,"message":"服务器处理请求失败","data":null,"timestamp":1794241387175}
+]]></system-out>
+  </testcase>
+  <testcase name="genericDraftCancellationDoesNotBroadcastToSpecializedListeners" classname="com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest" time="0.336">
+    <system-out><![CDATA[ISSUE19_HTTP action=创建通用业务草稿 status=201 body={"code":201,"message":"created","data":{"applicationId":43,"applicationNo":"APP-20261110-600DA56A28AF","businessType":"GENERAL_SERVICE","title":"Issue19 通用草稿","applicantUserId":6,"applicantName":"户籍管理人员","applicantDepartmentId":4,"applicantRegionCode":"110000","targetPersonId":null,"targetHouseholdId":null,"status":"DRAFT","reason":"验证取消不广播","remark":"opt-in check","submittedAt":null,"completedAt":null,"version":0,"createdAt":"2026-11-10T00:23:07","updatedAt":"2026-11-10T00:23:07"},"timestamp":1794241387496}
+ISSUE19_HTTP action=取消通用业务草稿 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387513}
+]]></system-out>
+  </testcase>
+  <testcase name="cancelledMigrationRecordAndLogsRemainTraceable" classname="com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest" time="0.417">
+    <system-out><![CDATA[ISSUE19_HTTP action=HTTP 创建同市跨区迁出申请 status=201 body={"code":201,"message":"created","data":{"applicationId":44,"applicationNo":"APP-20261110-9634B6D76584","migrationId":20,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241387801}
+ISSUE19_HTTP action=提交申请 44 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387825}
+ISSUE19_HTTP action=审批通过 16 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387843}
+ISSUE19_HTTP action=HTTP 执行同市跨区迁出 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387867}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=20, application_id=44, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-3FF209, version=3}
+ISSUE19_HTTP action=创建迁入草稿 A（可追溯场景） status=201 body={"code":201,"message":"created","data":{"applicationId":45,"applicationNo":"APP-20261110-3FDC256C28C5","migrationId":24,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241387886}
+ISSUE19_HTTP action=取消迁入草稿 A（可追溯场景） status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387901}
+ISSUE19_HTTP action=查询取消后的迁入详情 status=200 body={"code":200,"message":"ok","data":{"application":{"applicationId":45,"applicationNo":"APP-20261110-3FDC256C28C5","businessType":"MIGRATION_IN","title":"Issue19 取消可追溯","applicantUserId":6,"applicantName":"户籍管理人员","applicantDepartmentId":4,"applicantRegionCode":"110000","targetPersonId":93001,"targetHouseholdId":93002,"status":"CANCELLED","reason":"同市跨区迁入","remark":null,"submittedAt":null,"completedAt":null,"version":1,"createdAt":"2026-11-10T00:23:07","updatedAt":"2026-11-10T00:23:07"},"migrationIn":{"inId":24,"applicationId":45,"personId":93001,"migrationType":"IN_CITY_CROSS_DISTRICT","fromRegionCode":"110101","fromAddress":"北京市东城区旧址","toRegionCode":"110105","toHouseholdId":93002,"toAddressSnapshot":null,"inDate":"2026-11-02","reason":"同市跨区迁入","transferBatchNo":"TR-20261110-3FF209","businessStatus":"CANCELLED","operatorId":null,"executedAt":null,"version":1,"createdAt":"2026-11-10T00:23:07","updatedAt":"2026-11-10T00:23:07"},"migrationOut":null,"currentResidence":null,"household":{"householdId":93002,"householdNo":"H-93002","headPersonId":93002,"address":"北京市朝阳区目标地址","regionCode":"110105","status":"ACTIVE","establishDate":"2020-01-01","activeMemberCount":1,"version":0},"activeMemberPersonIds":[93002],"materials":[],"approval":null,"approvalLogs":[{"logId":79,"approvalId":null,"applicationId":45,"action":"CREATE","fromStatus":null,"toStatus":"DRAFT","operatorUserId":6,"comment":null,"operationTime":"2026-11-10T00:23:07"},{"logId":80,"approvalId":null,"applicationId":45,"action":"CANCEL","fromStatus":"DRAFT","toStatus":"CANCELLED","operatorUserId":6,"comment":null,"operationTime":"2026-11-10T00:23:07"}],"executable":false,"executionRestriction":"申请尚未批准或已执行"},"timestamp":1794241387920}
+]]></system-out>
+  </testcase>
+</testsuite>

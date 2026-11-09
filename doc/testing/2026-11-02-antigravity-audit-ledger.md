@@ -20,7 +20,7 @@
 | 12 | HIGH | 家庭关系枚举文案及户主显示回退异常 | FRONTEND_HANDOFF | 属关系标签和展示回退；本轮未改前端。 | 前端组 |
 | 13 | MEDIUM | 家庭户表单重复渲染控件 | FRONTEND_HANDOFF | 视图布局问题；本轮未改前端。 | 前端组 |
 | 14 | MEDIUM | 前端拦截器吞掉 409 业务冲突提示 | FRONTEND_HANDOFF | API 错误提示呈现需前端核验；本轮未改前端。 | 前端组 |
-| 15 | MEDIUM | 立户日期与成员入户日期边界未校验 | OPEN | 当前创建/更新路径未见统一的立户日期与初始成员日期约束；本轮未动态复现。 | 后端 |
+| 15 | MEDIUM | 立户日期与成员入户日期边界未校验 | CODE_CANDIDATE | 已统一新增/更新/迁入及历史恢复日期边界；真实 H2 RED 21 项 8 失败，修复后全量 Maven 937 项 0 失败/0 错误/3 既有跳过；MySQL 8.4 专项及相关回归 133 项通过（含 4 项真实锁等待并发，1 个 H2 重复关系夹具明确排除）。证据与限制见 `doc/development/issue15-household-date-boundary.md`；待 ChatGPT 独立复核，未集成或部署。 | 后端 |
 | 16 | LOW | 详情刷新未 await 导致竞态 | FRONTEND_HANDOFF | 页面异步刷新行为；本轮未改前端。 | 前端组 |
 | 17 | LOW | 家庭户适配器重复定义 regionCode | FRONTEND_HANDOFF | 前端适配器实现问题；本轮未改前端。 | 前端组 |
 | 18 | CRITICAL | 户主迁出申请缺少继任者导致批准后无法执行 | FIXED_NOT_VERIFIED | 新申请在提交时校验继任者，`Phase03MigrationIntegrationTest` 验证新流；已批准但缺少继任者的历史单仍需补正/重新审批方案；`eabae6a`。 | 后端后续处理历史单 |

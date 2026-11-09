@@ -1,0 +1,7 @@
+RED tests=21, failures=8, errors=0, skipped=0
+GREEN issue15 tests=21, failures=0, errors=0, skipped=0
+Expanded candidate test source SHA256 at summary creation=2D3E439DF27636E70D6D5F68734877AFAD4F7D32DC8EBC16CFD76A5EF50B6DC4
+RED command reportsDirectory property was not honoured by the existing Surefire configuration. target/surefire-reports was independently copied to h2-red-surefire before any subsequent run.
+H2 targeted command: .\mvnw.cmd -Dtest=Issue15HouseholdDateBoundaryIntegrationTest,Phase08HouseholdMasterDataIntegrationTest,Phase03MigrationIntegrationTest,Issue19MigrationBatchReuseIntegrationTest,Phase04CancellationIntegrationTest test
+Targeted H2 actual total: 127 tests, 0 failures, 0 errors, 0 skipped.
+

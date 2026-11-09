@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.wjx871.population.keypopulation.Phase10KeyPopulationIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 56, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.065 s -- in com.wjx871.population.keypopulation.Phase10KeyPopulationIntegrationTest

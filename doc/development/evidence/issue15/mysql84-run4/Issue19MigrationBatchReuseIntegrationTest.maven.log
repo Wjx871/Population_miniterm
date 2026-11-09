@@ -1,0 +1,488 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.wjx871:population-miniterm >-------------------
+[INFO] Building population-miniterm 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.14:prepare-agent (coverage-agent) @ population-miniterm ---
+[INFO] argLine set to -javaagent:C:\\Users\\jxgm\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.14\\org.jacoco.agent-0.8.14-runtime.jar=destfile=C:\\Users\\jxgm\\.codex\\worktrees\\issue15-household-date-boundary\\Сѧ��\\target\\jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ population-miniterm ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 42 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ population-miniterm ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 324 source files with javac [debug parameters release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ population-miniterm ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ population-miniterm ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 93 source files with javac [debug parameters release 17] to target\test-classes
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Issue4145KeyPopulationScopeHttpIntegrationTest.java:[415,234] ���һ������ʹ���˲�׼ȷ�ı������͵� varargs �����ķ� varargs ����; 
+  ���� varargs ����, Ӧʹ�� java.lang.Object
+  ���ڷ� varargs ����, Ӧʹ�� java.lang.Object[], ����Ҳ�������ƴ˾���
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[18,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/reference/Issue8183HierarchyHttpTest.java:[19,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/s2/S2StatisticsApiIntegrationTest.java:[43,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java:[76,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java:[76,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java:[76,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java:[76,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/cache/OptionalRedisServiceTest.java: C:\Users\jxgm\.codex\worktrees\issue15-household-date-boundary\Сѧ��\src\test\java\com\wjx871\population\cache\OptionalRedisServiceTest.javaʹ�û򸲸����ѹ�ʱ�� API��
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/cache/OptionalRedisServiceTest.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:deprecation ���±��롣
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/security/S5A1StrictRevocationHttpIntegrationTest.java: ĳЩ�����ļ�����ʹ�û򸲸��˱��Ϊ��ɾ�����ѹ�ʱ API��
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/cache/S5A1StrictRedisServiceTest.java: ĳЩ�����ļ�ʹ����δ�����򲻰�ȫ�Ĳ�����
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue15-household-date-boundary/Сѧ��/src/test/java/com/wjx871/population/cache/S5A1StrictRedisServiceTest.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:unchecked ���±��롣
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ population-miniterm ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.3)
+
+2026-11-10 00:22:51.518 INFO  [traceId= instanceId=] [background-preinit] org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2026-11-10 00:22:51.620 INFO  [traceId= instanceId=] [main] com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest - Starting Issue19MigrationBatchReuseIntegrationTest using Java 21.0.7 with PID 2712 (started by jxgm in C:\Users\jxgm\.codex\worktrees\issue15-household-date-boundary\Сѧ��)
+2026-11-10 00:22:51.633 INFO  [traceId= instanceId=] [main] com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest - No active profile set, falling back to 1 default profile: "default"
+2026-11-10 00:22:53.861 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-11-10 00:22:53.865 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-11-10 00:22:53.959 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 60 ms. Found 0 Redis repository interfaces.
+2026-11-10 00:22:55.387 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-11-10 00:22:56.002 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@7c11f00a
+2026-11-10 00:22:56.005 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-11-10 00:22:57.551 INFO  [traceId= instanceId=] [main] com.wjx871.population.assistant.PolicyAssistantService - Policy knowledge base loaded: 56 chunks across 19 registered sources
+2026-11-10 00:22:58.434 INFO  [traceId= instanceId=] [main] org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name authService
+2026-11-10 00:22:59.698 INFO  [traceId= instanceId=] [main] org.springframework.boot.test.mock.web.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-11-10 00:22:59.700 INFO  [traceId= instanceId=] [main] org.springframework.test.web.servlet.TestDispatcherServlet - Initializing Servlet ''
+2026-11-10 00:22:59.701 INFO  [traceId= instanceId=] [main] org.springframework.test.web.servlet.TestDispatcherServlet - Completed initialization in 1 ms
+2026-11-10 00:22:59.744 INFO  [traceId= instanceId=] [main] com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest - Started Issue19MigrationBatchReuseIntegrationTest in 8.848 seconds (process running for 11.884)
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (C:\Users\jxgm\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.6\byte-buddy-agent-1.17.6.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+ISSUE19_HTTP action=����Ǩ��ݸ� Issue19 ռ���еĲݸ� status=201 body={"code":201,"message":"created","data":{"applicationId":2,"applicationNo":"APP-20261110-6B2297C193AF","migrationId":1,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241381402}
+ISSUE19_DUPLICATE_CREATE_HTTP=409 body={"code":409,"message":"Ǩ�������ѱ�ռ�ã���ʹ��δʹ�õĺϷ�����","data":null,"timestamp":1794241381500}
+ISSUE19_HTTP action=HTTP ����ͬ�п���Ǩ������ status=201 body={"code":201,"message":"created","data":{"applicationId":3,"applicationNo":"APP-20261110-BF766C0FE5C4","migrationId":2,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241381858}
+ISSUE19_HTTP action=�ύ���� 3 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241381907}
+ISSUE19_HTTP action=����ͨ�� 1 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241381942}
+ISSUE19_HTTP action=HTTP ִ��ͬ�п���Ǩ�� status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241381987}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=2, application_id=3, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-1D2CE9, version=3}
+ISSUE19_HTTP action=����Ǩ��ݸ� Issue19 ������� status=201 body={"code":201,"message":"created","data":{"applicationId":4,"applicationNo":"APP-20261110-A619BC226635","migrationId":2,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241382012}
+ISSUE19_HTTP action=�ύ���� 4 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241382047}
+ISSUE19_HTTP action=����ͨ�� 2 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241382072}
+ISSUE19_HTTP action=ִ��Ǩ�벢�������� status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241382113}
+ISSUE19_RED_COMPLETED_IN={business_application.status=COMPLETED, migration_in={in_id=2, business_status=COMPLETED, transfer_batch_no=TR-20261110-1D2CE9, version=3}, approved_logs=[{action=CREATE, from_status=null, to_status=DRAFT}, {action=SUBMIT, from_status=DRAFT, to_status=UNDER_REVIEW}, {action=APPROVE, from_status=UNDER_REVIEW, to_status=APPROVED}, {action=EXECUTE, from_status=APPROVED, to_status=COMPLETED}]}
+ISSUE19_RED_COMPLETED_BATCH_REUSE_HTTP status=409 body={"code":409,"message":"Ǩ�������ѱ�ռ�ã���ʹ��δʹ�õĺϷ�����","data":null,"timestamp":1794241382156}
+ISSUE19_HTTP action=HTTP ����ͬ�п���Ǩ������ status=201 body={"code":201,"message":"created","data":{"applicationId":5,"applicationNo":"APP-20261110-3B1531F1E4F8","migrationId":3,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241382502}
+ISSUE19_HTTP action=�ύ���� 5 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241382535}
+ISSUE19_HTTP action=����ͨ�� 3 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241382562}
+ISSUE19_HTTP action=HTTP ִ��ͬ�п���Ǩ�� status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241382595}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=3, application_id=5, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-404E63, version=3}
+ISSUE19_HTTP action=����Ǩ��ݸ� Issue19 �ƹ�У�� A status=201 body={"code":201,"message":"created","data":{"applicationId":6,"applicationNo":"APP-20261110-ECA410080A8C","migrationId":3,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241382618}
+ISSUE19_HTTP action=ȡ�� A���ƹ�У�鳡���� status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241382638}
+ISSUE19_HTTP action=ȡ���󴴽� B status=201 body={"code":201,"message":"created","data":{"applicationId":7,"applicationNo":"APP-20261110-D7065EE84C3D","migrationId":4,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241382658}
+ISSUE19_HTTP action=δ�ύֱ��ִ�� status=409 body={"code":409,"message":"������δ��׼����ִ��","data":null,"timestamp":1794241382674}
+ISSUE19_HTTP action=ȱ�����ύ status=409 body={"code":409,"message":"ȱ�ٱ�����ϣ�IDENTITY_PROOF","data":null,"timestamp":1794241382689}
+ISSUE19_HTTP action=��ִ��Ȩ��ִ�� status=403 body={"code":403,"message":"��ǰ�˺���Ȩִ�иò���","data":null,"timestamp":1794241382703}
+ISSUE19_HTTP action=����״̬�۲�ݸ� DRAFT status=201 body={"code":201,"message":"created","data":{"applicationId":9,"applicationNo":"APP-20261110-8808E4A78804","migrationId":5,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241383056}
+ISSUE19_RED_STATUS_OCCUPANCY status=DRAFT appStatus=DRAFT migrationStatus=DRAFT secondHttp=409 secondBody={"code":409,"message":"Ǩ�������ѱ�ռ�ã���ʹ��δʹ�õĺϷ�����","data":null,"timestamp":1794241383077}
+ISSUE19_HTTP action=����״̬�۲�ݸ� UNDER_REVIEW status=201 body={"code":201,"message":"created","data":{"applicationId":11,"applicationNo":"APP-20261110-6235E1764233","migrationId":6,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241383116}
+ISSUE19_HTTP action=�ύ���� 11 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383155}
+ISSUE19_RED_STATUS_OCCUPANCY status=UNDER_REVIEW appStatus=UNDER_REVIEW migrationStatus=UNDER_REVIEW secondHttp=409 secondBody={"code":409,"message":"Ǩ�������ѱ�ռ�ã���ʹ��δʹ�õĺϷ�����","data":null,"timestamp":1794241383173}
+ISSUE19_HTTP action=����״̬�۲�ݸ� APPROVED status=201 body={"code":201,"message":"created","data":{"applicationId":13,"applicationNo":"APP-20261110-F11164202651","migrationId":7,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241383209}
+ISSUE19_HTTP action=�ύ���� 13 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383249}
+ISSUE19_HTTP action=����ͨ�� 5 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383277}
+ISSUE19_RED_STATUS_OCCUPANCY status=APPROVED appStatus=APPROVED migrationStatus=APPROVED secondHttp=409 secondBody={"code":409,"message":"Ǩ�������ѱ�ռ�ã���ʹ��δʹ�õĺϷ�����","data":null,"timestamp":1794241383294}
+ISSUE19_HTTP action=����״̬�۲�ݸ� REJECTED status=201 body={"code":201,"message":"created","data":{"applicationId":15,"applicationNo":"APP-20261110-DAAE614CD9CF","migrationId":8,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241383326}
+ISSUE19_HTTP action=�ύ���� 15 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383360}
+ISSUE19_HTTP action=�������� 6 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383399}
+ISSUE19_RED_STATUS_OCCUPANCY status=REJECTED appStatus=REJECTED migrationStatus=REJECTED secondHttp=409 secondBody={"code":409,"message":"Ǩ�������ѱ�ռ�ã���ʹ��δʹ�õĺϷ�����","data":null,"timestamp":1794241383414}
+ISSUE19_HTTP action=����״̬�۲�ݸ� WITHDRAWN status=201 body={"code":201,"message":"created","data":{"applicationId":17,"applicationNo":"APP-20261110-118A2A45A4D4","migrationId":9,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241383444}
+ISSUE19_HTTP action=�ύ���� 17 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383478}
+ISSUE19_HTTP action=�������� 17 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383503}
+ISSUE19_RED_STATUS_OCCUPANCY status=WITHDRAWN appStatus=WITHDRAWN migrationStatus=WITHDRAWN secondHttp=409 secondBody={"code":409,"message":"Ǩ�������ѱ�ռ�ã���ʹ��δʹ�õĺϷ�����","data":null,"timestamp":1794241383519}
+ISSUE19_HTTP action=����״̬�۲�ݸ� RETURNED status=201 body={"code":201,"message":"created","data":{"applicationId":19,"applicationNo":"APP-20261110-07AA0BC0C529","migrationId":10,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241383546}
+ISSUE19_HTTP action=�ύ���� 19 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383581}
+ISSUE19_HTTP action=����ͨ�� 8 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383606}
+ISSUE19_HTTP action=�˻����� 19 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241383631}
+ISSUE19_RED_STATUS_OCCUPANCY status=RETURNED appStatus=RETURNED migrationStatus=APPROVED secondHttp=409 secondBody={"code":409,"message":"Ǩ�������ѱ�ռ�ã���ʹ��δʹ�õĺϷ�����","data":null,"timestamp":1794241383645}
+ISSUE19_HTTP action=HTTP ����ͬ�п���Ǩ������ status=201 body={"code":201,"message":"created","data":{"applicationId":20,"applicationNo":"APP-20261110-DBF777A6B6D9","migrationId":10,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241383980}
+ISSUE19_HTTP action=�ύ���� 20 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241384008}
+ISSUE19_HTTP action=����ͨ�� 9 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241384027}
+ISSUE19_HTTP action=HTTP ִ��ͬ�п���Ǩ�� status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241384053}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=10, application_id=20, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-744E7B, version=3}
+ISSUE19_HTTP action=����Ǩ��ݸ� Issue19 �ظ�ȡ�� status=201 body={"code":201,"message":"created","data":{"applicationId":21,"applicationNo":"APP-20261110-DD80954D840D","migrationId":11,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241384074}
+ISSUE19_HTTP action=��һ��ȡ�� status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241384089}
+ISSUE19_HTTP action=�ظ�ȡ�� status=409 body={"code":409,"message":"ֻ�вݸ��������ִ�иò���","data":null,"timestamp":1794241384100}
+ISSUE19_HTTP action=����Ǩ��ݸ� Issue19 �ǲݸ�ȡ�� status=201 body={"code":201,"message":"created","data":{"applicationId":23,"applicationNo":"APP-20261110-CB13007295E3","migrationId":12,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241384130}
+ISSUE19_HTTP action=�ύ���� 23 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241384165}
+ISSUE19_HTTP action=�ǲݸ�ȡ�� status=409 body={"code":409,"message":"ֻ�вݸ��������ִ�иò���","data":null,"timestamp":1794241384174}
+ISSUE19_HTTP action=����Ǩ��ݸ� Issue19 ���� A 0 status=201 body={"code":201,"message":"created","data":{"applicationId":25,"applicationNo":"APP-20261110-069505772D30","migrationId":13,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241384512}
+ISSUE19_INTERLEAVE round=0 cancelHttp=200 createHttp=409
+ISSUE19_HTTP action=����Ǩ��ݸ� Issue19 ���� A 1 status=201 body={"code":201,"message":"created","data":{"applicationId":27,"applicationNo":"APP-20261110-6AA706DF0B3D","migrationId":14,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241384555}
+ISSUE19_INTERLEAVE round=1 cancelHttp=200 createHttp=409
+ISSUE19_HTTP action=����Ǩ��ݸ� Issue19 �༭������ status=201 body={"code":201,"message":"created","data":{"applicationId":30,"applicationNo":"APP-20261110-3A01D3E10D00","migrationId":15,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241384899}
+ISSUE19_HTTP action=�༭Ǩ��ݸ廻���� status=200 body={"code":200,"message":"ok","data":{"applicationId":30,"applicationNo":"APP-20261110-3A01D3E10D00","migrationId":15,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241384925}
+ISSUE19_HTTP action=�������ͷź����´��� status=201 body={"code":201,"message":"created","data":{"applicationId":31,"applicationNo":"APP-20261110-087E1E36097B","migrationId":16,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241384945}
+ISSUE19_EDIT_BATCH old=TR-OBS-EDIT-OLD-888A86 new=TR-OBS-EDIT-NEW-F2ABB7 reuseOldHttp=201 reuseNewHttp=409
+ISSUE19_HTTP action=HTTP ����ͬ�п���Ǩ������ status=201 body={"code":201,"message":"created","data":{"applicationId":32,"applicationNo":"APP-20261110-C0DB28FB8BDF","migrationId":16,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241385271}
+ISSUE19_HTTP action=�ύ���� 32 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241385297}
+ISSUE19_HTTP action=����ͨ�� 11 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241385315}
+ISSUE19_HTTP action=HTTP ִ��ͬ�п���Ǩ�� status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241385339}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=16, application_id=32, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-C4F0E3, version=3}
+ISSUE19_RED_COMPLETED_OUT_BATCH=CompletedOut[applicationId=32, batchNo=TR-20261110-C4F0E3]
+ISSUE19_HTTP action=����Ǩ��ݸ� A status=201 body={"code":201,"message":"created","data":{"applicationId":33,"applicationNo":"APP-20261110-1EC435D6CE80","migrationId":17,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241385359}
+ISSUE19_RED_DRAFT_A_AFTER_CREATE={business_application.status=DRAFT, migration_in={in_id=17, business_status=DRAFT, transfer_batch_no=TR-20261110-C4F0E3, version=0}, approved_logs=[{action=CREATE, from_status=null, to_status=DRAFT}]}
+ISSUE19_HTTP action=ȡ��Ǩ��ݸ� A status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241385375}
+ISSUE19_RED_DRAFT_A_AFTER_CANCEL={business_application.status=CANCELLED, migration_in={in_id=17, business_status=CANCELLED, transfer_batch_no=TR-20261110-C4F0E3, version=1}, approved_logs=[{action=CREATE, from_status=null, to_status=DRAFT}, {action=CANCEL, from_status=DRAFT, to_status=CANCELLED}]}
+ISSUE19_RED_CANCEL_APPROVAL_LOGS=[{action=CREATE, from_status=null, to_status=DRAFT, operator_user_id=6}, {action=CANCEL, from_status=DRAFT, to_status=CANCELLED, operator_user_id=6}]
+ISSUE19_RED_CANCEL_OPERATION_LOGS=[]
+ISSUE19_RED_OPERATION_LOG_TOTAL=7
+ISSUE19_DIRECT_DUPLICATE unexpected-success
+ISSUE19_RED_DRAFT_B_HTTP status=201 body={"code":201,"message":"created","data":{"applicationId":35,"applicationNo":"APP-20261110-09380E3FBFD2","migrationId":19,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241385409}
+ISSUE19_RED_AFTER_B businessApplicationCount=2 migrationInRowsForBatch=2
+ISSUE19_HTTP action=HTTP ����ͬ�п���Ǩ������ status=201 body={"code":201,"message":"created","data":{"applicationId":36,"applicationNo":"APP-20261110-DC33657C0BFC","migrationId":17,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241385720}
+ISSUE19_HTTP action=�ύ���� 36 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241385747}
+ISSUE19_HTTP action=����ͨ�� 12 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241385765}
+ISSUE19_HTTP action=HTTP ִ��ͬ�п���Ǩ�� status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241385793}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=17, application_id=36, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-31A883, version=3}
+ISSUE19_CONCURRENT_CLAIM statuses=[409, 201]
+ISSUE19_HTTP action=HTTP ����ͬ�п���Ǩ������ status=201 body={"code":201,"message":"created","data":{"applicationId":39,"applicationNo":"APP-20261110-A0D52D74050A","migrationId":18,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241386601}
+ISSUE19_HTTP action=�ύ���� 39 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241386626}
+ISSUE19_HTTP action=����ͨ�� 13 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241386644}
+ISSUE19_HTTP action=HTTP ִ��ͬ�п���Ǩ�� status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241386670}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=18, application_id=39, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-E60A64, version=3}
+ISSUE19_HTTP action=����Ǩ��ݸ� Issue19 ����Ա���� status=201 body={"code":201,"message":"created","data":{"applicationId":40,"applicationNo":"APP-20261110-38184A2B0784","migrationId":22,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241386688}
+ISSUE19_HTTP action=�ύ���� 40 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241386717}
+ISSUE19_HTTP action=����ͨ�� 14 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241386738}
+ISSUE19_HTTP action=����Ա����ִ�� status=409 body={"code":409,"message":"Ǩ�����β�ƥ�����ʹ��","data":null,"timestamp":1794241386753}
+ISSUE19_HTTP action=HTTP ����ͬ�п���Ǩ������ status=201 body={"code":201,"message":"created","data":{"applicationId":41,"applicationNo":"APP-20261110-14CD8F3EAE5D","migrationId":19,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241387072}
+ISSUE19_HTTP action=�ύ���� 41 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387097}
+ISSUE19_HTTP action=����ͨ�� 15 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387114}
+ISSUE19_HTTP action=HTTP ִ��ͬ�п���Ǩ�� status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387136}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=19, application_id=41, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-9F57DA, version=3}
+ISSUE19_HTTP action=����Ǩ��ݸ� ISSUE19_CANCEL_FAIL status=201 body={"code":201,"message":"created","data":{"applicationId":42,"applicationNo":"APP-20261110-7C2B5BC56B44","migrationId":23,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241387156}
+2026-11-10 00:23:07.171 ERROR [traceId=0a6ca3ec-b861-4efa-8553-04786c8d0f1f instanceId=8f18bb22-4974-4f6d-bba4-a8036d2c8f73] [main] com.wjx871.population.common.GlobalExceptionHandler - Unhandled request exception
+java.lang.IllegalStateException: simulated draft cancellation listener failure
+	at com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest$FaultInjectionConfiguration$1.onDraftCancelled(Issue19MigrationBatchReuseIntegrationTest.java:844)
+	at com.wjx871.population.application.ApplicationService.cancelDraft(ApplicationService.java:116)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:380)
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:728)
+	at com.wjx871.population.application.ApplicationService$$SpringCGLIB$$0.cancelDraft(<generated>)
+	at com.wjx871.population.application.ApplicationController.delete(ApplicationController.java:43)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+	at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.proceed(AuthorizationManagerBeforeMethodInterceptor.java:268)
+	at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.attemptAuthorization(AuthorizationManagerBeforeMethodInterceptor.java:263)
+	at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.invoke(AuthorizationManagerBeforeMethodInterceptor.java:196)
+	at org.springframework.security.config.annotation.method.configuration.DeferringMethodInterceptor.invoke(DeferringMethodInterceptor.java:44)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:728)
+	at com.wjx871.population.application.ApplicationController$$SpringCGLIB$$0.delete(<generated>)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:986)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:891)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doDelete(FrameworkServlet.java:936)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:596)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:165)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:125)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:119)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at com.wjx871.population.security.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:60)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:319)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$4(HandlerMappingIntrospector.java:267)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:240)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.test.web.servlet.setup.MockMvcFilterDecorator.doFilter(MockMvcFilterDecorator.java:162)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:201)
+	at com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest.deleteDraft(Issue19MigrationBatchReuseIntegrationTest.java:612)
+	at com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest.cancellationListenerFailureRollsBackApplicationAndDetail(Issue19MigrationBatchReuseIntegrationTest.java:473)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:775)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:479)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:161)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:152)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:91)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:112)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:94)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:87)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:216)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:212)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:201)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:170)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:94)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:59)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:142)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+ISSUE19_CANCEL_FAILURE_HTTP=500 body={"code":500,"message":"��������������ʧ��","data":null,"timestamp":1794241387175}
+ISSUE19_HTTP action=����ͨ��ҵ��ݸ� status=201 body={"code":201,"message":"created","data":{"applicationId":43,"applicationNo":"APP-20261110-600DA56A28AF","businessType":"GENERAL_SERVICE","title":"Issue19 ͨ�òݸ�","applicantUserId":6,"applicantName":"����������Ա","applicantDepartmentId":4,"applicantRegionCode":"110000","targetPersonId":null,"targetHouseholdId":null,"status":"DRAFT","reason":"��֤ȡ�����㲥","remark":"opt-in check","submittedAt":null,"completedAt":null,"version":0,"createdAt":"2026-11-10T00:23:07","updatedAt":"2026-11-10T00:23:07"},"timestamp":1794241387496}
+ISSUE19_HTTP action=ȡ��ͨ��ҵ��ݸ� status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387513}
+ISSUE19_HTTP action=HTTP ����ͬ�п���Ǩ������ status=201 body={"code":201,"message":"created","data":{"applicationId":44,"applicationNo":"APP-20261110-9634B6D76584","migrationId":20,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241387801}
+ISSUE19_HTTP action=�ύ���� 44 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387825}
+ISSUE19_HTTP action=����ͨ�� 16 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387843}
+ISSUE19_HTTP action=HTTP ִ��ͬ�п���Ǩ�� status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387867}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=20, application_id=44, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261110-3FF209, version=3}
+ISSUE19_HTTP action=����Ǩ��ݸ� A����׷�ݳ����� status=201 body={"code":201,"message":"created","data":{"applicationId":45,"applicationNo":"APP-20261110-3FDC256C28C5","migrationId":24,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794241387886}
+ISSUE19_HTTP action=ȡ��Ǩ��ݸ� A����׷�ݳ����� status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794241387901}
+ISSUE19_HTTP action=��ѯȡ�����Ǩ������ status=200 body={"code":200,"message":"ok","data":{"application":{"applicationId":45,"applicationNo":"APP-20261110-3FDC256C28C5","businessType":"MIGRATION_IN","title":"Issue19 ȡ����׷��","applicantUserId":6,"applicantName":"����������Ա","applicantDepartmentId":4,"applicantRegionCode":"110000","targetPersonId":93001,"targetHouseholdId":93002,"status":"CANCELLED","reason":"ͬ�п���Ǩ��","remark":null,"submittedAt":null,"completedAt":null,"version":1,"createdAt":"2026-11-10T00:23:07","updatedAt":"2026-11-10T00:23:07"},"migrationIn":{"inId":24,"applicationId":45,"personId":93001,"migrationType":"IN_CITY_CROSS_DISTRICT","fromRegionCode":"110101","fromAddress":"�����ж�������ַ","toRegionCode":"110105","toHouseholdId":93002,"toAddressSnapshot":null,"inDate":"2026-11-02","reason":"ͬ�п���Ǩ��","transferBatchNo":"TR-20261110-3FF209","businessStatus":"CANCELLED","operatorId":null,"executedAt":null,"version":1,"createdAt":"2026-11-10T00:23:07","updatedAt":"2026-11-10T00:23:07"},"migrationOut":null,"currentResidence":null,"household":{"householdId":93002,"householdNo":"H-93002","headPersonId":93002,"address":"�����г�����Ŀ���ַ","regionCode":"110105","status":"ACTIVE","establishDate":"2020-01-01","activeMemberCount":1,"version":0},"activeMemberPersonIds":[93002],"materials":[],"approval":null,"approvalLogs":[{"logId":79,"approvalId":null,"applicationId":45,"action":"CREATE","fromStatus":null,"toStatus":"DRAFT","operatorUserId":6,"comment":null,"operationTime":"2026-11-10T00:23:07"},{"logId":80,"approvalId":null,"applicationId":45,"action":"CANCEL","fromStatus":"DRAFT","toStatus":"CANCELLED","operatorUserId":6,"comment":null,"operationTime":"2026-11-10T00:23:07"}],"executable":false,"executionRestriction":"������δ��׼����ִ��"},"timestamp":1794241387920}
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 18.66 s -- in com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jacoco:0.8.14:report (coverage-report) @ population-miniterm ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  43.507 s
+[INFO] Finished at: 2026-11-10T00:23:09+08:00
+[INFO] ------------------------------------------------------------------------

@@ -1,0 +1,1129 @@
+[
+  {
+    "case": "viewer-add",
+    "RED": {
+      "httpStatus": 403,
+      "message": "当前账号无权执行该操作",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 403,
+      "message": "当前账号无权执行该操作",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "viewer-update",
+    "RED": {
+      "httpStatus": 403,
+      "message": "当前账号无权执行该操作",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 403,
+      "message": "当前账号无权执行该操作",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "foreign-add",
+    "RED": {
+      "httpStatus": 403,
+      "message": "超出家庭户数据范围",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 403,
+      "message": "超出家庭户数据范围",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "foreign-update",
+    "RED": {
+      "httpStatus": 403,
+      "message": "超出家庭户数据范围",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 403,
+      "message": "超出家庭户数据范围",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "execute-in-stale-version",
+    "RED": {
+      "httpStatus": 409,
+      "message": "记录已被其他用户处理，请刷新后重试",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": [
+        {
+          "business_status": "APPROVED",
+          "in_date": "2026-01-01",
+          "version": "2"
+        }
+      ]
+    },
+    "GREEN": {
+      "httpStatus": 409,
+      "message": "记录已被其他用户处理，请刷新后重试",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": [
+        {
+          "business_status": "APPROVED",
+          "in_date": "2026-01-01",
+          "version": "2"
+        }
+      ]
+    }
+  },
+  {
+    "case": "execute-in-viewer",
+    "RED": {
+      "httpStatus": 403,
+      "message": "当前账号无权执行该操作",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": [
+        {
+          "business_status": "APPROVED",
+          "in_date": "2026-01-01",
+          "version": "2"
+        }
+      ]
+    },
+    "GREEN": {
+      "httpStatus": 403,
+      "message": "当前账号无权执行该操作",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": [
+        {
+          "business_status": "APPROVED",
+          "in_date": "2026-01-01",
+          "version": "2"
+        }
+      ]
+    }
+  },
+  {
+    "case": "restore-legal-LEFT",
+    "RED": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2026-02-01",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "4"
+        }
+      ],
+      "residenceCount": 1,
+      "migrationStatus": [
+        {
+          "business_status": "COMPLETED",
+          "in_date": "2026-02-01",
+          "version": "3"
+        }
+      ]
+    },
+    "GREEN": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2026-02-01",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "4"
+        }
+      ],
+      "residenceCount": 1,
+      "migrationStatus": [
+        {
+          "business_status": "COMPLETED",
+          "in_date": "2026-02-01",
+          "version": "3"
+        }
+      ]
+    }
+  },
+  {
+    "case": "restore-legal-MOVED_OUT",
+    "RED": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2026-02-01",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "4"
+        }
+      ],
+      "residenceCount": 1,
+      "migrationStatus": [
+        {
+          "business_status": "COMPLETED",
+          "in_date": "2026-02-01",
+          "version": "3"
+        }
+      ]
+    },
+    "GREEN": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2026-02-01",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "4"
+        }
+      ],
+      "residenceCount": 1,
+      "migrationStatus": [
+        {
+          "business_status": "COMPLETED",
+          "in_date": "2026-02-01",
+          "version": "3"
+        }
+      ]
+    }
+  },
+  {
+    "case": "restore-invalid-history-LEFT",
+    "RED": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2026-02-01",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "4"
+        }
+      ],
+      "residenceCount": 1,
+      "migrationStatus": [
+        {
+          "business_status": "COMPLETED",
+          "in_date": "2026-02-01",
+          "version": "3"
+        }
+      ]
+    },
+    "GREEN": {
+      "httpStatus": 409,
+      "message": "历史成员入户日期早于立户日期，请核查历史记录后再办理迁入",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2025-12-31",
+          "leave_date": "2026-01-10",
+          "status": "LEFT",
+          "version": "3"
+        }
+      ],
+      "residenceCount": 0,
+      "migrationStatus": [
+        {
+          "business_status": "APPROVED",
+          "in_date": "2026-02-01",
+          "version": "2"
+        }
+      ]
+    }
+  },
+  {
+    "case": "restore-invalid-history-MOVED_OUT",
+    "RED": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2026-02-01",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "4"
+        }
+      ],
+      "residenceCount": 1,
+      "migrationStatus": [
+        {
+          "business_status": "COMPLETED",
+          "in_date": "2026-02-01",
+          "version": "3"
+        }
+      ]
+    },
+    "GREEN": {
+      "httpStatus": 409,
+      "message": "历史成员入户日期早于立户日期，请核查历史记录后再办理迁入",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2025-12-31",
+          "leave_date": "2026-01-10",
+          "status": "MOVED_OUT",
+          "version": "3"
+        }
+      ],
+      "residenceCount": 0,
+      "migrationStatus": [
+        {
+          "business_status": "APPROVED",
+          "in_date": "2026-02-01",
+          "version": "2"
+        }
+      ]
+    }
+  },
+  {
+    "case": "update-stale-version",
+    "RED": {
+      "httpStatus": 409,
+      "message": "家庭户版本冲突",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 409,
+      "message": "家庭户版本冲突",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "execute-in-legal-2026-01-01",
+    "RED": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2026-01-01",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "0"
+        }
+      ],
+      "residenceCount": 1,
+      "migrationStatus": [
+        {
+          "business_status": "COMPLETED",
+          "in_date": "2026-01-01",
+          "version": "3"
+        }
+      ]
+    },
+    "GREEN": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2026-01-01",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "0"
+        }
+      ],
+      "residenceCount": 1,
+      "migrationStatus": [
+        {
+          "business_status": "COMPLETED",
+          "in_date": "2026-01-01",
+          "version": "3"
+        }
+      ]
+    }
+  },
+  {
+    "case": "execute-in-legal-2026-01-02",
+    "RED": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2026-01-02",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "0"
+        }
+      ],
+      "residenceCount": 1,
+      "migrationStatus": [
+        {
+          "business_status": "COMPLETED",
+          "in_date": "2026-01-02",
+          "version": "3"
+        }
+      ]
+    },
+    "GREEN": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2026-01-02",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "0"
+        }
+      ],
+      "residenceCount": 1,
+      "migrationStatus": [
+        {
+          "business_status": "COMPLETED",
+          "in_date": "2026-01-02",
+          "version": "3"
+        }
+      ]
+    }
+  },
+  {
+    "case": "update-empty-household",
+    "RED": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": null,
+      "successfulAuditDelta": null,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": null,
+      "successfulAuditDelta": null,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "add-before-establish",
+    "RED": {
+      "httpStatus": 201,
+      "message": "created",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2025-12-31",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "0"
+        }
+      ],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 400,
+      "message": "入户日期不能早于家庭户立户日期",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "update-after-history-LEFT",
+    "RED": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-02",
+          "version": "1"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 400,
+      "message": "立户日期不能晚于现有或历史成员的入户日期",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "update-after-history-MOVED_OUT",
+    "RED": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-02",
+          "version": "1"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 400,
+      "message": "立户日期不能晚于现有或历史成员的入户日期",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "update-after-history-CANCELLED",
+    "RED": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-02",
+          "version": "1"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 400,
+      "message": "立户日期不能晚于现有或历史成员的入户日期",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "update-legal-2026-01-01",
+    "RED": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": null,
+      "successfulAuditDelta": null,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "1"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": null,
+      "successfulAuditDelta": null,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "1"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "update-legal-2025-12-31",
+    "RED": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": null,
+      "successfulAuditDelta": null,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2025-12-31",
+          "version": "1"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": null,
+      "successfulAuditDelta": null,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2025-12-31",
+          "version": "1"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "update-after-active-join",
+    "RED": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-02",
+          "version": "1"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 400,
+      "message": "立户日期不能晚于现有或历史成员的入户日期",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "add-legal-2026-01-01",
+    "RED": {
+      "httpStatus": 201,
+      "message": "created",
+      "businessRowsChanged": null,
+      "successfulAuditDelta": null,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2026-01-01",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "0"
+        }
+      ],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 201,
+      "message": "created",
+      "businessRowsChanged": null,
+      "successfulAuditDelta": null,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2026-01-01",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "0"
+        }
+      ],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "add-legal-2026-01-02",
+    "RED": {
+      "httpStatus": 201,
+      "message": "created",
+      "businessRowsChanged": null,
+      "successfulAuditDelta": null,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2026-01-02",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "0"
+        }
+      ],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 201,
+      "message": "created",
+      "businessRowsChanged": null,
+      "successfulAuditDelta": null,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2026-01-02",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "0"
+        }
+      ],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "create-initial-head",
+    "RED": {
+      "httpStatus": 201,
+      "message": "created",
+      "businessRowsChanged": null,
+      "successfulAuditDelta": null,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    },
+    "GREEN": {
+      "httpStatus": 201,
+      "message": "created",
+      "businessRowsChanged": null,
+      "successfulAuditDelta": null,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": []
+    }
+  },
+  {
+    "case": "execute-in-before-establish",
+    "RED": {
+      "httpStatus": 200,
+      "message": "ok",
+      "businessRowsChanged": true,
+      "successfulAuditDelta": 1,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [
+        {
+          "person_id": "95102",
+          "join_date": "2025-12-31",
+          "leave_date": null,
+          "status": "ACTIVE",
+          "version": "0"
+        }
+      ],
+      "residenceCount": 1,
+      "migrationStatus": [
+        {
+          "business_status": "COMPLETED",
+          "in_date": "2025-12-31",
+          "version": "3"
+        }
+      ]
+    },
+    "GREEN": {
+      "httpStatus": 400,
+      "message": "入户日期不能早于家庭户立户日期",
+      "businessRowsChanged": false,
+      "successfulAuditDelta": 0,
+      "household": [
+        {
+          "household_id": "95101",
+          "establish_date": "2026-01-01",
+          "version": "0"
+        }
+      ],
+      "candidateMembership": [],
+      "residenceCount": 0,
+      "migrationStatus": [
+        {
+          "business_status": "APPROVED",
+          "in_date": "2025-12-31",
+          "version": "2"
+        }
+      ]
+    }
+  }
+]

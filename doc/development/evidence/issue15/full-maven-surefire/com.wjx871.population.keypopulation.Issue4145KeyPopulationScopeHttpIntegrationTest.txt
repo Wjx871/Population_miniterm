@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.810 s -- in com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest

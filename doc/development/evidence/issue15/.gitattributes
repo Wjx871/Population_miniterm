@@ -1,0 +1,2 @@
+# Preserve captured runner bytes and their original whitespace.
+* -text -whitespace

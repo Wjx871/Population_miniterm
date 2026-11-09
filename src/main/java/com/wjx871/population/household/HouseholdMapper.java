@@ -1,6 +1,8 @@
 package com.wjx871.population.household;
 import com.wjx871.population.person.Person; import com.wjx871.population.security.DataScopeCriteria; import java.util.*; import org.apache.ibatis.annotations.*;
 @Mapper public interface HouseholdMapper {
+Optional<java.time.LocalDate> lockEarliestJoinDate(Long id);
+List<HouseholdMember> lockRestorableMembers(@Param("householdId") Long householdId, @Param("personId") Long personId);
 long count(@Param("no")String no,@Param("head")String head,@Param("address")String address,@Param("region")String region,@Param("type")String type,@Param("status")String status,@Param("scope")DataScopeCriteria scope);
 List<Household> search(@Param("no")String no,@Param("head")String head,@Param("address")String address,@Param("region")String region,@Param("type")String type,@Param("status")String status,@Param("scope")DataScopeCriteria scope,@Param("limit")int limit,@Param("offset")long offset,@Param("orderBy")String orderBy);
 Optional<Household> findScoped(@Param("id")Long id,@Param("scope")DataScopeCriteria scope); Optional<Household> findScopedByNo(@Param("no")String no,@Param("scope")DataScopeCriteria scope); Optional<Household> lock(Long id); Optional<Household> lockScoped(@Param("id")Long id,@Param("scope")DataScopeCriteria scope); Optional<Person> lockPerson(Long id); Optional<HouseholdMember> lockMember(Long id); Optional<HouseholdMember> activeMemberByPerson(Long id); Optional<HouseholdMember> activeHead(Long id); List<HouseholdMember> members(Long id);

@@ -1,0 +1,52 @@
+{
+  "results": [
+    {
+      "source": "doc\\development\\evidence\\issue15\\mysql84-run4\\surefire-reports\\TEST-com.wjx871.population.household.Issue15MySql84IT.xml",
+      "class": "com.wjx871.population.household.Issue15MySql84IT",
+      "tests": 28,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "source": "doc\\development\\evidence\\issue15\\mysql84-run4\\surefire-reports\\TEST-com.wjx871.population.household.Phase08HouseholdMasterDataIntegrationTest.xml",
+      "class": "com.wjx871.population.household.Phase08HouseholdMasterDataIntegrationTest",
+      "tests": 24,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "source": "doc\\development\\evidence\\issue15\\mysql84-run4\\surefire-reports\\TEST-com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest.xml",
+      "class": "com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest",
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "source": "doc\\development\\evidence\\issue15\\mysql84-run4\\surefire-reports\\TEST-com.wjx871.population.cancellation.Phase04CancellationIntegrationTest.xml",
+      "class": "com.wjx871.population.cancellation.Phase04CancellationIntegrationTest",
+      "tests": 33,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "source": "doc\\development\\evidence\\issue15\\mysql84-run5\\surefire-reports\\TEST-com.wjx871.population.migration.Phase03MigrationIntegrationTest.xml",
+      "class": "com.wjx871.population.migration.Phase03MigrationIntegrationTest",
+      "tests": 35,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totals": {
+    "tests": 133,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "fixtureExclusion": "Phase03MigrationIntegrationTest.duplicateHistoricalMembershipsRejectMigrationInWithoutPartialActivation: pre-existing MySQL uk_household_member_pair rejects the H2 duplicate fixture before HTTP; all 36 run in H2.",
+  "supersededAttempt": "mysql84-run4 Phase03 ran 36 with 0 assertion failures, 1 fixture setup error; raw reports retained. Corrected gate runs 35 compatible methods in mysql84-run5. No schema or existing test changes."
+}

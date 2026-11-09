@@ -1,0 +1,7 @@
+Baseline production diff before RED: empty (git diff --exit-code 4482522897b2000fb80cef903443a875c44d6c92 -- src/main returned 0).
+RED raw log and XML preserved independently before next test run.
+Original test scenarios: 21; baseline real failures: 8; errors: 0.
+Failure scenarios: add-before-establish; update-after-active-join; update-after-history LEFT/MOVED_OUT/CANCELLED; execute-in-before-establish; restore-invalid-history LEFT/MOVED_OUT.
+Final candidate adds three further scenarios after the original RED: history-only household, ALL cross-region dates, historical restore with invalid new inDate.
+Tests drive real MockMvc JWT + Service + Mapper + H2; before/after rows and versions are in h2-red-database-evidence.json.
+Runtime: Oracle JDK21.0.7; Maven3.9.16; compilation target Java17. Native JDK17 runtime not tested.

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.wjx871.population.person.idcard.Phase14PersonIdCardImageIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.678 s -- in com.wjx871.population.person.idcard.Phase14PersonIdCardImageIntegrationTest

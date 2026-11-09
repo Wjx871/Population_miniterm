@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.wjx871.population.approval.Phase02ApprovalIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.206 s -- in com.wjx871.population.approval.Phase02ApprovalIntegrationTest

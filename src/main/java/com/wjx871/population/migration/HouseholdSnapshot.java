@@ -10,6 +10,7 @@ public class HouseholdSnapshot {
     private String address;
     private String regionCode;
     private String status;
+    private java.time.LocalDate establishDate;
     private Long activeMemberCount;
     private Integer version;
 }
