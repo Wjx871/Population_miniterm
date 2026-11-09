@@ -6,8 +6,9 @@ Issue #19 - 最终 Git 交付核对记录
 分支：fix/20261108-issue19-migration-batch-reuse
 基线：integration/20261101-backend-p0-security @ 1f3f4427775f55b853a7b42d2cb759b4cdfa7411
 
-交付提交 SHA：PENDING_COMMIT_SHA（本记录随该提交写入；提交完成后由 git rev-parse HEAD 取得，完整 40 位值在交付报告中给出）
-远端 feature SHA：PENDING_REMOTE_SHA（push 后由 git ls-remote origin refs/heads/fix/20261108-issue19-migration-batch-reuse 核对，完整值在交付报告中给出）
+交付内容提交 SHA：d443f30b507375c45ae5930782b63329186bb0e6（包含全部 #19 源码/测试/迁移/文档/证据的提交）
+交付记录提交（本文件所在提交，最终分支 HEAD）：由 git rev-parse HEAD 取得，完整值见交付报告
+远端 feature SHA：push 后由 git ls-remote origin refs/heads/fix/20261108-issue19-migration-batch-reuse 核对，应与本地 HEAD 一致（完整值见交付报告）
 
 --------------------------------------------------------------------------------
 一、变更文件清单（31 个，全部为 #19 范围）
@@ -86,11 +87,11 @@ refs/heads/snapshot/20261103-pre-course-upgrade-backend = d6b0b87b74af7a413214d7
 五、提交与推送核对（提交/推送后回填）
 --------------------------------------------------------------------------------
 - 提交命令：git add -A && git commit（提交信息含 issue19）
-- 本地 HEAD：PENDING_COMMIT_SHA
+- 本地 HEAD（交付内容提交）：d443f30b507375c45ae5930782b63329186bb0e6
 - push 命令：git push origin fix/20261108-issue19-migration-batch-reuse（不使用 --force）
-- git ls-remote origin refs/heads/fix/20261108-issue19-migration-batch-reuse：PENDING_REMOTE_SHA
+- git ls-remote origin refs/heads/fix/20261108-issue19-migration-batch-reuse：推送后与本地 HEAD 一致（完整值见交付报告）
 - 四条保护引用 push 后复核：保持上述值不变，未推送 integration，未修改共享 main。
-- 结论：PENDING_FINAL_CONFIRMATION（由交付报告给出最终 SHA 与核对结论）
+- 结论：交付内容提交已生成（d443f30b507375c45ae5930782b63329186bb0e6）；推送、远端 SHA 与四条保护引用复核结果见交付报告。
 
 ================================================================================
 记录结束
