@@ -1,0 +1,278 @@
+================================================================================
+#19 旧实现 RED 证据（H2 + Spring HTTP/JWT/Service/Mapper）
+================================================================================
+
+生成时间：2026-11-08 19:19:51 +08:00（Asia/Shanghai）
+施工基线：integration/20261101-backend-p0-security @ 1f3f4427775f55b853a7b42d2cb759b4cdfa7411
+施工分支：fix/20261108-issue19-migration-batch-reuse
+隔离 worktree：D:\学习用\大二下\小学期-issue19-migration-batch-reuse
+测试类：src/test/java/com/wjx871/population/migration/Issue19MigrationBatchReuseIntegrationTest.java
+测试环境：@SpringBootTest + @AutoConfigureMockMvc + H2 schema.sql（jdbc:h2:mem:issue19_migration_batch_reuse;
+          MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE）+ 真实 JWT 登录（POST /api/auth/login）
+JDK：Java 21.0.7（Oracle）；Maven：Apache Maven 3.9.16；Spring Boot：3.5.3；H2：2.3.232
+生产代码状态：本轮未修改 src/main、mapper XML、应用 SQL、迁移脚本或 src/test/resources/schema.sql
+
+================================================================================
+1. 执行命令与 Maven/Surefire 结果
+================================================================================
+
+实际命令（工作目录 = worktree 根）：
+
+    .\mvnw.cmd -Dtest=Issue19MigrationBatchReuseIntegrationTest test
+
+实际 exit code：1（BUILD FAILURE；RED 要求的非 0）
+
+Surefire 报告（保留在 target/surefire-reports/，本轮可复核）：
+
+    target\surefire-reports\TEST-com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest.xml
+      SIZE=110941 bytes
+      SHA256=3E29397091CAA8FA2D8CA763930340F58D55A1DB032DC861B5A346F63BF69686
+    target\surefire-reports\com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest.txt
+      SIZE=1793 bytes
+      SHA256=D23AEBFDCFE260A11EA86208700C22D2E10EA68F87DC7B0EE078A8207FB217B3
+
+原始完整 Maven 日志：target\issue19-red-run-utf8.log
+      SIZE=205700 bytes
+      SHA256=858016B6E45D921EBE22829183FB8ED2C099383C13A2A91699C5753918337480
+注：target/ 为 Maven 忽略目录，未入库；Surefire XML 中 <system-out> 为 UTF-8 全文，已验证中文无乱码。
+
+Surefire 汇总（原文）：
+
+    -------------------------------------------------------------------------------
+    Test set: com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest
+    -------------------------------------------------------------------------------
+    Tests run: 4, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 12.06 s <<< FAILURE!
+
+失败测试方法：
+
+    1) cancelDraftReleasesBatchAndNewDraftCanBeCreated
+       java.lang.AssertionError: 取消草稿 A 后，用同一批次号创建迁入草稿 B 应返回 201，
+       实际 HTTP 409，响应体: {"code":409,"message":"数据已存在，请勿重复提交","data":null,"timestamp":1794136801172}
+       at Issue19MigrationBatchReuseIntegrationTest.java:127
+
+    2) cancelledMigrationRecordAndLogsRemainTraceable
+       org.opentest4j.AssertionFailedError: expected: "CANCELLED" but was: "DRAFT"
+       at Issue19MigrationBatchReuseIntegrationTest.java:157
+       （即：取消后旧实现 migration_in.business_status 仍为 DRAFT）
+
+通过但作为修复后防回归断言的测试（旧实现上通过）：
+
+    3) completedMigrationConsumesBatchPermanently（完成批次永久消费，第二次创建 409）
+    4) existingStatusOccupancyObservationMatrix（DRAFT/UNDER_REVIEW/APPROVED/REJECTED/WITHDRAWN/RETURNED 占用观察）
+
+================================================================================
+2. 真实业务流程与数据构造方式
+================================================================================
+
+主 RED 场景（cancelDraftReleasesBatchAndNewDraftCanBeCreated）使用完整 HTTP 流程创建
+“合法的已完成同市跨区迁出批次”，不是直接伪造 migration_out 行：
+
+    1) household 用户通过 POST /api/auth/login 获取真实 JWT（BCrypt 密码校验通过）；
+    2) POST /api/migrations/out/applications 创建 personId=93001、
+       migrationType=IN_CITY_CROSS_DISTRICT、toRegionCode=110105 的迁出申请 → 201；
+    3) 仅通过 JDBC 写入测试必需材料（IDENTITY_PROOF/HOUSEHOLD_BOOK，状态 VERIFIED），
+       随后走真实 Service：POST /api/applications/{id}/submit → 200；
+    4) POST /api/approvals/{approvalId}/approve → 200；
+    5) POST /api/migrations/out/applications/{id}/execute → 200；
+       executeOut 在 MigrationService 内生成 transfer_batch_no 并写入 migration_out，
+       该行 business_status=COMPLETED（见下方 ISSUE19_RED_COMPLETED_OUT_ROW）。
+
+    6) POST /api/migrations/in/applications（personId=93001、migrationType=IN_CITY_CROSS_DISTRICT、
+       toRegionCode=110105、toHouseholdId=93002、transferBatchNo=<上一步 batch>）创建迁入 DRAFT A → 201；
+    7) DELETE /api/applications/{A} 取消 A（household 用户持有 application:edit 权限）→ 200；
+    8) 再次 POST /api/migrations/in/applications（同一 transferBatchNo）创建迁入 DRAFT B；
+       旧实现实际返回 409（见 §3）。
+
+观察矩阵（existingStatusOccupancyObservationMatrix）中的“已完成迁出批次”采用 H2 直接插入
+migration_out 行（business_status='COMPLETED'、migration_type='IN_CITY_CROSS_DISTRICT'，并带
+对应 business_application 行以满足外键），仅用于状态占用观察；主 RED 场景完全走真实迁出 HTTP 执行链。
+测试 @BeforeEach 清空业务表并重建 person(93001/93002/93003)、household(93001/93002)、
+household_member、residence；每个测试方法的 H2 状态互相隔离。
+
+================================================================================
+3. 主 RED 场景完整输出（Surefire <system-out> 原文，主测试方法）
+================================================================================
+
+ISSUE19_HTTP action=HTTP 创建同市跨区迁出申请 status=201 body={"code":201,"message":"created","data":{"applicationId":22,"applicationNo":"APP-20261108-8319A528B120","migrationId":8,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794136801055}
+ISSUE19_HTTP action=提交申请 22 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794136801065}
+ISSUE19_HTTP action=审批通过 8 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794136801075}
+ISSUE19_HTTP action=HTTP 执行同市跨区迁出 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794136801089}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=8, application_id=22, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261108-0FB03D, version=3}
+ISSUE19_RED_COMPLETED_OUT_BATCH=CompletedOut[applicationId=22, batchNo=TR-20261108-0FB03D]
+ISSUE19_HTTP action=创建迁入草稿 A status=201 body={"code":201,"message":"created","data":{"applicationId":23,"applicationNo":"APP-20261108-9E113589E7B8","migrationId":15,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794136801098}
+ISSUE19_RED_DRAFT_A_AFTER_CREATE={business_application.status=DRAFT, migration_in={in_id=15, business_status=DRAFT, transfer_batch_no=TR-20261108-0FB03D, version=0}, approved_logs=[{action=CREATE, from_status=null, to_status=DRAFT}]}
+ISSUE19_HTTP action=取消迁入草稿 A status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794136801113}
+ISSUE19_RED_DRAFT_A_AFTER_CANCEL={business_application.status=CANCELLED, migration_in={in_id=15, business_status=DRAFT, transfer_batch_no=TR-20261108-0FB03D, version=0}, approved_logs=[{action=CREATE, from_status=null, to_status=DRAFT}, {action=CANCEL, from_status=DRAFT, to_status=CANCELLED}]}
+ISSUE19_RED_CANCEL_APPROVAL_LOGS=[{action=CREATE, from_status=null, to_status=DRAFT, operator_user_id=6}, {action=CANCEL, from_status=DRAFT, to_status=CANCELLED, operator_user_id=6}]
+ISSUE19_RED_CANCEL_OPERATION_LOGS=[]
+ISSUE19_RED_OPERATION_LOG_TOTAL=6
+ISSUE19_H2_VERSION=2.3.232
+ISSUE19_H2_MIGRATION_IN_COLUMNS=[{column_name=in_id, data_type=bigint, character_maximum_length=null, is_nullable=NO}, {column_name=application_id, data_type=bigint, character_maximum_length=null, is_nullable=NO}, {column_name=person_id, data_type=bigint, character_maximum_length=null, is_nullable=NO}, {column_name=migration_type, data_type=character varying, character_maximum_length=40, is_nullable=NO}, {column_name=from_region_code, data_type=character varying, character_maximum_length=20, is_nullable=YES}, {column_name=from_address, data_type=character varying, character_maximum_length=255, is_nullable=NO}, {column_name=to_region_code, data_type=character varying, character_maximum_length=20, is_nullable=NO}, {column_name=to_household_id, data_type=bigint, character_maximum_length=null, is_nullable=NO}, {column_name=to_address_snapshot, data_type=character varying, character_maximum_length=255, is_nullable=YES}, {column_name=in_date, data_type=date, character_maximum_length=null, is_nullable=NO}, {column_name=reason, data_type=character varying, character_maximum_length=500, is_nullable=NO}, {column_name=transfer_batch_no, data_type=character varying, character_maximum_length=40, is_nullable=YES}, {column_name=business_status, data_type=character varying, character_maximum_length=30, is_nullable=NO}, {column_name=operator_id, data_type=bigint, character_maximum_length=null, is_nullable=YES}, {column_name=executed_at, data_type=timestamp, character_maximum_length=null, is_nullable=YES}, {column_name=version, data_type=integer, character_maximum_length=null, is_nullable=NO}, {column_name=created_at, data_type=timestamp, character_maximum_length=null, is_nullable=YES}, {column_name=updated_at, data_type=timestamp, character_maximum_length=null, is_nullable=YES}]
+ISSUE19_H2_MIGRATION_IN_CONSTRAINTS=[{constraint_name=CONSTRAINT_B698, constraint_type=FOREIGN KEY}, {constraint_name=CONSTRAINT_B6980, constraint_type=FOREIGN KEY}, {constraint_name=CONSTRAINT_B69803, constraint_type=FOREIGN KEY}, {constraint_name=CONSTRAINT_B, constraint_type=PRIMARY KEY}, {constraint_name=CONSTRAINT_B6, constraint_type=UNIQUE}, {constraint_name=CONSTRAINT_B69, constraint_type=UNIQUE}]
+ISSUE19_H2_MIGRATION_IN_INDEXES=[{index_catalog=issue19_migration_batch_reuse, index_schema=public, index_name=CONSTRAINT_INDEX_B, table_catalog=issue19_migration_batch_reuse, table_schema=public, table_name=migration_in, index_type_name=UNIQUE INDEX, nulls_distinct=YES, is_generated=true, remarks=null, index_class=org.h2.mvstore.db.MVSecondaryIndex}, {index_catalog=issue19_migration_batch_reuse, index_schema=public, index_name=CONSTRAINT_INDEX_B6, table_catalog=issue19_migration_batch_reuse, table_schema=public, table_name=migration_in, index_type_name=UNIQUE INDEX, nulls_distinct=YES, is_generated=true, remarks=null, index_class=org.h2.mvstore.db.MVSecondaryIndex}, {index_catalog=issue19_migration_batch_reuse, index_schema=public, index_name=CONSTRAINT_INDEX_B69, table_catalog=issue19_migration_batch_reuse, table_schema=public, table_name=migration_in, index_type_name=INDEX, nulls_distinct=null, is_generated=true, remarks=null, index_class=org.h2.mvstore.db.MVSecondaryIndex}, {index_catalog=issue19_migration_batch_reuse, index_schema=public, index_name=CONSTRAINT_INDEX_B698, table_catalog=issue19_migration_batch_reuse, table_schema=public, table_name=migration_in, index_type_name=INDEX, nulls_distinct=null, is_generated=true, remarks=null, index_class=org.h2.mvstore.db.MVSecondaryIndex}, {index_catalog=issue19_migration_batch_reuse, index_schema=public, index_name=PRIMARY_KEY_B6, table_catalog=issue19_migration_batch_reuse, table_schema=public, table_name=migration_in, index_type_name=PRIMARY KEY, nulls_distinct=null, is_generated=true, remarks=null, index_class=org.h2.mvstore.db.MVDelegateIndex}, {index_catalog=issue19_migration_batch_reuse, index_schema=public, index_name=idx_migration_in_query, table_catalog=issue19_migration_batch_reuse, table_schema=public, table_name=migration_in, index_type_name=INDEX, nulls_distinct=null, is_generated=false, remarks=null, index_class=org.h2.mvstore.db.MVSecondaryIndex}]
+
+H2 元数据结论（便于复核）：
+- 版本：H2 2.3.232。
+- migration_in.transfer_batch_no：character varying(40)，IS_NULLABLE=YES。
+- 唯一索引：CONSTRAINT_INDEX_B6（UNIQUE INDEX）仅含 transfer_batch_no 一列（ordinal_position=1, is_unique=true）；
+  对应约束 CONSTRAINT_B6（UNIQUE）。
+- 另一唯一索引：CONSTRAINT_INDEX_B（UNIQUE INDEX）为 application_id 唯一，对应 CONSTRAINT_B。
+- 业务基线中 schema.sql:210 定义为 `transfer_batch_no VARCHAR(40) UNIQUE`（H2 自动生成约束/索引名）；
+  MySQL 迁移脚本中同一语义的显式名称为 `uk_migration_in_batch`（V4_003:48）。
+- 旧唯一索引不包含任何状态条件 → 取消记录只要保留 transfer_batch_no 就继续占用批次。
+
+================================================================================
+4. H2 唯一约束真实异常（支撑证据，非伪造异常）
+================================================================================
+
+以下为测试中执行的真实直接 INSERT（同一 H2 唯一约束）的异常；HTTP 链路的 409 由同一
+DuplicateKeyException 经 GlobalExceptionHandler 映射产生，不是测试伪造的异常。
+
+ISSUE19_DIRECT_DUPLICATE exception=org.springframework.dao.DuplicateKeyException root=Unique index or primary key violation: "public.CONSTRAINT_INDEX_B6 ON public.migration_in(transfer_batch_no NULLS FIRST) VALUES ( /* 15 */ 'TR-20261108-0FB03D' )"; SQL statement:
+INSERT INTO migration_in(application_id,person_id,migration_type,from_region_code,from_address,to_region_code,to_household_id,in_date,reason,transfer_batch_no,business_status,version) VALUES(?,?,'IN_CITY_CROSS_DISTRICT',?,?,?,?,?,?,?,?,0) [23505-232]
+org.springframework.dao.DuplicateKeyException: PreparedStatementCallback; SQL [INSERT INTO migration_in(application_id,person_id,migration_type,from_region_code,from_address,to_region_code,to_household_id,in_date,reason,transfer_batch_no,business_status,version) VALUES(?,?,'IN_CITY_CROSS_DISTRICT',?,?,?,?,?,?,?,?,0)]; Unique index or primary key violation: "public.CONSTRAINT_INDEX_B6 ON public.migration_in(transfer_batch_no NULLS FIRST) VALUES ( /* 15 */ 'TR-20261108-0FB03D' )"; SQL statement:
+INSERT INTO migration_in(application_id,person_id,migration_type,from_region_code,from_address,to_region_code,to_household_id,in_date,reason,transfer_batch_no,business_status,version) VALUES(?,?,'IN_CITY_CROSS_DISTRICT',?,?,?,?,?,?,?,?,0) [23505-232]
+    at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:95)
+    at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+    at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1556)
+    at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+    at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:972)
+    at com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest.printDuplicateConstraintDiagnostic(Issue19MigrationBatchReuseIntegrationTest.java:459)
+Caused by: org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException: Unique index or primary key violation: "public.CONSTRAINT_INDEX_B6 ON public.migration_in(transfer_batch_no NULLS FIRST) VALUES ( /* 15 */ 'TR-20261108-0FB03D' )"; SQL statement:
+INSERT INTO migration_in(application_id,person_id,migration_type,from_region_code,from_address,to_region_code,to_household_id,in_date,reason,transfer_batch_no,business_status,version) VALUES(?,?,'IN_CITY_CROSS_DISTRICT',?,?,?,?,?,?,?,?,0) [23505-232]
+    at org.h2.message.DbException.getJdbcSQLException(DbException.java:520)
+    at org.h2.index.Index.getDuplicateKeyException(Index.java:523)
+    at org.h2.mvstore.db.MVSecondaryIndex.checkUnique(MVSecondaryIndex.java:223)
+    at org.h2.mvstore.db.MVSecondaryIndex.add(MVSecondaryIndex.java:184)
+    at org.h2.mvstore.db.MVTable.addRow(MVTable.java:517)
+
+（完整栈在 target/surefire-reports/...xml 的 system-out 与 target/issue19-red-run-utf8.log 中。）
+
+================================================================================
+5. 旧实现 HTTP 实际返回（B 创建）与失败断言
+================================================================================
+
+ISSUE19_RED_DRAFT_B_HTTP status=409 body={"code":409,"message":"数据已存在，请勿重复提交","data":null,"timestamp":1794136801172}
+ISSUE19_RED_AFTER_B businessApplicationCount=1 migrationInRowsForBatch=1
+
+MockMvc 实际解析出的服务端异常类型（与 Surefire 请求 dump 一致）：
+    Resolved Exception:
+             Type = org.springframework.dao.DuplicateKeyException
+    MockHttpServletResponse:
+           Status = 409
+           Body = {"code":409,"message":"数据已存在，请勿重复提交","data":null,"timestamp":1794136801172}
+
+结论：
+- 取消 A 后 business_application.status=CANCELLED 已成立；
+- 但 migration_in.business_status 仍为 DRAFT、transfer_batch_no 仍为 TR-20261108-0FB03D；
+- B 创建返回 **409**（不是 500；GlobalExceptionHandler 的 DuplicateKeyException 分支返回通用 409 文案），
+  business_application 无孤儿（计数仍为 1），migration_in 该批次仍只有 1 行 → 旧实现真实 RED。
+
+================================================================================
+6. 已完成批次消费观察（旧实现）
+================================================================================
+
+ISSUE19_HTTP action=HTTP 创建同市跨区迁出申请 status=201 body={"code":201,"message":"created","data":{"applicationId":1,"applicationNo":"APP-20261108-38D413629D11","migrationId":1,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794136799992}
+ISSUE19_HTTP action=提交申请 1 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794136800102}
+ISSUE19_HTTP action=审批通过 1 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794136800127}
+ISSUE19_HTTP action=HTTP 执行同市跨区迁出 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794136800200}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=1, application_id=1, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261108-4A398F, version=3}
+ISSUE19_HTTP action=创建迁入草稿 Issue19 完成消费 status=201 body={"code":201,"message":"created","data":{"applicationId":2,"applicationNo":"APP-20261108-63AFC0872602","migrationId":1,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794136800232}
+ISSUE19_HTTP action=提交申请 2 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794136800248}
+ISSUE19_HTTP action=审批通过 2 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794136800262}
+ISSUE19_HTTP action=执行迁入并消费批次 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794136800283}
+ISSUE19_RED_COMPLETED_IN={business_application.status=COMPLETED, migration_in={in_id=1, business_status=COMPLETED, transfer_batch_no=TR-20261108-4A398F, version=3}, approved_logs=[{action=CREATE, from_status=null, to_status=DRAFT}, {action=SUBMIT, from_status=DRAFT, to_status=UNDER_REVIEW}, {action=APPROVE, from_status=UNDER_REVIEW, to_status=APPROVED}, {action=EXECUTE, from_status=APPROVED, to_status=COMPLETED}]}
+ISSUE19_RED_COMPLETED_BATCH_REUSE_HTTP status=409 body={"code":409,"message":"数据已存在，请勿重复提交","data":null,"timestamp":1794136800402}
+
+观察结论：已完成迁入真实落库为 COMPLETED；再次用同一批次创建新迁入返回 409，
+该批次在 migration_in 中只有 1 条 COMPLETED 记录（completedMigrationConsumesBatchPermanently 通过）。
+该行为是修复前后都必须保持的“完成即永久消费”契约。
+
+================================================================================
+7. 审批中/驳回/撤回/退回等状态现有占用观察
+================================================================================
+
+ISSUE19_RED_STATUS_OCCUPANCY status=DRAFT appStatus=DRAFT migrationStatus=DRAFT secondHttp=409 secondBody={"code":409,"message":"数据已存在，请勿重复提交","data":null,"timestamp":1794136800616}
+ISSUE19_RED_STATUS_OCCUPANCY status=UNDER_REVIEW appStatus=UNDER_REVIEW migrationStatus=UNDER_REVIEW secondHttp=409 secondBody={"code":409,"message":"数据已存在，请勿重复提交","data":null,"timestamp":1794136800658}
+ISSUE19_RED_STATUS_OCCUPANCY status=APPROVED appStatus=APPROVED migrationStatus=APPROVED secondHttp=409 secondBody={"code":409,"message":"数据已存在，请勿重复提交","data":null,"timestamp":1794136800709}
+ISSUE19_RED_STATUS_OCCUPANCY status=REJECTED appStatus=REJECTED migrationStatus=REJECTED secondHttp=409 secondBody={"code":409,"message":"数据已存在，请勿重复提交","data":null,"timestamp":1794136800757}
+ISSUE19_RED_STATUS_OCCUPANCY status=WITHDRAWN appStatus=WITHDRAWN migrationStatus=WITHDRAWN secondHttp=409 secondBody={"code":409,"message":"数据已存在，请勿重复提交","data":null,"timestamp":1794136800808}
+ISSUE19_RED_STATUS_OCCUPANCY status=RETURNED appStatus=RETURNED migrationStatus=APPROVED secondHttp=409 secondBody={"code":409,"message":"数据已存在，请勿重复提交","data":null,"timestamp":1794136800875}
+
+观察结论（旧实现，均通过真实 HTTP 驱动）：
+- DRAFT / UNDER_REVIEW / APPROVED：第二条同批次迁入创建均 409，即均占用批次；
+- REJECTED（审批驳回）与 WITHDRAWN（撤回）：migration_in 分别同步为 REJECTED/WITHDRAWN，第二条创建仍 409；
+- RETURNED（已批准后执行岗退回）：business_application.status=RETURNED，migration_in.business_status 保持 APPROVED（既有语义），
+  第二条创建仍 409；
+- 按 #19 契约，上述状态在本修复中不得释放，仅 CANCELLED 释放；本组观察结果在 GREEN 阶段应保持不变。
+
+================================================================================
+8. 取消记录可追溯性测试（第二个失败测试）
+================================================================================
+
+ISSUE19_HTTP action=HTTP 创建同市跨区迁出申请 status=201 body={"code":201,"message":"created","data":{"applicationId":26,"applicationNo":"APP-20261108-8C7EB718E47F","migrationId":9,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794136801379}
+ISSUE19_HTTP action=提交申请 26 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794136801389}
+ISSUE19_HTTP action=审批通过 9 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794136801400}
+ISSUE19_HTTP action=HTTP 执行同市跨区迁出 status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794136801413}
+ISSUE19_RED_COMPLETED_OUT_ROW={out_id=9, application_id=26, person_id=93001, migration_type=IN_CITY_CROSS_DISTRICT, from_region_code=110101, to_region_code=110105, business_status=COMPLETED, transfer_batch_no=TR-20261108-BF4390, version=3}
+ISSUE19_HTTP action=创建迁入草稿 A（可追溯场景） status=201 body={"code":201,"message":"created","data":{"applicationId":27,"applicationNo":"APP-20261108-476AAFF2BB67","migrationId":18,"status":"DRAFT","businessStatus":"DRAFT"},"timestamp":1794136801423}
+ISSUE19_HTTP action=取消迁入草稿 A（可追溯场景） status=200 body={"code":200,"message":"ok","data":null,"timestamp":1794136801431}
+
+失败断言（Surefire 原文）：
+    cancelledMigrationRecordAndLogsRemainTraceable -- Time elapsed: 0.240 s <<< FAILURE!
+    org.opentest4j.AssertionFailedError:
+    expected: "CANCELLED"
+     but was: "DRAFT"
+        at com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest.cancelledMigrationRecordAndLogsRemainTraceable(Issue19MigrationBatchReuseIntegrationTest.java:157)
+
+结论：旧实现取消后 business_application.status 已 CANCELLED、sys_approval_log 已有 CANCEL 记录，
+但 migration_in.business_status 仍 DRAFT → 迁移明细不可追溯为已取消，且批次值仍占用。
+（该测试在旧实现上失败，GREEN 阶段应转为通过。）
+
+================================================================================
+9. 生产文件完整性 / 本任务 diff 证明
+================================================================================
+
+执行 `git diff --name-only -- src/main src/test/resources doc/database/migrations`：无输出，exit code 0。
+以下生产文件 SHA256（工作区当前值，均与 HEAD 基线一致）：
+
+    248227AFC2DD8193E6A9273112BD8BC9C2AB694ABFB05C022547B2AF4F77FD2E  src/main/java/com/wjx871/population/application/ApplicationService.java
+    3FA8547FD099C3C5BF29F472EC53D27BE791BC71A2819BEF17E493A6D06B4C40  src/main/java/com/wjx871/population/migration/MigrationService.java
+    2888D6DB623B659B90375850CB2E81C59CB8AFC92A0E3A9CD6EDA807AE6D3746  src/main/java/com/wjx871/population/migration/MigrationStatusListener.java
+    5438A6FFE64F11897B28BB4EE69DF0286AD95677ABA9FA62290168396BBB9AE2  src/main/java/com/wjx871/population/migration/MigrationBusinessStatus.java
+    23E336D3C75F471312D2F6059DBA9F00BDFD9B27AC830D6E5042A749B41DF85A  src/main/resources/mapper/MigrationMapper.xml
+    30B033135209CECB632B3A4332D6462A5C48A4F2B0D62311168D65C1DFC76B2A  doc/database/migrations/V4_003_household_migration_archive.sql
+    E903EB51045C1B24385E93BBBEB740A35E122E843C8D94A041BE6563F0CF583F  src/test/resources/schema.sql
+
+`git status --short`（写入本证据前）：
+    ?? doc/development/issue19-migration-batch-reuse.md   ← t2 既有设计文档（非本任务产出，未改动）
+    ?? src/test/java/com/wjx871/population/migration/Issue19MigrationBatchReuseIntegrationTest.java   ← 本任务新增测试
+
+本任务仅新增：
+    src/test/java/com/wjx871/population/migration/Issue19MigrationBatchReuseIntegrationTest.java
+    doc/development/evidence/issue19-red-h2.txt（本文件）
+
+================================================================================
+10. 结论与后续（t4/t5/t6 输入）
+================================================================================
+
+RED 结论：在基线 1f3f4427 上，取消 DRAFT 迁入草稿后：
+- business_application.status = CANCELLED；
+- migration_in.business_status = DRAFT（缺陷）；
+- migration_in.transfer_batch_no 原值保留并被全局唯一约束继续占用；
+- 同一批次创建新迁入 DRAFT B 实际 HTTP 409（DuplicateKeyException → 通用文案），无法继续办理；
+- H2 侧唯一索引名 CONSTRAINT_INDEX_B6（对应约束 CONSTRAINT_B6），列 transfer_batch_no(40)，无状态条件。
+
+待后续任务完成/验证（本任务不做）：
+- t4：实现仅 CANCELLED 释放的条件唯一键（生成列/条件索引）与 cancelDraft→migration_in 同步；
+  本测试类的两个 RED 方法应转为通过，两个观察方法应保持通过。
+- t5：H2 GREEN 全量矩阵（含并发 G/H、事务回滚 I、版本/重复取消 J 等）。
+- t6：真实 MySQL 8.4 的 1062 duplicate key、information_schema/ SHOW INDEX、V4_019 升级与备份回填证据；
+  H2 与 MySQL 在唯一索引名、生成列语法上的差异必须分别记录，不得以 H2 冒充 MySQL。
+- t5/t6：同一批次并发创建 10 轮验证；本 RED 任务未执行并发轮次（已在 t2 §11 G/H 预留）。
+- AI 预检链路（AiResolutionService.countAnyInBatch）不在本任务范围；按 t2 §8.6/§12.2 记录为暂不支持，
+  需船长决定是否扩展 scope。
+
+================================================================================
+END OF ISSUE19 RED H2 EVIDENCE
+================================================================================

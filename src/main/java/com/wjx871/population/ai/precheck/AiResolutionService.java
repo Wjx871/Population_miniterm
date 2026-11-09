@@ -306,7 +306,8 @@ public class AiResolutionService {
                         + "FROM migration_out WHERE transfer_batch_no=? FOR UPDATE",
                 (rs, row) -> new TransferBatchRow(rs.getLong("person_id"), rs.getString("migration_type"),
                         rs.getString("to_region_code"), rs.getString("business_status")), session.transferBatchNo());
-        List<Long> incoming = jdbc.queryForList("SELECT in_id FROM migration_in WHERE transfer_batch_no=? FOR UPDATE",
+        List<Long> incoming = jdbc.queryForList("SELECT in_id FROM migration_in WHERE transfer_batch_no=? "
+                        + "AND business_status<>'CANCELLED' FOR UPDATE",
                 Long.class, session.transferBatchNo());
         return outgoing.size() == 1 && incoming.isEmpty() && personId.equals(outgoing.get(0).personId())
                 && MigrationType.IN_CITY_CROSS_DISTRICT.name().equals(outgoing.get(0).migrationType())
@@ -354,7 +355,8 @@ public class AiResolutionService {
     }
 
     private int countAnyInBatch(String batchNo) {
-        return jdbc.queryForObject("SELECT COUNT(*) FROM migration_in WHERE transfer_batch_no=?", Integer.class, batchNo);
+        return jdbc.queryForObject("SELECT COUNT(*) FROM migration_in WHERE transfer_batch_no=? "
+                + "AND business_status<>'CANCELLED'", Integer.class, batchNo);
     }
 
     private void insertAudit(String taskId, Long actorId, String traceId, String event, String from, String to,

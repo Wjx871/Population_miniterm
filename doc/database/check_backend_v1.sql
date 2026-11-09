@@ -4,6 +4,10 @@ UNION ALL SELECT 'orphan_member_person',COUNT(*) FROM household_member m LEFT JO
 UNION ALL SELECT 'orphan_member_household',COUNT(*) FROM household_member m LEFT JOIN household h ON h.household_id=m.household_id WHERE h.household_id IS NULL
 UNION ALL SELECT 'multiple_active_residence',COUNT(*) FROM (SELECT person_id FROM residence WHERE status='ACTIVE' GROUP BY person_id HAVING COUNT(*)>1) x
 UNION ALL SELECT 'multiple_active_membership',COUNT(*) FROM (SELECT person_id FROM household_member WHERE status='ACTIVE' GROUP BY person_id HAVING COUNT(*)>1) x
+UNION ALL SELECT 'multiple_active_migration_batch',COUNT(*) FROM (SELECT transfer_batch_no FROM migration_in WHERE active_transfer_batch_no IS NOT NULL GROUP BY transfer_batch_no HAVING COUNT(*)>1) x
+UNION ALL SELECT 'cancelled_application_detail_not_cancelled',COUNT(*) FROM business_application a JOIN migration_in m ON m.application_id=a.application_id WHERE a.business_type='MIGRATION_IN' AND a.status='CANCELLED' AND m.business_status<>'CANCELLED'
+UNION ALL SELECT 'unexpected_cancelled_migration_detail',COUNT(*) FROM business_application a JOIN migration_in m ON m.application_id=a.application_id WHERE a.business_type='MIGRATION_IN' AND a.status<>'CANCELLED' AND m.business_status='CANCELLED'
+UNION ALL SELECT 'legacy_migration_batch_unique_index',COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='migration_in' AND index_name='uk_migration_in_batch'
 UNION ALL SELECT 'invalid_household_head',COUNT(*) FROM household h WHERE h.status='ACTIVE' AND (
     (h.head_person_id IS NULL AND EXISTS(SELECT 1 FROM household_member m WHERE m.household_id=h.household_id AND m.status='ACTIVE' AND m.relationship='HEAD'))
     OR (h.head_person_id IS NOT NULL AND (
@@ -27,6 +31,7 @@ UNION ALL SELECT 'required_column_missing',COUNT(*) FROM (
     SELECT 'person' table_name,'current_status_code' column_name UNION ALL SELECT 'person','initial_scope_user_id'
     UNION ALL SELECT 'person','initial_scope_department_id' UNION ALL SELECT 'person','initial_scope_region_code'
     UNION ALL SELECT 'household','version'
+    UNION ALL SELECT 'migration_in','active_transfer_batch_no'
     UNION ALL SELECT 'residence','status' UNION ALL SELECT 'business_application','status'
     UNION ALL SELECT 'key_population','active_flag' UNION ALL SELECT 'operation_log','operation_time'
 ) required LEFT JOIN information_schema.columns actual ON actual.table_schema=DATABASE() AND actual.table_name=required.table_name AND actual.column_name=required.column_name WHERE actual.column_name IS NULL
@@ -34,6 +39,7 @@ UNION ALL SELECT 'required_index_missing',COUNT(*) FROM (
     SELECT 'idx_household_member_person_status' object_name UNION ALL SELECT 'idx_household_member_household_status'
     UNION ALL SELECT 'idx_key_population_query' UNION ALL SELECT 'idx_person_query'
     UNION ALL SELECT 'idx_operation_log_query' UNION ALL SELECT 'idx_migration_in_query' UNION ALL SELECT 'idx_migration_out_query'
+    UNION ALL SELECT 'uk_migration_in_active_batch'
     UNION ALL SELECT 'idx_person_initial_scope_user' UNION ALL SELECT 'idx_person_initial_scope_department'
     UNION ALL SELECT 'idx_person_initial_scope_region'
 ) required LEFT JOIN (SELECT DISTINCT index_name FROM information_schema.statistics WHERE table_schema=DATABASE()) actual ON actual.index_name=required.object_name WHERE actual.index_name IS NULL

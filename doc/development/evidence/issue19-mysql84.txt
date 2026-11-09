@@ -1,0 +1,289 @@
+================================================================================
+Issue #19 - cancelled MIGRATION_IN draft must release its transfer batch
+Real MySQL 8.4 verification evidence
+================================================================================
+Generated: 2026-11-09 22:51:44 +08:00
+Gate script: D:\学习用\大二下\小学期-issue19-migration-batch-reuse\scripts\windows\tests\issue19-mysql84-gate.ps1
+Worktree: D:\学习用\大二下\小学期-issue19-migration-batch-reuse
+Baseline commit: 1f3f4427775f55b853a7b42d2cb759b4cdfa7411
+Temporary instance dir: C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue19_46c30189ad
+Schema: population_miniterm_mysql_gate_issue19_46c30189ad
+Port: 13370
+
+================================================================================
+Issue #19 real MySQL 8.4 gate
+================================================================================
+Started: 2026-11-09 22:49:52 +08:00
+Repo: D:\学习用\大二下\小学期-issue19-migration-batch-reuse
+Baseline commit: 1f3f4427775f55b853a7b42d2cb759b4cdfa7411
+mysqld --version: C:\Program Files\MySQL\MySQL Server 8.4\bin\mysqld.exe  Ver 8.4.8 for Win64 on x86_64 (MySQL Community Server - GPL)
+Selected port: 13370 (checked free, non-3306)
+Worktree HEAD: 1f3f4427775f55b853a7b42d2cb759b4cdfa7411 branch=fix/20261108-issue19-migration-batch-reuse
+[PASS] Worktree HEAD includes the pinned baseline commit
+Baseline population_miniterm.sql sha256=5F20EA825DBF8DD22DF6B53557BF8B23A2027EBB2D10653B10D5C64841C496CF
+initialize-insecure: PASS
+Private mysqld ready: PASS (pid=18532, datadir=C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue19_46c30189ad\data)
+[PASS] Administrator identity query succeeds :: 8.4.8	MySQL Community Server - GPL	13370	127.0.0.1	REPEATABLE-READ	C:\\Users\\jxgm\\AppData\\Local\\Temp\\population_mysql84_issue19_46c30189ad\\data\\	ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+[PASS] Server is MySQL 8.4 :: 8.4.8
+[PASS] Server port matches selected non-3306 port :: port=13370
+[PASS] Server bind-address is 127.0.0.1 :: 127.0.0.1
+[PASS] Server transaction isolation is REPEATABLE-READ :: REPEATABLE-READ
+[PASS] Non-root application account created with schema-scoped DML only :: exit=0
+[PASS] Application account identity query succeeds :: 8.4.8	13370	127.0.0.1	REPEATABLE-READ	population_miniterm_mysql_gate_issue19_46c30189ad	i19_46c30189ad@127.0.0.1
+[PASS] Application connection reports expected version :: 8.4.8
+[PASS] Application connection reports expected port :: port=13370
+[PASS] Application connection reports 127.0.0.1 :: 127.0.0.1
+[PASS] Application connection reports REPEATABLE-READ :: REPEATABLE-READ
+[PASS] Application connection reports the isolated schema :: population_miniterm_mysql_gate_issue19_46c30189ad
+[PASS] Application connection uses the non-root account :: i19_46c30189ad@127.0.0.1
+[PASS] Historical baseline schema loads successfully :: exit=0, log=C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue19_46c30189ad\baseline-load.log
+Baseline schema load: PASS (sha256=5F20EA825DBF8DD22DF6B53557BF8B23A2027EBB2D10653B10D5C64841C496CF)
+[PASS] Baseline already contains V4_014 initial-scope columns (so V4_014 is not re-applied) :: count=3
+V4_014: baseline schema already contains the three initial_scope_* columns; no separate apply needed.
+
+--- historical migration chain to V4_018 ---
+[PASS] Apply V4_011_application_return.sql :: exit=0, sha256=0DE97BE3308050951B2251D4626F6532BDD6F989B66E8FB4192A58FC0F90233F
+  V4_011_application_return.sql -> exit 0, sha256=0DE97BE3308050951B2251D4626F6532BDD6F989B66E8FB4192A58FC0F90233F
+[PASS] Apply V4_012_dashboard_viewer_scope.sql :: exit=0, sha256=74C0E875C6B5F152B62875F9339430BE3FD6202038BB7CEFD0F9927C2AEE7BB9
+  V4_012_dashboard_viewer_scope.sql -> exit 0, sha256=74C0E875C6B5F152B62875F9339430BE3FD6202038BB7CEFD0F9927C2AEE7BB9
+[PASS] Apply V4_013_person_idcard_image.sql :: exit=0, sha256=A51796EE8C8CEB617010F3F53C541840585C09D67E10DB92ED5BD8CF816B3F9D
+  V4_013_person_idcard_image.sql -> exit 0, sha256=A51796EE8C8CEB617010F3F53C541840585C09D67E10DB92ED5BD8CF816B3F9D
+[PASS] Apply V4_015_ai_precheck_async.sql :: exit=0, sha256=F120DA1752BFF4DA4EE62FEBACB6DA8494FA45A6DAB24460A4B1F3AFAD8185D0
+  V4_015_ai_precheck_async.sql -> exit 0, sha256=F120DA1752BFF4DA4EE62FEBACB6DA8494FA45A6DAB24460A4B1F3AFAD8185D0
+[PASS] Apply V4_016_s4a_entity_resolution.sql :: exit=0, sha256=C8EA033D49DD335147852FB1169D825E266A30C6F3C284003769FED8250A056E
+  V4_016_s4a_entity_resolution.sql -> exit 0, sha256=C8EA033D49DD335147852FB1169D825E266A30C6F3C284003769FED8250A056E
+[PASS] Apply V4_017_s4a_resolution_retention_indexes.sql :: exit=0, sha256=504E1E8DE5F2FA57A334B674EDD462371D36AF730F94004FA807F37E882F18D3
+  V4_017_s4a_resolution_retention_indexes.sql -> exit 0, sha256=504E1E8DE5F2FA57A334B674EDD462371D36AF730F94004FA807F37E882F18D3
+[PASS] Apply V4_018_s4b_confirm_draft_binding.sql :: exit=0, sha256=03B3DA50B38B9B387DF7FBF53AD1663B308317B9993AB2A9F8978B6F241271C4
+  V4_018_s4b_confirm_draft_binding.sql -> exit 0, sha256=03B3DA50B38B9B387DF7FBF53AD1663B308317B9993AB2A9F8978B6F241271C4
+[PASS] V4_018 schema has old unconditional uk_migration_in_batch :: count=1
+[PASS] V4_018 schema has no active_transfer_batch_no yet :: count=0
+
+--- V4_018 migration_in SHOW INDEX (pre-fix) ---
++--------------+------------+----------------------------------+--------------+-------------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+| Table        | Non_unique | Key_name                         | Seq_in_index | Column_name       | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment | Visible | Expression |
++--------------+------------+----------------------------------+--------------+-------------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+| migration_in |          0 | PRIMARY                          |            1 | in_id             | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          0 | uk_migration_in_application      |            1 | application_id    | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          0 | uk_migration_in_batch            |            1 | transfer_batch_no | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_person_id       |            1 | person_id         | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_to_household_id |            1 | to_household_id   | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_operator_id     |            1 | operator_id       | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_query           |            1 | in_date           | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_query           |            2 | business_status   | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_query           |            3 | migration_type    | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_query           |            4 | person_id         | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
++--------------+------------+----------------------------------+--------------+-------------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+[PASS] Prepare old-version RED fixture (completed OUT + draft A cancelled only at application level) :: exit=0
+[PASS] Old-version cancelled draft keeps migration_in DRAFT and original batch :: actual=CANCELLED|DRAFT|TR-RED-46c30189ad
+
+--- OLD VERSION RED: cancelled draft A snapshot (application CANCELLED, migration_in DRAFT) ---
+application_status|migration_status|transfer_batch_no = CANCELLED|DRAFT|TR-RED-46c30189ad
+RED fixture: completed same-city cross-district OUT batch TR-RED-46c30189ad is legitimate and reusable only if a cancelled DRAFT releases it.
+--- RED duplicate insert SQL ---
+START TRANSACTION; INSERT business_application(APP-RED-IN-B...); INSERT migration_in(... transfer_batch_no=TR-RED-
+[PASS] Old V4_018 schema fails with real duplicate key 1062 on uk_migration_in_batch :: exit=1
+RED duplicate attempt exit=1
+RED duplicate error: ERROR 1062 (23000) at line 9: Duplicate entry 'TR-RED-46c30189ad' for key 'migration_in.uk_migration_in_batch'
+[PASS] RED failed insert rolled back its business_application row :: orphan=0
+[PASS] RED batch still has exactly the one cancelled DRAFT row :: rows=1
+RED transaction aftermath: orphan_application=0, migration_in_rows_for_batch=1 (implicit rollback on duplicate error)
+[PASS] Prepare historical CANCELLED+DRAFT rows before upgrade :: exit=0
+Pre-upgrade row counts (migration_in|business_application) = 3|4
+--- pre-upgrade historical snapshot (desensitized) ---
+  PRE_UPGRADE	APP-HIST-CANCELLED-001-46c30189ad	CANCELLED	3	DRAFT	TR-HIST-46c30189ad-0007	3
+  PRE_UPGRADE	APP-HIST-CANCELLED-002-46c30189ad	CANCELLED	4	CANCELLED	TR-HIST-46c30189ad-0008	2
+  PRE_UPGRADE_COUNTS	3	4
+[PASS] V4_019 migration file exists :: D:\学习用\大二下\小学期-issue19-migration-batch-reuse\doc\database\migrations\V4_019_migration_batch_reuse.sql
+V4_019 sha256=83FDA88C423E2E8ED8E23169ABD3CC6E31400978C1268E00F8DE6D5525C6C31F
+
+--- V4_019 first application ---
+[PASS] Apply V4_019 first time :: exit=0
+V4_019 first-run output:
+  application_id	application_no	application_status	in_id	business_status	transfer_batch_no	person_id	to_region_code	to_household_id	version	created_at	updated_at
+  2	APP-RED-IN-A-46c30189ad	CANCELLED	1	DRAFT	TR-RED-46c30189ad	93001	110105	93002	0	2026-11-09 22:50:03	2026-11-09 22:50:03
+  4	APP-HIST-CANCELLED-001-46c30189ad	CANCELLED	3	DRAFT	TR-HIST-46c30189ad-0007	93001	110105	93004	3	2026-11-09 22:50:04	2026-11-09 22:50:04
+  affected_rows	with_batch	without_batch	distinct_batches	max_in_id	in_id_checksum
+  2	2	0	2	3	4
+  expected_rows	updated_rows	backup_rows
+  2	2	2
+  remaining_cancelled_draft
+  0
+  in_id	application_id	business_status	transfer_batch_no	active_transfer_batch_no
+  1	2	CANCELLED	TR-RED-46c30189ad	NULL
+  3	4	CANCELLED	TR-HIST-46c30189ad-0007	NULL
+  4	5	CANCELLED	TR-HIST-46c30189ad-0008	NULL
+  INDEX_NAME	NON_UNIQUE	COLUMN_NAME
+  uk_migration_in_active_batch	0	active_transfer_batch_no
+  migration_in_rows	business_application_rows	backup_rows
+  3	4	2
+  
+
+--- V4_019 second application (repeatability) ---
+[PASS] Apply V4_019 second time (repeatable) :: exit=0
+V4_019 second-run output:
+  affected_rows	with_batch	without_batch	distinct_batches	max_in_id	in_id_checksum
+  0	NULL	NULL	0	0	0
+  expected_rows	updated_rows	backup_rows
+  0	0	2
+  remaining_cancelled_draft
+  0
+  in_id	application_id	business_status	transfer_batch_no	active_transfer_batch_no
+  1	2	CANCELLED	TR-RED-46c30189ad	NULL
+  3	4	CANCELLED	TR-HIST-46c30189ad-0007	NULL
+  4	5	CANCELLED	TR-HIST-46c30189ad-0008	NULL
+  INDEX_NAME	NON_UNIQUE	COLUMN_NAME
+  uk_migration_in_active_batch	0	active_transfer_batch_no
+  migration_in_rows	business_application_rows	backup_rows
+  3	4	2
+  
+[PASS] Old uk_migration_in_batch has been dropped :: count=0
+[PASS] Conditional unique index uk_migration_in_active_batch exists :: count=1
+[PASS] active_transfer_batch_no is a STORED generated column with CANCELLED->NULL :: definition=STORED GENERATED|(case when (`business_status` = _utf8mb4\\'CANCELLED\\') then NULL else `transfer_batch_no` end)
+[PASS] Historical CANCELLED+DRAFT row is state-aligned to CANCELLED during upgrade :: actual=3|CANCELLED|CANCELLED|TR-HIST-46c30189ad-0007|4|NULL
+[PASS] Historical already-CANCELLED row is not touched by upgrade :: actual=4|CANCELLED|CANCELLED|TR-HIST-46c30189ad-0008|2|NULL
+[PASS] Backup table retains original DRAFT/batch/version snapshot :: count=1
+[PASS] Upgrade did not delete rows (counts unchanged) :: before=3|4 after=3|4
+
+--- historical data upgrade snapshot (desensitized: synthetic batch, no person identity selected) ---
+APP-HIST-CANCELLED-001 (original application CANCELLED + detail DRAFT): 3|CANCELLED|CANCELLED|TR-HIST-46c30189ad-0007|4|NULL  [in_id|app_status|detail_status|batch|version|active_batch]
+APP-HIST-CANCELLED-002 (already CANCELLED detail): 4|CANCELLED|CANCELLED|TR-HIST-46c30189ad-0008|2|NULL  [in_id|app_status|detail_status|batch|version|active_batch]
+Backup rows for TR-HIST-46c30189ad-0007 with original DRAFT/version3: 1
+
+--- new behaviour on V4_019 ---
+[PASS] Cancelled batch can be reused by a new DRAFT :: exit=0, result=NEW_A_REUSE_OK|6|5|1
+A. cancelled-reuse: PASS (NEW_A_REUSE_OK|6|5|1) [appId|inId|activeRows]
+[PASS] Active DRAFT still exclusively occupies the batch (1062 on uk_migration_in_active_batch) :: exit=1
+[PASS] Duplicate active attempt leaves exactly one active row :: active=1
+B. active exclusivity: PASS (exit=1, active_rows=1, error=ERROR 1062 (23000) at line 7: Duplicate entry 'TR-RED-46c30189ad' for key 'migration_in.uk_migration_in_active_batch')
+[PASS] COMPLETED batch is permanently rejected for a new DRAFT :: exit=1
+[PASS] COMPLETED batch retains exactly one row :: rows=1
+C. completed permanent consumption: PASS (exit=1, rows=1, error=ERROR 1062 (23000) at line 12: Duplicate entry 'TR-NEW-COMPLETED-46c30189ad' for key 'migration_in.uk_migration_in_active_batch')
+[PASS] Failed duplicate inside a transaction rolls back application + migration detail together :: exit=1, orphan_apps=0, rows=0
+D. transaction rollback: PASS (exit=1, orphan_applications=0, migration_rows=0)
+
+--- concurrency: 10 claim rounds + 10 cancel/create interleave rounds ---
+round=1 kind=claim batch=TR-CONC-46c30189ad-claim-1 | A(conn=56,trx=2409,exit=0,outcome=SUCCESS) | B(conn=58,trx=2410,exit=1,outcome=DUPLICATE) | wait_events=DLW=0;2410:LOCK WAIT:58;DLW=1 | final_active=1 | final_rows=11:DRAFT | elapsed_ms=1991
+[PASS] claim round 1 exactly one winner :: A=SUCCESS, B=DUPLICATE
+[PASS] claim round 1 one active row :: active=1
+round=2 kind=claim batch=TR-CONC-46c30189ad-claim-2 | A(conn=71,trx=2411,exit=0,outcome=SUCCESS) | B(conn=73,trx=2412,exit=1,outcome=DUPLICATE) | wait_events=DLW=0;2412:LOCK WAIT:73;DLW=1 | final_active=1 | final_rows=13:DRAFT | elapsed_ms=1954
+[PASS] claim round 2 exactly one winner :: A=SUCCESS, B=DUPLICATE
+[PASS] claim round 2 one active row :: active=1
+round=3 kind=claim batch=TR-CONC-46c30189ad-claim-3 | A(conn=86,trx=2413,exit=0,outcome=SUCCESS) | B(conn=88,trx=2414,exit=1,outcome=DUPLICATE) | wait_events=DLW=0;2414:LOCK WAIT:88;DLW=1 | final_active=1 | final_rows=15:DRAFT | elapsed_ms=1954
+[PASS] claim round 3 exactly one winner :: A=SUCCESS, B=DUPLICATE
+[PASS] claim round 3 one active row :: active=1
+round=4 kind=claim batch=TR-CONC-46c30189ad-claim-4 | A(conn=101,trx=2415,exit=0,outcome=SUCCESS) | B(conn=103,trx=2416,exit=1,outcome=DUPLICATE) | wait_events=DLW=0;2416:LOCK WAIT:103;DLW=1 | final_active=1 | final_rows=17:DRAFT | elapsed_ms=1914
+[PASS] claim round 4 exactly one winner :: A=SUCCESS, B=DUPLICATE
+[PASS] claim round 4 one active row :: active=1
+round=5 kind=claim batch=TR-CONC-46c30189ad-claim-5 | A(conn=116,trx=2417,exit=0,outcome=SUCCESS) | B(conn=118,trx=2418,exit=1,outcome=DUPLICATE) | wait_events=DLW=0;2418:LOCK WAIT:118;DLW=1 | final_active=1 | final_rows=19:DRAFT | elapsed_ms=1895
+[PASS] claim round 5 exactly one winner :: A=SUCCESS, B=DUPLICATE
+[PASS] claim round 5 one active row :: active=1
+round=6 kind=claim batch=TR-CONC-46c30189ad-claim-6 | A(conn=131,trx=2421,exit=0,outcome=SUCCESS) | B(conn=133,trx=2422,exit=1,outcome=DUPLICATE) | wait_events=DLW=0;2422:LOCK WAIT:133;DLW=1 | final_active=1 | final_rows=21:DRAFT | elapsed_ms=1883
+[PASS] claim round 6 exactly one winner :: A=SUCCESS, B=DUPLICATE
+[PASS] claim round 6 one active row :: active=1
+round=7 kind=claim batch=TR-CONC-46c30189ad-claim-7 | A(conn=146,trx=2423,exit=0,outcome=SUCCESS) | B(conn=148,trx=2424,exit=1,outcome=DUPLICATE) | wait_events=DLW=0;2424:LOCK WAIT:148;DLW=1 | final_active=1 | final_rows=23:DRAFT | elapsed_ms=1946
+[PASS] claim round 7 exactly one winner :: A=SUCCESS, B=DUPLICATE
+[PASS] claim round 7 one active row :: active=1
+round=8 kind=claim batch=TR-CONC-46c30189ad-claim-8 | A(conn=161,trx=2425,exit=0,outcome=SUCCESS) | B(conn=163,trx=2426,exit=1,outcome=DUPLICATE) | wait_events=DLW=0;2426:LOCK WAIT:163;DLW=1 | final_active=1 | final_rows=25:DRAFT | elapsed_ms=1923
+[PASS] claim round 8 exactly one winner :: A=SUCCESS, B=DUPLICATE
+[PASS] claim round 8 one active row :: active=1
+round=9 kind=claim batch=TR-CONC-46c30189ad-claim-9 | A(conn=176,trx=2427,exit=0,outcome=SUCCESS) | B(conn=178,trx=2428,exit=1,outcome=DUPLICATE) | wait_events=DLW=0;2428:LOCK WAIT:178;DLW=1 | final_active=1 | final_rows=27:DRAFT | elapsed_ms=1941
+[PASS] claim round 9 exactly one winner :: A=SUCCESS, B=DUPLICATE
+[PASS] claim round 9 one active row :: active=1
+round=10 kind=claim batch=TR-CONC-46c30189ad-claim-10 | A(conn=191,trx=2429,exit=0,outcome=SUCCESS) | B(conn=193,trx=2430,exit=1,outcome=DUPLICATE) | wait_events=DLW=0;2430:LOCK WAIT:193;DLW=1 | final_active=1 | final_rows=29:DRAFT | elapsed_ms=1906
+[PASS] claim round 10 exactly one winner :: A=SUCCESS, B=DUPLICATE
+[PASS] claim round 10 one active row :: active=1
+round=1 kind=interleave batch=TR-CONC-46c30189ad-interleave-1 | A(conn=207,trx=2435,exit=0,outcome=SUCCESS) | B(conn=209,trx=,exit=1,outcome=DUPLICATE) | wait_events=DLW=0 | final_active=0 | final_rows=31:CANCELLED | elapsed_ms=1114
+[PASS] interleave round 1 no double active claim :: active=0, rows=31:CANCELLED
+[PASS] interleave round 1 cancel succeeds :: A=SUCCESS
+round=2 kind=interleave batch=TR-CONC-46c30189ad-interleave-2 | A(conn=218,trx=2440,exit=0,outcome=SUCCESS) | B(conn=220,trx=2441,exit=0,outcome=SUCCESS) | wait_events=DLW=0;2441:LOCK WAIT:220;DLW=1 | final_active=1 | final_rows=33:CANCELLED,34:DRAFT | elapsed_ms=1146
+[PASS] interleave round 2 no double active claim :: active=1, rows=33:CANCELLED,34:DRAFT
+[PASS] interleave round 2 cancel succeeds :: A=SUCCESS
+round=3 kind=interleave batch=TR-CONC-46c30189ad-interleave-3 | A(conn=229,trx=2445,exit=0,outcome=SUCCESS) | B(conn=231,trx=,exit=1,outcome=DUPLICATE) | wait_events=DLW=0 | final_active=0 | final_rows=35:CANCELLED | elapsed_ms=1002
+[PASS] interleave round 3 no double active claim :: active=0, rows=35:CANCELLED
+[PASS] interleave round 3 cancel succeeds :: A=SUCCESS
+round=4 kind=interleave batch=TR-CONC-46c30189ad-interleave-4 | A(conn=239,trx=2450,exit=0,outcome=SUCCESS) | B(conn=241,trx=2451,exit=0,outcome=SUCCESS) | wait_events=DLW=0;2451:LOCK WAIT:241;DLW=1 | final_active=1 | final_rows=37:CANCELLED,38:DRAFT | elapsed_ms=1107
+[PASS] interleave round 4 no double active claim :: active=1, rows=37:CANCELLED,38:DRAFT
+[PASS] interleave round 4 cancel succeeds :: A=SUCCESS
+round=5 kind=interleave batch=TR-CONC-46c30189ad-interleave-5 | A(conn=250,trx=2455,exit=0,outcome=SUCCESS) | B(conn=252,trx=,exit=1,outcome=DUPLICATE) | wait_events=DLW=0 | final_active=0 | final_rows=39:CANCELLED | elapsed_ms=1129
+[PASS] interleave round 5 no double active claim :: active=0, rows=39:CANCELLED
+[PASS] interleave round 5 cancel succeeds :: A=SUCCESS
+round=6 kind=interleave batch=TR-CONC-46c30189ad-interleave-6 | A(conn=261,trx=2460,exit=0,outcome=SUCCESS) | B(conn=263,trx=2461,exit=0,outcome=SUCCESS) | wait_events=DLW=0;2461:LOCK WAIT:263;DLW=1 | final_active=1 | final_rows=41:CANCELLED,42:DRAFT | elapsed_ms=1087
+[PASS] interleave round 6 no double active claim :: active=1, rows=41:CANCELLED,42:DRAFT
+[PASS] interleave round 6 cancel succeeds :: A=SUCCESS
+round=7 kind=interleave batch=TR-CONC-46c30189ad-interleave-7 | A(conn=272,trx=2465,exit=0,outcome=SUCCESS) | B(conn=274,trx=,exit=1,outcome=DUPLICATE) | wait_events=DLW=0 | final_active=0 | final_rows=43:CANCELLED | elapsed_ms=1118
+[PASS] interleave round 7 no double active claim :: active=0, rows=43:CANCELLED
+[PASS] interleave round 7 cancel succeeds :: A=SUCCESS
+round=8 kind=interleave batch=TR-CONC-46c30189ad-interleave-8 | A(conn=283,trx=2472,exit=0,outcome=SUCCESS) | B(conn=285,trx=2473,exit=0,outcome=SUCCESS) | wait_events=DLW=0;2473:LOCK WAIT:285;DLW=1 | final_active=1 | final_rows=45:CANCELLED,46:DRAFT | elapsed_ms=1126
+[PASS] interleave round 8 no double active claim :: active=1, rows=45:CANCELLED,46:DRAFT
+[PASS] interleave round 8 cancel succeeds :: A=SUCCESS
+round=9 kind=interleave batch=TR-CONC-46c30189ad-interleave-9 | A(conn=294,trx=2477,exit=0,outcome=SUCCESS) | B(conn=296,trx=,exit=1,outcome=DUPLICATE) | wait_events=DLW=0 | final_active=0 | final_rows=47:CANCELLED | elapsed_ms=1117
+[PASS] interleave round 9 no double active claim :: active=0, rows=47:CANCELLED
+[PASS] interleave round 9 cancel succeeds :: A=SUCCESS
+round=10 kind=interleave batch=TR-CONC-46c30189ad-interleave-10 | A(conn=305,trx=2482,exit=0,outcome=SUCCESS) | B(conn=307,trx=2483,exit=0,outcome=SUCCESS) | wait_events=DLW=0;2483:LOCK WAIT:307;DLW=1 | final_active=1 | final_rows=49:CANCELLED,50:DRAFT | elapsed_ms=1097
+[PASS] interleave round 10 no double active claim :: active=1, rows=49:CANCELLED,50:DRAFT
+[PASS] interleave round 10 cancel succeeds :: A=SUCCESS
+
+--- Maven regression ---
+Maven command: .\mvnw.cmd -Dtest=Issue19MigrationBatchReuseIntegrationTest,AiConfirmIntegrationTest,AiPrecheckIntegrationTest,Phase03MigrationIntegrationTest test
+Maven exit code: 0
+Maven log tail:
+  	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+  	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+  	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+  	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+  	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+  	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+  	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+  	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+  	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:194)
+  	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:150)
+  	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:124)
+  	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+  	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+  	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+  	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+  [INFO] Tests run: 36, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.53 s -- in com.wjx871.population.migration.Phase03MigrationIntegrationTest
+  [INFO] 
+  [INFO] Results:
+  [INFO] 
+  [INFO] Tests run: 100, Failures: 0, Errors: 0, Skipped: 0
+  [INFO] 
+  [INFO] 
+  [INFO] --- jacoco:0.8.14:report (coverage-report) @ population-miniterm ---
+  [INFO] Skipping JaCoCo execution due to missing execution data file.
+  [INFO] ------------------------------------------------------------------------
+  [INFO] BUILD SUCCESS
+  [INFO] ------------------------------------------------------------------------
+  [INFO] Total time:  01:02 min
+  [INFO] Finished at: 2026-11-09T22:51:43+08:00
+  [INFO] ------------------------------------------------------------------------
+[PASS] Maven regression suite :: exit=0, log=C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue19_46c30189ad\maven-regression.log
+  com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest: tests=13 failures=0 errors=0 skipped=0
+  com.wjx871.population.ai.precheck.AiConfirmIntegrationTest: tests=15 failures=0 errors=0 skipped=0
+  com.wjx871.population.ai.precheck.AiPrecheckIntegrationTest: tests=36 failures=0 errors=0 skipped=0
+  com.wjx871.population.migration.Phase03MigrationIntegrationTest: tests=36 failures=0 errors=0 skipped=0
+Temporary mysqld shutdown: PASS (port 13370 no longer listening)
+
+RESULT: PASS - all checks passed
+================================================================================
+SUPPLEMENTARY: service-layer HTTP suite against the real MySQL 8.4 instance
+================================================================================
+Command: .\mvnw.cmd "-Dtest=TmpIssue19MySql84IT#<14 methods>" -DfailIfNoTests=false surefire:test
+Test target: temporary verifier-owned subclass of Issue19MigrationBatchReuseIntegrationTest,
+compiled only into target/test-classes from %TEMP%; repository test sources were not modified.
+Identity observed by every test: 8.4.8 / port 13371 / 127.0.0.1 / REPEATABLE-READ /
+population_miniterm_mysql_gate_issue19_scratch / i19scratch@127.0.0.1
+Result: Tests run: 14, Failures: 0, Errors: 0, Skipped: 0; BUILD SUCCESS (exit 0).
+Methods: failedDuplicateDraftCreationLeavesNoOrphanApplicationOrDetail,cancelledMigrationRecordAndLogsRemainTraceable,completedMigrationConsumesBatchPermanently,existingStatusOccupancyObservationMatrix,updateDraftReleasesOldBatchAndClaimsNewBatch,batchMismatchIsRejectedOnExecution,cancelRecreateCannotBypassMaterialsApprovalOrExecutePermission,concurrentClaimsAllowOnlyOneActiveDraft,cancelAndCreateInterleavingHasNoDoubleActiveClaim,cancellationListenerFailureRollsBackApplicationAndDetail,repeatedCancelAndNonDraftCancelAreRejected,genericDraftCancellationDoesNotBroadcastToSpecializedListeners,wrongTargetRegionIsRejectedOnMySql,unknownBatchIsRejectedOnMySqlExecution
+Observed HTTP/database behaviour:
+- wrong target region -> HTTP 409 {"message":"TARGET_REGION_MISMATCH"}, no business_application row created.
+- unknown/无效 batch at execution -> HTTP 409 {"message":"迁移批次无效"}, no residence row created.
+- wrong person for completed batch at execution -> HTTP 409 (batchMismatchIsRejectedOnExecution).
+- cancelled draft releases batch and re-created draft succeeds; active draft remains exclusive;
+  completed batch remains permanently consumed; cancellation listener failure rolls back both
+  application and migration detail; repeated/non-draft cancellation rejected.
+- two concurrent HTTP requests and cancel/create interleaving: no double active claim.
+Note: the base test method cancelDraftReleasesBatchAndNewDraftCanBeCreated was excluded from this
+MySQL run only because its diagnostic helper calls H2VERSION() and INFORMATION_SCHEMA.INDEXES
+(H2-only syntax); its cancelled-draft RED and reuse scenario is covered by the SQL gate above.

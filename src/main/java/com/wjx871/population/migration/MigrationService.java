@@ -1,15 +1,42 @@
 package com.wjx871.population.migration;
 
 import com.wjx871.population.application.*; import com.wjx871.population.approval.*; import com.wjx871.population.audit.OperationLogService; import com.wjx871.population.common.BusinessException; import com.wjx871.population.material.*; import com.wjx871.population.person.*; import com.wjx871.population.security.*;
-import jakarta.servlet.http.HttpServletRequest; import java.time.*; import java.time.format.DateTimeFormatter; import java.util.*; import lombok.RequiredArgsConstructor; import org.springframework.data.domain.*; import org.springframework.http.HttpStatus; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional;
+import jakarta.servlet.http.HttpServletRequest; import java.time.*; import java.time.format.DateTimeFormatter; import java.util.*; import lombok.RequiredArgsConstructor; import org.springframework.dao.DataIntegrityViolationException; import org.springframework.data.domain.*; import org.springframework.http.HttpStatus; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional;
 
 @Service @RequiredArgsConstructor
 public class MigrationService {
  private final MigrationMapper mapper; private final ApplicationService applications; private final BusinessApplicationMapper applicationMapper; private final PersonMapper persons; private final MigrationMaterialRequirementService materials; private final ApplicationMaterialMapper materialMapper; private final ApprovalRequestMapper approvalRequests; private final MigrationTransactionHook hook; private final OperationLogService audit; private final ApprovalLogMapper logs;
 
- @Transactional public MigrationCreatedView createIn(MigrationInRequest r,HttpServletRequest http){requirePerson(r.personId());if(mapper.findResidence(r.personId()).isPresent())throw conflict("该人员已存在当前户籍");HouseholdSnapshot h=lockActiveHousehold(r.toHouseholdId());validateTargetRegion(r.toRegionCode(),h.getRegionCode());validateInType(r);ApplicationView a=applications.createSpecialized(appRequest(BusinessType.MIGRATION_IN,r.title(),r.personId(),r.toHouseholdId(),r.reason(),r.remark(),null),http);MigrationIn v=inValue(a.applicationId(),r);mapper.insertIn(v);return new MigrationCreatedView(a.applicationId(),a.applicationNo(),v.getInId(),a.status(),v.getBusinessStatus());}
+ @Transactional public MigrationCreatedView createIn(MigrationInRequest r,HttpServletRequest http){
+  requirePerson(r.personId());
+  if(mapper.findResidence(r.personId()).isPresent())throw conflict("该人员已存在当前户籍");
+  HouseholdSnapshot h=lockActiveHousehold(r.toHouseholdId());
+  validateTargetRegion(r.toRegionCode(),h.getRegionCode());
+  validateInType(r);
+  requireBatchAvailable(r.transferBatchNo(),null);
+  ApplicationView a=applications.createSpecialized(appRequest(BusinessType.MIGRATION_IN,r.title(),r.personId(),r.toHouseholdId(),r.reason(),r.remark(),null),http);
+  MigrationIn v=inValue(a.applicationId(),r);
+  try{mapper.insertIn(v);}catch(DataIntegrityViolationException exception){throw batchConflict(exception);}
+  return new MigrationCreatedView(a.applicationId(),a.applicationNo(),v.getInId(),a.status(),v.getBusinessStatus());
+ }
  @Transactional public MigrationCreatedView createOut(MigrationOutRequest r,HttpServletRequest http){requirePerson(r.personId());Residence residence=mapper.findResidence(r.personId()).orElseThrow(()->conflict("该人员没有当前有效户籍"));HouseholdSnapshot h=requireActiveHousehold(residence.getHouseholdId());validateHead(r,h);ApplicationView a=applications.createSpecialized(appRequest(BusinessType.MIGRATION_OUT,r.title(),r.personId(),h.getHouseholdId(),r.reason(),r.remark(),null),http);MigrationOut v=outValue(a.applicationId(),r,residence);mapper.insertOut(v);return new MigrationCreatedView(a.applicationId(),a.applicationNo(),v.getOutId(),a.status(),v.getBusinessStatus());}
- @Transactional public MigrationCreatedView updateIn(Long id,MigrationInRequest r){BusinessApplication a=applications.require(id);applications.assertOwner(a,CurrentUserContext.requireUser());requireDraft(a);MigrationIn old=mapper.findIn(id).orElseThrow(()->notFound("迁入详情不存在"));if(r.version()==null)throw bad("version 不能为空");requirePerson(r.personId());if(mapper.findResidence(r.personId()).isPresent())throw conflict("该人员已存在当前户籍");HouseholdSnapshot h=lockActiveHousehold(r.toHouseholdId());validateTargetRegion(r.toRegionCode(),h.getRegionCode());validateInType(r);MigrationIn v=inValue(id,r);if(mapper.updateInDraft(v,r.version())==0)ApplicationService.conflict();ApplicationView av=applications.updateSpecialized(id,appRequest(BusinessType.MIGRATION_IN,r.title(),r.personId(),r.toHouseholdId(),r.reason(),r.remark(),a.getVersion()));return new MigrationCreatedView(id,av.applicationNo(),old.getInId(),av.status(),MigrationBusinessStatus.DRAFT);}
+ @Transactional public MigrationCreatedView updateIn(Long id,MigrationInRequest r){
+  BusinessApplication a=applications.require(id);
+  applications.assertOwner(a,CurrentUserContext.requireUser());
+  requireDraft(a);
+  MigrationIn old=mapper.findIn(id).orElseThrow(()->notFound("迁入详情不存在"));
+  if(r.version()==null)throw bad("version 不能为空");
+  requirePerson(r.personId());
+  if(mapper.findResidence(r.personId()).isPresent())throw conflict("该人员已存在当前户籍");
+  HouseholdSnapshot h=lockActiveHousehold(r.toHouseholdId());
+  validateTargetRegion(r.toRegionCode(),h.getRegionCode());
+  validateInType(r);
+  requireBatchAvailable(r.transferBatchNo(),id);
+  MigrationIn v=inValue(id,r);
+  try{if(mapper.updateInDraft(v,r.version())==0)ApplicationService.conflict();}catch(DataIntegrityViolationException exception){throw batchConflict(exception);}
+  ApplicationView av=applications.updateSpecialized(id,appRequest(BusinessType.MIGRATION_IN,r.title(),r.personId(),r.toHouseholdId(),r.reason(),r.remark(),a.getVersion()));
+  return new MigrationCreatedView(id,av.applicationNo(),old.getInId(),av.status(),MigrationBusinessStatus.DRAFT);
+ }
  @Transactional public MigrationCreatedView updateOut(Long id,MigrationOutRequest r){BusinessApplication a=applications.require(id);applications.assertOwner(a,CurrentUserContext.requireUser());requireDraft(a);MigrationOut old=mapper.findOut(id).orElseThrow(()->notFound("迁出详情不存在"));if(r.version()==null)throw bad("version 不能为空");Residence res=mapper.findResidence(r.personId()).orElseThrow(()->conflict("该人员没有当前有效户籍"));HouseholdSnapshot h=requireActiveHousehold(res.getHouseholdId());validateHead(r,h);MigrationOut v=outValue(id,r,res);if(mapper.updateOutDraft(v,r.version())==0)ApplicationService.conflict();ApplicationView av=applications.updateSpecialized(id,appRequest(BusinessType.MIGRATION_OUT,r.title(),r.personId(),h.getHouseholdId(),r.reason(),r.remark(),a.getVersion()));return new MigrationCreatedView(id,av.applicationNo(),old.getOutId(),av.status(),MigrationBusinessStatus.DRAFT);}
 
  @Transactional(readOnly=true) public MigrationDetailView detail(Long id){BusinessApplication a=applications.require(id);assertMigrationScope(a,CurrentUserContext.requireUser());MigrationIn in=mapper.findIn(id).orElse(null);MigrationOut out=mapper.findOut(id).orElse(null);if(in==null&&out==null)throw notFound("迁移详情不存在");Long personId=in!=null?in.getPersonId():out.getPersonId();Residence res=mapper.findResidence(personId).orElse(null);Long householdId=res!=null?res.getHouseholdId():(in!=null?in.getToHouseholdId():out.getFromHouseholdId());HouseholdSnapshot h=mapper.findHousehold(householdId).orElse(null);boolean executable=a.getStatus()==ApplicationStatus.APPROVED&&((in!=null&&in.getBusinessStatus()==MigrationBusinessStatus.APPROVED)||(out!=null&&out.getBusinessStatus()==MigrationBusinessStatus.APPROVED));return new MigrationDetailView(ApplicationView.from(a),in,out,res,h,h==null?List.of():mapper.activeMembers(h.getHouseholdId()),materialMapper.selectByApplicationId(id).stream().map(MaterialView::from).toList(),approvalRequests.selectByApplicationId(id).orElse(null),logs.selectByApplicationId(id).stream().map(ApprovalLogView::from).toList(),executable,executable?null:"申请尚未批准或已执行");}
@@ -86,5 +113,7 @@ private void completeIn(BusinessApplication a,MigrationIn v,Long user){if(mapper
  private MigrationIn inValue(Long id,MigrationInRequest r){MigrationIn v=new MigrationIn();v.setApplicationId(id);v.setPersonId(r.personId());v.setMigrationType(r.migrationType());v.setFromRegionCode(r.fromRegionCode());v.setFromAddress(r.fromAddress());v.setToRegionCode(r.toRegionCode());v.setToHouseholdId(r.toHouseholdId());v.setInDate(r.inDate());v.setReason(r.reason());v.setTransferBatchNo(r.transferBatchNo());v.setBusinessStatus(MigrationBusinessStatus.DRAFT);v.setVersion(0);return v;}
  private MigrationOut outValue(Long id,MigrationOutRequest q,Residence r){MigrationOut v=new MigrationOut();v.setApplicationId(id);v.setPersonId(q.personId());v.setMigrationType(q.migrationType());v.setFromRegionCode(r.getRegionCode());v.setFromHouseholdId(r.getHouseholdId());v.setFromAddressSnapshot(r.getRegisteredAddress());v.setToRegionCode(q.toRegionCode());v.setToAddress(q.toAddress());v.setOutDate(q.outDate());v.setReason(q.reason());v.setNewHeadPersonId(q.newHeadPersonId());v.setBusinessStatus(MigrationBusinessStatus.DRAFT);v.setVersion(0);return v;}
  private String batchNo(){return "TR-"+LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)+"-"+UUID.randomUUID().toString().substring(0,6).toUpperCase();}
+ private void requireBatchAvailable(String batchNo,Long excludeApplicationId){if(batchNo==null||batchNo.isBlank())return;if(mapper.countActiveInBatch(batchNo,excludeApplicationId)>0)throw conflict("迁移批次已被占用，请使用未使用的合法批次");}
+ private BusinessException batchConflict(DataIntegrityViolationException exception){String cause=String.valueOf(exception.getMostSpecificCause().getMessage());if(cause.contains("uk_migration_in_active_batch")||cause.contains("transfer_batch_no")||cause.contains("CONSTRAINT_INDEX_"))return conflict("迁移批次已被占用，请使用未使用的合法批次");return conflict("迁移申请数据冲突，请刷新后重试");}
  private BusinessException conflict(String m){return new BusinessException(HttpStatus.CONFLICT,m);}private BusinessException bad(String m){return new BusinessException(HttpStatus.BAD_REQUEST,m);}private BusinessException notFound(String m){return new BusinessException(HttpStatus.NOT_FOUND,m);}
 }

@@ -12,6 +12,7 @@ import com.wjx871.population.security.DataScope;
 import com.wjx871.population.security.DataScopeCriteria;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,6 +31,7 @@ public class ApplicationService {
     private final ApprovalLogMapper approvalLogMapper;
     private final OperationLogService audit;
     private final SpecializedBusinessTypeRegistry specializedTypes;
+    private final List<ApplicationDraftCancellationListener> draftCancellationListeners;
 
     @Transactional
     public ApplicationView create(ApplicationRequest request, HttpServletRequest httpRequest) {
@@ -107,6 +109,13 @@ public class ApplicationService {
         AuthenticatedUser user = CurrentUserContext.requireUser();
         approvalLogMapper.insert(ApprovalLog.of(null, id, ApprovalAction.CANCEL, ApplicationStatus.DRAFT.name(),
                 ApplicationStatus.CANCELLED.name(), user.userId(), null, audit.clientIp(request)));
+        // Opt-in only: never broadcast CANCELLED to every ApplicationStatusListener. Specialized
+        // enums such as CancellationStatus/Floating/Export/KeyPopulation do not define CANCELLED.
+        for (ApplicationDraftCancellationListener listener : draftCancellationListeners) {
+            if (listener.supports(value.getBusinessType())) {
+                listener.onDraftCancelled(value);
+            }
+        }
     }
 
     /**

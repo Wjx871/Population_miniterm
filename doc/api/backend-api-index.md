@@ -8,7 +8,7 @@
 | 用户、角色、权限 | 当前用户信息及初始化 RBAC；V1 无在线管理 CRUD | [auth-rbac-api.md](auth-rbac-api.md) |
 | 人口 | `/api/persons` | [household-master-data-api.md](household-master-data-api.md) |
 | 家庭户、成员、户主 | `/api/households` | [household-master-data-api.md](household-master-data-api.md) |
-| 户籍、迁移、归档 | `/api/migrations`,`/api/residence-archives` | [household-migration-api.md](household-migration-api.md) |
+| 户籍、迁移、归档 | `/api/migrations`,`/api/residence-archives`；迁移草稿取消走 `DELETE /api/applications/{id}`（同事务释放 `CANCELLED` 迁入批次，原批次号保留；已完成批次不可复用；批次冲突 409） | [household-migration-api.md](household-migration-api.md) |
 | 注销 | `/api/cancellations`,`/api/household-archives` | [cancellation-management-api.md](cancellation-management-api.md) |
 | 流动人口、居住证 | `/api/floating-registrations`,`/api/residence-permits` | [floating-residence-permit-api.md](floating-residence-permit-api.md) |
 | 行政区划 | `/api/admin-regions` | [admin-region-api.md](admin-region-api.md) |

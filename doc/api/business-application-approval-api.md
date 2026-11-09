@@ -14,7 +14,7 @@
 | GET | `/api/applications` | `application:view` | 按编号、类型、状态、申请人、日期分页查询 |
 | GET | `/api/applications/{id}` | `application:view` | 范围内详情 |
 | PUT | `/api/applications/{id}` | `application:edit` | 仅 DRAFT，必须传 version |
-| DELETE | `/api/applications/{id}` | `application:edit` | 将本人 DRAFT 软取消为 CANCELLED |
+| DELETE | `/api/applications/{id}` | `application:edit` | 将本人 DRAFT 软取消为 CANCELLED；迁移类申请同事务同步 `migration_in`/`migration_out` 明细为 `CANCELLED` 并释放批次（详见 [household-migration-api.md](household-migration-api.md)） |
 | POST | `/api/applications/{id}/submit` | `application:submit` | 转 UNDER_REVIEW 并创建 PENDING 审批 |
 | POST | `/api/applications/{id}/withdraw` | `application:withdraw` | 撤回未处理审批 |
 | GET | `/api/applications/{id}/approval-logs` | 申请或审批查看 | 完整只读轨迹 |

@@ -1,0 +1,409 @@
+================================================================================
+#19 H2 GREEN 证据（t5 独立验证：H2 动态验证 + 全量 Maven 回归）
+================================================================================
+
+生成时间：2026-11-09 22:44:00 +08:00（Asia/Shanghai）
+验证角色：verifier（qa-verifier，独立于实现者；本轮未修改任何生产代码、测试、迁移或 schema）
+施工基线：integration/20261101-backend-p0-security @ 1f3f4427775f55b853a7b42d2cb759b4cdfa7411
+施工分支：fix/20261108-issue19-migration-batch-reuse
+隔离 worktree：D:\学习用\大二下\小学期-issue19-migration-batch-reuse
+工作区 HEAD：1f3f4427775f55b853a7b42d2cb759b4cdfa7411（t4 实现尚未提交，工作区改动见 §1；本任务不负责提交）
+测试环境：@SpringBootTest + @AutoConfigureMockMvc + 真实 JWT 登录 + 真实 Service/MyBatis + H2 2.3.232
+          （jdbc:h2:mem:issue19_migration_batch_reuse;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE）
+JDK：Java 21.0.7（Oracle）；Maven：Apache Maven 3.9.16；Spring Boot：3.5.3；H2：2.3.232
+本任务唯一允许写入的文件：doc/development/evidence/issue19-h2-green.txt（本文件）
+
+================================================================================
+1. 边界复核（静态源码 / Git 检查）
+================================================================================
+
+1.1 `git status --porcelain=v1 -b`（本轮复核时）：
+    ## fix/20261108-issue19-migration-batch-reuse
+     M doc/database/check_backend_v1.sql
+     M doc/database/population_miniterm.sql
+     M src/main/java/com/wjx871/population/ai/precheck/AiResolutionService.java
+     M src/main/java/com/wjx871/population/application/ApplicationService.java
+     M src/main/java/com/wjx871/population/application/ApplicationStatusListener.java
+     M src/main/java/com/wjx871/population/migration/MigrationBusinessStatus.java
+     M src/main/java/com/wjx871/population/migration/MigrationMapper.java
+     M src/main/java/com/wjx871/population/migration/MigrationService.java
+     M src/main/java/com/wjx871/population/migration/MigrationStatusListener.java
+     M src/main/resources/mapper/MigrationMapper.xml
+     M src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java
+     M src/test/resources/schema.sql
+    ?? doc/database/migrations/V4_019_migration_batch_reuse.sql
+    ?? doc/development/evidence/issue19-h2-green.txt          （本任务唯一新增文件）
+    ?? doc/development/evidence/issue19-mysql84-schema.txt    （t6 并发产物，非本任务修改）
+    ?? doc/development/evidence/issue19-mysql84.txt           （t6 并发产物，非本任务修改）
+    ?? doc/development/evidence/issue19-red-h2.txt
+    ?? doc/development/issue19-migration-batch-reuse.md
+    ?? scripts/windows/tests/issue19-mysql84-gate.ps1         （#19 MySQL 8.4 gate 辅助脚本，t6 任务产物，非本任务修改）
+    ?? src/main/java/com/wjx871/population/application/ApplicationDraftCancellationListener.java
+    ?? src/test/java/com/wjx871/population/migration/Issue19MigrationBatchReuseIntegrationTest.java
+    ?? src/test/java/com/wjx871/population/migration/Issue19MySql84IT.java
+    注：本轮复核期间，t6 MySQL gate 任务在同一 worktree 并发产出
+    doc/development/evidence/issue19-mysql84.txt 与 issue19-mysql84-schema.txt（属 #19 MySQL 8.4 验证产物，
+    非本任务修改）；本任务唯一新增/修改文件为 doc/development/evidence/issue19-h2-green.txt。
+
+1.2 `git diff --stat`（已跟踪文件）：12 files changed, 134 insertions(+), 11 deletions(-)
+1.3 `git diff --check`：exit code 0（无空白/冲突标记问题；仅有 MigrationStatusListener.java 的
+    LF→CRLF 行尾提示 warning，属于 Git 配置提示，不是错误，也不是本任务引入）。
+1.4 边界结论：全部变更均属于 #19 范围——
+    - 生产源码/接口：ApplicationDraftCancellationListener（新增）、ApplicationService、
+      ApplicationStatusListener、MigrationBusinessStatus、MigrationMapper、MigrationService、
+      MigrationStatusListener、AiResolutionService（AI 预检一致性）；
+    - MyBatis：src/main/resources/mapper/MigrationMapper.xml；
+    - 数据库：doc/database/migrations/V4_019_migration_batch_reuse.sql（新增）、
+      doc/database/population_miniterm.sql（新装基线）、doc/database/check_backend_v1.sql（结构/一致性检查）；
+    - H2 测试 schema：src/test/resources/schema.sql；
+    - #19 测试：Issue19MigrationBatchReuseIntegrationTest（新增）、AiConfirmIntegrationTest（新增 #19 场景）、
+      Issue19MySql84IT（新增 MySQL 8.4 gate，*IT 默认不进 mvn test）。
+    - 文档：doc/development/issue19-migration-batch-reuse.md（t2 设计）、
+      doc/development/evidence/issue19-red-h2.txt（t3 RED）；
+    - MySQL 8.4 gate 辅助脚本：scripts/windows/tests/issue19-mysql84-gate.ps1（t6 任务新增，
+      用于隔离 MySQL 8.4 实例验证；不属于生产实现，本任务未修改/执行）。
+    未发现 .env/.log/.tmp/.bak/.orig/.rej/target 等临时或敏感文件进入 git status；未执行 git add/commit/push。
+1.5 敏感信息扫描：对 V4_019、t2 文档、RED 证据、ApplicationDraftCancellationListener、Issue19 测试、
+    Issue19MySql84IT 扫描 password/secret/token/private key/AKIA 模式，结果全部 CLEAN（无明文凭据）。
+1.6 生产实现改动边界复核结论：PASS。
+
+================================================================================
+2. 执行命令、exit code 与 Surefire 汇总（H2 动态验证）
+================================================================================
+
+2.1 专项 H2：Issue19MigrationBatchReuseIntegrationTest
+
+    命令（工作目录 = worktree 根）：
+        .\mvnw.cmd -Dtest=Issue19MigrationBatchReuseIntegrationTest test
+    exit code：0（BUILD SUCCESS）
+    Surefire：
+        Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 19.38 s
+        -- in com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest
+    Maven 总耗时：44.848 s（Finished at: 2026-11-09T22:32:52+08:00）
+    原始日志：target\verify2-issue19-focused.log
+    Surefire XML：target\surefire-reports\TEST-com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest.xml
+    测试方法清单（13 个）：cancelDraftReleasesBatchAndNewDraftCanBeCreated、
+    failedDuplicateDraftCreationLeavesNoOrphanApplicationOrDetail、cancelledMigrationRecordAndLogsRemainTraceable、
+    completedMigrationConsumesBatchPermanently、existingStatusOccupancyObservationMatrix、
+    updateDraftReleasesOldBatchAndClaimsNewBatch、batchMismatchIsRejectedOnExecution、
+    cancelRecreateCannotBypassMaterialsApprovalOrExecutePermission、concurrentClaimsAllowOnlyOneActiveDraft、
+    cancelAndCreateInterleavingHasNoDoubleActiveClaim、cancellationListenerFailureRollsBackApplicationAndDetail、
+    repeatedCancelAndNonDraftCancelAreRejected、genericDraftCancellationDoesNotBroadcastToSpecializedListeners。
+
+2.2 专项 H2：Phase03MigrationIntegrationTest + Issue33CrossDistrictCharacterizationIntegrationTest
+
+    命令：
+        .\mvnw.cmd -Dtest=Phase03MigrationIntegrationTest,Issue33CrossDistrictCharacterizationIntegrationTest test
+    exit code：0（BUILD SUCCESS）
+    Surefire：
+        Phase03MigrationIntegrationTest: Tests run: 36, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 19.02 s
+        Issue33CrossDistrictCharacterizationIntegrationTest: Tests run: 6, Failures: 0, Errors: 0, Skipped: 0,
+            Time elapsed: 16.48 s
+        Results（合并）: Tests run: 42, Failures: 0, Errors: 0, Skipped: 0
+    Maven 总耗时：01:01 min（Finished at: 2026-11-09T22:34:36+08:00）
+    原始日志：target\verify2-phase03-issue33.log
+
+2.3 专项 H2（K 矩阵）：AiConfirmIntegrationTest + AiPrecheckIntegrationTest
+
+    命令：
+        .\mvnw.cmd -Dtest=AiConfirmIntegrationTest,AiPrecheckIntegrationTest test
+    exit code：0（BUILD SUCCESS）
+    Surefire：
+        AiConfirmIntegrationTest: Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 20.11 s
+        AiPrecheckIntegrationTest: Tests run: 36, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.21 s
+        Results: Tests run: 51, Failures: 0, Errors: 0, Skipped: 0
+    Maven 总耗时：59.086 s（Finished at: 2026-11-09T22:35:56+08:00）
+    原始日志：target\verify2-ai-tests.log
+    #19 新增 AI 场景实测输出：
+        ISSUE19_AI_REUSE_FIRST warnings=[] confirmable=true
+        ISSUE19_AI_REUSE_SECOND warnings=[] confirmable=true
+        （即：取消后的批次在 AI 预检中不再因 CANCELLED 行被判为 TRANSFER_BATCH_INVALID_OR_USED，
+          第二次 AI 确认建草稿成功 — cancelledTransferBatchCanBeReusedThroughAiPrecheckAndConfirmation）
+
+2.4 G/H 并发专项（10 轮循环，真实 Spring MVC HTTP 链路 + 独立事务）
+
+    循环命令（每轮）：
+        .\mvnw.cmd surefire:test "-Dtest=Issue19MigrationBatchReuseIntegrationTest#concurrentClaimsAllowOnlyOneActiveDraft+cancelAndCreateInterleavingHasNoDoubleActiveClaim"
+    结果：ROUND=1..10 全部 EXIT=0（ALL_ROUNDS_OK=True）
+      - G（concurrentClaimsAllowOnlyOneActiveDraft）10/10 轮：
+          每轮恰好一个 201、一个 409；statuses 依次为
+          [409,201], [409,201], [409,201], [201,409], [409,201],
+          [409,201], [409,201], [409,201], [409,201], [409,201]
+          每轮后断言 `migration_in WHERE transfer_batch_no=? AND business_status<>'CANCELLED'` 计数=1。
+      - H（cancelAndCreateInterleavingHasNoDoubleActiveClaim）10 次执行 × 每次内部 2 轮 = 20 轮：
+          每轮 cancelHttp=200；createHttp ∈ {201,409}；最终活动占用 = createStatus==201 ? 1 : 0，
+          未出现双重有效占用。逐轮输出见 target\verify2-concurrency-g-h.log。
+    原始日志：target\verify2-concurrency-g-h.log（含所有 ROUND/Tests run/BUILD SUCCESS 行）
+
+2.5 完整回归：.\mvnw.cmd test
+
+    命令：
+        .\mvnw.cmd test
+    执行前动作：清空 target\surefire-reports，确保下列统计仅来自本轮（不引用任何历史数字）。
+    exit code：0
+    Maven 结果：BUILD SUCCESS；Total time: 03:12 min；Finished at: 2026-11-09T22:42:39+08:00
+    Surefire XML 逐项统计（本轮 target/surefire-reports/TEST-*.xml，77 个文件）：
+        XML 文件数：77
+        tests：913
+        failures：0
+        errors：0
+        skipped：3
+    逐文件统计明细：target\verify2-surefire-summary.txt
+    本轮 77 个 XML 的原始备份：target\verify2-surefire-reports\（防止共享 worktree 并发任务覆盖/删除）
+    原始完整 Maven 日志：target\verify2-full-test.log
+    环境说明（同一 worktree 并发任务）：本轮全量运行结束后（22:43），t6 MySQL gate 在同一 worktree 以
+    `-Dtest=TmpIssue19MySql84IT surefire:test` 并发跑了临时类，向共享 target/surefire-reports 写入了
+    TEST-com.wjx871.population.migration.TmpIssue19MySql84IT.xml（13 tests / 12 errors，属该临时 MySQL
+    探针缺少环境导致，与本轮 Maven 全量无关）。本报告统计严格限定为 22:40–22:42 生成的 77 个本轮
+    报告文件，与 Maven 官方 Results: "Tests run: 913, Failures: 0, Errors: 0, Skipped: 3" 完全一致；
+    Tmp 临时报告已在 target\verify2-surefire-summary.txt 的 "Foreign concurrent report(s)" 节单独列出，
+    未计入 913。
+
+================================================================================
+3. H2 唯一约束 / 生成列核对（information_schema 等价查询）
+================================================================================
+
+3.1 实际集成测试库（测试内 JdbcTemplate 对 INFORMATION_SCHEMA 查询，Surefire system-out 原文）：
+    ISSUE19_H2_VERSION=2.3.232
+    migration_in 列包含：
+      active_transfer_batch_no | character varying | 40 | IS_NULLABLE=YES
+      transfer_batch_no        | character varying | 40 | IS_NULLABLE=YES
+    索引（INFORMATION_SCHEMA.INDEXES / INDEX_COLUMNS）：
+      uk_migration_in_active_batch | UNIQUE INDEX | active_transfer_batch_no | ordinal=1 | is_unique=true
+      旧全局唯一索引 uk_migration_in_batch 已不存在；
+      CONSTRAINT_INDEX_B6 已变为普通 INDEX（person_id，is_unique=false）；
+      CONSTRAINT_INDEX_B（application_id）、PRIMARY_KEY_B6（in_id）、idx_migration_in_query 保持原语义。
+    （完整原文见 target\verify2-issue19-focused.log 中 ISSUE19_H2_MIGRATION_IN_* 行）
+
+3.2 独立 H2 Shell 复核（把 src/test/resources/schema.sql 原样加载到 H2 2.3.232 file DB，
+    MODE=MySQL;DATABASE_TO_LOWER=TRUE，单独进程查询/插入，排除测试框架影响）：
+    - Q1 migration_in 索引：
+        index_name                   | index_type_name | column_name              | ordinal_position | is_unique
+        CONSTRAINT_INDEX_B           | UNIQUE INDEX    | application_id           | 1                | TRUE
+        CONSTRAINT_INDEX_B6          | INDEX           | person_id                | 1                | FALSE
+        CONSTRAINT_INDEX_B69         | INDEX           | to_household_id          | 1                | FALSE
+        PRIMARY_KEY_B6               | PRIMARY KEY     | in_id                    | 1                | TRUE
+        idx_migration_in_query       | INDEX           | in_date                  | 1                | FALSE
+        idx_migration_in_query       | INDEX           | business_status          | 2                | FALSE
+        idx_migration_in_query       | INDEX           | migration_type           | 3                | FALSE
+        idx_migration_in_query       | INDEX           | person_id                | 4                | FALSE
+        uk_migration_in_active_batch | UNIQUE INDEX    | active_transfer_batch_no | 1                | TRUE
+    - Q2 生成列定义：
+        column_name              | is_generated | generation_expression
+        active_transfer_batch_no | ALWAYS       | CASE WHEN "business_status" = 'CANCELLED' THEN NULL ELSE "transfer_batch_no" END
+    - Q3 语义插入（REFERENTIAL_INTEGRITY 临时关闭以隔离唯一约束）：
+        同一批次 PROBE-BATCH-3 插入 2 条 CANCELLED + 1 条 DRAFT 均成功：
+          application_id | business_status | transfer_batch_no | active_transfer_batch_no
+          92001          | CANCELLED       | PROBE-BATCH-3     | null
+          92002          | CANCELLED       | PROBE-BATCH-3     | null
+          92003          | DRAFT           | PROBE-BATCH-3     | PROBE-BATCH-3
+    - Q4 再插入第 2 条非 CANCELLED 同批次行（预期唯一冲突，实测）：
+        Error: org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException:
+        Unique index or primary key violation:
+        "public.uk_migration_in_active_batch ON public.migration_in(active_transfer_batch_no NULLS FIRST)
+         VALUES ( /* 3 */ 'PROBE-BATCH-3' )"; SQL statement: INSERT INTO migration_in ... [23505-232]
+    - Q5 最终计数：total_rows=3，active_rows=1。
+    - 结论：未取消行（DRAFT/UNDER_REVIEW/APPROVED/COMPLETED/REJECTED/WITHDRAWN/RETURNED）在
+      active_transfer_batch_no 上保持唯一，CANCELLED 行映射为 NULL 可重复引用同一历史批次；
+      H2 唯一索引 nulls_distinct=YES，允许多个 NULL，与 MySQL 唯一索引允许多个 NULL 的语义一致。
+    原始查询输出：target\verify2-h2-index.txt（本文件 §3.2 为其摘录）
+
+3.3 与 MySQL 8.4 的语法差异（静态说明，MySQL 侧由 t6 复核）：
+    - MySQL 8.4：`VARCHAR(40) GENERATED ALWAYS AS (CASE WHEN business_status='CANCELLED' THEN NULL ELSE transfer_batch_no END) STORED`
+      + `UNIQUE INDEX uk_migration_in_active_batch(active_transfer_batch_no)`；生成列持久化后同样可建唯一索引，
+      唯一索引允许多个 NULL。
+    - H2 2.3.232：不接受 `STORED` 关键字，`src/test/resources/schema.sql` 使用等价计算列（无 STORED），
+      CASE 表达式与 MySQL 完全一致，语义等价。该差异已在 t2 §7/§12 记录，不构成 H2 GREEN 的阻断。
+
+================================================================================
+4. A-L 验收矩阵逐项证据（H2 动态）
+================================================================================
+
+以下均为 H2 2.3.232 + Spring MVC/JWT/Service/MyBatis 真实链路的实际执行结果；
+“PASS”只对应 H2 部分。MySQL 8.4 专属部分见 §6（本文件不冒充）。
+
+[A] 取消后复用
+    证据：cancelDraftReleasesBatchAndNewDraftCanBeCreated（13 专项之一，GREEN 通过）
+      - HTTP 创建已完成同市跨区迁出（真实 out 执行链）→ batch=TR-2026...
+      - POST /api/migrations/in/applications 创建 A → HTTP 201；A snapshot：business_application.status=DRAFT，
+        migration_in={business_status=DRAFT, transfer_batch_no=原批次, version=0}
+      - DELETE /api/applications/{A} → HTTP 200；A snapshot：business_application.status=CANCELLED，
+        migration_in={business_status=CANCELLED, transfer_batch_no=原批次（未改）, version=1}；
+        sys_approval_log 含 CREATE(DRAFT) + CANCEL(DRAFT→CANCELLED)
+      - 用同一 transferBatchNo 创建 B → HTTP 201；B 状态 DRAFT；数据库中该批次 migration_in 行数=2（A/B 共存）
+    结论：PASS。
+
+[B] 未取消草稿独占（DRAFT/UNDER_REVIEW/APPROVED 等）
+    证据：
+      - existingStatusOccupancyObservationMatrix：对 DRAFT、UNDER_REVIEW、APPROVED、REJECTED、WITHDRAWN、RETURNED
+        六种状态，每种先创建/推进到该状态，再用同批次创建第二条：
+        输出 `ISSUE19_RED_STATUS_OCCUPANCY status=<state> ... secondHttp=409`，六种状态全部 409，
+        migration_in 中该批次始终只有 1 行（继续占用；仅 CANCELLED 释放）。
+      - updateDraftReleasesOldBatchAndClaimsNewBatch：编辑 DRAFT 从 oldBatch→newBatch：
+        `ISSUE19_EDIT_BATCH ... reuseOldHttp=201 reuseNewHttp=409`（旧批次释放可复用，新批次被占用）。
+      - failedDuplicateDraftCreationLeavesNoOrphanApplicationOrDetail：重复创建返回 409（消息含“迁移批次”），
+        business_application/migration_in 计数均未增加（无孤儿/半行）。
+    结论：PASS。
+
+[C] 已完成不可重复消费
+    证据：completedMigrationConsumesBatchPermanently
+      - 迁入走完 submit/approve/execute → migration_in.business_status=COMPLETED；
+        `ISSUE19_RED_COMPLETED_IN=...business_status=COMPLETED...`
+      - 同批次再次创建 → `ISSUE19_RED_COMPLETED_BATCH_REUSE_HTTP status=409`；
+        migration_in 中该批次 exactly 1 条 COMPLETED；PERSON_IN 无 business_application 行。
+    结论：PASS。
+
+[D] 历史与日志保留
+    证据：cancelledMigrationRecordAndLogsRemainTraceable
+      - 取消后 business_application.status=CANCELLED、migration_in.business_status=CANCELLED、
+        transfer_batch_no 保持原值（未删除/未置空）；
+      - sys_approval_log：action=CANCEL, from_status=DRAFT, to_status=CANCELLED 计数=1；
+      - GET /api/migrations/applications/{id} 返回 application.status=CANCELLED、
+        migrationIn.businessStatus=CANCELLED、migrationIn.transferBatchNo=原批次。
+      - 观察：取消动作的 operation_log 记录为空（ISSUE19_RED_CANCEL_OPERATION_LOGS=[]）；这是基线既有行为
+        （t3 RED 快照同样为空），#19 未删除任何既有操作日志，故不属于本修复回归；不阻断 H2 验收。
+    MySQL 专属部分（V4_019 存量 CANCELLED+DRAFT 回填、备份表、非目标行快照）本任务未执行 → 见 §6。
+    结论：H2 部分 PASS；MySQL 历史升级部分 NOT EXECUTED（由 t6/DBA 负责）。
+
+[E] 错误人员 / 目标区划 / 批次拒绝
+    证据：
+      - Issue19 `batchMismatchIsRejectedOnExecution`：已完成迁出批次绑定错误人员执行 → HTTP 409
+        (“迁移批次不匹配该人员”)，status 仍 APPROVED，residence 无写入。
+      - Phase03 `targetRegionMismatchIsRejectedOnCreateUpdateAndExecute`（专项 36 通过之一）：
+        创建/编辑/执行目标区划不匹配均 409 TARGET_REGION_MISMATCH，无 residence/person 副作用。
+      - Issue33 `completedBatchRejectsMismatchedTargetAtExecutionWithoutPartialWrites`、
+        `completedBatchRejectsMismatchedPersonAtExecutionWithoutPartialWrites`（专项 6 通过之二）：
+        完成批次目标区划/人员不匹配均在执行阶段 409 且无 partial write。
+    结论：PASS。
+
+[F] 取消不能绕过材料核验/审批/执行权限
+    证据：cancelRecreateCannotBypassMaterialsApprovalOrExecutePermission
+      - 取消 A 后创建 B（201）；B 未提交直接 execute → 409；
+      - B 缺必需材料 submit → 409（消息列出 IDENTITY_PROOF）；
+      - viewer（无 migration:execute 权限）execute → 403；
+      - B 最终仍为 DRAFT；PERSON_OUT 无 residence 写入。
+    结论：PASS。
+
+[G] 双请求并发最多一个成功（至少 10 轮）
+    证据：
+      - 专项类全量执行中 concurrentClaimsAllowOnlyOneActiveDraft 通过（1 轮：statuses=[409,201]）；
+      - 额外 10 轮 surefire 循环（§2.4）：每轮两并发 HTTP 创建同批次，结果均恰好 {201,409}，
+        10/10 轮 EXIT=0；每轮 DB 活动占用行数=1；无 500/未处理死锁。
+    环境说明：H2 sanity 已覆盖 10 轮（超过设计要求的 1 轮）；MySQL 8.4 REPEATABLE READ 的 10 轮由 t6 执行。
+    结论：PASS（H2）。
+
+[H] 取消与新建交错无双重有效占用（至少 10 轮）
+    证据：cancelAndCreateInterleavingHasNoDoubleActiveClaim
+      - 每次执行内部 2 轮；本次共 10 次执行 = 20 轮交错（§2.4）；
+      - 每轮 cancelHttp=200；createHttp 为 201 或 409；代码断言最终活动占用 = createStatus==201 ? 1 : 0；
+      - 逐轮输出 target\verify2-concurrency-g-h.log；无双重有效占用、无 500。
+    结论：PASS（H2）。
+
+[I] 事务中途失败共同回滚（真实故障注入）
+    证据：cancellationListenerFailureRollsBackApplicationAndDetail
+      - 测试配置注入 ApplicationDraftCancellationListener：标题含 ISSUE19_CANCEL_FAIL 时抛
+        IllegalStateException("simulated draft cancellation listener failure")；
+      - DELETE /api/applications/{draft} → HTTP 500（GlobalExceptionHandler 记录真实异常栈，
+        由 ApplicationService.cancelDraft 同一 @Transactional 传播）；
+      - 回滚后实测：business_application.status=DRAFT、migration_in.business_status=DRAFT、
+        transfer_batch_no=原批次、sys_approval_log 中 CANCEL 记录数=0（CREATE 记录保留），
+        即应用状态与明细同事务整体回滚，批次未被释放。
+      - 该故障发生在真实事务边界（listener 在 ApplicationService.cancelDraft 事务内被调用），
+        不是 mock 断言分支。
+    结论：PASS。
+
+[J] 版本冲突 / 重复取消 / 非 DRAFT 取消不回归
+    证据：
+      - Issue19 `repeatedCancelAndNonDraftCancelAreRejected`：
+        第一次 DELETE → 200；第二次 DELETE → 409（“只有草稿可执行该操作”）；
+        UNDER_REVIEW 状态 DELETE → 409，状态仍 UNDER_REVIEW，迁移明细仍 UNDER_REVIEW，
+        同批次活动占用行数=1。
+      - Phase03 `staleOutVersionDoesNotChangeHouseholdOrMemberRows`：错误版本执行迁出 → 409，
+        household/head/member/residence_archive 均无变化。
+      - Phase03 `householdVersionConflictDuringFinalOutRollsBackResidenceMemberArchiveAndApplications`：
+        版本冲突整体回滚（36/36 通过）。
+    结论：PASS（版本冲突用既有 Phase03 回归覆盖；#19 未改变版本语义）。
+
+[K] 人工与 AI 辅助建草稿入口不回归 + 取消批次经 AI 预检可复用
+    证据：
+      - 人工入口：Issue19 全类的创建/取消/编辑/提交/审批/执行链路均走 POST /api/migrations/in/applications
+        与 /api/migrations/out/applications，13/13 通过；
+      - AI 入口：AiConfirmIntegrationTest 15/15、AiPrecheckIntegrationTest 36/36 通过（§2.3）；
+        其中 #19 新增 cancelledTransferBatchCanBeReusedThroughAiPrecheckAndConfirmation 实测：
+        FIRST/SECOND 两次预检 warnings=[]、confirmable=true，取消后同一批次第二次 AI 确认建草稿成功；
+        说明 AiResolutionService 的 countAnyInBatch / validateTransferBatchForConfirmation 已排除 CANCELLED 行。
+    结论：PASS。
+
+[L] 既有迁入迁出 / 归档测试通过
+    证据：
+      - Phase03MigrationIntegrationTest 36/36 通过（含 `executeOutArchivesSnapshotRemovesCurrentResidenceAndChangesHead`、
+        `archiveDetailsAndListRespectDepartmentAndTreeRegionScopes`、`archiveIdentityIsMaskedForReadOnlyArchiveViewer`、
+        `failureAfterArchiveRollsBackEveryWrite` 等归档回归）；
+      - Issue33CrossDistrictCharacterizationIntegrationTest 6/6 通过；
+      - 完整 .\mvnw.cmd test 全量回归见 §2.5（本轮真实统计）。
+    结论：PASS。
+
+================================================================================
+5. 失败场景 / 预期异常说明（不是未处理失败）
+================================================================================
+
+5.1 预期 409（业务拒绝，非缺陷）：
+    - 同批次重复创建：{"code":409,"message":"迁移批次已被占用，请使用未使用的合法批次",...}
+      （MigrationService.batchConflict 将 DuplicateKey/DataIntegrity 映射为该文案，HTTP 状态 409）；
+    - 已完成批次再次创建、错误人员批次执行、缺材料提交、未提交执行、重复取消、非 DRAFT 取消：
+      均为测试断言期望的 409。
+5.2 预期 403：viewer 无执行权限执行迁移 → 403（Spring Security 真实权限链）。
+5.3 预期 500（故障注入场景 I）：ApplicationDraftCancellationListener 抛 IllegalStateException，
+    GlobalExceptionHandler 记录 "Unhandled request exception" 并返回 500；这是有意注入的事务回滚验证，
+    回滚后状态已在 §4[I] 核实。测试通过。
+5.4 预期 H2 23505：§3.2 Q4 直接 SQL 插入第二条同批次 DRAFT 触发
+    `JdbcSQLIntegrityConstraintViolationException [23505-232]`，证明唯一约束真实生效；HTTP 路径已由
+    batchConflict 映射为 409（无 500 泄漏）。
+5.5 观察（非阻断）：GREEN 测试的辅助诊断 printDuplicateConstraintDiagnostic 在取消后直接插入 DRAFT 时
+    输出 `ISSUE19_DIRECT_DUPLICATE unexpected-success`。该输出是 RED 期诊断方法的旧标签；GREEN 下
+    取消行释放后同批次 DRAFT 直接插入本来就应成功，不属于断言失败，也不影响任何测试结论。
+5.6 本轮专项/全量运行中无 unexpected failure/error/skip（除全量汇总中的预期 skipped，见 §2.5）。
+
+================================================================================
+6. 未执行的 MySQL / 环境场景与阻断条件（不得冒充）
+================================================================================
+
+6.1 MySQL 8.4 真实网关（Issue19MySql84IT）：本任务未执行。
+    阻断条件：
+      - 需要独立 MySQL 8.4 实例（非 3306 端口、127.0.0.1、独立 schema、非 root 应用账号、
+        REPEATABLE READ、createDatabaseIfNotExist=false）；
+      - 需要环境变量 MYSQL84_GATE_DB_URL / MYSQL84_GATE_DB_USERNAME / MYSQL84_GATE_DB_PASSWORD /
+        MYSQL84_GATE_ADMIN_USERNAME / MYSQL84_GATE_ADMIN_PASSWORD；
+      - 当前 t5 环境未提供上述实例/凭据，且 Issue19MySql84IT 为 *IT，默认 Maven Surefire 不执行；
+      - 该部分由 t6（DBA）任务负责，见 doc/development/evidence/issue19-mysql84.txt / issue19-mysql84-schema.txt。
+6.2 V4_019 迁移脚本在真实 MySQL 8.4 上的实际应用、存量 CANCELLED+DRAFT 统计/备份/回填/失败回滚：
+    本任务未执行（仅从静态上核对脚本内容与 H2 等价 schema）；阻断条件同 6.1（无 MySQL 8.4 隔离库）。
+6.3 MySQL SHOW INDEX / information_schema.statistics 的原始输出：本任务未执行；本文件 §3 仅为 H2 的
+    information_schema/字段生成表达式输出，不能替代 MySQL 结构证据。
+6.4 真实网络端口 HTTP：本仓库 H2 集成测试采用 @SpringBootTest + MockMvc 的进程内完整 Spring MVC/Security/JWT
+    链路（非外部监听端口）。本文件不将其表述为跨进程网络压力测试；G/H 的 MySQL 真实连接并发由 t6 验证。
+6.5 生产历史数据规模/实际升级窗口：无生产库权限，未执行，不评估生产数量影响。
+6.6 前端展示/其他审计问题（#33 等）：本轮仅 #19，未触碰 #33；相关场景不在本文件范围。
+
+================================================================================
+7. 结论
+================================================================================
+
+7.1 边界：实现改动全部落在 #19 的源码/Mapper/AI 预检/V4_019/新装基线/H2 schema/#19 测试与文档范围内，
+    git diff --check 通过；验证者未修改生产代码、测试、迁移或 schema，仅新增本证据文件。
+7.2 H2 GREEN：
+    - Issue19MigrationBatchReuseIntegrationTest：13/13 通过（0 failures/errors/skipped，exit 0）；
+    - Phase03MigrationIntegrationTest 36/36、Issue33CrossDistrictCharacterizationIntegrationTest 6/6 通过；
+    - AiConfirmIntegrationTest 15/15、AiPrecheckIntegrationTest 36/36 通过；
+    - G 10 轮 / H 20 轮并发全部符合“最多一个有效占用”，无 500/死锁；
+    - 完整 .\mvnw.cmd test 见 §2.5，exit 0，Surefire XML 统计为本轮真实数字；
+    - H2 information_schema 实测：uk_migration_in_active_batch 为 active_transfer_batch_no 上的唯一索引，
+      生成列 CANCELLED→NULL，CANCELLED 行可重复、未取消行唯一；旧 uk_migration_in_batch 不存在。
+7.3 A-L 矩阵 H2 部分：A/B/C/E/F/G/H/I/J/K/L PASS；D 的 H2 取消日志部分 PASS，D 的 MySQL 历史回填部分
+    按 §6.1 标记为 NOT EXECUTED（阻断条件明确），由 t6 负责，不以 H2 冒充。
+7.4 结论：H2 GREEN 与全量 Maven 回归通过，可继续进入 t6 真实 MySQL 8.4 验证与独立复核；
+    本文件不把 MySQL 场景标为通过。
+
+================================================================================
+END OF ISSUE19 H2 GREEN EVIDENCE
+================================================================================

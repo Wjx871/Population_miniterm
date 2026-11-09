@@ -530,8 +530,10 @@ ALTER TABLE migration_in ADD COLUMN application_id BIGINT NOT NULL AFTER in_id,A
  ADD COLUMN to_address_snapshot VARCHAR(255) NULL AFTER to_household_id,ADD COLUMN transfer_batch_no VARCHAR(40) NULL AFTER reason,
  ADD COLUMN business_status VARCHAR(30) NOT NULL DEFAULT 'DRAFT' AFTER transfer_batch_no,ADD COLUMN executed_at DATETIME NULL AFTER operator_id,
  ADD COLUMN version INT NOT NULL DEFAULT 0 AFTER executed_at,ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
- ADD UNIQUE KEY uk_migration_in_application(application_id),ADD UNIQUE KEY uk_migration_in_batch(transfer_batch_no),
+ ADD UNIQUE KEY uk_migration_in_application(application_id),
  ADD CONSTRAINT fk_migration_in_application FOREIGN KEY(application_id) REFERENCES business_application(application_id),MODIFY reason VARCHAR(500) NULL;
+-- Issue #19: only non-cancelled migration_in rows occupy transfer_batch_no; the original batch value stays on the row.
+ALTER TABLE migration_in ADD COLUMN active_transfer_batch_no VARCHAR(40) GENERATED ALWAYS AS (CASE WHEN business_status='CANCELLED' THEN NULL ELSE transfer_batch_no END) STORED, ADD UNIQUE KEY uk_migration_in_active_batch(active_transfer_batch_no);
 ALTER TABLE migration_out ADD COLUMN application_id BIGINT NOT NULL AFTER out_id,ADD COLUMN migration_type VARCHAR(40) NOT NULL AFTER person_id,
  ADD COLUMN from_region_code VARCHAR(20) NULL AFTER migration_type,ADD COLUMN from_address_snapshot VARCHAR(255) NOT NULL AFTER from_household_id,
  ADD COLUMN to_region_code VARCHAR(20) NULL AFTER from_address_snapshot,ADD COLUMN transfer_batch_no VARCHAR(40) NULL AFTER reason,

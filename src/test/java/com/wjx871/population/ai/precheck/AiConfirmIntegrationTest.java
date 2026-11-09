@@ -471,6 +471,60 @@ class AiConfirmIntegrationTest {
     }
 
     @Test
+    void cancelledTransferBatchCanBeReusedThroughAiPrecheckAndConfirmation() throws Exception {
+        String batchNo = "S4B-REUSE-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        seedCompletedTransferBatch(batchNo);
+
+        Scenario first = scenario("issue19-ai-reuse-first",
+                List.of("IDENTITY_CARD_FRONT", "ADDRESS_PROOF"), MigrationType.IN_CITY_CROSS_DISTRICT, batchNo);
+        System.out.println("ISSUE19_AI_REUSE_FIRST warnings=" + first.preview().path("warnings")
+                + " confirmable=" + first.preview().path("confirmable").asBoolean());
+        assertThat(first.preview().path("warnings").toString()).doesNotContain("TRANSFER_BATCH_INVALID_OR_USED");
+        assertThat(first.preview().path("confirmable").asBoolean()).isTrue();
+        Map<String, Object> firstBody = confirmBody(first, "issue19-ai-reuse-first-key",
+                List.of(material(first.stageIds().get(0), "IDENTITY_PROOF"),
+                        material(first.stageIds().get(1), "ADDRESS_PROOF")), List.of(), null);
+        replaceField(firstBody, "migration.migrationType", MigrationType.IN_CITY_CROSS_DISTRICT.name());
+        addField(firstBody, "migration.transferBatchNo", batchNo);
+        MvcResult firstResult = confirm(first.taskId(), householdToken, firstBody)
+                .andExpect(status().isCreated()).andReturn();
+        long firstApplication = objectMapper.readTree(firstResult.getResponse().getContentAsString())
+                .path("data").path("applicationId").asLong();
+        assertThat(jdbc.queryForObject("SELECT business_status FROM migration_in WHERE application_id=?",
+                String.class, firstApplication)).isEqualTo("DRAFT");
+
+        mvc.perform(delete("/api/applications/{id}", firstApplication)
+                        .header("Authorization", bearer(householdToken)))
+                .andExpect(status().isOk());
+        assertThat(jdbc.queryForObject("SELECT status FROM business_application WHERE application_id=?",
+                String.class, firstApplication)).isEqualTo("CANCELLED");
+        assertThat(jdbc.queryForObject("SELECT business_status FROM migration_in WHERE application_id=?",
+                String.class, firstApplication)).isEqualTo("CANCELLED");
+        assertThat(jdbc.queryForObject("SELECT transfer_batch_no FROM migration_in WHERE application_id=?",
+                String.class, firstApplication)).isEqualTo(batchNo);
+
+        Scenario second = scenario("issue19-ai-reuse-second",
+                List.of("IDENTITY_CARD_FRONT", "ADDRESS_PROOF"), MigrationType.IN_CITY_CROSS_DISTRICT, batchNo);
+        System.out.println("ISSUE19_AI_REUSE_SECOND warnings=" + second.preview().path("warnings")
+                + " confirmable=" + second.preview().path("confirmable").asBoolean());
+        assertThat(second.preview().path("warnings").toString()).doesNotContain("TRANSFER_BATCH_INVALID_OR_USED");
+        assertThat(second.preview().path("confirmable").asBoolean()).isTrue();
+        Map<String, Object> secondBody = confirmBody(second, "issue19-ai-reuse-second-key",
+                List.of(material(second.stageIds().get(0), "IDENTITY_PROOF"),
+                        material(second.stageIds().get(1), "ADDRESS_PROOF")), List.of(), null);
+        replaceField(secondBody, "migration.migrationType", MigrationType.IN_CITY_CROSS_DISTRICT.name());
+        addField(secondBody, "migration.transferBatchNo", batchNo);
+        MvcResult secondResult = confirm(second.taskId(), householdToken, secondBody)
+                .andExpect(status().isCreated()).andReturn();
+        long secondApplication = objectMapper.readTree(secondResult.getResponse().getContentAsString())
+                .path("data").path("applicationId").asLong();
+        assertThat(jdbc.queryForObject("SELECT business_status FROM migration_in WHERE application_id=?",
+                String.class, secondApplication)).isEqualTo("DRAFT");
+        assertThat(jdbc.queryForObject("SELECT transfer_batch_no FROM migration_in WHERE application_id=?",
+                String.class, secondApplication)).isEqualTo(batchNo);
+    }
+
+    @Test
     void sameTaskDifferentIdempotencyKeysInParallelCreateAtMostOneDraft() throws Exception {
         Scenario scenario = scenario("confirm-concurrent-different-keys", List.of("UNKNOWN"));
         Map<String, Object> firstBody = confirmBody(scenario, "different-key-first", List.of(), List.of(), null);

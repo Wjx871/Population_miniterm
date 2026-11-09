@@ -24,7 +24,7 @@
 | 16 | LOW | 详情刷新未 await 导致竞态 | FRONTEND_HANDOFF | 页面异步刷新行为；本轮未改前端。 | 前端组 |
 | 17 | LOW | 家庭户适配器重复定义 regionCode | FRONTEND_HANDOFF | 前端适配器实现问题；本轮未改前端。 | 前端组 |
 | 18 | CRITICAL | 户主迁出申请缺少继任者导致批准后无法执行 | FIXED_NOT_VERIFIED | 新申请在提交时校验继任者，`Phase03MigrationIntegrationTest` 验证新流；已批准但缺少继任者的历史单仍需补正/重新审批方案；`eabae6a`。 | 后端后续处理历史单 |
-| 19 | HIGH | 跨区迁移批次号全局唯一使取消草稿占号 | OPEN | 批次号生成与表唯一约束仍未按已取消草稿释放；本轮未改。 | 后端 |
+| 19 | HIGH | 跨区迁移批次号全局唯一使取消草稿占号 | CODE_CANDIDATE | 已修复并完成 H2 与真实 MySQL 8.4 验证：取消草稿同事务将 migration_in/migration_out 明细置 CANCELLED，原 transfer_batch_no 保留；V4_019 以 STORED 生成列 active_transfer_batch_no（CANCELLED→NULL）+ uk_migration_in_active_batch 条件唯一索引替代旧 uk_migration_in_batch；历史 CANCELLED+DRAFT 记录备份后受控回填。Issue19MigrationBatchReuseIntegrationTest 13/13（H2），全量 Maven 913/0/0/3，真实 MySQL 8.4.8 gate 10+10 并发通过；Issue19MySql84IT exact 门禁 t11 曾发现继承 H2-only 诊断 1 error，t12 已用 isH2Database() 保护修复，t13 全新实例正式复跑 13/13（issue19-mysql84-gate-rerun.txt）。证据 doc/development/evidence/issue19-*.txt，专项文档 doc/development/issue19-migration-batch-reuse.md。等待独立复核，不标记为已修复/已验证。 | 后端/独立复核 |
 | 20 | HIGH | 户主交接只改主表指针未更新成员 HEAD 关系 | FIXED_VERIFIED | `MigrationService.executeOut` 同事务更新新户主关系与家庭户指针；迁出交接测试覆盖；`eabae6a`。 | 后端已完成 |
 | 21 | MEDIUM | 目标家庭户与迁入区划不一致 | FIXED_VERIFIED | `MigrationService.createIn/updateIn/executeIn` 均在服务端锁定/读取目标户后要求非空 `household.region_code` 与 `to_region_code` 精确一致；执行时再次验证。`Phase03MigrationIntegrationTest.targetRegionMismatchIsRejectedOnCreateUpdateAndExecute` 覆盖三处拒绝、草稿不被改写及执行失败不改人员/户籍。 | 后端已完成 |
 | 22 | MEDIUM | 户籍归档写入未检查受影响行数 | OPEN | `MigrationService` 调用归档写入后未检查插入影响行数；本轮未改。 | 后端 |

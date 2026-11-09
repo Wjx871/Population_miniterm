@@ -1,0 +1,123 @@
+﻿================================================================================
+Issue19 Issue19MySql84IT real-MySQL gate rerun (after t10 Matcher fix)
+================================================================================
+Execution time : 2026-11-09T22:59:03+08:00 .. 2026-11-09T22:59:40+08:00
+Worktree       : D:\学习用\大二下\小学期-issue19-migration-batch-reuse
+Command        : .\mvnw.cmd -Dtest=Issue19MySql84IT test
+Result         : exit code 1 (BUILD FAILURE)
+Tests          : Tests run: 13, Failures: 0, Errors: 1, Skipped: 0
+
+--- Fresh isolated MySQL 8.4 instance ---
+MySQL binary   : C:\Program Files\MySQL\MySQL Server 8.4\bin\mysqld.exe
+Version        : 8.4.8
+Port           : 13372 (non-3306; 13372 was checked free before start)
+Bind address   : 127.0.0.1
+Datadir        : C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue19_t11_t11\data (created 2026-11-09T22:58:45+08:00; initialize-insecure)
+Schema         : population_miniterm_mysql_gate_issue19_t11_t11
+App user       : i19_t11_t11@127.0.0.1 (non-root; only SELECT/INSERT/UPDATE/DELETE on this schema)
+Admin user     : root (separate; only for temporary instance administration)
+Isolation      : REPEATABLE-READ
+Migration path : pinned baseline 1f3f4427775f55b853a7b42d2cb759b4cdfa7411 -> V4_011/V4_012/V4_013/V4_015/
+                 V4_016/V4_017/V4_018 -> V4_019 (all setup steps exited 0)
+Identity query : SELECT @@version,@@port,@@bind_address,@@transaction_isolation,@@datadir,DATABASE(),CURRENT_USER()
+Raw identity   : 8.4.8  13372  127.0.0.1  REPEATABLE-READ
+                 C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue19_t11_t11\data\
+                 population_miniterm_mysql_gate_issue19_t11_t11  i19_t11_t11@127.0.0.1
+
+--- Matcher fix verification ---
+The run printed the following identity line 13 times (once per test in this class), and the log
+contains zero occurrences of "No match found":
+  ISSUE19 MYSQL identity version=8.4.8 port=13372 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue19_t11_t11 user=i19_t11_t11@127.0.0.1
+Therefore the t10 fix to Issue19MySql84IT.verifyMysqlIdentity is effective.
+
+--- Failure in the submitted class ---
+Failing test : Issue19MySql84IT.cancelDraftReleasesBatchAndNewDraftCanBeCreated
+Location     : Issue19MigrationBatchReuseIntegrationTest.cancelDraftReleasesBatchAndNewDraftCanBeCreated:135
+               -> Issue19MigrationBatchReuseIntegrationTest.dumpH2MigrationInMetadata:730
+Exception    : org.springframework.jdbc.BadSqlGrammarException: StatementCallback; bad SQL grammar
+               [SELECT H2VERSION()]
+Cause        : java.sql.SQLSyntaxErrorException: execute command denied to user
+               'i19_t11_t11'@'127.0.0.1' for routine
+               'population_miniterm_mysql_gate_issue19_t11_t11.H2VERSION'
+Interpretation: dumpH2MigrationInMetadata() is an H2-only diagnostic helper in the inherited base
+test; it unconditionally calls H2VERSION() (and later INFORMATION_SCHEMA.INDEXES/INDEX_COLUMNS).
+The submitted Issue19MySql84IT class therefore cannot execute all inherited tests on a real MySQL
+8.4 server. This is a test-entry defect, not a failure of the #19 business scenarios.
+No "No match found" error occurred; the t10 Matcher fix itself is confirmed.
+
+--- Supplementary run: all other inherited tests on the same fresh instance ---
+Command    : .\mvnw.cmd "-Dtest=Issue19MySql84IT#<12 methods excluding cancelDraftReleasesBatchAndNewDraftCanBeCreated>" test
+Methods    : failedDuplicateDraftCreationLeavesNoOrphanApplicationOrDetail,
+             cancelledMigrationRecordAndLogsRemainTraceable, completedMigrationConsumesBatchPermanently,
+             existingStatusOccupancyObservationMatrix, updateDraftReleasesOldBatchAndClaimsNewBatch,
+             batchMismatchIsRejectedOnExecution, cancelRecreateCannotBypassMaterialsApprovalOrExecutePermission,
+             concurrentClaimsAllowOnlyOneActiveDraft, cancelAndCreateInterleavingHasNoDoubleActiveClaim,
+             cancellationListenerFailureRollsBackApplicationAndDetail,
+             repeatedCancelAndNonDraftCancelAreRejected,
+             genericDraftCancellationDoesNotBroadcastToSpecializedListeners
+Result     : exit code 0; Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+Conclusion : all 12 remaining inherited #19 tests pass on real MySQL 8.4; the only blocker in the
+             submitted gate class is the inherited H2-only diagnostic call above.
+
+--- Artifacts / cleanup ---
+Full exact-run Maven log : C:\Users\jxgm\AppData\Local\Temp\issue19-t11-IT-run1.log (203486 bytes)
+Supplementary Maven log  : C:\Users\jxgm\AppData\Local\Temp\issue19-t11-IT-excluding-h2diagnostic.log
+Setup log                : C:\Users\jxgm\AppData\Local\Temp\issue19-t11-setup.log
+Raw root diagnostic      : SELECT COUNT(*) FROM INFORMATION_SCHEMA.INDEXES -> ERROR 1109 (42S02):
+                           Unknown table 'INDEXES' in information_schema (confirmed on the same 8.4.8 instance)
+Temporary mysqld         : shutdown via mysqladmin after the run; port 13372 no longer listening.
+Repository changes       : this evidence file only. No production code, test, migration or schema file
+                           was modified by this task. The pre-existing t10 modification to
+                           src/test/java/com/wjx871/population/migration/Issue19MySql84IT.java is
+                           not part of this run's changes.
+
+================================================================================
+ROUND 2 (t13): after t12 H2-only diagnostic guard
+================================================================================
+Execution time : 2026-11-09T23:10:50.645+08:00 .. 2026-11-09T23:11:34.628+08:00
+Command        : .\mvnw.cmd -Dtest=Issue19MySql84IT test
+Result         : exit code 0 (BUILD SUCCESS)
+Tests          : Tests run: 13, Failures: 0, Errors: 0, Skipped: 0
+
+--- Fresh isolated MySQL 8.4 instance ---
+MySQL binary   : C:\Program Files\MySQL\MySQL Server 8.4\bin\mysqld.exe
+Version        : 8.4.8
+Port           : 13373 (non-3306; 13373 was checked free before start)
+Bind address   : 127.0.0.1
+Datadir        : C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue19_t11_t13\data (created 2026-11-09T23:10:35+08:00; initialize-insecure)
+Schema         : population_miniterm_mysql_gate_issue19_t11_t13
+App user       : i19_t11_t13@127.0.0.1 (non-root; only SELECT/INSERT/UPDATE/DELETE on this schema)
+Admin user     : root (separate; only for temporary instance administration)
+Isolation      : REPEATABLE-READ
+Migration path : pinned baseline 1f3f4427775f55b853a7b42d2cb759b4cdfa7411 -> V4_011/V4_012/V4_013/V4_015/
+                 V4_016/V4_017/V4_018 -> V4_019 (all setup steps exited 0)
+Identity query : SELECT @@version,@@port,@@bind_address,@@transaction_isolation,@@datadir,DATABASE(),CURRENT_USER()
+Raw identity   : 8.4.8  13373  127.0.0.1  REPEATABLE-READ
+                 C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue19_t11_t13\data\
+                 population_miniterm_mysql_gate_issue19_t11_t13  i19_t11_t13@127.0.0.1
+
+--- Matcher / H2 guard verification ---
+The exact MySQL gate run printed the following identity line 13 times (one per inherited test) and
+contains zero occurrences of "No match found":
+  ISSUE19 MYSQL identity version=8.4.8 port=13373 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue19_t11_t13 user=i19_t11_t13@127.0.0.1
+The exact run contains zero occurrences of H2VERSION / ISSUE19_H2_VERSION. The t12 guard
+if (!isH2Database()) return; in dumpH2MigrationInMetadata() correctly skips the H2-only diagnostic
+on MySQL while the inherited #19 business assertions execute.
+
+--- Auxiliary contract commands ---
+Command 1 : .\mvnw.cmd -DskipTests test-compile
+Result 1  : exit code 0; BUILD SUCCESS; Total time 15.797 s
+Command 2 : .\mvnw.cmd -Dtest=Issue19MigrationBatchReuseIntegrationTest test
+Result 2  : exit code 0; Tests run: 13, Failures: 0, Errors: 0, Skipped: 0; BUILD SUCCESS;
+            ISSUE19_H2_VERSION=2.3.232 (H2 diagnostic still executes on H2)
+Command 3 : .\mvnw.cmd -Dtest=Issue19MySql84IT test
+Result 3  : exit code 0; Tests run: 13, Failures: 0, Errors: 0, Skipped: 0; BUILD SUCCESS
+
+--- Artifacts / cleanup ---
+Exact MySQL gate log : C:\Users\jxgm\AppData\Local\Temp\issue19-t13-IT-run.log
+Setup log            : C:\Users\jxgm\AppData\Local\Temp\issue19-t13-setup.log
+Maven test-compile   : C:\Users\jxgm\AppData\Local\Temp\issue19-t13-test-compile.log
+Maven H2 test        : C:\Users\jxgm\AppData\Local\Temp\issue19-t13-h2-test.log
+Temporary mysqld     : shutdown via mysqladmin after the run; port 13373 no longer listening.
+Repository changes   : this evidence append only. No production code, test, migration or schema file
+                       was modified by t13 (the pre-existing t12 changes remain untouched).

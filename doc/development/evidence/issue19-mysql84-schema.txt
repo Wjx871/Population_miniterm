@@ -1,0 +1,148 @@
+================================================================================
+Issue #19 - cancelled MIGRATION_IN draft must release its transfer batch
+Real MySQL 8.4 verification evidence
+================================================================================
+Generated: 2026-11-09 22:51:44 +08:00
+Gate script: D:\学习用\大二下\小学期-issue19-migration-batch-reuse\scripts\windows\tests\issue19-mysql84-gate.ps1
+Worktree: D:\学习用\大二下\小学期-issue19-migration-batch-reuse
+Baseline commit: 1f3f4427775f55b853a7b42d2cb759b4cdfa7411
+Temporary instance dir: C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue19_46c30189ad
+Schema: population_miniterm_mysql_gate_issue19_46c30189ad
+Port: 13370
+
+--- administrator identity (root, private instance) ---
+SELECT @@version,@@version_comment,@@port,@@bind_address,@@transaction_isolation,@@datadir,@@sql_mode; => 8.4.8 | MySQL Community Server - GPL | 13370 | 127.0.0.1 | REPEATABLE-READ | C:\\Users\\jxgm\\AppData\\Local\\Temp\\population_mysql84_issue19_46c30189ad\\data\\ | ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+--- application account grants ---
+GRANT USAGE ON *.* TO `i19_46c30189ad`@`127.0.0.1`
+GRANT SELECT, INSERT, UPDATE, DELETE ON `population_miniterm_mysql_gate_issue19_46c30189ad`.* TO `i19_46c30189ad`@`127.0.0.1`
+--- application identity (non-root) ---
+SELECT @@version,@@port,@@bind_address,@@transaction_isolation,DATABASE(),CURRENT_USER(); => 8.4.8 | 13370 | 127.0.0.1 | REPEATABLE-READ | population_miniterm_mysql_gate_issue19_46c30189ad | i19_46c30189ad@127.0.0.1
+datadir: C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue19_46c30189ad\data
+instance task dir: C:\Users\jxgm\AppData\Local\Temp\population_mysql84_issue19_46c30189ad
+--- V4_018 pre-fix SHOW INDEX FROM migration_in ---
++--------------+------------+----------------------------------+--------------+-------------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+| Table        | Non_unique | Key_name                         | Seq_in_index | Column_name       | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment | Visible | Expression |
++--------------+------------+----------------------------------+--------------+-------------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+| migration_in |          0 | PRIMARY                          |            1 | in_id             | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          0 | uk_migration_in_application      |            1 | application_id    | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          0 | uk_migration_in_batch            |            1 | transfer_batch_no | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_person_id       |            1 | person_id         | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_to_household_id |            1 | to_household_id   | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_operator_id     |            1 | operator_id       | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_query           |            1 | in_date           | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_query           |            2 | business_status   | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_query           |            3 | migration_type    | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_query           |            4 | person_id         | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
++--------------+------------+----------------------------------+--------------+-------------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+--- V4_019 migration_in SHOW CREATE TABLE ---
++--------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Table        | Create Table                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
++--------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| migration_in | CREATE TABLE `migration_in` (
+  `in_id` bigint NOT NULL AUTO_INCREMENT,
+  `application_id` bigint NOT NULL,
+  `person_id` bigint NOT NULL,
+  `migration_type` varchar(40) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `from_region_code` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `from_address` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `to_region_code` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `to_household_id` bigint NOT NULL,
+  `to_address_snapshot` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `in_date` date NOT NULL,
+  `reason` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `transfer_batch_no` varchar(40) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `business_status` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'DRAFT',
+  `operator_id` bigint DEFAULT NULL,
+  `executed_at` datetime DEFAULT NULL,
+  `version` int NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `active_transfer_batch_no` varchar(40) COLLATE utf8mb4_unicode_ci GENERATED ALWAYS AS ((case when (`business_status` = _utf8mb4'CANCELLED') then NULL else `transfer_batch_no` end)) STORED COMMENT 'Issue19: active batch claim; NULL when the migration detail is CANCELLED',
+  PRIMARY KEY (`in_id`),
+  UNIQUE KEY `uk_migration_in_application` (`application_id`),
+  UNIQUE KEY `uk_migration_in_active_batch` (`active_transfer_batch_no`),
+  KEY `idx_migration_in_person_id` (`person_id`),
+  KEY `idx_migration_in_to_household_id` (`to_household_id`),
+  KEY `idx_migration_in_operator_id` (`operator_id`),
+  KEY `idx_migration_in_query` (`in_date`,`business_status`,`migration_type`,`person_id`),
+  CONSTRAINT `fk_migration_in_application` FOREIGN KEY (`application_id`) REFERENCES `business_application` (`application_id`),
+  CONSTRAINT `fk_migration_in_household` FOREIGN KEY (`to_household_id`) REFERENCES `household` (`household_id`),
+  CONSTRAINT `fk_migration_in_operator` FOREIGN KEY (`operator_id`) REFERENCES `sys_user` (`user_id`),
+  CONSTRAINT `fk_migration_in_person` FOREIGN KEY (`person_id`) REFERENCES `person` (`person_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci |
++--------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+--- V4_019 migration_in SHOW INDEX ---
++--------------+------------+----------------------------------+--------------+--------------------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+| Table        | Non_unique | Key_name                         | Seq_in_index | Column_name              | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment | Visible | Expression |
++--------------+------------+----------------------------------+--------------+--------------------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+| migration_in |          0 | PRIMARY                          |            1 | in_id                    | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          0 | uk_migration_in_application      |            1 | application_id           | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          0 | uk_migration_in_active_batch     |            1 | active_transfer_batch_no | A         |           3 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_person_id       |            1 | person_id                | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_to_household_id |            1 | to_household_id          | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_operator_id     |            1 | operator_id              | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_query           |            1 | in_date                  | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_query           |            2 | business_status          | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_query           |            3 | migration_type           | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| migration_in |          1 | idx_migration_in_query           |            4 | person_id                | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
++--------------+------------+----------------------------------+--------------+--------------------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+--- V4_019 information_schema.statistics (migration_in) ---
++----------------------------------+------------+--------------+--------------------------+------------+
+| INDEX_NAME                       | NON_UNIQUE | SEQ_IN_INDEX | COLUMN_NAME              | INDEX_TYPE |
++----------------------------------+------------+--------------+--------------------------+------------+
+| idx_migration_in_operator_id     |          1 |            1 | operator_id              | BTREE      |
+| idx_migration_in_person_id       |          1 |            1 | person_id                | BTREE      |
+| idx_migration_in_query           |          1 |            1 | in_date                  | BTREE      |
+| idx_migration_in_query           |          1 |            2 | business_status          | BTREE      |
+| idx_migration_in_query           |          1 |            3 | migration_type           | BTREE      |
+| idx_migration_in_query           |          1 |            4 | person_id                | BTREE      |
+| idx_migration_in_to_household_id |          1 |            1 | to_household_id          | BTREE      |
+| PRIMARY                          |          0 |            1 | in_id                    | BTREE      |
+| uk_migration_in_active_batch     |          0 |            1 | active_transfer_batch_no | BTREE      |
+| uk_migration_in_application      |          0 |            1 | application_id           | BTREE      |
++----------------------------------+------------+--------------+--------------------------+------------+
+--- V4_019 information_schema.columns (migration_in) ---
++--------------------------+--------------+-------------+-----------------------------------------------+------------------------------------------------------------------------------------------------+
+| COLUMN_NAME              | COLUMN_TYPE  | IS_NULLABLE | EXTRA                                         | GENERATION_EXPRESSION                                                                          |
++--------------------------+--------------+-------------+-----------------------------------------------+------------------------------------------------------------------------------------------------+
+| in_id                    | bigint       | NO          | auto_increment                                |                                                                                                |
+| application_id           | bigint       | NO          |                                               |                                                                                                |
+| person_id                | bigint       | NO          |                                               |                                                                                                |
+| migration_type           | varchar(40)  | NO          |                                               |                                                                                                |
+| from_region_code         | varchar(20)  | YES         |                                               |                                                                                                |
+| from_address             | varchar(255) | NO          |                                               |                                                                                                |
+| to_region_code           | varchar(20)  | NO          |                                               |                                                                                                |
+| to_household_id          | bigint       | NO          |                                               |                                                                                                |
+| to_address_snapshot      | varchar(255) | YES         |                                               |                                                                                                |
+| in_date                  | date         | NO          |                                               |                                                                                                |
+| reason                   | varchar(500) | YES         |                                               |                                                                                                |
+| transfer_batch_no        | varchar(40)  | YES         |                                               |                                                                                                |
+| business_status          | varchar(30)  | NO          |                                               |                                                                                                |
+| operator_id              | bigint       | YES         |                                               |                                                                                                |
+| executed_at              | datetime     | YES         |                                               |                                                                                                |
+| version                  | int          | NO          |                                               |                                                                                                |
+| created_at               | datetime     | NO          | DEFAULT_GENERATED                             |                                                                                                |
+| updated_at               | datetime     | NO          | DEFAULT_GENERATED on update CURRENT_TIMESTAMP |                                                                                                |
+| active_transfer_batch_no | varchar(40)  | YES         | STORED GENERATED                              | (case when (`business_status` = _utf8mb4\'CANCELLED\') then NULL else `transfer_batch_no` end) |
++--------------------------+--------------+-------------+-----------------------------------------------+------------------------------------------------------------------------------------------------+
+--- V4_019 migration_in_issue19_backup structure ---
++-----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Table                       | Create Table                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
++-----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| migration_in_issue19_backup | CREATE TABLE `migration_in_issue19_backup` (
+  `backup_id` bigint NOT NULL AUTO_INCREMENT,
+  `in_id` bigint NOT NULL,
+  `application_id` bigint NOT NULL,
+  `original_business_status` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `original_transfer_batch_no` varchar(40) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `original_version` int NOT NULL,
+  `application_status` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `application_version` int NOT NULL,
+  `backup_run` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `backup_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`backup_id`),
+  UNIQUE KEY `uk_issue19_backup_in` (`in_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci |
++-----------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+RESULT: PASS - all checks passed

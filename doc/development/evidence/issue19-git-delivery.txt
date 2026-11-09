@@ -1,0 +1,97 @@
+================================================================================
+Issue #19 - 最终 Git 交付核对记录
+================================================================================
+记录时间：2026-11-09T23:30:41+08:00（Asia/Shanghai）
+工作树：D:\学习用\大二下\小学期-issue19-migration-batch-reuse
+分支：fix/20261108-issue19-migration-batch-reuse
+基线：integration/20261101-backend-p0-security @ 1f3f4427775f55b853a7b42d2cb759b4cdfa7411
+
+交付提交 SHA：PENDING_COMMIT_SHA（本记录随该提交写入；提交完成后由 git rev-parse HEAD 取得，完整 40 位值在交付报告中给出）
+远端 feature SHA：PENDING_REMOTE_SHA（push 后由 git ls-remote origin refs/heads/fix/20261108-issue19-migration-batch-reuse 核对，完整值在交付报告中给出）
+
+--------------------------------------------------------------------------------
+一、变更文件清单（31 个，全部为 #19 范围）
+--------------------------------------------------------------------------------
+已跟踪修改（17 个）：
+M  doc/api/backend-api-index.md
+M  doc/api/business-application-approval-api.md
+M  doc/api/household-migration-api.md
+M  doc/database/backend-v1-database-guide.md
+M  doc/database/check_backend_v1.sql
+M  doc/database/population_miniterm.sql
+M  doc/testing/2026-11-02-antigravity-audit-ledger.md
+M  src/main/java/com/wjx871/population/ai/precheck/AiResolutionService.java
+M  src/main/java/com/wjx871/population/application/ApplicationService.java
+M  src/main/java/com/wjx871/population/application/ApplicationStatusListener.java
+M  src/main/java/com/wjx871/population/migration/MigrationBusinessStatus.java
+M  src/main/java/com/wjx871/population/migration/MigrationMapper.java
+M  src/main/java/com/wjx871/population/migration/MigrationService.java
+M  src/main/java/com/wjx871/population/migration/MigrationStatusListener.java
+M  src/main/resources/mapper/MigrationMapper.xml
+M  src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java
+M  src/test/resources/schema.sql
+
+新增文件（14 个）：
+A  doc/database/V4_019-migration-batch-reuse-upgrade.md
+A  doc/database/migrations/V4_019_migration_batch_reuse.sql
+A  doc/development/evidence/issue19-h2-green.txt
+A  doc/development/evidence/issue19-mysql84-gate-rerun.txt
+A  doc/development/evidence/issue19-mysql84-schema.txt
+A  doc/development/evidence/issue19-mysql84.txt
+A  doc/development/evidence/issue19-red-h2.txt
+A  doc/development/evidence/issue19-review.md
+A  doc/development/evidence/issue19-git-delivery.txt（本记录）
+A  doc/development/issue19-migration-batch-reuse.md
+A  scripts/windows/tests/issue19-mysql84-gate.ps1
+A  src/main/java/com/wjx871/population/application/ApplicationDraftCancellationListener.java
+A  src/test/java/com/wjx871/population/migration/Issue19MigrationBatchReuseIntegrationTest.java
+A  src/test/java/com/wjx871/population/migration/Issue19MySql84IT.java
+
+--------------------------------------------------------------------------------
+二、提交前检查
+--------------------------------------------------------------------------------
+- git diff --check：exit code 0（无空白错误、无冲突标记）。MigrationStatusListener.java 仅有
+  Git 的 LF->CRLF 自动换行提示，不是内容问题。
+- git status --porcelain=v1：30 个既有变更（17 个已跟踪修改 + 13 个新增），加上本记录文件共 31 个
+  文件随本次提交；无其他未跟踪文件。
+- 内容范围核对：全部为 #19 的生产 Java（草稿取消 opt-in 监听、迁移状态联动、批次占用查询、
+  AI 预检一致性）、测试（H2/MySQL 专项与 AI 复用用例）、V4_019 迁移、H2 schema、专项文档与证据；
+  未包含 #33 或其他审计问题的改动。
+- 敏感信息扫描：对全部 31 个文件扫描 password/passwd/secret/token/api-key/private key/AKIA
+  等模式，未发现明文凭据；无 .env、.pem、.key、id_rsa 等敏感文件。MySQL gate 脚本中的
+  root/app 密码在运行时用 RandomNumberGenerator 随机生成，不落入仓库。
+- 临时产物/大文件：无 target 构建产物、无 MySQL datadir、无二进制或大日志。最大文件为
+  doc/database/population_miniterm.sql（65,080 字节），evidence 最大 30,755 字节。
+- 编码检查：31 个文件全部为有效 UTF-8 文本。
+
+--------------------------------------------------------------------------------
+三、四条保护引用实测（push 前）
+--------------------------------------------------------------------------------
+refs/heads/integration/20261101-backend-p0-security = 1f3f4427775f55b853a7b42d2cb759b4cdfa7411（期望值，匹配）
+refs/heads/main                                     = b54579b6b7f8b1feeda60f43906da05fb2ffda99（期望值，匹配）
+refs/heads/feat/20261103-s3-rabbitmq-async-precheck = 758014cbcccdfe820efb2a6fae73bc3168030484（期望值，匹配）
+refs/heads/snapshot/20261103-pre-course-upgrade-backend = d6b0b87b74af7a413214d7da9dd30b075cec882b（期望值，匹配）
+
+--------------------------------------------------------------------------------
+四、worktree 状态
+--------------------------------------------------------------------------------
+- worktree 绝对路径：D:\学习用\大二下\小学期-issue19-migration-batch-reuse
+- 当前分支：fix/20261108-issue19-migration-batch-reuse
+- 提交前 HEAD：1f3f4427775f55b853a7b42d2cb759b4cdfa7411（与基线一致）
+- 提交前工作区：30 个文件变更（17 M + 13 ??），全部为 #19 预期范围
+- 提交后工作区：clean（提交与推送完成后复核）
+- worktree 保留、分支保留；未执行 prune/clean/reset --hard，未删除分支或清理任何历史 worktree。
+
+--------------------------------------------------------------------------------
+五、提交与推送核对（提交/推送后回填）
+--------------------------------------------------------------------------------
+- 提交命令：git add -A && git commit（提交信息含 issue19）
+- 本地 HEAD：PENDING_COMMIT_SHA
+- push 命令：git push origin fix/20261108-issue19-migration-batch-reuse（不使用 --force）
+- git ls-remote origin refs/heads/fix/20261108-issue19-migration-batch-reuse：PENDING_REMOTE_SHA
+- 四条保护引用 push 后复核：保持上述值不变，未推送 integration，未修改共享 main。
+- 结论：PENDING_FINAL_CONFIRMATION（由交付报告给出最终 SHA 与核对结论）
+
+================================================================================
+记录结束
+================================================================================
