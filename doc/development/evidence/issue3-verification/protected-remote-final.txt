@@ -1,0 +1,6 @@
+758014cbcccdfe820efb2a6fae73bc3168030484	refs/heads/feat/20261103-s3-rabbitmq-async-precheck
+8b0730fa474c8b533ab8f3b571bd1bf73b4e65f2	refs/heads/fix/20261107-issue43-keypopulation-submit-permission
+f5c3a959cf99f69fed8e8640d845a99b23428563	refs/heads/fix/20261107-issue81-83-admin-region-hierarchy
+aec60c4f4536144851d4156b8918ef12d46af252	refs/heads/integration/20261101-backend-p0-security
+b54579b6b7f8b1feeda60f43906da05fb2ffda99	refs/heads/main
+d6b0b87b74af7a413214d7da9dd30b075cec882b	refs/heads/snapshot/20261103-pre-course-upgrade-backend

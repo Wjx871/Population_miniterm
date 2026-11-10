@@ -8,7 +8,7 @@
 |---:|---|---|---|---|---|
 | 1 | CRITICAL | 普通编辑可能复活注销或死亡人员 | FIXED_VERIFIED | `PersonService` 不再把客户端 status 写回；`Phase08PersonIdentityIntegrationTest.ordinaryEditsPreserveCancelledAndDeceasedLifecycleStates` 与本轮 `Phase08PersonIdentityIntegrationTest` 覆盖显式 status 绕过；`6541a05`。 | 后端已完成 |
 | 2 | CRITICAL | REGION 建档后人员无法由创建人读取 | FIXED_VERIFIED | 本轮旧实现复现：201 创建后同区详情 403、列表/导出为 0；修复后同区、异区、ALL 与导出断言通过；`PersonRegionOwnershipAuditIntegrationTest`，`aff3f8e`，迁移 `V4_014`。 | 后端已完成 |
-| 3 | HIGH | OCR 远程请求发生在长事务内 | OPEN | `PersonIdCardImageService` 上传流程仍同步调用 OCR；本轮未改、未对外部 OCR 做时序压测。 | 后端 |
+| 3 | HIGH | OCR 远程请求发生在长事务内 | CODE_CANDIDATE | 历史修复 `a1cff942` 在精确基线 `aec60c4` 已独立验证为 `EXISTING_FIX_CONFIRMED`；本轮无生产代码修改。H2/私有 MySQL 8.4 RR 观察确认 OCR 等待期间无活动事务、借用连接或 InnoDB 数据锁，并验证并发、必要审计回滚、已提交文件及 UNKNOWN 保留。证据见 [本轮验证](../development/issue3-ocr-transaction-verification.md)，等待 ChatGPT 独立复核。 | 后端/独立复核 |
 | 4 | HIGH | 脱敏回显值可能被编辑表单写回 | FRONTEND_HANDOFF | 后端保留/忽略脱敏字段的兼容逻辑已在 `PersonService`；编辑表单回填与提交仍需前端验证。 | 前端组 |
 | 5 | MEDIUM | 性别编码与前端字典不一致 | FRONTEND_HANDOFF | 关联前端表单/字典映射；本轮未改前端。 | 前端组 |
 | 6 | MEDIUM | 影印本 SHA 去重可跨用户占用 | FIXED_VERIFIED | `PersonIdCardImageService` 按对象归属拒绝跨用户读取/覆盖；`Phase14PersonIdCardOcrIntegrationTest.duplicateFromAnotherUploaderCannotReadOrChangeOriginalDraftOrFileReference`；`dfc5f81`。 | 后端已完成 |

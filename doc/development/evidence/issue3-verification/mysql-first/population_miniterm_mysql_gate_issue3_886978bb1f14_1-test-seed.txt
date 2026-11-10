@@ -1,0 +1,5 @@
+1	viewer
+2	population
+3	admin
+6	household
+7	approver

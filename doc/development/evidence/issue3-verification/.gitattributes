@@ -1,0 +1,6 @@
+# Preserve original evidence bytes, including Maven's trailing spaces and CRLF.
+# Scoped to this evidence directory; source-code whitespace checks remain enabled.
+*.log -text -whitespace
+*.xml -text -whitespace
+*.txt -text -whitespace
+*.tsv -text

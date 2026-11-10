@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.wjx871.population.person.idcard.Issue3OcrMySql84IT
+-------------------------------------------------------------------------------
+Tests run: 29, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 23.31 s -- in com.wjx871.population.person.idcard.Issue3OcrMySql84IT

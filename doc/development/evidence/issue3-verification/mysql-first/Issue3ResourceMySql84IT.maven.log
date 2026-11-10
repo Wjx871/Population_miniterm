@@ -1,0 +1,209 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.wjx871:population-miniterm >-------------------
+[INFO] Building population-miniterm 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.14:prepare-agent (coverage-agent) @ population-miniterm ---
+[INFO] argLine set to -javaagent:C:\\Users\\jxgm\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.14\\org.jacoco.agent-0.8.14-runtime.jar=destfile=C:\\Users\\jxgm\\.codex\\worktrees\\issue3-ocr-tx-verification\\Сѧ��\\target\\jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ population-miniterm ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 42 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ population-miniterm ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 324 source files with javac [debug parameters release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ population-miniterm ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ population-miniterm ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 106 source files with javac [debug parameters release 17] to target\test-classes
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[72,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[72,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[72,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[72,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[72,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[73,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[73,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[73,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[73,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[73,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Issue4145KeyPopulationScopeHttpIntegrationTest.java:[415,234] ���һ������ʹ���˲�׼ȷ�ı������͵� varargs �����ķ� varargs ����; 
+  ���� varargs ����, Ӧʹ�� java.lang.Object
+  ���ڷ� varargs ����, Ӧʹ�� java.lang.Object[], ����Ҳ�������ƴ˾���
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/migration/Issue22ArchiveAffectedRowsIntegrationTest.java:[42,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/migration/Issue22ArchiveAffectedRowsIntegrationTest.java:[42,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/migration/Issue22ArchiveAffectedRowsIntegrationTest.java:[42,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/migration/Issue22ArchiveAffectedRowsIntegrationTest.java:[42,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/migration/Issue22ArchiveAffectedRowsIntegrationTest.java:[42,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3ResourceObservationIntegrationTest.java:[79,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3ResourceObservationIntegrationTest.java:[79,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3ResourceObservationIntegrationTest.java:[79,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3ResourceObservationIntegrationTest.java:[79,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/cache/OptionalRedisServiceTest.java: C:\Users\jxgm\.codex\worktrees\issue3-ocr-tx-verification\Сѧ��\src\test\java\com\wjx871\population\cache\OptionalRedisServiceTest.javaʹ�û򸲸����ѹ�ʱ�� API��
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/cache/OptionalRedisServiceTest.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:deprecation ���±��롣
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/person/idcard/Issue3ResourceObservationIntegrationTest.java: ĳЩ�����ļ�����ʹ�û򸲸��˱��Ϊ��ɾ�����ѹ�ʱ API��
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/cache/S5A1StrictRedisServiceTest.java: ĳЩ�����ļ�ʹ����δ�����򲻰�ȫ�Ĳ�����
+[INFO] /C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/Сѧ��/src/test/java/com/wjx871/population/cache/S5A1StrictRedisServiceTest.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:unchecked ���±��롣
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ population-miniterm ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.wjx871.population.person.idcard.Issue3ResourceMySql84IT
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.3)
+
+2026-11-10 19:01:13.964 INFO  [traceId= instanceId=] [background-preinit] org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+ISSUE3_MYSQL_IDENTITY version=8.4.8 port=5470 bind=127.0.0.1 isolation=REPEATABLE-READ schema=population_miniterm_mysql_gate_issue3_886978bb1f14_2 account=i3_886978bb1f14@127.0.0.1 datadirVerified=true
+2026-11-10 19:01:14.805 INFO  [traceId= instanceId=] [main] com.wjx871.population.person.idcard.Issue3ResourceMySql84IT - Starting Issue3ResourceMySql84IT using Java 21.0.7 with PID 41088 (started by jxgm in C:\Users\jxgm\.codex\worktrees\issue3-ocr-tx-verification\Сѧ��)
+2026-11-10 19:01:14.813 INFO  [traceId= instanceId=] [main] com.wjx871.population.person.idcard.Issue3ResourceMySql84IT - No active profile set, falling back to 1 default profile: "default"
+2026-11-10 19:01:16.410 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-11-10 19:01:16.416 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-11-10 19:01:16.497 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 58 ms. Found 0 Redis repository interfaces.
+2026-11-10 19:01:17.790 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-11-10 19:01:17.840 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@7a2e996c
+2026-11-10 19:01:17.844 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-11-10 19:01:19.461 INFO  [traceId= instanceId=] [main] com.wjx871.population.assistant.PolicyAssistantService - Policy knowledge base loaded: 56 chunks across 19 registered sources
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (C:\Users\jxgm\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.6\byte-buddy-agent-1.17.6.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+2026-11-10 19:01:21.545 INFO  [traceId= instanceId=] [main] org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name authService
+2026-11-10 19:01:23.573 INFO  [traceId= instanceId=] [main] org.springframework.boot.test.mock.web.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-11-10 19:01:23.574 INFO  [traceId= instanceId=] [main] org.springframework.test.web.servlet.TestDispatcherServlet - Initializing Servlet ''
+2026-11-10 19:01:23.575 INFO  [traceId= instanceId=] [main] org.springframework.test.web.servlet.TestDispatcherServlet - Completed initialization in 1 ms
+2026-11-10 19:01:23.648 INFO  [traceId= instanceId=] [main] com.wjx871.population.person.idcard.Issue3ResourceMySql84IT - Started Issue3ResourceMySql84IT in 10.231 seconds (process running for 13.147)
+ISSUE3_RESOURCE_SAMPLE backend=MySQL84 index=0 elapsedMs=381 springTx=false bound=false hikariActive=0 database={innodbTransactions=0, dataLocks=0, activeTransactions=0, lockWaits=0}
+ISSUE3_RESOURCE_SAMPLE backend=MySQL84 index=1 elapsedMs=601 springTx=false bound=false hikariActive=0 database={innodbTransactions=0, dataLocks=0, activeTransactions=0, lockWaits=0}
+ISSUE3_RESOURCE_SAMPLE backend=MySQL84 index=2 elapsedMs=818 springTx=false bound=false hikariActive=0 database={innodbTransactions=0, dataLocks=0, activeTransactions=0, lockWaits=0}
+ISSUE3_TIMEOUT elapsedMs=5101 rows=1 requiredAudits=1 state=FAILED error=OCR_UNAVAILABLE
+ISSUE3_HTTP quick=SUCCESS http503=FAILED sanitized=true skipHttpCalls=0 requiredRecognizedAudits=2
+ISSUE3_RESOURCE_SAMPLE backend=MySQL84 index=0 elapsedMs=42 springTx=false bound=false hikariActive=0 database={innodbTransactions=0, dataLocks=0, activeTransactions=0, lockWaits=0}
+ISSUE3_RESOURCE_SAMPLE backend=MySQL84 index=1 elapsedMs=258 springTx=false bound=false hikariActive=0 database={innodbTransactions=0, dataLocks=0, activeTransactions=0, lockWaits=0}
+ISSUE3_RESOURCE_SAMPLE backend=MySQL84 index=2 elapsedMs=472 springTx=false bound=false hikariActive=0 database={innodbTransactions=0, dataLocks=0, activeTransactions=0, lockWaits=0}
+ISSUE3_RESOURCE_SAMPLE backend=MySQL84 index=3 elapsedMs=685 springTx=false bound=false hikariActive=0 database={innodbTransactions=0, dataLocks=0, activeTransactions=0, lockWaits=0}
+ISSUE3_RESOURCE_SAMPLE backend=MySQL84 index=4 elapsedMs=900 springTx=false bound=false hikariActive=0 database={innodbTransactions=0, dataLocks=0, activeTransactions=0, lockWaits=0}
+ISSUE3_RESOURCE_SAMPLE backend=MySQL84 index=5 elapsedMs=1115 springTx=false bound=false hikariActive=0 database={innodbTransactions=0, dataLocks=0, activeTransactions=0, lockWaits=0}
+2026-11-10 19:01:31.827 WARN  [traceId=922fe020-d65b-4700-b19e-7749396535ed instanceId=5327f626-6971-41b2-8720-fd7132300d50] [pool-6-thread-3] org.springframework.data.web.config.SpringDataJacksonConfiguration$PageModule$WarningLoggingModifier - Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
+	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
+
+ISSUE3_UNRELATED_HTTP completedMs=106 slowUploadsStillBlocked=2
+ISSUE3_RESOURCE_SAMPLE backend=MySQL84 index=6 elapsedMs=1437 springTx=false bound=false hikariActive=0 database={innodbTransactions=0, dataLocks=0, activeTransactions=0, lockWaits=0}
+ISSUE3_OCR_DELAY elapsedMs=1425 filePresent=true finalState=SUCCESS
+ISSUE3_OCR_DELAY elapsedMs=1425 filePresent=true finalState=SUCCESS
+ISSUE3_PROBE_POSITIVE_CONTROL {innodbTransactions=1, dataLocks=3, activeTransactions=1, lockWaits=0}
+ISSUE3_CONTROL_LOCK type=TABLE mode=IX status=GRANTED count=1
+ISSUE3_CONTROL_LOCK type=RECORD mode=X,REC_NOT_GAP status=GRANTED count=2
+ISSUE3_PROBE_POSITIVE_CONTROL_ROLLBACK noRemainingTransactionsOrLocks=true
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 20.48 s -- in com.wjx871.population.person.idcard.Issue3ResourceMySql84IT
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jacoco:0.8.14:report (coverage-report) @ population-miniterm ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  42.049 s
+[INFO] Finished at: 2026-11-10T19:01:33+08:00
+[INFO] ------------------------------------------------------------------------

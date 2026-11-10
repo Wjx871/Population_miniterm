@@ -1,0 +1,28 @@
+mainHead=d7fc1192967a13c7d80d2b60fdc12749fd5218df gitignoreSha256=8399B5DE049E3989E123B747D457A02A5D8EDADF6A57867B57F1BD760FA68DE3 mainStatus:
+ M .gitignore
+?? .agent-teams/
+worktrees:
+worktree D:/学习用/大二下/小学期
+HEAD d7fc1192967a13c7d80d2b60fdc12749fd5218df
+branch refs/heads/main
+
+worktree C:/Users/jxgm/.codex/worktrees/issue22-archive-rowcount/小学期
+HEAD 3f2730882583fdb0cfb3b5aafb50583ea1aecade
+detached
+
+worktree C:/Users/jxgm/.codex/worktrees/issue3-ocr-tx-verification/小学期
+HEAD aec60c4f4536144851d4156b8918ef12d46af252
+branch refs/heads/fix/20261110-issue3-ocr-tx-verification
+
+worktree C:/Users/jxgm/.codex/worktrees/issue81-83-admin-region/小学期
+HEAD f5c3a959cf99f69fed8e8640d845a99b23428563
+branch refs/heads/fix/20261107-issue81-83-admin-region-hierarchy
+
+worktree C:/Users/jxgm/.codex/worktrees/s3-rabbitmq-async-precheck/小学期
+HEAD 758014cbcccdfe820efb2a6fae73bc3168030484
+branch refs/heads/feat/20261103-s3-rabbitmq-async-precheck
+
+worktree D:/学习用/大二下/小学期-integration-20261101-backend-p0-security
+HEAD aec60c4f4536144851d4156b8918ef12d46af252
+branch refs/heads/integration/20261101-backend-p0-security
+

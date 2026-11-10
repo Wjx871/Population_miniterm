@@ -1,0 +1,712 @@
+{
+  "h2Final": {
+    "tests": 45,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      {
+        "failures": 0,
+        "tests": 3,
+        "name": "com.wjx871.population.material.Issue3OwnedFileCompensationTest",
+        "skipped": 0,
+        "errors": 0
+      },
+      {
+        "failures": 0,
+        "tests": 2,
+        "name": "com.wjx871.population.person.idcard.Issue3CommitOutcomeIntegrationTest",
+        "skipped": 0,
+        "errors": 0
+      },
+      {
+        "failures": 0,
+        "tests": 29,
+        "name": "com.wjx871.population.person.idcard.Issue3OcrTransactionIntegrationTest",
+        "skipped": 0,
+        "errors": 0
+      },
+      {
+        "failures": 0,
+        "tests": 3,
+        "name": "com.wjx871.population.person.idcard.Issue3ResourceObservationIntegrationTest",
+        "skipped": 0,
+        "errors": 0
+      },
+      {
+        "failures": 0,
+        "tests": 8,
+        "name": "com.wjx871.population.person.idcard.Phase14PersonIdCardOcrIntegrationTest",
+        "skipped": 0,
+        "errors": 0
+      }
+    ]
+  },
+  "mysqlFirst": {
+    "tests": 43,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      {
+        "failures": 0,
+        "tests": 2,
+        "name": "com.wjx871.population.person.idcard.Issue3CommitMySql84IT",
+        "skipped": 0,
+        "errors": 0
+      },
+      {
+        "failures": 0,
+        "tests": 29,
+        "name": "com.wjx871.population.person.idcard.Issue3OcrMySql84IT",
+        "skipped": 0,
+        "errors": 0
+      },
+      {
+        "failures": 0,
+        "tests": 4,
+        "name": "com.wjx871.population.person.idcard.Issue3ResourceMySql84IT",
+        "skipped": 0,
+        "errors": 0
+      },
+      {
+        "failures": 1,
+        "tests": 8,
+        "name": "com.wjx871.population.person.idcard.Phase14PersonIdCardOcrIntegrationTest",
+        "skipped": 0,
+        "errors": 0
+      }
+    ]
+  },
+  "mysqlPhase14Retry": {
+    "tests": 8,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      {
+        "failures": 0,
+        "tests": 8,
+        "name": "com.wjx871.population.person.idcard.Phase14PersonIdCardOcrIntegrationTest",
+        "skipped": 0,
+        "errors": 0
+      }
+    ]
+  },
+  "mysqlAuditFinal": {
+    "tests": 31,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      {
+        "failures": 0,
+        "tests": 2,
+        "name": "com.wjx871.population.person.idcard.Issue3CommitMySql84IT",
+        "skipped": 0,
+        "errors": 0
+      },
+      {
+        "failures": 0,
+        "tests": 29,
+        "name": "com.wjx871.population.person.idcard.Issue3OcrMySql84IT",
+        "skipped": 0,
+        "errors": 0
+      }
+    ]
+  },
+  "fullMaven": {
+    "command": ".\\mvnw.cmd test",
+    "exit": 0,
+    "startedAt": "2026-11-10T19:06:21.729812+08:00",
+    "suites": 83,
+    "tests": 972,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 4,
+    "classes": [
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.ai.precheck.AiConfirmIntegrationTest",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.ai.precheck.AiPrecheckIntegrationTest",
+        "tests": 36,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.ai.precheck.DocumentAnalysisResponseValidatorTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.application.Phase12ApplicationReturnIntegrationTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.approval.Phase02ApprovalIntegrationTest",
+        "tests": 21,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.assistant.PolicyAssistantServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.assistant.PolicyPythonAdapterIntegrationTest",
+        "tests": 20,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.assistant.PolicyPythonHttpStubIntegrationTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.assistant.PolicyWorkflowServiceTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.auth.AuthRbacIntegrationTest",
+        "tests": 19,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.cache.OptionalRedisServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.cache.S5A1StrictRedisServiceTest",
+        "tests": 13,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.cancellation.CancellationMaterialRequirementServiceTest",
+        "tests": 13,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.cancellation.Phase04CancellationIntegrationTest",
+        "tests": 33,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.certificate.Phase09CertificateIntegrationTest",
+        "tests": 20,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.common.GlobalExceptionHandlerDeadlockTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.dashboard.DashboardMapperTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.dashboard.DashboardServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.export.ExportDataScopeAuditIntegrationTest",
+        "tests": 18,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.export.ExportFileServiceFormulaInjectionTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.export.ExportFormulaInjectionIntegrationTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.export.Phase06ExportAuditIntegrationTest",
+        "tests": 34,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.floating.FloatingSelfScopeAuditIntegrationTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.floating.Issue34FirstIssueExclusivityTest",
+        "tests": 35,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 3,
+        "name": "com.wjx871.population.floating.Issue34FirstIssueRedTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 1,
+        "name": "com.wjx871.population.floating.Issue37ExpiryBatchIntegrationTest",
+        "tests": 18,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.floating.Issue37ExpiryPropertiesTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.floating.Phase05FloatingResidenceIntegrationTest",
+        "tests": 40,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.household.Issue15HouseholdDateBoundaryIntegrationTest",
+        "tests": 24,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.household.Phase08HouseholdMasterDataIntegrationTest",
+        "tests": 24,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.keypopulation.Issue4145KeyPopulationScopeHttpIntegrationTest",
+        "tests": 24,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.keypopulation.Issue43KeyPopulationSubmitPermissionIntegrationTest",
+        "tests": 27,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.keypopulation.Phase10KeyPopulationGateIntegrationTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.keypopulation.Phase10KeyPopulationIntegrationTest",
+        "tests": 56,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.material.ApplicationMaterialFeatureOffIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.material.ApplicationMaterialSubmitConcurrencyIntegrationTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.material.Issue3OwnedFileCompensationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.migration.Issue19MigrationBatchReuseIntegrationTest",
+        "tests": 13,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.migration.Issue22ArchiveAffectedRowsIntegrationTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.migration.Issue33CrossDistrictCharacterizationIntegrationTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.migration.Phase03MigrationIntegrationTest",
+        "tests": 36,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.person.idcard.Issue3CommitOutcomeIntegrationTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.person.idcard.Issue3OcrTransactionIntegrationTest",
+        "tests": 29,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.person.idcard.Issue3ResourceObservationIntegrationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.person.idcard.Phase14PersonIdCardImageIntegrationTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.person.idcard.Phase14PersonIdCardOcrIntegrationTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.person.IdCardValidatorTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.person.PersonMapperTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.person.PersonRegionOwnershipAuditIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.person.Phase08PersonIdentityIntegrationTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.PopulationMinitermApplicationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.query.ComprehensiveQueryMapperTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.query.ComprehensiveQueryServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.query.Issue6871ComprehensiveQueryIntegrationTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.query.Phase11QueryValidationTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.query.QueryDashboardPermissionIntegrationTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.reference.Issue8183HierarchyHttpTest",
+        "tests": 21,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.reference.Phase09AdminRegionIntegrationTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.reference.Phase09DataDictionaryIntegrationTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.reference.ReferenceCacheIsolationIntegrationTest",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.reference.ReferenceCacheTransactionIntegrationTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.release.BackendV1ReleaseAuditTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.resident.ResidentMapperTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.review.SecondaryBackendDataValidationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.s2.aggregation.PopulationMetricsCalculatorTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.s2.rmi.RmiInvocationHandlerClassificationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.s2.S2AggregationFacadeTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.s2.S2RemoteDisabledIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.s2.S2RmiClientConcurrencyIntegrationTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.s2.S2RmiHttpEndToEndIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.s2.S2StatisticsApiIntegrationTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.security.Phase11TokenRevocationTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.security.RevocationConfigurationTest",
+        "tests": 27,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.security.RevocationEventsTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.security.S5A1StrictRevocationHttpIntegrationTest",
+        "tests": 23,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.security.SensitiveDataMaskingServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.security.TokenRevocationServiceConsistencyTest",
+        "tests": 18,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.stats.Issue70StatisticsLogRedactionIntegrationTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.stats.StatisticsScopeCacheIntegrationTest",
+        "tests": 13,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.stats.StatisticsScopeIntegrationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.stats.StatisticsServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.stats.UnifiedStatisticsScopeCacheTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "skipped": 0,
+        "name": "com.wjx871.population.transaction.CoreTransactionBoundaryIntegrationTest",
+        "tests": 14,
+        "failures": 0,
+        "errors": 0
+      }
+    ]
+  },
+  "distinctMySqlScenarios": 43
+}
