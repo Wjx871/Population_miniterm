@@ -24,6 +24,41 @@ class ExportFileServiceFormulaInjectionTest {
     Path exportDirectory;
 
     @Test
+    void allPrefixExpressionCombinationsRemainStringInOriginalOoxml() throws Exception {
+        ExportProperties properties = new ExportProperties();
+        properties.setDir(exportDirectory.toString());
+        var cases = ExportFormulaPayloads.cases();
+        List<Map<String, Object>> rows = cases.stream()
+                .map(p -> Map.<String, Object>of("name", p.input())).toList();
+        var generated = new ExportFileService(properties).generate("PERSON", List.of("name"), rows, "matrix.xlsx");
+        var inspection = ExportXlsxInspection.inspect(generated.path());
+        assertThat(inspection.sha256()).isEqualTo(generated.sha256());
+        assertThat(inspection.poiFormulaCells()).isZero();
+        assertThat(inspection.xmlFormulaElements()).isZero();
+        assertThat(inspection.externalLinkParts()).isZero();
+        assertThat(inspection.externalRelationships()).isZero();
+        for (int i = 0; i < cases.size(); i++) {
+            var cell = inspection.cells().get("A" + (i + 2));
+            assertThat(cell.type()).isEqualTo("STRING");
+            assertThat(cell.text()).isEqualTo(cases.get(i).expected());
+            assertThat(cell.xml()).contains("t=\"s\"").doesNotContain("<f");
+        }
+    }
+
+    @Test
+    void inspectionDetectsHarmlessRealFormulaPositiveControl() throws Exception {
+        Path file = exportDirectory.resolve("positive-control.xlsx");
+        try (Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+            workbook.createSheet("CONTROL").createRow(0).createCell(0).setCellFormula("1+1");
+            try (var output = Files.newOutputStream(file)) { workbook.write(output); }
+        }
+        var inspection = ExportXlsxInspection.inspect(file);
+        assertThat(inspection.poiFormulaCells()).isOne();
+        assertThat(inspection.xmlFormulaElements()).isOne();
+        assertThat(inspection.cells().get("A1").type()).isEqualTo("FORMULA");
+    }
+
+    @Test
     void generatedAndReopenedWorkbooksKeepPayloadsAsTextWithoutFormulaCells() throws Exception {
         List<PayloadCase> cases = List.of(
                 new PayloadCase("equals", "=1+1", "'=1+1"),

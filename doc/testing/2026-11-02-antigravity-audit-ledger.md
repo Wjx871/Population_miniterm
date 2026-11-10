@@ -83,7 +83,7 @@
 | 75 | CRITICAL | 敏感导出执行借用管理员执行人范围 | FIXED_VERIFIED | 执行时复核申请人当前权限并保留批准范围；`Phase06ExportAuditIntegrationTest` 范围测试；`553f539`、`274517b`。 | 后端已完成 |
 | 76 | CRITICAL | Redis 健康探针连接未关闭 | FIXED_VERIFIED | `OptionalRedisService.ping` 使用 try-with-resources；mock 验证成功/异常关闭；`9156378`。 | 后端已完成 |
 | 77 | HIGH | 导出 SQL 缺 DEPARTMENT/SELF 分支 | FIXED_VERIFIED | 与 #57 同修复；导出范围集成测试验证；`6541a05`、`553f539`。 | 后端已完成 |
-| 78 | HIGH | XLSX 公式注入可由前导空白绕过 | OPEN | `ExportFileService.cell` 仍需检查去空白后的公式前缀；本轮未改。 | 后端 |
+| 78 | HIGH | XLSX 公式注入可由前导空白绕过 | OPEN | 2026-11-10 独立复核候选：NOT_REPRODUCED，建议重新分类，等待 ChatGPT 独立复核。精确基线 `5d05109` 的真实普通/审批后敏感 HTTP 导出，两次生成及下载、94 组输入；原始 OOXML 全为共享字符串 `t="s"`，无 `<f>`/externalLinks，POI STRING、Excel 16.0 只读打开均 0 公式。未修改生产代码，未追加前导空白转义；不是 FIXED_VERIFIED。[报告、原始 XLSX/XML 与限制](../development/issue78-xlsx-formula-triage.md)。 | 独立复核 |
 | 79 | HIGH | 审计日志可能明文记录身份号/凭据 | FIXED_VERIFIED | 写日志前执行 `auditDetail` 脱敏；`Phase06ExportAuditIntegrationTest.auditMaskingRemovesCredentialsAndSensitiveNumbers`；`3e887f1`。 | 后端已完成 |
 | 80 | HIGH | 自定义字典可能绕过居住证类型拦截 | NOT_REPRODUCED | `CertificateService.validate` 明确拒绝 `RESIDENCE_PERMIT` 并要求启用类型；`Phase09CertificateIntegrationTest` 覆盖。 | 后端按现有拦截 |
 | 81 | HIGH | 行政区父节点停用状态未校验 | CODE_CANDIDATE | 2026-11-08 精确基线真实 HTTP RED：H2/MySQL 均复现停用父节点下新增 201、迁入 200。新增/更新/启用改为锁定并校验完整 parent_id 祖先链，MySQL 祖先 S / 操作节点 X，当前读重验父指针，保留 version/RBAC/审计事务。新增 H2 21 项、相关专项 78、MySQL 8.4.8 RR 22 项通过；36 组实际行锁等待，未形成非法层级，死锁/超时计数无增长；全量 869（866 通过、原 #34 RED 3 跳过），0 失败/错误。[实现、证据及限制](../development/issue81-83-admin-region-hierarchy.md)。等待 ChatGPT 独立复核，不关闭。 | 后端/独立复核 |

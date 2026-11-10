@@ -1,0 +1,65 @@
+{
+  "fullMaven": {
+    "tests": 969,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 4,
+    "suites": 82
+  },
+  "skippedTests": [
+    {
+      "class": "com.wjx871.population.floating.Issue34FirstIssueRedTest",
+      "test": "anotherApplicantAlsoCreatesDuplicate",
+      "reason": "System property [issue34.red] does not exist"
+    },
+    {
+      "class": "com.wjx871.population.floating.Issue34FirstIssueRedTest",
+      "test": "simultaneousHttpRequestsBothCreateDrafts",
+      "reason": "System property [issue34.red] does not exist"
+    },
+    {
+      "class": "com.wjx871.population.floating.Issue34FirstIssueRedTest",
+      "test": "duplicateCreatesTwoRealHttpDrafts(String)",
+      "reason": "System property [issue34.red] does not exist"
+    },
+    {
+      "class": "com.wjx871.population.floating.Issue37ExpiryBatchIntegrationTest",
+      "test": "tenThousandCandidatesPerKindHaveBoundedResults",
+      "reason": "System property [issue37.large] does not exist"
+    }
+  ],
+  "localRawLogs": [
+    {
+      "file": "issue78-baseline-test.log",
+      "sha256": "466da43882ad30db7986b52604219a5ccbc6a6f894ed781fbd2486c1f868dfc1"
+    },
+    {
+      "file": "issue78-focused-test.log",
+      "sha256": "ea6a9b7c7fb05c891da6ec5091e23722b78ecc738605654b9939aa8d85422ec2"
+    },
+    {
+      "file": "issue78-focused-final-test.log",
+      "sha256": "fe044ed810843274065bed9b6ec88e3500c1146676a5092f9441888932ce363c"
+    },
+    {
+      "file": "issue78-focused-verified-test.log",
+      "sha256": "8cecb360c1917c547d0b3eaf56c7179dffdefbfe46c3f0b852ce0f9d2c202384"
+    },
+    {
+      "file": "issue78-full-test.log",
+      "sha256": "206dad071b421a9983c9b7dbadb2aa223ceea5627c91a58c63035d45f03d40e3"
+    }
+  ],
+  "focused": {
+    "tests": 57,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "baseline": {
+    "tests": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

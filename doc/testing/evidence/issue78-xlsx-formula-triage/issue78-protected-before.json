@@ -1,0 +1,85 @@
+{
+  "mainStatus": [
+    " M .gitignore",
+    "?? .agent-teams/"
+  ],
+  "localRefs": [
+    "f26cc20ca9d0d7bfd650669cb8ecd04a5c9d9891 refs/heads/backup/develop2-before-develop-sync-20260717",
+    "b1832719dc9bd070903d0b7b179e40bcc963ff6c refs/heads/backup/frontend-before-develop-merge-20260712",
+    "a48b2f5b7535715c37efac85f70c60725c90ece0 refs/heads/backup/frontend-before-final-develop-sync-20260712",
+    "ab9d75351095a06bd23102384f774a15fc6c30fd refs/heads/backup/frontend-before-m5-ab9d753",
+    "f53f53c881261dd3116ece076f32d28446a356dc refs/heads/backup/frontend-population-before-launch",
+    "eaf344bbbb1a3605657eddf4ed97bae2863bd3e6 refs/heads/codex/frontend-launch",
+    "1247345078fd27a639e293e9ea213daad6b34187 refs/heads/develop",
+    "74f8a0a47ccaab948e42bd6e3bf950aa758dc986 refs/heads/develop2",
+    "758014cbcccdfe820efb2a6fae73bc3168030484 refs/heads/feat/20261103-s3-rabbitmq-async-precheck",
+    "409530e33404bd3056a0bf0705592db585ee9b0f refs/heads/feat/frontend-population",
+    "e7bc85229f9f36b82a0aaf31f1dd5b2f242a7de1 refs/heads/fix/20261101-audit-p0-review-followup",
+    "d1b23206367642aac27553adea61e43c0b37a908 refs/heads/fix/20261101-audit-p0-security",
+    "c31c232bbfcb6601b3a4ff884896a22c7739c0c2 refs/heads/fix/20261101-backend-security-hardening",
+    "8b0730fa474c8b533ab8f3b571bd1bf73b4e65f2 refs/heads/fix/20261107-issue43-keypopulation-submit-permission",
+    "f5c3a959cf99f69fed8e8640d845a99b23428563 refs/heads/fix/20261107-issue81-83-admin-region-hierarchy",
+    "5d05109ecabb15738c0d1c7d017e5d8220f490c1 refs/heads/fix/20261110-issue78-xlsx-formula-triage",
+    "082c281897165edd2050b01a25bb4c3ceed955ef refs/heads/fix/integration-readiness",
+    "5d05109ecabb15738c0d1c7d017e5d8220f490c1 refs/heads/integration/20261101-backend-p0-security",
+    "d7fc1192967a13c7d80d2b60fdc12749fd5218df refs/heads/main",
+    "b54579b6b7f8b1feeda60f43906da05fb2ffda99 refs/heads/recovery/20261101-undo-accidental-main-push",
+    "4488fc892432f8def7763c97935c137cf9eed086 refs/heads/review/frontend-current-progress",
+    "47362d67452bc85e35d37e9927a3a88275d4352c refs/heads/test/20261101-backend-deep-regression",
+    "d1f946c37a784454b4c0374770b17de995b3345e refs/heads/worktree-agent-a044bc5143e7ae326",
+    "d1f946c37a784454b4c0374770b17de995b3345e refs/heads/worktree-agent-a4d4ad6bf1f90bd87",
+    "d1f946c37a784454b4c0374770b17de995b3345e refs/heads/worktree-agent-aec77d2151888e045"
+  ],
+  "worktrees": [
+    "worktree D:/学习用/大二下/小学期",
+    "HEAD d7fc1192967a13c7d80d2b60fdc12749fd5218df",
+    "branch refs/heads/main",
+    "",
+    "worktree C:/Users/jxgm/.codex/worktrees/issue22-archive-rowcount/小学期",
+    "HEAD 3f2730882583fdb0cfb3b5aafb50583ea1aecade",
+    "detached",
+    "",
+    "worktree C:/Users/jxgm/.codex/worktrees/issue78-xlsx-formula-triage/小学期",
+    "HEAD 5d05109ecabb15738c0d1c7d017e5d8220f490c1",
+    "branch refs/heads/fix/20261110-issue78-xlsx-formula-triage",
+    "",
+    "worktree C:/Users/jxgm/.codex/worktrees/issue81-83-admin-region/小学期",
+    "HEAD f5c3a959cf99f69fed8e8640d845a99b23428563",
+    "branch refs/heads/fix/20261107-issue81-83-admin-region-hierarchy",
+    "",
+    "worktree C:/Users/jxgm/.codex/worktrees/s3-rabbitmq-async-precheck/小学期",
+    "HEAD 758014cbcccdfe820efb2a6fae73bc3168030484",
+    "branch refs/heads/feat/20261103-s3-rabbitmq-async-precheck",
+    "",
+    "worktree D:/学习用/大二下/小学期-integration-20261101-backend-p0-security",
+    "HEAD 5d05109ecabb15738c0d1c7d017e5d8220f490c1",
+    "branch refs/heads/integration/20261101-backend-p0-security",
+    ""
+  ],
+  "protectedFiles": [
+    {
+      "path": "D:\\学习用\\大二下\\小学期\\.gitignore",
+      "sha256": "8399B5DE049E3989E123B747D457A02A5D8EDADF6A57867B57F1BD760FA68DE3"
+    },
+    {
+      "path": "D:\\学习用\\大二下\\小学期\\.agent-teams\\issue19-migration-batch-reuse\\team.json",
+      "sha256": "74560FE0FDFFA06348EA598C52B47996FA564C534FBC6C9D3B638BEE468DAB84"
+    },
+    {
+      "path": "D:\\学习用\\大二下\\小学期\\.agent-teams\\issue19-migration-batch-reuse\\inbox\\analyst.jsonl",
+      "sha256": "B5E3401CA5715CD16F1FDFBCAE50F14AC5F77A3432FE386109364ADCE22F1E9E"
+    },
+    {
+      "path": "D:\\学习用\\大二下\\小学期\\.agent-teams\\issue19-migration-batch-reuse\\inbox\\captain.jsonl",
+      "sha256": "ABBB4FA25EB860561A8C7FEFF8B4B79798DA6A6AF31AFBEE690B33058E3BAE85"
+    },
+    {
+      "path": "D:\\学习用\\大二下\\小学期\\.agent-teams\\issue19-migration-batch-reuse\\inbox\\engineer.jsonl",
+      "sha256": "2468339BBF9493B01931C1BF5B392B61EFC021A17D3787D80EF0D0BEB5DBA6A3"
+    },
+    {
+      "path": "D:\\学习用\\大二下\\小学期\\.claude\\settings.local.json",
+      "sha256": "85216C09E33F9DB575F6AC0857D8AE116236E920E63FAD893233F183CAC9839D"
+    }
+  ]
+}
