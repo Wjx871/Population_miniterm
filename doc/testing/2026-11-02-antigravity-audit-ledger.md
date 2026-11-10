@@ -2,13 +2,13 @@
 
 基线：`c6caa2d87038fd728772699a7af643931852c28a`。原始报告保留在 `D:\学习用\大二下\小学期\.agents\teamwork\orchestrator\SYSTEM_CORE_BUSINESS_AUDIT_REPORT.md`，本文件不覆盖该报告。
 
-原审计状态沿用任务约定的六种值；2026-11-07 仅为 #43 补充 `CODE_CANDIDATE`，表示代码及 H2 验证已完成、等待独立复核，不等于结项。除标明“本轮动态复现”的项目外，结论来自当前源码、既有集成测试、已审查提交或 API/前端契约；没有把未运行的场景写成动态通过。`FRONTEND_HANDOFF` 项本轮没有改动前端。
+原审计状态沿用任务约定的六种值；2026-11-10 对 #3、#15、#19、#22、#34、#37 和 #78 完成独立复核状态核销，详见文末补充。`FIXED_VERIFIED` 不代表已部署；其余项目维持原状。除标明“本轮动态复现”的项目外，结论来自当前源码、既有集成测试、已审查提交或 API/前端契约；没有把未运行的场景写成动态通过。`FRONTEND_HANDOFF` 项本轮没有改动前端。
 
 | # | 原级别 | 原问题摘要 | 最新状态 | 复核依据、复现与关联提交 | 后续责任方 |
 |---:|---|---|---|---|---|
 | 1 | CRITICAL | 普通编辑可能复活注销或死亡人员 | FIXED_VERIFIED | `PersonService` 不再把客户端 status 写回；`Phase08PersonIdentityIntegrationTest.ordinaryEditsPreserveCancelledAndDeceasedLifecycleStates` 与本轮 `Phase08PersonIdentityIntegrationTest` 覆盖显式 status 绕过；`6541a05`。 | 后端已完成 |
 | 2 | CRITICAL | REGION 建档后人员无法由创建人读取 | FIXED_VERIFIED | 本轮旧实现复现：201 创建后同区详情 403、列表/导出为 0；修复后同区、异区、ALL 与导出断言通过；`PersonRegionOwnershipAuditIntegrationTest`，`aff3f8e`，迁移 `V4_014`。 | 后端已完成 |
-| 3 | HIGH | OCR 远程请求发生在长事务内 | CODE_CANDIDATE | 历史修复 `a1cff942` 在精确基线 `aec60c4` 已独立验证为 `EXISTING_FIX_CONFIRMED`；本轮无生产代码修改。H2/私有 MySQL 8.4 RR 观察确认 OCR 等待期间无活动事务、借用连接或 InnoDB 数据锁，并验证并发、必要审计回滚、已提交文件及 UNKNOWN 保留。证据见 [本轮验证](../development/issue3-ocr-transaction-verification.md)，等待 ChatGPT 独立复核。 | 后端/独立复核 |
+| 3 | HIGH | OCR 远程请求发生在长事务内 | FIXED_VERIFIED | 历史修复 `a1cff942` 经 `c49e753` 的 H2/MySQL 8.4 慢 OCR、连接与锁观测及 UNKNOWN 文件保留验证；ChatGPT 独立复核通过。EXISTING_FIX_CONFIRMED / REVIEW_PASSED / INTEGRATED / CLEANUP_COMPLETED。同步请求仍占用线程，无持久化崩溃恢复协议。 [证据](../development/issue3-ocr-transaction-verification.md)。 | 已复核；未声明生产部署 |
 | 4 | HIGH | 脱敏回显值可能被编辑表单写回 | FRONTEND_HANDOFF | 后端保留/忽略脱敏字段的兼容逻辑已在 `PersonService`；编辑表单回填与提交仍需前端验证。 | 前端组 |
 | 5 | MEDIUM | 性别编码与前端字典不一致 | FRONTEND_HANDOFF | 关联前端表单/字典映射；本轮未改前端。 | 前端组 |
 | 6 | MEDIUM | 影印本 SHA 去重可跨用户占用 | FIXED_VERIFIED | `PersonIdCardImageService` 按对象归属拒绝跨用户读取/覆盖；`Phase14PersonIdCardOcrIntegrationTest.duplicateFromAnotherUploaderCannotReadOrChangeOriginalDraftOrFileReference`；`dfc5f81`。 | 后端已完成 |
@@ -20,14 +20,14 @@
 | 12 | HIGH | 家庭关系枚举文案及户主显示回退异常 | FRONTEND_HANDOFF | 属关系标签和展示回退；本轮未改前端。 | 前端组 |
 | 13 | MEDIUM | 家庭户表单重复渲染控件 | FRONTEND_HANDOFF | 视图布局问题；本轮未改前端。 | 前端组 |
 | 14 | MEDIUM | 前端拦截器吞掉 409 业务冲突提示 | FRONTEND_HANDOFF | API 错误提示呈现需前端核验；本轮未改前端。 | 前端组 |
-| 15 | MEDIUM | 立户日期与成员入户日期边界未校验 | CODE_CANDIDATE | 已统一新增/更新/迁入及历史恢复日期边界；真实 H2 RED 21 项 8 失败，修复后全量 Maven 937 项 0 失败/0 错误/3 既有跳过；MySQL 8.4 专项及相关回归 133 项通过（含 4 项真实锁等待并发，1 个 H2 重复关系夹具明确排除）。证据与限制见 `doc/development/issue15-household-date-boundary.md`；待 ChatGPT 独立复核，未集成或部署。 | 后端 |
+| 15 | MEDIUM | 立户日期与成员入户日期边界未校验 | FIXED_VERIFIED | 家庭户建立、成员入户、迁入及历史恢复日期边界已修复；H2 RED/GREEN、MySQL 并发及全量回归经独立复核。提交 `3f273088`。 [证据](../development/issue15-household-date-boundary.md)。 | 已复核；未声明生产部署 |
 | 16 | LOW | 详情刷新未 await 导致竞态 | FRONTEND_HANDOFF | 页面异步刷新行为；本轮未改前端。 | 前端组 |
 | 17 | LOW | 家庭户适配器重复定义 regionCode | FRONTEND_HANDOFF | 前端适配器实现问题；本轮未改前端。 | 前端组 |
 | 18 | CRITICAL | 户主迁出申请缺少继任者导致批准后无法执行 | FIXED_NOT_VERIFIED | 新申请在提交时校验继任者，`Phase03MigrationIntegrationTest` 验证新流；已批准但缺少继任者的历史单仍需补正/重新审批方案；`eabae6a`。 | 后端后续处理历史单 |
-| 19 | HIGH | 跨区迁移批次号全局唯一使取消草稿占号 | CODE_CANDIDATE | 已修复并完成 H2 与真实 MySQL 8.4 验证：取消草稿同事务将 migration_in/migration_out 明细置 CANCELLED，原 transfer_batch_no 保留；V4_019 以 STORED 生成列 active_transfer_batch_no（CANCELLED→NULL）+ uk_migration_in_active_batch 条件唯一索引替代旧 uk_migration_in_batch；历史 CANCELLED+DRAFT 记录备份后受控回填。Issue19MigrationBatchReuseIntegrationTest 13/13（H2），全量 Maven 913/0/0/3，真实 MySQL 8.4.8 gate 10+10 并发通过；Issue19MySql84IT exact 门禁 t11 曾发现继承 H2-only 诊断 1 error，t12 已用 isH2Database() 保护修复，t13 全新实例正式复跑 13/13（issue19-mysql84-gate-rerun.txt）。证据 doc/development/evidence/issue19-*.txt，专项文档 doc/development/issue19-migration-batch-reuse.md。等待独立复核，不标记为已修复/已验证。 | 后端/独立复核 |
+| 19 | HIGH | 跨区迁移批次号全局唯一使取消草稿占号 | FIXED_VERIFIED | 取消草稿释放有效批次号占位；`d443f30b`、V4_019 条件唯一方案及 H2/MySQL 8.4 并发门禁经独立复核。历史数据升级需备份与受控回填；隔离验证不代表生产已执行 V4_019。 [证据](../development/issue19-migration-batch-reuse.md)。 | 已复核；未声明生产部署 |
 | 20 | HIGH | 户主交接只改主表指针未更新成员 HEAD 关系 | FIXED_VERIFIED | `MigrationService.executeOut` 同事务更新新户主关系与家庭户指针；迁出交接测试覆盖；`eabae6a`。 | 后端已完成 |
 | 21 | MEDIUM | 目标家庭户与迁入区划不一致 | FIXED_VERIFIED | `MigrationService.createIn/updateIn/executeIn` 均在服务端锁定/读取目标户后要求非空 `household.region_code` 与 `to_region_code` 精确一致；执行时再次验证。`Phase03MigrationIntegrationTest.targetRegionMismatchIsRejectedOnCreateUpdateAndExecute` 覆盖三处拒绝、草稿不被改写及执行失败不改人员/户籍。 | 后端已完成 |
-| 22 | MEDIUM | 户籍归档写入未检查受影响行数 | CODE_CANDIDATE | executeOut 在归档后置 Hook 前严格要求 insertArchive 返回 1，非 1 返回 409 并回滚。H2/真实 MySQL 8.4.8 受控零行 SQL 均已先 RED（旧版仍 200 并删除户籍）；GREEN H2 93 项、MySQL 92 项通过，全量 Maven 943/0/0/3。零行是精确 SQL 故障注入，-1/2 为模拟返回；事务/并发/唯一冲突及 #15/#19 回归见 `doc/development/issue22-archive-affected-rows.md`。仅候选，等待 ChatGPT 独立复核，未集成/部署。 | 后端/独立复核 |
+| 22 | MEDIUM | 户籍归档写入未检查受影响行数 | FIXED_VERIFIED | `3268a831` 要求 executeOut 归档受影响行数为 1；零行旧版 RED、H2/MySQL GREEN、回滚与回归经独立复核；-1/2 为模拟返回。 [证据](../development/issue22-archive-affected-rows.md)。 | 已复核；未声明生产部署 |
 | 23 | MEDIUM | 迁出表单缺少新户主选择与同意材料 | FRONTEND_HANDOFF | 前端申请表单/材料配置需核验；新后端提交门禁已要求继任者；本轮未改前端。 | 前端组 |
 | 24 | LOW | 迁出区划与归档查询类型交互不规范 | FRONTEND_HANDOFF | 查询控件绑定问题；本轮未改前端。 | 前端组 |
 | 25 | CRITICAL | 人员编辑接口隐式复活注销/死亡状态 | FIXED_VERIFIED | 与 #1 同根因；服务端状态白名单与 Person Mapper 不写 status；人口生命周期测试通过；`6541a05`。 | 后端已完成 |
@@ -39,10 +39,10 @@
 | 31 | CRITICAL | SELF 可绕过归属校验读取他人流动/居住证 | FIXED_VERIFIED | 服务层按来源申请人校验 SELF；`FloatingSelfScopeAuditIntegrationTest` 覆盖本人允许、他人拒绝及列表/详情；`6541a05`。 | 后端已完成 |
 | 32 | HIGH | 流动关闭与居住证签注锁顺序形成 MySQL 死锁 | FIXED_VERIFIED | 本轮旧实现捕获 8.4.8 `1213/40001` 等待环；修复后 MySQL 10/10 轮关闭 200、签注 409、死锁计数不增；`MySql84CriticalAcceptanceIT.closeThenEndorseLocksFloatingBeforePermitWithoutDeadlock`，`2bfa038`。 | 后端已完成 |
 | 33 | HIGH | 同市跨区户籍冲突只按区划精确相等判断 | OPEN | `countActiveResidenceInRegion` 与 `MigrationMapper.xml` 仍按 `region_code=#{region}` 精确匹配。仓库 admin_region 有层级表和合成种子，但没有权威完整区划数据或可证明“同市”归属规则；本轮不推断编码前缀/长度、不修改查询。需业务提供权威区划数据与边界规则后再修复。 | 后端/业务规则提供方 |
-| 34 | HIGH | 居住证申请缺少在途排他检查 | CODE_CANDIDATE | 真实HTTP/H2旧版6场景复现双201；保留登记/人员父锁后按通用申请人员与未结状态排他，含RETURNED/APPROVED及兼容RESUBMITTED，权限验证先于查询。新增H2 35项与MySQL8.4 RR 35项通过，两者10轮并发均单201/单409；MySQL #32门禁10轮无1213；全量845通过/0失败/0错误/3个RED方法跳过。无新迁移、不清理历史重复；边界与证据见 `doc/development/issue34-permit-first-issue-exclusivity.md`。等待独立复核。 | 后端/独立复核 |
+| 34 | HIGH | 居住证申请缺少在途排他检查 | FIXED_VERIFIED | `5b95f2be` 按人员、通用业务类型及未结状态排他；真实 HTTP/H2 与 MySQL RR 并发门禁经独立复核。RR 结论依赖当前入口先取得父记录锁再建立一致性快照，不涵盖已有旧快照的外层事务。 [证据](../development/issue34-permit-first-issue-exclusivity.md)。 | 已复核；未声明生产部署 |
 | 35 | MEDIUM | 居住证到期预警页签复用停滞 | FRONTEND_HANDOFF | 前端 Tab/列表刷新问题；本轮未改前端。 | 前端组 |
 | 36 | MEDIUM | 申领弹窗可选不合资格人员 | FRONTEND_HANDOFF | 候选项筛选属前端；后端执行仍校验有效登记与申领日期；本轮未改前端。 | 前端组 |
-| 37 | MEDIUM | 居住证到期任务全量加载结果集 | CODE_CANDIDATE | 已实现有界 ID keyset 扫描、冻结日期、锁后重验及登记/person→permit 锁顺序；RED/H2/MySQL 8.4（各类 10,000 候选）和全量 Maven 965 项（4 跳过）通过。证据：`doc/development/issue37-expiry-keyset-pagination.md`；等待 ChatGPT 独立复核。 | 后端 |
+| 37 | MEDIUM | 居住证到期任务全量加载结果集 | FIXED_VERIFIED | `5d05109e` 使用有界 ID keyset 分页、冻结日期、锁后重验；MySQL 两类各 10000 候选及并发/锁顺序回归经独立复核。分页不消除数据库扫描成本。 [证据](../development/issue37-expiry-keyset-pagination.md)。 | 已复核；未声明生产部署 |
 | 38 | LOW | 关闭流动登记与签注的级联锁不一致 | FIXED_VERIFIED | 与 #32 同一等待环；锁流动登记先于居住证行，`lockPermit` 不再锁 JOIN 表；同一 MySQL 十轮门禁通过；`2bfa038`。 | 后端已完成 |
 | 39 | HIGH | 解除申请被错误要求提交建档依据 | NOT_REPRODUCED | 当前 API 文档明确解除材料规则同建档；前端建档/解除共用必需材料与核验 helper；`Phase10KeyPopulationIntegrationTest.releaseMissingMaterials` 验证缺材料拒绝。无业务代码改动。 | 后端按现有契约 |
 | 40 | HIGH | 重点人口/统计状态值不匹配导致统计恒为零 | FIXED_VERIFIED | 统计 SQL 使用业务 ACTIVE 状态并传入范围；`StatisticsScopeIntegrationTest`、`DashboardMapperTest`；`8509d78`。 | 后端已完成 |
@@ -83,7 +83,7 @@
 | 75 | CRITICAL | 敏感导出执行借用管理员执行人范围 | FIXED_VERIFIED | 执行时复核申请人当前权限并保留批准范围；`Phase06ExportAuditIntegrationTest` 范围测试；`553f539`、`274517b`。 | 后端已完成 |
 | 76 | CRITICAL | Redis 健康探针连接未关闭 | FIXED_VERIFIED | `OptionalRedisService.ping` 使用 try-with-resources；mock 验证成功/异常关闭；`9156378`。 | 后端已完成 |
 | 77 | HIGH | 导出 SQL 缺 DEPARTMENT/SELF 分支 | FIXED_VERIFIED | 与 #57 同修复；导出范围集成测试验证；`6541a05`、`553f539`。 | 后端已完成 |
-| 78 | HIGH | XLSX 公式注入可由前导空白绕过 | OPEN | 2026-11-10 独立复核候选：NOT_REPRODUCED，建议重新分类，等待 ChatGPT 独立复核。精确基线 `5d05109` 的真实普通/审批后敏感 HTTP 导出，两次生成及下载、94 组输入；原始 OOXML 全为共享字符串 `t="s"`，无 `<f>`/externalLinks，POI STRING、Excel 16.0 只读打开均 0 公式。未修改生产代码，未追加前导空白转义；不是 FIXED_VERIFIED。[报告、原始 XLSX/XML 与限制](../development/issue78-xlsx-formula-triage.md)。 | 独立复核 |
+| 78 | HIGH | XLSX 公式注入可由前导空白绕过 | NOT_REPRODUCED | `aec60c4f` 的真实普通及审批后敏感 XLSX 导出经 94 组输入、OOXML、POI 和 Excel 16.0 只读验证，未复现可执行公式注入；没有真实漏洞 RED 或生产修复。CSV 转换、手动编辑和其他 Excel 版本未测试。 [证据](../development/issue78-xlsx-formula-triage.md)。 | 已复核；未声明生产部署 |
 | 79 | HIGH | 审计日志可能明文记录身份号/凭据 | FIXED_VERIFIED | 写日志前执行 `auditDetail` 脱敏；`Phase06ExportAuditIntegrationTest.auditMaskingRemovesCredentialsAndSensitiveNumbers`；`3e887f1`。 | 后端已完成 |
 | 80 | HIGH | 自定义字典可能绕过居住证类型拦截 | NOT_REPRODUCED | `CertificateService.validate` 明确拒绝 `RESIDENCE_PERMIT` 并要求启用类型；`Phase09CertificateIntegrationTest` 覆盖。 | 后端按现有拦截 |
 | 81 | HIGH | 行政区父节点停用状态未校验 | CODE_CANDIDATE | 2026-11-08 精确基线真实 HTTP RED：H2/MySQL 均复现停用父节点下新增 201、迁入 200。新增/更新/启用改为锁定并校验完整 parent_id 祖先链，MySQL 祖先 S / 操作节点 X，当前读重验父指针，保留 version/RBAC/审计事务。新增 H2 21 项、相关专项 78、MySQL 8.4.8 RR 22 项通过；36 组实际行锁等待，未形成非法层级，死锁/超时计数无增长；全量 869（866 通过、原 #34 RED 3 跳过），0 失败/错误。[实现、证据及限制](../development/issue81-83-admin-region-hierarchy.md)。等待 ChatGPT 独立复核，不关闭。 | 后端/独立复核 |
@@ -108,3 +108,20 @@
 - #44 保持 FIXED_VERIFIED：真实 MySQL REPEATABLE-READ 下建档和解除并发分别 10/10 轮为 201/409，未出现双成功；RETURNED 重复申请均 409。显式早期一致性读对照显示 RR 旧快照、RC 可见提交行；该人为序列未在服务入口复现，生产实现未改。
 - 独立回归：H2 484/484 通过；MySQL 专项 16/16 通过，0 失败、0 错误、0 跳过。两类数字分别统计，具体测试构成见 2026-11-02-round4-mysql-final-gate.md。
 - 本补充只扩充 #2、#44 的 MySQL 证据，不改变 86 项账本编号，也不改变其他事项状态。
+
+
+## 2026-11-10 独立复核状态核销补充
+
+基线为个人 integration `c49e7531d9aa58d37510a784b02e74101c3f44d5`。历史施工文档中的 CODE_CANDIDATE、尚未集成等为当时阶段性快照；当前权威状态以本账本为准。独立复核不等于部署。本轮仅作文档对账，未重跑历史测试。
+
+| 编号 | 原状态 | 核销状态 | 提交与证据、边界 |
+|---|---|---|---|
+| 3 | CODE_CANDIDATE | FIXED_VERIFIED | 历史修复 `a1cff942` 经 `c49e753` 的 H2/MySQL 8.4 慢 OCR、连接与锁观测及 UNKNOWN 文件保留验证；ChatGPT 独立复核通过。EXISTING_FIX_CONFIRMED / REVIEW_PASSED / INTEGRATED / CLEANUP_COMPLETED。同步请求仍占用线程，无持久化崩溃恢复协议。 [证据](../development/issue3-ocr-transaction-verification.md) |
+| 15 | CODE_CANDIDATE | FIXED_VERIFIED | 家庭户建立、成员入户、迁入及历史恢复日期边界已修复；H2 RED/GREEN、MySQL 并发及全量回归经独立复核。提交 `3f273088`。 [证据](../development/issue15-household-date-boundary.md) |
+| 19 | CODE_CANDIDATE | FIXED_VERIFIED | 取消草稿释放有效批次号占位；`d443f30b`、V4_019 条件唯一方案及 H2/MySQL 8.4 并发门禁经独立复核。历史数据升级需备份与受控回填；隔离验证不代表生产已执行 V4_019。 [证据](../development/issue19-migration-batch-reuse.md) |
+| 22 | CODE_CANDIDATE | FIXED_VERIFIED | `3268a831` 要求 executeOut 归档受影响行数为 1；零行旧版 RED、H2/MySQL GREEN、回滚与回归经独立复核；-1/2 为模拟返回。 [证据](../development/issue22-archive-affected-rows.md) |
+| 34 | CODE_CANDIDATE | FIXED_VERIFIED | `5b95f2be` 按人员、通用业务类型及未结状态排他；真实 HTTP/H2 与 MySQL RR 并发门禁经独立复核。RR 结论依赖当前入口先取得父记录锁再建立一致性快照，不涵盖已有旧快照的外层事务。 [证据](../development/issue34-permit-first-issue-exclusivity.md) |
+| 37 | CODE_CANDIDATE | FIXED_VERIFIED | `5d05109e` 使用有界 ID keyset 分页、冻结日期、锁后重验；MySQL 两类各 10000 候选及并发/锁顺序回归经独立复核。分页不消除数据库扫描成本。 [证据](../development/issue37-expiry-keyset-pagination.md) |
+| 78 | OPEN | NOT_REPRODUCED | `aec60c4f` 的真实普通及审批后敏感 XLSX 导出经 94 组输入、OOXML、POI 和 Excel 16.0 只读验证，未复现可执行公式注入；没有真实漏洞 RED 或生产修复。CSV 转换、手动编辑和其他 Excel 版本未测试。 [证据](../development/issue78-xlsx-formula-triage.md) |
+
+详见 [独立对账报告](../development/audit-status-reconciliation-2026-11-10.md)。其他 79 项记录不变。
