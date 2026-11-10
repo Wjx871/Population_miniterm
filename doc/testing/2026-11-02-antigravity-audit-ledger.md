@@ -42,7 +42,7 @@
 | 34 | HIGH | 居住证申请缺少在途排他检查 | CODE_CANDIDATE | 真实HTTP/H2旧版6场景复现双201；保留登记/人员父锁后按通用申请人员与未结状态排他，含RETURNED/APPROVED及兼容RESUBMITTED，权限验证先于查询。新增H2 35项与MySQL8.4 RR 35项通过，两者10轮并发均单201/单409；MySQL #32门禁10轮无1213；全量845通过/0失败/0错误/3个RED方法跳过。无新迁移、不清理历史重复；边界与证据见 `doc/development/issue34-permit-first-issue-exclusivity.md`。等待独立复核。 | 后端/独立复核 |
 | 35 | MEDIUM | 居住证到期预警页签复用停滞 | FRONTEND_HANDOFF | 前端 Tab/列表刷新问题；本轮未改前端。 | 前端组 |
 | 36 | MEDIUM | 申领弹窗可选不合资格人员 | FRONTEND_HANDOFF | 候选项筛选属前端；后端执行仍校验有效登记与申领日期；本轮未改前端。 | 前端组 |
-| 37 | MEDIUM | 居住证到期任务全量加载结果集 | OPEN | `ResidencePermitExpiryService` 仍批量读取待处理 ID 后逐条处理，无分页；本轮未改。 | 后端 |
+| 37 | MEDIUM | 居住证到期任务全量加载结果集 | CODE_CANDIDATE | 已实现有界 ID keyset 扫描、冻结日期、锁后重验及登记/person→permit 锁顺序；RED/H2/MySQL 8.4（各类 10,000 候选）和全量 Maven 965 项（4 跳过）通过。证据：`doc/development/issue37-expiry-keyset-pagination.md`；等待 ChatGPT 独立复核。 | 后端 |
 | 38 | LOW | 关闭流动登记与签注的级联锁不一致 | FIXED_VERIFIED | 与 #32 同一等待环；锁流动登记先于居住证行，`lockPermit` 不再锁 JOIN 表；同一 MySQL 十轮门禁通过；`2bfa038`。 | 后端已完成 |
 | 39 | HIGH | 解除申请被错误要求提交建档依据 | NOT_REPRODUCED | 当前 API 文档明确解除材料规则同建档；前端建档/解除共用必需材料与核验 helper；`Phase10KeyPopulationIntegrationTest.releaseMissingMaterials` 验证缺材料拒绝。无业务代码改动。 | 后端按现有契约 |
 | 40 | HIGH | 重点人口/统计状态值不匹配导致统计恒为零 | FIXED_VERIFIED | 统计 SQL 使用业务 ACTIVE 状态并传入范围；`StatisticsScopeIntegrationTest`、`DashboardMapperTest`；`8509d78`。 | 后端已完成 |

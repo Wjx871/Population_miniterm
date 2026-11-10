@@ -45,6 +45,19 @@
     <otherwise>AND 1=0</otherwise>
   </choose>
 </sql><sql id="permitFilter"><where><if test="permitNo!=null">AND r.permit_no LIKE CONCAT('%',#{permitNo},'%')</if><if test="personName!=null">AND p.name LIKE CONCAT('%',#{personName},'%')</if><if test="identityNo!=null">AND p.id_card LIKE CONCAT('%',#{identityNo},'%')</if><if test="region!=null">AND r.issue_region_code=#{region}</if><if test="status!=null">AND r.status=#{status}</if><if test="from!=null">AND r.valid_until&gt;=#{from}</if><if test="to!=null">AND r.valid_until&lt;=#{to}</if><include refid="permitScope"/></where></sql><select id="searchPermits" resultType="com.wjx871.population.floating.ResidencePermit">SELECT <include refid="permitCols"/> FROM residence_permit r JOIN person p ON p.person_id=r.person_id JOIN floating_population f ON f.floating_id=r.floating_id <include refid="permitFilter"/> ORDER BY r.created_at DESC LIMIT #{limit} OFFSET #{offset}</select><select id="countPermits" resultType="long">SELECT COUNT(*) FROM residence_permit r JOIN person p ON p.person_id=r.person_id JOIN floating_population f ON f.floating_id=r.floating_id <include refid="permitFilter"/></select>
-<select id="expiring" resultType="com.wjx871.population.floating.ResidencePermit">SELECT <include refid="permitCols"/> FROM residence_permit r JOIN person p ON p.person_id=r.person_id JOIN floating_population f ON f.floating_id=r.floating_id WHERE r.status='ACTIVE' AND r.valid_until BETWEEN #{from} AND #{to} <include refid="permitScope"/> ORDER BY r.valid_until</select><select id="expiredCandidates" resultType="com.wjx871.population.floating.ResidencePermit">SELECT <include refid="permitCols"/> FROM residence_permit r JOIN person p ON p.person_id=r.person_id JOIN floating_population f ON f.floating_id=r.floating_id WHERE r.status='ACTIVE' AND r.valid_until&lt;#{today}</select><select id="expiredFloatingCandidates" resultType="com.wjx871.population.floating.FloatingPopulation">SELECT <include refid="floatingCols"/> FROM floating_population f JOIN person p ON p.person_id=f.person_id WHERE f.status='ACTIVE' AND f.planned_leave_date&lt;#{today}</select>
+<select id="expiring" resultType="com.wjx871.population.floating.ResidencePermit">SELECT <include refid="permitCols"/> FROM residence_permit r JOIN person p ON p.person_id=r.person_id JOIN floating_population f ON f.floating_id=r.floating_id WHERE r.status='ACTIVE' AND r.valid_until BETWEEN #{from} AND #{to} <include refid="permitScope"/> ORDER BY r.valid_until</select><select id="expiredPermitIds" resultType="long">
+ SELECT permit_id FROM residence_permit
+ WHERE status='ACTIVE' AND current_flag=1 AND valid_until&lt;#{today}
+   AND permit_id&gt;#{afterId}
+ ORDER BY permit_id LIMIT #{batchSize}
+</select>
+<select id="expiredFloatingIds" resultType="long">
+ SELECT floating_id FROM floating_population
+ WHERE status='ACTIVE' AND current_flag=1 AND planned_leave_date&lt;#{today}
+   AND floating_id&gt;#{afterId}
+ ORDER BY floating_id LIMIT #{batchSize}
+</select>
+<!-- Non-locking relationship lookup only; worker locks floating/person before permit. -->
+<select id="findPermitFloatingId" resultType="long">SELECT floating_id FROM residence_permit WHERE permit_id=#{id}</select>
 <select id="findApplicantUserIdByApplicationId" resultType="long">SELECT applicant_user_id FROM business_application WHERE application_id=#{applicationId}</select>
 </mapper>
