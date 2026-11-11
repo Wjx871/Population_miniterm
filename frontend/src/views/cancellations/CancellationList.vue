@@ -63,7 +63,7 @@
         <el-form-item label="家庭户号">
           <el-input v-model.trim="query.householdNo" clearable style="width: 140px" />
         </el-form-item>
-        <el-form-item label="业务状态">
+        <el-form-item label="注销记录状态">
           <el-select v-model="query.businessStatus" clearable style="width: 140px">
             <el-option
               v-for="(label, value) in CANCELLATION_BUSINESS_STATUS"
@@ -110,9 +110,14 @@
           </template>
         </el-table-column>
         <el-table-column prop="eventDate" label="事件日期" width="120" />
-        <el-table-column label="业务状态" width="110">
+        <el-table-column label="注销记录状态" width="120">
           <template #default="{ row }">
-            <StatusTag :value="row.businessStatus" kind="application" />
+            {{ CANCELLATION_BUSINESS_STATUS[row.businessStatus] || row.businessStatus || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="申请状态" width="140">
+          <template #default="{ row }">
+            <StatusTag :value="row.applicationStatus" kind="application" />
           </template>
         </el-table-column>
         <el-table-column prop="regionCode" label="区划" width="100" />

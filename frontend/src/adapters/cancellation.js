@@ -3,6 +3,7 @@ import {
   CANCELLATION_REASON_LABEL,
   CANCELLATION_BUSINESS_STATUS
 } from '../constants/cancellation.js'
+import { APPLICATION_STATUS } from '../constants/application.js'
 
 const pickFirst = (...values) => {
   for (const v of values) {
@@ -24,6 +25,7 @@ export function normalizeCancellationRecord(raw) {
     cancelReasonDetail: raw.cancelReasonDetail || '',
     eventDate: raw.eventDate || '',
     businessStatus: raw.businessStatus || '',
+    applicationStatus: raw.applicationStatus || '',
     personName: raw.personName || '',
     identityNo: raw.identityNo || '',
     householdNo: raw.householdNo || '',
@@ -198,9 +200,10 @@ export function getCancellationDetailFields(detail) {
     { label: '原因说明', value: c.cancelReasonDetail || '-', span: 2 },
     { label: '事件日期', value: c.eventDate || '-' },
     {
-      label: '业务状态',
+      label: '注销记录状态',
       value: CANCELLATION_BUSINESS_STATUS[c.businessStatus] || c.businessStatus || '-'
     },
+    { label: '申请状态', value: APPLICATION_STATUS[c.applicationStatus || detail?.application?.status] || c.applicationStatus || detail?.application?.status || '-' },
     { label: '行政区划', value: c.regionCode || '-' },
     { label: '地址', value: c.address || '-', span: 2 },
     { label: '版本号', value: c.version ?? '-' },

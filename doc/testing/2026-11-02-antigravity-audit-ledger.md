@@ -35,7 +35,7 @@
 | 27 | HIGH | 注销草稿列表快照为空且范围过滤错误 | FIXED_VERIFIED | 创建/更新时生成可信快照，查询与 count 使用一致权限条件；`Phase04CancellationIntegrationTest` 覆盖；`be12635`。 | 后端已完成 |
 | 28 | MEDIUM | 注销查询错误复用 SELF 归档范围规则 | FIXED_VERIFIED | 注销列表 SELF 按本人申请授权，归档仍按既有规则拒绝 SELF；列表/详情测试通过；`be12635`。 | 后端已完成 |
 | 29 | MEDIUM | 空户销户原户主快照缺失 | OPEN | 无户主家庭户本来就没有户主；当前销户快照未形成可靠的历史原户主快照字段/来源；本轮未改。 | 后端/产品 |
-| 30 | LOW | 注销状态监听器未映射 RETURNED | OPEN | `CancellationStatusListener` 将状态直接 `CancellationStatus.valueOf`，而枚举无 `RETURNED`；退回该业务可能抛异常；本轮未改。 | 后端 |
+| 30 | LOW | 注销状态监听器未映射 RETURNED | NOT_REPRODUCED | 实际人员与家庭户退回链路未向监听器广播 RETURNED，原异常未复现；修正另发现的注销列表和详情状态显示歧义。H2 流程、错误状态与全量回归通过；MySQL 仅验证隔离合成查询。 [本轮报告](../development/issue30-62-70-batch-review-2026-11-11.md)。 | 已验证当前链路；未声明生产部署 |
 | 31 | CRITICAL | SELF 可绕过归属校验读取他人流动/居住证 | FIXED_VERIFIED | 服务层按来源申请人校验 SELF；`FloatingSelfScopeAuditIntegrationTest` 覆盖本人允许、他人拒绝及列表/详情；`6541a05`。 | 后端已完成 |
 | 32 | HIGH | 流动关闭与居住证签注锁顺序形成 MySQL 死锁 | FIXED_VERIFIED | 本轮旧实现捕获 8.4.8 `1213/40001` 等待环；修复后 MySQL 10/10 轮关闭 200、签注 409、死锁计数不增；`MySql84CriticalAcceptanceIT.closeThenEndorseLocksFloatingBeforePermitWithoutDeadlock`，`2bfa038`。 | 后端已完成 |
 | 33 | HIGH | 同市跨区户籍冲突只按区划精确相等判断 | OPEN | `countActiveResidenceInRegion` 与 `MigrationMapper.xml` 仍按 `region_code=#{region}` 精确匹配。仓库 admin_region 有层级表和合成种子，但没有权威完整区划数据或可证明“同市”归属规则；本轮不推断编码前缀/长度、不修改查询。需业务提供权威区划数据与边界规则后再修复。 | 后端/业务规则提供方 |
@@ -67,7 +67,7 @@
 | 59 | HIGH | 迁移归档 SELF 详情逻辑短路 | FIXED_VERIFIED | 归档明确拒绝 SELF，列表/详情语义一致；`Phase03MigrationIntegrationTest`；`3caaeca`。 | 后端已完成 |
 | 60 | HIGH | 注销列表缺少部门过滤 | FIXED_VERIFIED | 列表与 count 按 SELF/部门/授权区划一致过滤；`Phase04CancellationIntegrationTest`；`be12635`。 | 后端已完成 |
 | 61 | HIGH | 过期 Bearer Token 阻断匿名登录 | FIXED_VERIFIED | JWT filter 豁免精确公开登录路径；失效 Token 登录可继续，受保护 API 仍 401；`AuthRbacIntegrationTest`，`0d84620`。 | 后端已完成 |
-| 62 | MEDIUM | 业务申请和审批区划判定曾分裂 | FIXED_NOT_VERIFIED | 两 Mapper 当前均使用授权 `regionCodes`；无直接逐行比较边界的独立测试。`3caaeca`。 | 后端补充一致性测试 |
+| 62 | MEDIUM | 业务申请和审批区划判定曾分裂 | FIXED_VERIFIED | 独立 H2 真实认证、授权及 MyBatis 测试覆盖多子区划、同级和伪前缀排除、列表/审批对照及分页等；原 Mapper 未改。 [本轮报告](../development/issue30-62-70-batch-review-2026-11-11.md)。 | 已验证；未声明生产部署 |
 | 63 | MEDIUM | 统计接口未使用调用者数据范围 | FIXED_VERIFIED | 统计 Service/Mapper 传递 `DataScopeCriteria`；部门/SELF/REGION/ALL 测试通过；`8509d78`。 | 后端已完成 |
 | 64 | MEDIUM | 本地 Token 黑名单无主动清理/分布式同步 | OPEN | Redis 不可用时本地 Map 仍依赖重复 JTI 查询才清理；本轮未改。 | 后端/运维 |
 | 65 | LOW | 会话恢复初次挂载可能丢角色权限 | FIXED_NOT_VERIFIED | `user.js` 现会恢复持久化角色/权限并核验 `/auth/me`；未找到 UI 初次挂载闪烁专测。 | 前端补测 |
@@ -75,7 +75,7 @@
 | 67 | HIGH | 综合档案抽屉 prop 名与组件声明失配 | FRONTEND_HANDOFF | `ComprehensiveProfileDrawer.vue`/`DetailDrawer` 绑定需前端核验；本轮未改前端。 | 前端组 |
 | 68 | HIGH | 综合查询未关联流动登记/居住证/迁移字段 | FIXED_VERIFIED | ChatGPT 独立复核通过，原实现 `c3fb7eb1` 已集成；当前流动登记、居住证及 COMPLETED 最近迁移字段和服务端脱敏已有历史 H2/MySQL 验证，同日取 OUT。详见 [独立复核与证据](../development/issue68-71-independent-review-2026-11-11.md)；生产规模性能未验证。 | 已复核；未声明生产部署 |
 | 69 | HIGH | 迁移历史方向参数绑定到迁移类型 | FRONTEND_HANDOFF | 前端方向查询参数需与后端契约核对；本轮未改前端。 | 前端组 |
-| 70 | MEDIUM | 统计日志明细可能返回未脱敏 detail | CODE_CANDIDATE | 2026-11-07 动态 RED：真实 JWT/Security/JDBC、隔离 H2 经测试专用 CHAR 方言适配后，历史日志 HTTP 200 返回原 detail，1 项预期失败；原样 H2 的 CHAR(1) 截断不计为完整泄露证据。`StatisticsService.getRecentLogs()` 在响应副本上复用 `auditDetail()`，管理员固定脱敏、NULL/普通/已脱敏文本兼容，数据库未改写；log:view 与四类 DataScope 保持。Issue70 HTTP 11 项、专项 40、全量 810，失败/错误/跳过均 0。实现 `4a188f0b7231279a7d7cf453eb16a13af007b434`；[证据及限制](../development/issue70-statistics-log-redaction.md)。真实 MySQL/前端未验证，等待 ChatGPT 独立复核，不关闭。 | 后端/独立复核 |
+| 70 | MEDIUM | 统计日志明细可能返回未脱敏 detail | FIXED_VERIFIED | 历史实现与专项测试相对证据提交未变；本轮 11 项 HTTP 专项通过，响应副本固定脱敏及权限范围保留。真实 MySQL、前端人工回归、生产部署与其他非标准敏感日志格式未验证。 [本轮报告](../development/issue30-62-70-batch-review-2026-11-11.md)。 | 已验证；保留场景限制 |
 | 71 | MEDIUM | 综合查询 REGION 仅按户籍过滤漏流动人口 | FIXED_VERIFIED | ChatGPT 独立复核通过，原实现 `c3fb7eb1` 已集成；两套查询统一以授权区划内 ACTIVE 户籍或 ACTIVE/current_flag=1 流动登记授予 REGION 范围，空集合 403，历史记录不单独授权。历史 H2/MySQL、列表详情及分页验证见 [独立复核与证据](../development/issue68-71-independent-review-2026-11-11.md)。 | 已复核；未声明生产部署 |
 | 72 | MEDIUM | 零人口圆环图渲染异常 | FRONTEND_HANDOFF | 图表空数据展示；本轮未改前端。 | 前端组 |
 | 73 | LOW | 迁徙趋势包含未办结草稿 | FIXED_VERIFIED | 趋势统计限定已办结迁入/迁出；`StatisticsScopeIntegrationTest`；`8509d78`。 | 后端已完成 |
