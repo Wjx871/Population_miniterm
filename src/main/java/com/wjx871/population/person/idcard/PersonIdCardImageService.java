@@ -63,20 +63,20 @@ public class PersonIdCardImageService {
         IdCardImageTransactions.Completion completion = null;
         try {
             Optional<PersonIdCardImage> existing = transactions.reuse(stored.sha256(), userId, http);
-            if (existing.isPresent()) return PersonIdCardImageView.fromUpload(existing.get());
+            if (existing.isPresent()) return PersonIdCardImageView.fromUpload(existing.get(), masking);
 
             PersonIdCardImage row = draft(stored, userId);
             recognize(row, file, skipOcr); // No transaction, connection or business lock is held here.
             completion = new IdCardImageTransactions.Completion();
             try {
                 PersonIdCardImage persisted = transactions.persist(row, completion, http);
-                return PersonIdCardImageView.fromUpload(persisted);
+                return PersonIdCardImageView.fromUpload(persisted, masking);
             } catch (DuplicateKeyException duplicate) {
                 // The failed insert TransactionTemplate has completed before we inspect the winner.
                 if (!completion.safeToDiscard()) throw persistenceFailure();
                 PersonIdCardImage winner = transactions.reuse(stored.sha256(), userId, http)
                         .orElseThrow(PersonIdCardImageService::persistenceFailure);
-                return PersonIdCardImageView.fromUpload(winner);
+                return PersonIdCardImageView.fromUpload(winner, masking);
             }
         } catch (BusinessException safe) {
             throw safe;

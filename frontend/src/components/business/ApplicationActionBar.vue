@@ -34,7 +34,7 @@ const allowSubmit = computed(() => {
   if (typeof props.canSubmit === 'boolean') return props.canSubmit
   return userStore.hasPermission(PERMISSIONS.APPLICATION_SUBMIT)
 })
-const canSubmitDirect = computed(() => !props.specializedEditRoute)
+const canSubmitDirect = computed(() => props.application?.status === 'RETURNED' || !props.specializedEditRoute)
 const canCancel = computed(() => userStore.hasPermission(PERMISSIONS.APPLICATION_EDIT))
 // SUBMITTED / UNDER_REVIEW 撤回为审批阶段的撤回；RETURNED 状态由申请人选择放弃。
 const canWithdraw = computed(() =>

@@ -3,6 +3,7 @@ package com.wjx871.population.person.idcard;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import com.wjx871.population.security.SensitiveDataMaskingService;
 
 /** Controller 返回的影印本视图。上传回填和只读详情采用不同的敏感字段策略。 */
 public record PersonIdCardImageView(
@@ -28,25 +29,22 @@ public record PersonIdCardImageView(
         String ocrError,
         LocalDateTime createdAt
 ) {
-    public static PersonIdCardImageView fromUpload(PersonIdCardImage row) {
+    public static PersonIdCardImageView fromUpload(PersonIdCardImage row, SensitiveDataMaskingService masking) {
         String full = row.getOcrStatus() == OcrStatus.SUCCESS ? row.getOcrIdcardFull() : null;
-        return build(row, full, row.getOcrAddress());
+        return build(row, full, row.getOcrAddress(), safeMaskedIdentity(row, masking));
     }
 
     public static PersonIdCardImageView fromDetail(PersonIdCardImage row,
                                                    boolean canViewFull,
-                                                   com.wjx871.population.security.SensitiveDataMaskingService masking) {
+                                                   SensitiveDataMaskingService masking) {
         String full = canViewFull && row.getOcrStatus() == OcrStatus.SUCCESS ? row.getOcrIdcardFull() : null;
         String address = canViewFull ? row.getOcrAddress() : masking.address(row.getOcrAddress());
-        String masked = row.getOcrIdcardMasked();
-        if (masked == null && row.getOcrIdcardFull() != null) {
-            masked = masking.identityAlways(row.getOcrIdcardFull());
-        }
-        return build(row, full, address, masked);
+        return build(row, full, address, safeMaskedIdentity(row, masking));
     }
 
-    private static PersonIdCardImageView build(PersonIdCardImage row, String full, String address) {
-        return build(row, full, address, row.getOcrIdcardMasked());
+    private static String safeMaskedIdentity(PersonIdCardImage row, SensitiveDataMaskingService masking) {
+        if (row.getOcrIdcardFull() != null) return masking.identityAlways(row.getOcrIdcardFull());
+        return row.getOcrIdcardMasked() == null ? null : "****";
     }
 
     private static PersonIdCardImageView build(PersonIdCardImage row, String full, String address, String masked) {

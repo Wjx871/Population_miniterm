@@ -12,7 +12,7 @@
 | 4 | HIGH | 脱敏回显值可能被编辑表单写回 | FRONTEND_HANDOFF | 后端保留/忽略脱敏字段的兼容逻辑已在 `PersonService`；编辑表单回填与提交仍需前端验证。 | 前端组 |
 | 5 | MEDIUM | 性别编码与前端字典不一致 | FRONTEND_HANDOFF | 关联前端表单/字典映射；本轮未改前端。 | 前端组 |
 | 6 | MEDIUM | 影印本 SHA 去重可跨用户占用 | FIXED_VERIFIED | `PersonIdCardImageService` 按对象归属拒绝跨用户读取/覆盖；`Phase14PersonIdCardOcrIntegrationTest.duplicateFromAnotherUploaderCannotReadOrChangeOriginalDraftOrFileReference`；`dfc5f81`。 | 后端已完成 |
-| 7 | LOW | OCR 敏感字段切片逻辑脆弱 | OPEN | 本轮修复 OCR 非字符串字段的隐式转换并完成定向回归；8 字符身份证掩码保留全部原字符的边界风险尚未修复，OCR 本身先验证 18 位格式。 [证据](../development/issue7-18-55-batch-review-2026-11-11.md)。 | 后端继续处理短值掩码 |
+| 7 | LOW | OCR 敏感字段切片逻辑脆弱 | FIXED_VERIFIED | 本轮修复共享身份证短值掩码及历史影印本已存掩码输出；RED/GREEN、OCR/事务补偿回归和 Maven 全量通过，生产数据与部署未验证。 [证据](../development/issue7-50-64-batch-review-2026-11-11.md)。 | 后端已验证 |
 | 8 | LOW | 前端适配器导入路径缺扩展名 | FRONTEND_HANDOFF | 前端模块解析/构建行为需前端组核验；本轮未改前端。 | 前端组 |
 | 9 | CRITICAL | 多个 ACTIVE HEAD 导致户主变更 selectOne 崩溃 | FIXED_VERIFIED | 新增 HEAD 关系走户主变更入口；历史重复 HEAD 被安全拒绝；`Phase08HouseholdMasterDataIntegrationTest`；`45b5ac1`。 | 后端已完成 |
 | 10 | HIGH | 成员离户日期早于入户日期仍可成功 | FIXED_VERIFIED | `HouseholdService.leave` 校验日期；`leaveBeforeJoinDateIsRejectedWithoutMutation` 与相等日期正常路径测试；`45b5ac1`。 | 后端已完成 |
@@ -55,7 +55,7 @@
 | 47 | LOW | 解除创建页直接显示英文枚举 | FRONTEND_HANDOFF | `KeyPopulationReleaseCreate.vue` 展示文案；本轮未改前端。 | 前端组 |
 | 48 | LOW | 历史列表直接展示操作人数字 ID | FRONTEND_HANDOFF | `KeyPopulationHistory.vue` 文案/显示映射；本轮未改前端。 | 前端组 |
 | 49 | CRITICAL | RETURNED 不能补传/删除材料导致二次审批卡死 | FIXED_VERIFIED | 材料服务允许 DRAFT/RETURNED 并校验归属；`Phase12ApplicationReturnIntegrationTest` 覆盖退回、补材、复核、复审；`9b5081b`。 | 后端已完成 |
-| 50 | CRITICAL | RETURNED 申请栏没有重新提交与继续编辑入口 | FIXED_NOT_VERIFIED | `ApplicationActionBar.vue` 已有 RETURNED 提交动作；未找到前端交互测试，且迁移 Handler 路由组合仍需前端确认；本轮未改前端。 | 前端补测/核验 |
+| 50 | CRITICAL | RETURNED 申请栏没有重新提交与继续编辑入口 | FIXED_NOT_VERIFIED | 本轮修复专业路由导致 RETURNED 重新提交按钮隐藏，状态与权限矩阵通过；专业退回补正入口、浏览器交互及重复提交仍需验证，#18 历史单未解决。 [证据](../development/issue7-50-64-batch-review-2026-11-11.md)。 | 前后端继续核验 |
 | 51 | HIGH | 材料核验缺少申请人/上传者防自审 | FIXED_VERIFIED | 服务端拒绝申请人及上传者自审；重点人口门禁与 Phase03 核验测试通过；`a1840f2`。 | 后端已完成 |
 | 52 | MEDIUM | REGION 申请列表不能按授权下级区划查询 | FIXED_VERIFIED | 审批与申请 Mapper 使用授权区划集合；`Phase02ApprovalIntegrationTest.approverSeesChildRegionButOtherRegionDoesNot`；`3caaeca`。 | 后端已完成 |
 | 53 | MEDIUM | 撤回/取消按钮未校验申请人归属 | FRONTEND_HANDOFF | 前端按钮可见条件与错误处理需核验；后端仍校验归属；本轮未改前端。 | 前端组 |
@@ -69,7 +69,7 @@
 | 61 | HIGH | 过期 Bearer Token 阻断匿名登录 | FIXED_VERIFIED | JWT filter 豁免精确公开登录路径；失效 Token 登录可继续，受保护 API 仍 401；`AuthRbacIntegrationTest`，`0d84620`。 | 后端已完成 |
 | 62 | MEDIUM | 业务申请和审批区划判定曾分裂 | FIXED_VERIFIED | 独立 H2 真实认证、授权及 MyBatis 测试覆盖多子区划、同级和伪前缀排除、列表/审批对照及分页等；原 Mapper 未改。 [本轮报告](../development/issue30-62-70-batch-review-2026-11-11.md)。 | 已验证；未声明生产部署 |
 | 63 | MEDIUM | 统计接口未使用调用者数据范围 | FIXED_VERIFIED | 统计 Service/Mapper 传递 `DataScopeCriteria`；部门/SELF/REGION/ALL 测试通过；`8509d78`。 | 后端已完成 |
-| 64 | MEDIUM | 本地 Token 黑名单无主动清理/分布式同步 | OPEN | Redis 不可用时本地 Map 仍依赖重复 JTI 查询才清理；本轮未改。 | 后端/运维 |
+| 64 | MEDIUM | 本地 Token 黑名单无主动清理/分布式同步 | OPEN | 项目现有 Spring 配置已启用调度，隔离上下文主动批量清理通过；共享模式现仅有模拟双实例和 HTTP 门禁证据，真实 Redis 未验证。 [证据](../development/issue7-50-64-batch-review-2026-11-11.md)。 | 后端/运维继续验证共享存储 |
 | 65 | LOW | 会话恢复初次挂载可能丢角色权限 | FIXED_NOT_VERIFIED | `user.js` 现会恢复持久化角色/权限并核验 `/auth/me`；未找到 UI 初次挂载闪烁专测。 | 前端补测 |
 | 66 | CRITICAL | 统计 SQL 用中文状态与标准状态不匹配 | FIXED_VERIFIED | 统计查询使用 ACTIVE 等业务枚举；统计集成测试验证合成 ACTIVE 记录；`8509d78`。 | 后端已完成 |
 | 67 | HIGH | 综合档案抽屉 prop 名与组件声明失配 | FRONTEND_HANDOFF | `ComprehensiveProfileDrawer.vue`/`DetailDrawer` 绑定需前端核验；本轮未改前端。 | 前端组 |
