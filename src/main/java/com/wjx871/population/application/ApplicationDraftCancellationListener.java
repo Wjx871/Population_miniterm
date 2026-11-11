@@ -2,7 +2,7 @@ package com.wjx871.population.application;
 
 /**
  * Opt-in hook for specialized business records that need to react to a DRAFT application being
- * cancelled through {@link ApplicationService#cancelDraft(Long, jakarta.servlet.http.HttpServletRequest)}.
+ * cancelled through {@link ApplicationService#cancelDraft(Long, Integer, jakarta.servlet.http.HttpServletRequest)}.
  *
  * <p>This is deliberately separate from {@link ApplicationStatusListener}: the generic cancel path
  * must not broadcast {@code CANCELLED} to every business listener, because several specialized

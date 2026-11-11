@@ -43,7 +43,8 @@ class Issue34FirstIssueExclusivityTest extends Issue34HttpSupport {
     }
     @Test void realDraftCancellationReleasesSlot() throws Exception {
         long f=floating(9340001),app=applicationId(first(f,"population"));
-        check(request("DELETE","/api/applications/"+app,"population",null),200);
+        int version=jdbc.queryForObject("SELECT version FROM business_application WHERE application_id=?",Integer.class,app);
+        check(request("DELETE","/api/applications/"+app+"?version="+version,"population",null),200);
         assertThat(state(app)).isEqualTo("CANCELLED");
         assertThat(jdbc.queryForObject("SELECT business_status FROM residence_permit_application WHERE application_id=?",String.class,app)).isEqualTo("DRAFT");
         check(first(f,"population"),201);

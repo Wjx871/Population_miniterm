@@ -111,7 +111,9 @@ public class PaddleOcrHttpClient {
     }
 
     private static String asString(Object o) {
-        return o == null ? null : String.valueOf(o);
+        if (o == null) return null;
+        if (o instanceof String value) return value;
+        throw new OcrRequestException("OCR_INVALID_RESPONSE");
     }
 
     public static final class OcrRequestException extends RuntimeException {

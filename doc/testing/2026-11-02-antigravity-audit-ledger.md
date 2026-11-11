@@ -12,7 +12,7 @@
 | 4 | HIGH | 脱敏回显值可能被编辑表单写回 | FRONTEND_HANDOFF | 后端保留/忽略脱敏字段的兼容逻辑已在 `PersonService`；编辑表单回填与提交仍需前端验证。 | 前端组 |
 | 5 | MEDIUM | 性别编码与前端字典不一致 | FRONTEND_HANDOFF | 关联前端表单/字典映射；本轮未改前端。 | 前端组 |
 | 6 | MEDIUM | 影印本 SHA 去重可跨用户占用 | FIXED_VERIFIED | `PersonIdCardImageService` 按对象归属拒绝跨用户读取/覆盖；`Phase14PersonIdCardOcrIntegrationTest.duplicateFromAnotherUploaderCannotReadOrChangeOriginalDraftOrFileReference`；`dfc5f81`。 | 后端已完成 |
-| 7 | LOW | OCR 敏感字段切片逻辑脆弱 | OPEN | OCR 解析仍依赖当前切片/格式假设；本轮未改，也未覆盖更多供应商返回格式。 | 后端 |
+| 7 | LOW | OCR 敏感字段切片逻辑脆弱 | OPEN | 本轮修复 OCR 非字符串字段的隐式转换并完成定向回归；8 字符身份证掩码保留全部原字符的边界风险尚未修复，OCR 本身先验证 18 位格式。 [证据](../development/issue7-18-55-batch-review-2026-11-11.md)。 | 后端继续处理短值掩码 |
 | 8 | LOW | 前端适配器导入路径缺扩展名 | FRONTEND_HANDOFF | 前端模块解析/构建行为需前端组核验；本轮未改前端。 | 前端组 |
 | 9 | CRITICAL | 多个 ACTIVE HEAD 导致户主变更 selectOne 崩溃 | FIXED_VERIFIED | 新增 HEAD 关系走户主变更入口；历史重复 HEAD 被安全拒绝；`Phase08HouseholdMasterDataIntegrationTest`；`45b5ac1`。 | 后端已完成 |
 | 10 | HIGH | 成员离户日期早于入户日期仍可成功 | FIXED_VERIFIED | `HouseholdService.leave` 校验日期；`leaveBeforeJoinDateIsRejectedWithoutMutation` 与相等日期正常路径测试；`45b5ac1`。 | 后端已完成 |
@@ -23,7 +23,7 @@
 | 15 | MEDIUM | 立户日期与成员入户日期边界未校验 | FIXED_VERIFIED | 家庭户建立、成员入户、迁入及历史恢复日期边界已修复；H2 RED/GREEN、MySQL 并发及全量回归经独立复核。提交 `3f273088`。 [证据](../development/issue15-household-date-boundary.md)。 | 已复核；未声明生产部署 |
 | 16 | LOW | 详情刷新未 await 导致竞态 | FRONTEND_HANDOFF | 页面异步刷新行为；本轮未改前端。 | 前端组 |
 | 17 | LOW | 家庭户适配器重复定义 regionCode | FRONTEND_HANDOFF | 前端适配器实现问题；本轮未改前端。 | 前端组 |
-| 18 | CRITICAL | 户主迁出申请缺少继任者导致批准后无法执行 | FIXED_NOT_VERIFIED | 新申请在提交时校验继任者，`Phase03MigrationIntegrationTest` 验证新流；已批准但缺少继任者的历史单仍需补正/重新审批方案；`eabae6a`。 | 后端后续处理历史单 |
+| 18 | CRITICAL | 户主迁出申请缺少继任者导致批准后无法执行 | FIXED_NOT_VERIFIED | 新申请提交门禁为历史修复；本轮合成旧单确认执行冲突及退回后的常规编辑缺口。材料逐轮快照和重审安全闭环未实现；`eabae6a`。 [证据](../development/issue7-18-55-batch-review-2026-11-11.md)。 | 后端后续处理历史单 |
 | 19 | HIGH | 跨区迁移批次号全局唯一使取消草稿占号 | FIXED_VERIFIED | 取消草稿释放有效批次号占位；`d443f30b`、V4_019 条件唯一方案及 H2/MySQL 8.4 并发门禁经独立复核。历史数据升级需备份与受控回填；隔离验证不代表生产已执行 V4_019。 [证据](../development/issue19-migration-batch-reuse.md)。 | 已复核；未声明生产部署 |
 | 20 | HIGH | 户主交接只改主表指针未更新成员 HEAD 关系 | FIXED_VERIFIED | `MigrationService.executeOut` 同事务更新新户主关系与家庭户指针；迁出交接测试覆盖；`eabae6a`。 | 后端已完成 |
 | 21 | MEDIUM | 目标家庭户与迁入区划不一致 | FIXED_VERIFIED | `MigrationService.createIn/updateIn/executeIn` 均在服务端锁定/读取目标户后要求非空 `household.region_code` 与 `to_region_code` 精确一致；执行时再次验证。`Phase03MigrationIntegrationTest.targetRegionMismatchIsRejectedOnCreateUpdateAndExecute` 覆盖三处拒绝、草稿不被改写及执行失败不改人员/户籍。 | 后端已完成 |
@@ -60,7 +60,7 @@
 | 52 | MEDIUM | REGION 申请列表不能按授权下级区划查询 | FIXED_VERIFIED | 审批与申请 Mapper 使用授权区划集合；`Phase02ApprovalIntegrationTest.approverSeesChildRegionButOtherRegionDoesNot`；`3caaeca`。 | 后端已完成 |
 | 53 | MEDIUM | 撤回/取消按钮未校验申请人归属 | FRONTEND_HANDOFF | 前端按钮可见条件与错误处理需核验；后端仍校验归属；本轮未改前端。 | 前端组 |
 | 54 | LOW | 取消对话框 Promise rejection 未捕获 | FRONTEND_HANDOFF | 前端 Promise 异常处理；本轮未改前端。 | 前端组 |
-| 55 | LOW | 草稿 DELETE 缺少客户端版本号 | OPEN | `ApplicationController.delete` 仍不接收版本；本轮未改。 | 后端 |
+| 55 | LOW | 草稿 DELETE 缺少客户端版本号 | FIXED_VERIFIED | 取消草稿要求客户端版本并以其执行乐观锁；缺失或无效返回 400、过期返回 409。HTTP、专业草稿事务、前端及全量回归通过。 [证据](../development/issue7-18-55-batch-review-2026-11-11.md)。 | 后端已完成；待独立复核 |
 | 56 | CRITICAL | MainLayout 缺失 resolveLandingPath 导入 | FRONTEND_HANDOFF | 前端导航/导入问题；本轮未改前端，未运行前端构建。 | 前端组 |
 | 57 | CRITICAL | 普通/敏感导出 SQL 漏 DEPARTMENT/SELF 过滤 | FIXED_VERIFIED | 导出 SQL 覆盖 SELF/部门/区划/ALL；`ExportDataScopeAuditIntegrationTest` 行范围断言；`6541a05`、`553f539`。 | 后端已完成 |
 | 58 | HIGH | REGION 使用固定 substring 导致区县越权 | FIXED_VERIFIED | 授权区划树解析为完整代码集合并精确匹配；区域隔离集成测试通过；`3caaeca`。 | 后端已完成 |

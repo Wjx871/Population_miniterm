@@ -34,6 +34,6 @@ export function returnApplication(applicationId, payload) {
   return request({ url: `/applications/${applicationId}/return`, method: 'post', data: payload })
 }
 
-export function cancelDraftApplication(applicationId) {
-  return request({ url: `/applications/${applicationId}`, method: 'delete' })
+export function cancelDraftApplication(applicationId, version) {
+  return request({ url: `/applications/${applicationId}`, method: 'delete', params: { version } })
 }

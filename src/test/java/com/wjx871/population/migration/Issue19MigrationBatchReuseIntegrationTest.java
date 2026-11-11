@@ -121,6 +121,7 @@ class Issue19MigrationBatchReuseIntegrationTest {
         System.out.println("ISSUE19_RED_DRAFT_A_AFTER_CREATE=" + snapshot(draftA));
 
         MvcResult cancelled = mvc.perform(delete("/api/applications/" + draftA)
+                        .param("version", String.valueOf(applicationVersion(draftA)))
                         .header("Authorization", bearer(token("household"))))
                 .andReturn();
         assertHttp(cancelled, 200, "取消迁入草稿 A");
@@ -194,6 +195,7 @@ class Issue19MigrationBatchReuseIntegrationTest {
         long draftA = data(created).path("applicationId").asLong();
 
         MvcResult cancelled = mvc.perform(delete("/api/applications/" + draftA)
+                        .param("version", String.valueOf(applicationVersion(draftA)))
                         .header("Authorization", bearer(token("household"))))
                 .andReturn();
         assertHttp(cancelled, 200, "取消迁入草稿 A（可追溯场景）");
@@ -432,6 +434,7 @@ class Issue19MigrationBatchReuseIntegrationTest {
                     ready.countDown();
                     start.await(5, TimeUnit.SECONDS);
                     return mvc.perform(delete("/api/applications/" + draftA)
+                                    .param("version", String.valueOf(applicationVersion(draftA)))
                                     .header("Authorization", bearer(token("household"))))
                             .andReturn().getResponse().getStatus();
                 };
@@ -610,8 +613,13 @@ class Issue19MigrationBatchReuseIntegrationTest {
 
     private MvcResult deleteDraft(long applicationId) throws Exception {
         return mvc.perform(delete("/api/applications/" + applicationId)
+                        .param("version", String.valueOf(applicationVersion(applicationId)))
                         .header("Authorization", bearer(token("household"))))
                 .andReturn();
+    }
+
+    private int applicationVersion(long applicationId) {
+        return jdbc.queryForObject("SELECT version FROM business_application WHERE application_id=?", Integer.class, applicationId);
     }
 
     private String migrationStatusOf(long applicationId) {

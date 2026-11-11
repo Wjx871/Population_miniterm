@@ -365,7 +365,7 @@ async function withdraw() {
 async function cancelDraft() {
   await ElMessageBox.confirm('确认取消该草稿吗？取消后不能恢复。', '取消草稿', { type: 'warning' })
   try {
-    await cancelDraftApplication(applicationId.value)
+    await cancelDraftApplication(applicationId.value, detail.value?.application?.version)
     ElMessage.success('草稿已取消')
     await router.replace('/cancellations')
   } catch (error) {

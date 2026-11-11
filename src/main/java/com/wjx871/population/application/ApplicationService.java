@@ -101,11 +101,12 @@ public class ApplicationService {
     }
 
     @Transactional
-    public void cancelDraft(Long id, HttpServletRequest request) {
+    public void cancelDraft(Long id, Integer version, HttpServletRequest request) {
+        if (version == null || version < 0) throw new BusinessException(HttpStatus.BAD_REQUEST, "version 无效");
         BusinessApplication value = require(id);
         stateMachine.requireDraft(value.getStatus());
-        assertOwnerOrAdmin(value, CurrentUserContext.requireUser());
-        if (mapper.updateStatus(id, ApplicationStatus.DRAFT, ApplicationStatus.CANCELLED, value.getVersion()) == 0) conflict();
+        assertOwner(value, CurrentUserContext.requireUser());
+        if (mapper.updateStatus(id, ApplicationStatus.DRAFT, ApplicationStatus.CANCELLED, version) == 0) conflict();
         AuthenticatedUser user = CurrentUserContext.requireUser();
         approvalLogMapper.insert(ApprovalLog.of(null, id, ApprovalAction.CANCEL, ApplicationStatus.DRAFT.name(),
                 ApplicationStatus.CANCELLED.name(), user.userId(), null, audit.clientIp(request)));

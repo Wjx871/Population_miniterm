@@ -494,6 +494,7 @@ class AiConfirmIntegrationTest {
                 String.class, firstApplication)).isEqualTo("DRAFT");
 
         mvc.perform(delete("/api/applications/{id}", firstApplication)
+                        .param("version", String.valueOf(jdbc.queryForObject("SELECT version FROM business_application WHERE application_id=?", Integer.class, firstApplication)))
                         .header("Authorization", bearer(householdToken)))
                 .andExpect(status().isOk());
         assertThat(jdbc.queryForObject("SELECT status FROM business_application WHERE application_id=?",

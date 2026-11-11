@@ -391,7 +391,7 @@ async function cancelDraft() {
   await ElMessageBox.confirm('确认取消该草稿吗？取消后不能恢复。', '取消草稿', { type: 'warning' })
   actionLoading.value = true
   try {
-    await cancelDraftApplication(applicationId.value)
+    await cancelDraftApplication(applicationId.value, application.value?.version)
     ElMessage.success('草稿已取消')
     await router.replace('/applications')
   } catch (error) {
