@@ -1,0 +1,38 @@
+{"event": "redis_started", "pid": 18320, "port": 3500, "data_dir": "C:\\Users\\jxgm\\.codex\\worktrees\\issue29-64-real-redis\\redis-isolated\\run-e0172888e4b74b7689e2ff4fe5f1ac69\\data-initial", "persistence": "RDB explicit SAVE; AOF disabled"}
+{"event": "app_started", "instance": "A1", "pid": 37388, "port": 3501}
+{"event": "app_started", "instance": "B1", "pid": 31640, "port": 3502}
+{"event": "login_population", "actual": 200, "expected": 200, "passed": true}
+{"event": "login_viewer", "actual": 200, "expected": 200, "passed": true}
+{"event": "B_before_logout", "actual": 200, "expected": 200, "passed": true}
+{"event": "A_logout", "actual": 200, "expected": 200, "passed": true}
+{"event": "marker_exists", "actual": 1, "expected": 1, "passed": true}
+{"event": "absolute_expiry_ms", "actual": 1794460235000, "expected": 1794460235000, "passed": true}
+{"event": "B_repeated_revoked_0", "actual": 401, "expected": 401, "passed": true}
+{"event": "B_repeated_revoked_1", "actual": 401, "expected": 401, "passed": true}
+{"event": "B_repeated_revoked_2", "actual": 401, "expected": 401, "passed": true}
+{"event": "B_repeated_revoked_3", "actual": 401, "expected": 401, "passed": true}
+{"event": "B_repeated_revoked_4", "actual": 401, "expected": 401, "passed": true}
+{"event": "A_revoked", "actual": 401, "expected": 401, "passed": true}
+{"event": "other_user_unaffected", "actual": 200, "expected": 200, "passed": true}
+{"event": "login_population", "actual": 200, "expected": 200, "passed": true}
+{"event": "new_jti_different", "actual": true, "expected": true, "passed": true}
+{"event": "new_token_valid", "actual": 200, "expected": 200, "passed": true}
+{"event": "explicit_save", "actual": true, "expected": true, "passed": true}
+{"event": "redis_graceful_shutdown_after_save", "exit_code": 0}
+{"event": "redis_down_read", "status": 503, "closed": true, "credentials_or_address_leaked": false}
+{"event": "redis_down_login_rejected", "actual": true, "expected": true, "passed": true}
+{"event": "public_health_available", "actual": 200, "expected": 200, "passed": true}
+{"event": "redis_restarted", "pid": 39020}
+{"event": "first_response_after_redis_restart", "status": 503}
+{"event": "old_token_after_redis_restart_A", "actual": 401, "expected": 401, "passed": true}
+{"event": "old_token_after_redis_restart_B", "actual": 401, "expected": 401, "passed": true}
+{"event": "fresh_token_after_recovery", "actual": 200, "expected": 200, "passed": true}
+{"event": "write_denied_logout", "status": 503, "failed": true, "credentials_or_address_leaked": false}
+{"event": "app_started", "instance": "A2", "pid": 39548, "port": 3501}
+{"event": "app_started", "instance": "B2", "pid": 39260, "port": 3502}
+{"event": "old_token_after_app_restart_A", "actual": 401, "expected": 401, "passed": true}
+{"event": "old_token_after_app_restart_B", "actual": 401, "expected": 401, "passed": true}
+{"event": "redis_started", "pid": 39604, "port": 3500, "data_dir": "C:\\Users\\jxgm\\.codex\\worktrees\\issue29-64-real-redis\\redis-isolated\\run-e0172888e4b74b7689e2ff4fe5f1ac69\\data-empty", "persistence": "RDB explicit SAVE; AOF disabled"}
+{"event": "DATA_LOSS_CHARACTERIZATION", "status": 200, "previously_revoked_token_accepted": true}
+{"event": "completed"}
+{"event": "own_processes_stopped"}

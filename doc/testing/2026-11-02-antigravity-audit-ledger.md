@@ -34,7 +34,7 @@
 | 26 | HIGH | 注销提交门禁调用 bad 但未 throw | FIXED_VERIFIED | `CancellationSubmissionValidator` 已实际抛出门禁异常；`Phase04CancellationIntegrationTest` 覆盖非法注销拒绝与正常申请；`6541a05`。 | 后端已完成 |
 | 27 | HIGH | 注销草稿列表快照为空且范围过滤错误 | FIXED_VERIFIED | 创建/更新时生成可信快照，查询与 count 使用一致权限条件；`Phase04CancellationIntegrationTest` 覆盖；`be12635`。 | 后端已完成 |
 | 28 | MEDIUM | 注销查询错误复用 SELF 归档范围规则 | FIXED_VERIFIED | 注销列表 SELF 按本人申请授权，归档仍按既有规则拒绝 SELF；列表/详情测试通过；`be12635`。 | 后端已完成 |
-| 29 | MEDIUM | 空户销户原户主快照缺失 | OPEN | 无户主家庭户本来就没有户主；当前销户快照未形成可靠的历史原户主快照字段/来源；本轮未改。 | 后端/产品 |
+| 29 | MEDIUM | 空户销户原户主快照缺失 | OPEN | 真实链路表征证实最后户主注销后家庭户归档的户主 ID 和姓名为空；历史无户主与历史信息丢失无法可靠区分。其他路径仍需动态表征，未来快照方案待评审。 [证据](../development/issue29-64-real-validation-2026-11-12.md)。 | 后端/产品 |
 | 30 | LOW | 注销状态监听器未映射 RETURNED | NOT_REPRODUCED | 实际人员与家庭户退回链路未向监听器广播 RETURNED，原异常未复现；修正另发现的注销列表和详情状态显示歧义。H2 流程、错误状态与全量回归通过；MySQL 仅验证隔离合成查询。 [本轮报告](../development/issue30-62-70-batch-review-2026-11-11.md)。 | 已验证当前链路；未声明生产部署 |
 | 31 | CRITICAL | SELF 可绕过归属校验读取他人流动/居住证 | FIXED_VERIFIED | 服务层按来源申请人校验 SELF；`FloatingSelfScopeAuditIntegrationTest` 覆盖本人允许、他人拒绝及列表/详情；`6541a05`。 | 后端已完成 |
 | 32 | HIGH | 流动关闭与居住证签注锁顺序形成 MySQL 死锁 | FIXED_VERIFIED | 本轮旧实现捕获 8.4.8 `1213/40001` 等待环；修复后 MySQL 10/10 轮关闭 200、签注 409、死锁计数不增；`MySql84CriticalAcceptanceIT.closeThenEndorseLocksFloatingBeforePermitWithoutDeadlock`，`2bfa038`。 | 后端已完成 |
@@ -69,7 +69,7 @@
 | 61 | HIGH | 过期 Bearer Token 阻断匿名登录 | FIXED_VERIFIED | JWT filter 豁免精确公开登录路径；失效 Token 登录可继续，受保护 API 仍 401；`AuthRbacIntegrationTest`，`0d84620`。 | 后端已完成 |
 | 62 | MEDIUM | 业务申请和审批区划判定曾分裂 | FIXED_VERIFIED | 独立 H2 真实认证、授权及 MyBatis 测试覆盖多子区划、同级和伪前缀排除、列表/审批对照及分页等；原 Mapper 未改。 [本轮报告](../development/issue30-62-70-batch-review-2026-11-11.md)。 | 已验证；未声明生产部署 |
 | 63 | MEDIUM | 统计接口未使用调用者数据范围 | FIXED_VERIFIED | 统计 Service/Mapper 传递 `DataScopeCriteria`；部门/SELF/REGION/ALL 测试通过；`8509d78`。 | 后端已完成 |
-| 64 | MEDIUM | 本地 Token 黑名单无主动清理/分布式同步 | OPEN | 项目现有 Spring 配置已启用调度，隔离上下文主动批量清理通过；共享模式现仅有模拟双实例和 HTTP 门禁证据，真实 Redis 未验证。 [证据](../development/issue7-50-64-batch-review-2026-11-11.md)。 | 后端/运维继续验证共享存储 |
+| 64 | MEDIUM | 本地 Token 黑名单无主动清理/分布式同步 | OPEN | 真实 Redis 双 JVM 跨实例注销和保存后重启通过；模拟数据丢失时未过期的已注销令牌重新可用，安全恢复机制和生产持久化验收待设计验证。 [证据](../development/issue29-64-real-validation-2026-11-12.md)。 | 后端/运维继续验证共享存储 |
 | 65 | LOW | 会话恢复初次挂载可能丢角色权限 | FIXED_NOT_VERIFIED | `user.js` 现会恢复持久化角色/权限并核验 `/auth/me`；未找到 UI 初次挂载闪烁专测。 | 前端补测 |
 | 66 | CRITICAL | 统计 SQL 用中文状态与标准状态不匹配 | FIXED_VERIFIED | 统计查询使用 ACTIVE 等业务枚举；统计集成测试验证合成 ACTIVE 记录；`8509d78`。 | 后端已完成 |
 | 67 | HIGH | 综合档案抽屉 prop 名与组件声明失配 | FRONTEND_HANDOFF | `ComprehensiveProfileDrawer.vue`/`DetailDrawer` 绑定需前端核验；本轮未改前端。 | 前端组 |

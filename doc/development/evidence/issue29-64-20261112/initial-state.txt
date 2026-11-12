@@ -1,0 +1,12 @@
+Initial worktree status:
+## audit/20261112-issue29-64-real-redis
+Worktree HEAD:
+5e0daaea59da7f616dd6c71bff0e57c5513cf6e9
+Protected refs:
+b54579b6b7f8b1feeda60f43906da05fb2ffda99
+5e0daaea59da7f616dd6c71bff0e57c5513cf6e9
+758014cbcccdfe820efb2a6fae73bc3168030484
+d6b0b87b74af7a413214d7da9dd30b075cec882b
+8b0730fa474c8b533ab8f3b571bd1bf73b4e65f2
+d7fc1192967a13c7d80d2b60fdc12749fd5218df
+Main workspace gitignore SHA256: 8399B5DE049E3989E123B747D457A02A5D8EDADF6A57867B57F1BD760FA68DE3
