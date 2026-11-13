@@ -1,0 +1,24 @@
+{"event": "redis_started", "ts": "2026-11-13T03:38:08Z", "label": "initial", "pid": 34752, "port": 14218, "data_dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-b4ff998c9a11\\data-initial"}
+{"event": "app_started", "ts": "2026-11-13T03:38:18Z", "instance": "A1", "pid": 37924, "port": 14219}
+{"event": "app_started", "ts": "2026-11-13T03:38:28Z", "instance": "B1", "pid": 36668, "port": 14220}
+{"event": "check", "ts": "2026-11-13T03:38:28Z", "step": "login_population", "actual": 200, "expected": 200, "passed": true}
+{"event": "token_issued", "ts": "2026-11-13T03:38:28Z", "role": "old", "jti_sha256_prefix": "bc1801749cdc"}
+{"event": "check", "ts": "2026-11-13T03:38:28Z", "step": "A_before_logout", "actual": 200, "expected": 200, "passed": true}
+{"event": "check", "ts": "2026-11-13T03:38:28Z", "step": "B_before_logout", "actual": 200, "expected": 200, "passed": true}
+{"event": "check", "ts": "2026-11-13T03:38:28Z", "step": "A_logout", "actual": 200, "expected": 200, "passed": true}
+{"event": "check", "ts": "2026-11-13T03:38:28Z", "step": "A_after_logout", "actual": 401, "expected": 401, "passed": true}
+{"event": "check", "ts": "2026-11-13T03:38:28Z", "step": "B_after_logout", "actual": 401, "expected": 401, "passed": true}
+{"event": "check", "ts": "2026-11-13T03:38:29Z", "step": "login_fresh", "actual": 200, "expected": 200, "passed": true}
+{"event": "token_issued", "ts": "2026-11-13T03:38:29Z", "role": "fresh", "jti_sha256_prefix": "a528d0a4bf2f", "jti_distinct": true}
+{"event": "check", "ts": "2026-11-13T03:38:29Z", "step": "B_fresh_valid", "actual": 200, "expected": 200, "passed": true}
+{"event": "redis_down_after_save", "ts": "2026-11-13T03:38:29Z", "dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-b4ff998c9a11\\data-initial", "dbsize_before_shutdown": 3, "dump_rdb_exists": true, "dump_rdb_bytes": 389, "dump_rdb_sha256": "cfa13315b2a8fbd57132cecc92d7281987bacaeef1394b3f74dba355fa5109e7"}
+{"event": "check", "ts": "2026-11-13T03:38:30Z", "step": "B_during_outage_fresh", "actual": 503, "expected": 503, "passed": true}
+{"event": "check", "ts": "2026-11-13T03:38:31Z", "step": "A_during_outage_health", "actual": 200, "expected": 200, "passed": true}
+{"event": "check", "ts": "2026-11-13T03:38:31Z", "step": "A_after_preserved_rdb_old", "actual": 401, "expected": 401, "passed": true}
+{"event": "check", "ts": "2026-11-13T03:38:31Z", "step": "B_after_preserved_rdb_old", "actual": 401, "expected": 401, "passed": true}
+{"event": "check", "ts": "2026-11-13T03:38:31Z", "step": "B_after_preserved_rdb_fresh", "actual": 200, "expected": 200, "passed": true}
+{"event": "preserved_rdb_observation", "ts": "2026-11-13T03:38:31Z", "durable_guarantee_proven": false}
+{"event": "redis_started", "ts": "2026-11-13T03:38:32Z", "label": "empty", "pid": 21068, "port": 14218, "data_dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-b4ff998c9a11\\data-empty"}
+{"event": "redis_empty_dir_switch", "ts": "2026-11-13T03:38:32Z", "dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-b4ff998c9a11\\data-empty", "redis_reported_dir": "/cygdrive/c/Users/jxgm/AppData/Local/Temp/issue64-durability-red/run-b4ff998c9a11/data-empty", "dbsize": 0, "revocation_key_exists": 0, "dump_rdb_exists": false, "verified_switch": true}
+{"event": "FINAL_VERDICT", "ts": "2026-11-13T03:38:32Z", "verdict": "RED", "exit_code": 2, "reason": "revoked_jwt_accepted_after_empty_redis_recovery", "a_old_status": 200, "b_old_status": 200, "fresh_b_status": 200, "vulnerability_reproduced": true}
+{"event": "own_processes_stopped", "ts": "2026-11-13T03:38:32Z", "count": 5}

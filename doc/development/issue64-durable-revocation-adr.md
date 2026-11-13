@@ -80,7 +80,7 @@
 | **11. 延迟与吞吐成本** | **可接受**：`JwtAuthenticationFilter` 每次请求**本就执行 `authService.loadUser()` 访问 MySQL 2~4 次**；增加 1 次唯一索引点查（约 0.2~0.5ms）成本极低；Redis 仅命中黑名单时省去 DB 点查（防失效令牌重放风暴）。 | B1 可直接合并进 `authMapper.selectByUsername()`（0 额外 SQL），代价是丧失单设备注销；B2 每登录多 1 次 INSERT、每请求多 1 次 `sid` 校验。 | 网络 RTT 最低，但开启 `appendfsync always` + `WAIT`/`WAITAOF` 后写入尾延迟剧增且受网络抖动阻塞。 |
 | **12. 存储规模与清理成本** | 仅存“有效期内提前注销”的令牌，默认有效期 120 分钟；按峰值每小时数千次注销计，表规模常驻仅数百~数万行，有界批量清理极快。 | B1 零额外表增长；B2 需为**每次登录**建行（比仅存注销行大 1~2 个数量级）。 | 内存存储，受 `maxmemory` 限制；一旦触发淘汰策略即丢失黑名单。 |
 | **13. 生产部署复杂度** | **低**：复用现有 MySQL 8 唯一事实源；Redis 保持可选加速角色，完全契合仓库运维指南。 | **低~中**：同样复用现有 MySQL 8，无需新增运维组件。 | **极高**：需部署 Redis Sentinel/Cluster、AOF `always`、RDB/AOF 异地备份、禁止空目录启动护栏、`min-replicas-to-write`、禁用 `FLUSHDB`/淘汰等，且 Windows 环境无官方企业级支持。 |
-| **14. 数据迁移及回滚风险** | 新增独立表 + 检查点表，**不改业务表结构**；切换需配合 `min_valid_iat_epoch_ms` 或 `JWT_SECRET` 轮换（详见第 6 节）。 | 需修改 `sys_user` 表或新增会话表，且必须改造 `JwtService` Payload 契约与现有测试。 | 无法通过 SQL 脚本保证，高度依赖外部基础设施人工配置审计。 |
+| **14. 数据迁移及回滚风险** | 新增独立表 + 检查点表，**不改业务表结构**；切换需配合 `min_valid_iat_epoch_ms` 或 `JWT_SECRET` 轮换，PITR 回滚须执行强制失效 SOP（详见第 5、6 节）。 | 需修改 `sys_user` 表或新增会话表，且必须改造 `JwtService` Payload 契约与现有测试。 | 无法通过 SQL 脚本保证，高度依赖外部基础设施人工配置审计。 |
 | **15. 对现有代码的侵入程度** | **低~中**：无需改动 JWT 载荷格式、`LoginVO`、业务 Controller 或前端；仅扩展 `TokenRevocationService`、`RevocationProperties` 及新增 MyBatis/JDBC 持久化与切面。 | B1 改 `JwtService` + `AuthMapper` + `sys_user`；B2 需大改登录/会话生命周期与大量既有测试断言。 | 仍需改造应用支持 `WAIT`/`WAITAOF`/epoch 护栏，且无法消除空库恢复后的结构性盲区。 |
 
 ### 3.2 为何不能仅靠方案 C（即使启用 AOF/RDB 与 WAIT/WAITAOF）
@@ -121,8 +121,29 @@
      - `created_at` (`DATETIME(3)` / H2 `TIMESTAMP` `NOT NULL DEFAULT CURRENT_TIMESTAMP`)
    - **`jwt_revocation_checkpoint`**（全局/切换时间水位表）：
      - `checkpoint_key` (`VARCHAR(64) PK`) — 固定 `'GLOBAL_JWT_CUTOFF'`
-     - `min_valid_iat_epoch_ms` (`BIGINT NOT NULL DEFAULT 0`) — 凡 `iat < min_valid_iat_epoch_ms`（或缺 `iat`）的 JWT 一律视为已失效（401），用于上线安全切换与紧急全量踢出
+     - `checkpoint_status` (`VARCHAR(20) NOT NULL DEFAULT 'UNINITIALIZED'`) — 显式三态枚举：`UNINITIALIZED | READY | INVALID`
+     - `min_valid_iat_epoch_ms` (`BIGINT NULL`) — 仅当 `checkpoint_status = 'READY'` 且 `min_valid_iat_epoch_ms IS NOT NULL AND min_valid_iat_epoch_ms >= 0` 时有效；凡 `(iat_epoch_sec * 1000) < min_valid_iat_epoch_ms`（或缺失 `iat`）的 JWT 一律视为已失效（401）
+     - `activated_at` (`DATETIME(3)` / H2 `TIMESTAMP` `NULL`) — 首次从 `UNINITIALIZED` 激活至 `READY` 的时刻
      - `updated_by` (`VARCHAR(64) NULL`) / `updated_at` (`DATETIME(3)` / H2 `TIMESTAMP` `NOT NULL DEFAULT CURRENT_TIMESTAMP`)
+
+### 4.1.1 检查点状态机、Fail-Closed 契约与 `iat` 秒级精度规则（审查阻断项 A）
+
+为彻底防止“检查点行缺失/未初始化/损坏被 `COALESCE(..., 0)` 掩盖”进而导致存量或已吊销令牌意外放行，检查点表必须严格遵守以下 **10 条强安全约束**：
+
+1. **缺失检查点行 → Fail-Closed 503**：查询 `checkpoint_key = 'GLOBAL_JWT_CUTOFF'` 返回 0 行时，**严禁 `COALESCE(..., 0)`**，认证与登录预检必须抛出 `RevocationStoreUnavailableException`，返回 HTTP `503 REVOCATION_STORE_UNAVAILABLE`。
+2. **检查点字段无效 → Fail-Closed 503**：当 `checkpoint_status` 为 `UNINITIALIZED`、`INVALID` 或未知值，或 `min_valid_iat_epoch_ms` 为 `NULL` / `< 0`（以及明显异常负值）时，一律视为检查点不可信，认证与登录预检 **Fail-Closed 返回 HTTP 503**，绝不放行。
+3. **数据库查询失败 → Fail-Closed 503**：访问 `jwt_revocation` 或 `jwt_revocation_checkpoint` 发生连接异常、超时、表缺失、SQL 异常时，立即清空 `SecurityContextHolder` 并返回 HTTP `503`。
+4. **生产启动强门禁**：在 `DURABLE_DB_REQUIRED` 模式下启动应用时，启动自检必须验证 `GLOBAL_JWT_CUTOFF` 行存在，且 `checkpoint_status = 'READY'`、`min_valid_iat_epoch_ms IS NOT NULL AND min_valid_iat_epoch_ms >= 0`；缺失、`UNINITIALIZED` 或 `INVALID` 时直接**拒绝启动（fail-fast）**。
+5. **旧系统升级强制水位校核**：从 `SHARED_REDIS_REQUIRED` 升级至 `DURABLE_DB_REQUIRED` 时，部署脚本/运维流程必须先将 `checkpoint_status` 显式切换为 `READY`，并将 `min_valid_iat_epoch_ms` 设置为大于等于切换边界的 UTC 毫秒值（见第 10 条精度对齐规则），并经预检确认生效后方可启动 `v_new`。
+6. **禁止“空表 + 0 水位”放行存量 JWT**：DDL 初始化脚本仅写入 `checkpoint_status = 'UNINITIALIZED'` 与 `min_valid_iat_epoch_ms = NULL`（或未激活态的占位值）；**任何升级或生产环境都不得把初始化态或 `0` 自动当作已完成安全切换并放行此前签发的存量 JWT**。
+7. **水位更新必须单调不减**：更新 `GLOBAL_JWT_CUTOFF` 时必须执行条件更新：仅允许 `WHERE checkpoint_key = 'GLOBAL_JWT_CUTOFF' AND (min_valid_iat_epoch_ms IS NULL OR #{newCutoffMs} >= min_valid_iat_epoch_ms)`（建议显式要求 `> 0` 且在重装/紧急踢出时单调递增），**禁止回拨检查点水位**。
+8. **禁止普通启动脚本重置既有水位**：迁移与测试/部署初始化脚本必须使用幂等非覆盖插入（例如 `INSERT IGNORE` / `ON DUPLICATE KEY UPDATE checkpoint_key = checkpoint_key`），**绝对禁止在 `GLOBAL_JWT_CUTOFF` 已存在并处于 `READY` 时将其重置为 `0` 或 `UNINITIALIZED`**。
+9. **数据库恢复旧快照 / PITR 回滚强制安全约束**：若对 MySQL 执行冷备还原或基于时间点的恢复（PITR），会导致 `jwt_revocation` 中还原点之后的撤销记录丢失，且 `min_valid_iat_epoch_ms` 可能倒退回更旧时间点。因此任何历史库恢复**必须配合安全恢复 SOP**（见第 5.4 节：强制轮换 `JWT_SECRET` 或推进 `min_valid_iat_epoch_ms` 并清除全部在线会谈凭证），未完成安全处理前禁止接入外部流量。
+10. **JWT `iat` 秒级精度与 `cutoff` 毫秒精度关系及首次激活规则**：
+    - `JwtService.createToken()` (`L34-43`) 构造 `Date.from(now)` 交由 JJWT 按 RFC 7519 序列化 `iat` 为**整秒级 Unix 时间戳**（例如 `now = 1794537300.850s` 时，JWT 内 `iat` 为 `1794537300`，反序列化回 Java `claims.getIssuedAt().toInstant().toEpochMilli()` 时毫秒固定为 `1794537300000L`）。
+    - **精度陷阱与修正**：若在 `T_cutover = 1794537300.850s` 直接将 `cutoff` 设为 `1794537300850L`，则同一整秒内（`1794537300.851s`~`.999s`）随后新签发的合法 JWT 其 `iatMs` 仍为 `1794537300000L < 1794537300850L`，将被误判撤销；反之若简单向下截断为 `1794537300000L`，则同一秒更早时刻（`.100s`）签发的切前旧令牌也会逃逸放行。
+    - **强制对齐规则**：设置/提升 `min_valid_iat_epoch_ms` 时，必须将其对齐至**下一整秒上界**：`cutoffMs = ((T_cutover_ms / 1000L) + 1L) * 1000L`，并在放开登录/写流量前等待至多 1 秒跨过该整秒边界（`clock.millis() >= cutoffMs`）。认证比较使用 `iatEpochMs < min_valid_iat_epoch_ms`（若 `iat == null` 同样拒绝）。由此保证：所有切前旧令牌严格满足 `iatEpochMs <= T_cutover_sec * 1000 < cutoffMs`（100% 拒绝），所有切后新令牌严格满足 `iatEpochMs >= cutoffMs`（0 误杀）。
+    - **全新空库首次部署可验证激活条件**：仅当确认属于全新部署且历史上从未签发过有效 JWT（例如由运维在执行新随机 `JWT_SECRET` 生成、且 `sys_user`/业务尚未对外签发令牌的初始化窗口内），方可显式执行一次独立 `ACTIVATE` 语句将 `checkpoint_status` 由 `UNINITIALIZED` 置为 `READY` 并写入当前整秒对齐后的 `min_valid_iat_epoch_ms = ((now_ms / 1000L) + 1L) * 1000L`（禁止在未验证全新空库条件时由 DDL 默认激活为 `0`）。
 
 ### 4.2 唯一键、索引、过期时间与有界清理规则
 
@@ -159,37 +180,37 @@
    - 若此时 Redis 写入失败（连接断开、ACL 拒绝、超时）：记录 `REVOCATION_CACHE_WRITE_UNAVAILABLE` 告警并计数，**但注销接口仍返回 HTTP 200 且记录 `LOGOUT SUCCESS`**，因为 MySQL 权威状态已提交，后续所有实例在 Redis MISS 时会直接从 MySQL 主库读取到该吊销记录。
    - 若 MySQL 写入或事务提交失败：立即抛出 `RevocationStoreUnavailableException`（HTTP 503），**不写 Redis、不写 `LOGOUT SUCCESS` 审计、不放行返回 200**。
 
-### 4.4 认证读取顺序与 Redis 信任边界
+### 4.4 认证读取顺序、检查点即时一致性与 Redis 信任边界（审查阻断项 B）
 
 > [!CAUTION]
-> **核心铁律**：绝对禁止在任何生产/多实例模式中将 Redis 的“键不存在（MISS）”直接认定为“令牌未撤销”。
+> **核心铁律**：
+> 1. 绝对禁止在任何生产/多实例模式中将 Redis 的“键不存在（MISS）”直接认定为“令牌未撤销”。
+> 2. **严禁对 `GLOBAL_JWT_CUTOFF` 水位做进程内 TTL 缓存（如 5s 缓存）**：用于强制全量失效或安全切换的水位一旦更新，若因各 JVM 本地缓存刷新延迟导致其它实例在窗口期内继续返回 HTTP 200，将直接违反 INV-02 与 INV-05。因此**本设计彻底取消 JVM 本地水位缓存**，强制每次认证从 MySQL 主库读取权威检查点状态与水位。
 
 严格认证读取顺序（`JwtAuthenticationFilter` → `TokenRevocationService.isRevoked`）：
-1. **JWT 验签与基础声明校验**（`JwtService.parseClaims`）：验证 HMAC 签名、`exp > now`、`jti` 非空。过期返回 401 `身份令牌已过期`；签名/格式错误返回 401 `身份令牌无效`。
-2. **全局安全水位校验**（`min_valid_iat_epoch_ms`）：
-   - 由权威 MySQL 主库加载（可配合短生命周期刷新或直接与步骤 4 合并判断，见下）`min_valid_iat_epoch_ms`；若 `min_valid_iat_epoch_ms > 0` 且令牌 `iat == null` 或 `iat.toEpochMilli() < min_valid_iat_epoch_ms`，直接返回 401 `身份令牌已撤销`（切换期间强拒所有切前旧令牌）。
-   - *注：若对 `min_valid_iat_epoch_ms` 做进程内单调缓存，仅当本地缓存的 `cutoff` 已经拉取成功时才允许比较，且该缓存必须周期性（如每 5s）及在发生全量踢出时强制回源刷新；更稳妥的做法是：只要需要回源 MySQL 校验 `jwt_revocation`，可在**同一条或同一数据库往返**顺带核对 `min_valid_iat_epoch_ms`（例如使用单次 JDBC/MyBatis 查询同时返回是否存在吊销与当前 `cutoff`），零额外网络往返！*
-3. **Redis 辅助加速检查（仅允许正向命中拒绝，不允许 MISS 放行）**：
+1. **JWT 验签与基础声明校验**（`JwtService.parseClaims`）：验证 HMAC 签名、`exp > now`、`jti` 非空、`iat` 非空。过期返回 401 `身份令牌已过期`；签名/格式错误或缺失必要声明返回 401 `身份令牌无效`。
+2. **Redis 辅助快速拒绝缓存（仅允许正向命中拒绝，不允许 MISS 放行）**：
    - 若 Redis 已启用且可用，尝试查询 `blacklist:<jti_sha256>`：
-     - 若返回 `true`（命中）：**立即拒绝**，返回 401 `身份令牌已撤销`，记录 `REVOCATION_REJECTED(source=REDIS_CACHE)`（无需再打扰 MySQL）。
-     - 若返回 `false`（MISS）或 Redis 抛出超时/连接/认证异常：记录缓存异常统计（若异常），**不得放行，必须进入步骤 4**。
-4. **权威 MySQL 主库点查（Authoritative Check）**：
-   - 使用独立连接/只读非外层长事务快照，路由至 **MySQL Primary (RW)** 执行：
+     - 若返回 `true`（**快速拒绝命中**）：**立即拒绝**，返回 401 `身份令牌已撤销`，记录 `REVOCATION_REJECTED_CACHE`（无需再查询 MySQL；已确认单向吊销的 `jti` 只增不减，不会因水位升高而恢复有效）。
+     - 若返回 `false`（**Redis MISS**）或 Redis 抛出超时/连接/ACL 异常：记录缓存异常统计（若异常），**严禁放行，必须无条件进入步骤 3 查询 MySQL 主库**。
+3. **权威 MySQL 主库单次联合点查（Authoritative Primary Query）**：
+   - 使用独立连接/非长事务快照，强制路由至 **MySQL Primary (RW)** 执行单次联合查询（与 `jwt_revocation` 合并为 **1 次往返，0 额外延迟，0 实例间缓存漂移**；**严禁使用 `COALESCE(..., 0)` 掩盖缺失行**）：
      ```sql
      SELECT
        EXISTS(
          SELECT 1 FROM jwt_revocation
          WHERE jti_sha256 = #{jtiSha256} AND expires_at_epoch_ms > #{nowEpochMs}
        ) AS jti_revoked,
-       COALESCE((
-         SELECT min_valid_iat_epoch_ms FROM jwt_revocation_checkpoint
-         WHERE checkpoint_key = 'GLOBAL_JWT_CUTOFF'
-       ), 0) AS min_valid_iat_epoch_ms
+       c.checkpoint_status,
+       c.min_valid_iat_epoch_ms
+     FROM jwt_revocation_checkpoint c
+     WHERE c.checkpoint_key = 'GLOBAL_JWT_CUTOFF'
      ```
-   - 判定结果：
-     - 若 `jti_revoked == 1` 或 `(min_valid_iat_epoch_ms > 0 && (iatMs == null || iatMs < min_valid_iat_epoch_ms))`：返回 `revoked = true`（HTTP 401 `身份令牌已撤销`）。（若 Redis 可用但此前 MISS，可异步或顺带 best-effort 回填 Redis `PXAT` 缓存，防止同一无效令牌持续击穿数据库。）
-     - 若 MySQL 主库明确返回 `jti_revoked == 0` 且满足水位要求：确认未撤销，放行至 `authService.loadUser(username)`。
-     - 若 MySQL 主库查询异常（连接失败、超时、表缺失、SQL 错误）：抛出 `RevocationStoreUnavailableException`，返回 **HTTP 503 `REVOCATION_STORE_UNAVAILABLE`**（Fail-Closed）。
+   - 严格判定逻辑（顺序不可颠倒）：
+     1. **查询异常（连接失败、超时、表缺失、SQL 错误）** → 立即清空 `SecurityContextHolder`，抛出 `RevocationStoreUnavailableException`，返回 **HTTP 503 `REVOCATION_STORE_UNAVAILABLE`**（Fail-Closed）。
+     2. **检查点行缺失（返回 0 行）或状态无效**（`checkpoint_status` 非 `'READY'`，如 `'UNINITIALIZED'` / `'INVALID'` / 未知值，或 `min_valid_iat_epoch_ms IS NULL` / `< 0`） → **Fail-Closed 返回 HTTP 503 `REVOCATION_STORE_UNAVAILABLE`**，绝不放行。
+     3. **`jti_revoked == 1` 或 `iatMs == null` 或 `iatMs < min_valid_iat_epoch_ms`** → 返回 `revoked = true`（**HTTP 401 `身份令牌已撤销`**）。若 Redis 可用且仅因 `jti_revoked == 1` 拒绝（此前为 MISS），可 best-effort 回填 Redis `PXAT` 黑名单键以防重放击穿 DB；若仅因全局水位拒绝且需立即全实例统一踢出，后续实例同样通过本步骤即时读主库拒访，无视本地缓存。
+     4. **仅当检查点严格为 `READY` 且 `min_valid_iat_epoch_ms >= 0`、且 `jti_revoked == 0` 且 `iatMs >= min_valid_iat_epoch_ms`** → 确认未撤销，放行至 `authService.loadUser(username)`。
 
 ### 4.5 关键事务与故障时序图
 
@@ -255,58 +276,70 @@ sequenceDiagram
    - 已撤销或低于 `min_valid_iat_epoch_ms`：401 `身份令牌已撤销`
    - MySQL 权威吊销库不可用（认证回源、登录预检、注销写入）：503 `REVOCATION_STORE_UNAVAILABLE：身份令牌撤销服务暂不可用，请稍后重试`
    - `/api/health`：保持 `permitAll()` 无 Token 恒返回 HTTP 200，在返回体中可新增 `revocationMode` / `revocationStoreStatus`（例如 `DB_PRIMARY_UP` / `DB_PRIMARY_DOWN`）而不改变既有 `database`、`redisEnabled`、`redisStatus`、`cacheMode` 字段语义（满足 INV-06）。
-2. **运行模式兼容（`RevocationProperties.Mode`）**：
+2. **运行模式兼容与启动检查点校验（`RevocationProperties.Mode`）**：
    - 保留 `SINGLE_INSTANCE_LOCAL`（非 prod profile 本地开发兼容，或带显式审批的生产单机例外）。
-   - 新增推荐生产模式 `DURABLE_DB_REQUIRED`（或将严格多实例生产默认要求从 `SHARED_REDIS_REQUIRED` 演进为 `DURABLE_DB_REQUIRED`；启动门禁在 `prod/production` profile 或 `production=true` 时，若既非 `DURABLE_DB_REQUIRED` 也无单机审计例外则拒绝启动）。
-   - 若显式配置 `SHARED_REDIS_REQUIRED` 作为过渡兼容模式，应在启动日志中发出高优先级安全告警提示其不抗 Redis 空恢复，或直接由 `DURABLE_DB_REQUIRED` 接管生产标准。
+   - 新增生产默认模式 `DURABLE_DB_REQUIRED`：
+     - 启动校验（`validateConfiguration`）在 `prod/production` profile 或 `production=true` 时强制要求 `DURABLE_DB_REQUIRED`（除非显式审批单机例外）；
+     - **启动检查点强制校验**：在 `DURABLE_DB_REQUIRED` 模式下启动时，应用必须查询 `jwt_revocation_checkpoint` 中的 `GLOBAL_JWT_CUTOFF` 行，确认该行**存在**、且 `checkpoint_status = 'READY'`、且 `min_valid_iat_epoch_ms IS NOT NULL AND min_valid_iat_epoch_ms >= 0`；若行缺失、处于 `UNINITIALIZED` / `INVALID`、或数据库不可达，应用**直接 fail-fast 拒绝启动**（不得以 `0` 或空表静默上线）。
+   - 若显式配置 `SHARED_REDIS_REQUIRED` 作为过渡兼容模式，应在启动日志中发出高优先级安全告警提示其不抗 Redis 空恢复，禁止将其用于替代 `DURABLE_DB_REQUIRED` 的生产验收。
 3. **监控指标、审计事件与告警**：
    - 在 `RevocationEvents` 中维持有界事件名（禁止输出 `jti` 明文、JWT、密码、Redis/DB URI）：
      - `REVOCATION_DB_CONFIRMED` (`LOGOUT` 成功落库)
-     - `REVOCATION_DB_UNAVAILABLE` (`LOGOUT` / `LOGIN_PREFLIGHT` / `AUTHENTICATE` 数据库不可用，触发 503 紧急告警)
+     - `REVOCATION_DB_UNAVAILABLE` (`LOGOUT` / `LOGIN_PREFLIGHT` / `AUTHENTICATE` / 检查点缺失或 `UNINITIALIZED`/`INVALID` 触发 503 紧急告警)
      - `REVOCATION_REJECTED_CACHE` / `REVOCATION_REJECTED_DB` / `REVOCATION_REJECTED_CUTOFF`
-     - `REVOCATION_CACHE_WRITE_UNAVAILABLE` / `REVOCATION_CACHE_READ_UNAVAILABLE`（Redis 辅缓存异常告警，服务不中断但通知运维排查 Redis）
+     - `REVOCATION_CACHE_WRITE_UNAVAILABLE` / `REVOCATION_CACHE_READ_UNAVAILABLE`（Redis 辅缓存异常告警；注意 `v_new` 下服务不中断，但若处于 `v_bridge` 阶段仍必须 fail-closed 503）
      - `REVOCATION_CLEANUP_BATCH`（记录清理行数与耗时，不记录明细）
 
 ---
 
-## 5. 上线切换、混合部署与回滚安全方案
+## 5. 上线切换、混合部署、回滚与数据库恢复安全方案
 
-### 5.1 为什么禁止“直接建空表切新代码”
+### 5.1 为什么禁止“直接建空表 + 0 水位切新代码”
 
 上线瞬间，系统中可能存在此前由旧版本签发并已在 Redis 中注销、但新表 `jwt_revocation` 内尚未记录的 JWT：
-- 若直接启用 `v_new` 且 Redis 发生重启/丢数据/换新前缀，`v_new` 查询空表会认为这些旧令牌全部有效，直接造成**已撤销令牌大规模复活**。
-- **因此绝对禁止默认“空表 = 所有存量 JWT 有效”的直接切换方式！**
+- 若直接启用 `v_new` 且以默认 `0` 水位（或 `COALESCE(..., 0)`）查询空表，一旦 Redis 发生重启/丢数据/换新前缀，`v_new` 查询空表会认为这些旧令牌全部有效，直接造成**已撤销令牌大规模复活**。
+- **因此绝对禁止通过 `UNINITIALIZED`、空表或 `0` 水位直接放行升级前签发的存量 JWT！**
 
-### 5.2 推荐切换方案：维护窗口 + `min_valid_iat_epoch_ms` 安全水位切分（可选叠加 `JWT_SECRET` 轮换）
+### 5.2 推荐切换方案（优先停机维护窗口）与高精度水位切分
 
-对比两种可证明安全的切换路径：
-
-| 方案 | 流程 | 安全性证明 |
+| 方案 | 流程与原子要求 | 安全性与精度证明 |
 |---|---|---|
-| **方案 1：维护窗口切分（推荐，契合本项目部署方式）** | 1. 停止旧实例写入/进入维护窗口。<br>2. 备份 MySQL，执行 `V4_020_jwt_revocation.sql`。<br>3. 将 `jwt_revocation_checkpoint.min_valid_iat_epoch_ms` 设为当前切换时刻 `T_cutover`（并可同步轮换 `JWT_SECRET`，详见 [backend-v1-operations.md](../deployment/backend-v1-operations.md) 第 6 条）。<br>4. （可选辅助）对在线 Redis 扫描现存未过期 `blacklist:*` 键做最佳努力迁移入表，但**不以它作为安全边界**。<br>5. 启动 `v_new` 实例。 | 凡 `iat < T_cutover` 的所有历史令牌均被强制拒绝（401）要求重新登录；凡 `iat >= T_cutover` 的新令牌均在 `v_new` 全生命周期管控之下，不可能存在“只在旧 Redis 注销而未入库”的盲区。 |
-| **方案 2：零停机双阶段滚动升级（若未来要求不停机）** | 1. **阶段 A（Bridge 版本 `v_bridge`）**：上线双写双读兼容版本——注销同时写 MySQL 与旧 Redis 键，认证同时查 Redis 与 MySQL（任一命中即拒，MySQL 与 Redis 在此阶段均按严格失败处理）。<br>2. 等待所有实例完成滚动替换至 `v_bridge` 后，等待 `>= JWT_EXPIRE_MINUTES`（默认 120 分钟），或将 `min_valid_iat_epoch_ms` 推进至全部节点均已升为 `v_bridge` 的时刻 `T_all_bridge`。<br>3. **阶段 B（Target 版本 `v_new`）**：滚动升级至 `v_new`（去除了对 Redis 严格可用性的阻断依赖，保留 Redis 为可选 fast-reject）。 | 在阶段 B 启动前，所有尚在有效期内的令牌要么已超过 `120` 分钟过期，要么是在 `v_bridge` 上注销（已同时写入 MySQL）。 |
+| **方案 1：维护窗口停旧启新（推荐，默认生产路径）** | 1. 停止所有 `v_old` 实例接收流量（进入维护窗口，关闭登录/业务入口）。<br>2. 备份当前 MySQL，执行 `V4_020_jwt_revocation.sql`（创建表并将 `GLOBAL_JWT_CUTOFF` 初始写入为 `UNINITIALIZED`）。<br>3. 按整秒对齐规则计算切流水位：`cutoffMs = ((nowEpochMs / 1000L) + 1L) * 1000L`；显式执行激活 SQL 将 `GLOBAL_JWT_CUTOFF` 更新为 `checkpoint_status = 'READY'`、`min_valid_iat_epoch_ms = GREATEST(COALESCE(min_valid_iat_epoch_ms, 0), cutoffMs)`（并可同步轮换 `JWT_SECRET`，详见 [backend-v1-operations.md](../deployment/backend-v1-operations.md) 第 6 条）。<br>4. 等待至 `clock.millis() >= cutoffMs`（至多 1 秒）以跨过 `iat` 秒级整秒边界，然后**先验证检查点已处于 `READY` 且水位有效**，再启动 `v_new` 实例。 | 所有升级前签发的旧令牌满足 `(iat_sec * 1000) < cutoffMs`，无论是否曾写入新表、无论 Redis 是否清空，一律返回 401 强制重新登录；所有 `v_new` 启动后签发的新令牌满足 `(iat_sec * 1000) >= cutoffMs` 且 100% 处于 MySQL 持久吊销管控之下。 |
+| **方案 2：全新空库首次部署可验证激活条件** | 仅当满足全部可验证前提：**目标库为全新初始化库、历史上从未对外签发有效 JWT（或同步配置了全新生成的随机 `JWT_SECRET` 且在线无历史客户端流量）** 时，由部署初始化步骤执行一次显式激活 SQL，将 `checkpoint_status` 从 `UNINITIALIZED` 更新为 `READY`、`min_valid_iat_epoch_ms = ((nowEpochMs / 1000L) + 1L) * 1000L` 并等待至 `clock.millis() >= cutoffMs` 后再启动应用。 | 即使新库刚建表，也不依赖“0 水位默认有效”假设；`V4_020` 自身保持 `UNINITIALIZED`，未经显式激活无法放行请求或通过启动检查。 |
+| **方案 3：双阶段滚动过渡版本 `v_bridge`（仅在明确禁止维护窗口时启用）** | 若运维强制禁止停机窗口而保留 `v_bridge`：<br>1. `v_bridge` 开启**双写强一致确认（Dual-Write ACK）**：`POST /api/auth/logout` 期间，MySQL 主库提交 **AND** 旧 Redis 写入**两者都必须成功确认**，才允许返回 HTTP 200 与记录 `LOGOUT SUCCESS`；**只要 `v_old` 仍在运行，若旧 Redis 写入失败则 `v_bridge` 必须返回 503**（绝不能仅提交 MySQL 后返回 200，否则随后打到 `v_old` 的请求会立刻复活！）。认证阶段 `v_bridge` 同时查 Redis 与 MySQL，任一命中即拒。<br>2. 当全部实例确认升级至 `v_bridge` 且再无 `v_old` 实例在线后，将 `GLOBAL_JWT_CUTOFF` 显式单调推进至 `T_all_bridge`（整秒对齐，并等待 >= 1s）或等待超过完整 `JWT_EXPIRE_MINUTES`（默认 120 分钟），再滚动切换至 `v_new`。 | 消除了 `v_bridge` + `v_old` 混跑期间在 `v_bridge` 注销（Redis 失败却返回 200）→ `v_old` 放行的致命窗口。 |
 
-### 5.3 混合部署与回滚安全边界
+### 5.3 混合部署与版本回滚铁律
 
-1. **严禁 `v_old` 与 `v_new` 直接混跑**：若无 `v_bridge` 阶段直接滚动部署，客户在 `v_new` 注销（写 MySQL 成功、假设 Redis 偶发失败仍返回 200）后，下一请求路由到 `v_old`（只查 Redis）就会立刻复活！故必须采用**维护窗口停旧启新**或**`v_bridge` 两步滚动**。
-2. **升级失败处理**：`V4_020` 仅新增两张独立表，不改任何业务表。若切流前 DDL 失败，旧实例与原数据库完全不受影响。
-3. **上线后回滚安全边界（`v_new` → `v_old`）**：
-   - 在 `v_new` 运行期间，如果曾发生 Redis 辅助写入失败或 Redis 重启丢数据，则 `jwt_revocation` 中存在 Redis 里没有的已注销记录；此时直接切回只认 Redis 的 `v_old` **会导致这批令牌复活**。
-   - **回滚铁律**：若必须从 `v_new` 回滚到 `v_old`，**必须同时轮换 `JWT_SECRET`**（使回滚前签发/注销的全部 JWT 一次性失效，通知用户重新登录）；否则禁止回滚至仅读 Redis 的旧版代码。
+1. **严禁 `v_old` 与 `v_new` 直接混跑**：`v_new` 允许 Redis 辅缓存写入失败降级返回 200（依赖 MySQL 主库），而 `v_old` 只读取 Redis；二者直接混跑会在任何 Redis 抖动/空库时导致已在 `v_new` 成功注销的令牌在 `v_old` 立刻复活。
+2. **上线前 DDL 失败处理**：`V4_020` 仅新增两张独立表，不修改业务表。若切换前 DDL 失败，`v_old` 与现有业务完全不受影响。
+3. **版本回滚强制约束（`v_new` → `v_old`）**：
+   - 只要 `v_new` 对外服务过，期间发生的任意一次 Redis 辅写入失败、Redis 重启、淘汰或空恢复，都会导致“MySQL 有记录但旧 Redis 缺失记录”。
+   - **回滚铁律**：从 `v_new` 回滚到只读 Redis 的 `v_old` 时，**必须同时轮换 `JWT_SECRET`（使所有此前签发及已注销 JWT 一次性全部失效）**，严禁保留同一 `JWT_SECRET` 直接回滚！
+
+### 5.4 MySQL 备份还原 / PITR 回滚安全恢复 SOP（审查新增约束）
+
+MySQL 成为 JWT 吊销权威事实源后，数据库级时间点恢复（PITR）或从旧备份快照还原将直接带来安全风险：
+- **风险本质**：若于 `T_restore` 时刻将 MySQL 还原至较早快照时刻 `T_backup`，则 `[T_backup, T_restore]` 区间内所有已提交的 `jwt_revocation` 行以及可能上调过的 `GLOBAL_JWT_CUTOFF` 水位**都会随数据库一并回退丢失**；若仍允许还原前的存量未过期 JWT 继续访问，这部分本已注销/被踢出的令牌将在重启流量后复活。
+- **强制恢复 SOP（恢复流量前必须 100% 完成）**：
+  1. 恢复期间保持所有后端应用实例下线或处于维护拦截状态，禁止在恢复后直接开放外网业务流量。
+  2. 执行以下两项失效措施之一（优先同时执行）：
+     - **A（首选，最彻底）**：立即**轮换生产环境变量 `JWT_SECRET`**，令所有历史 JWT 签名立即失效；并将 `GLOBAL_JWT_CUTOFF.min_valid_iat_epoch_ms` 单调推进至当前恢复后时刻的下一整秒（`((now_ms / 1000) + 1) * 1000`）。
+     - **B（若受限暂不改密钥）**：由 DBA 在 MySQL 主库确认 `jwt_revocation_checkpoint` 为 `READY` 且**强制推进水位**至 `GREATEST(min_valid_iat_epoch_ms, ((now_ms / 1000) + 1) * 1000)`，等待跨过整秒边界后再启应用（确保还原时间点之前签发的所有未过期 JWT 均低于新水位而被强制 401 重新登录）。
+  3. 同时执行一次 Redis 黑名单关联核验或直接清理残留过期键（注意即使不清理 Redis，由于已改密钥或提升水位，旧令牌亦无法复用），确认 `/api/health` 与检查点启动自检全部通过后再恢复外部入口。
 
 ---
 
-## 6. 非执行性 SQL DDL 草案（供下一轮评审）
+## 6. 非执行性 SQL DDL 与操作脚本草案（供下一轮评审）
 
 > [!NOTE]
-> 以下 DDL 未在本轮执行，仅作为设计附录。正式迁移文件应按仓库顺序命名（紧随 `V4_019_migration_batch_reuse.sql` 之后，建议 `doc/database/migrations/V4_020_jwt_revocation.sql`），并同步更新 `src/test/resources/schema.sql`。
+> 以下 SQL 未在本轮执行，仅作为设计附录。正式迁移文件应按仓库顺序命名（紧随 `V4_019_migration_batch_reuse.sql` 之后，建议 `doc/database/migrations/V4_020_jwt_revocation.sql`），并同步更新 `src/test/resources/schema.sql`。
 
 ### 6.1 MySQL 8.4 DDL 草案（`V4_020_jwt_revocation.sql`）
 
 ```sql
 -- =============================================================================
 -- DRAFT ONLY (NON-EXECUTABLE IN THIS DESIGN ROUND)
--- V4_020: Issue #64 - Durable JWT revocation store and cutover checkpoint.
+-- V4_020: Issue #64 - Durable JWT revocation store and fail-closed checkpoint.
 -- Target: MySQL 8.4, apply after V4_019 on a backed-up database.
 -- =============================================================================
 USE population_miniterm;
@@ -330,18 +363,58 @@ CREATE TABLE IF NOT EXISTS jwt_revocation (
 
 CREATE TABLE IF NOT EXISTS jwt_revocation_checkpoint (
     checkpoint_key VARCHAR(64) NOT NULL,
-    min_valid_iat_epoch_ms BIGINT NOT NULL DEFAULT 0 COMMENT 'Reject JWTs with iat < min_valid_iat_epoch_ms',
+    checkpoint_status VARCHAR(20) NOT NULL DEFAULT 'UNINITIALIZED' COMMENT 'UNINITIALIZED | READY | INVALID',
+    min_valid_iat_epoch_ms BIGINT NULL COMMENT 'Must be non-null >= 0 when READY; reject iat_ms < cutoff',
+    activated_at DATETIME(3) NULL COMMENT 'First cutover activation timestamp',
     updated_by VARCHAR(64) NULL,
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-    PRIMARY KEY (checkpoint_key)
+    PRIMARY KEY (checkpoint_key),
+    CONSTRAINT chk_jwt_checkpoint_status CHECK (checkpoint_status IN ('UNINITIALIZED', 'READY', 'INVALID')),
+    CONSTRAINT chk_jwt_checkpoint_ready_cutoff CHECK (
+        checkpoint_status <> 'READY' OR (min_valid_iat_epoch_ms IS NOT NULL AND min_valid_iat_epoch_ms >= 0)
+    )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO jwt_revocation_checkpoint (checkpoint_key, min_valid_iat_epoch_ms, updated_by)
-VALUES ('GLOBAL_JWT_CUTOFF', 0, 'V4_020_INIT')
-ON DUPLICATE KEY UPDATE checkpoint_key = VALUES(checkpoint_key);
+-- 仅在行不存在时插入 UNINITIALIZED 占位；若已有 READY 水位，绝不覆盖或重置为 0！
+INSERT IGNORE INTO jwt_revocation_checkpoint (
+    checkpoint_key, checkpoint_status, min_valid_iat_epoch_ms, updated_by
+) VALUES (
+    'GLOBAL_JWT_CUTOFF', 'UNINITIALIZED', NULL, 'V4_020_DDL_INIT'
+);
 ```
 
-### 6.2 H2 2.3.232 测试 Schema 兼容草案（`src/test/resources/schema.sql`）
+### 6.2 检查点显式激活与单调更新 SQL 草案（运维切流 / 应急踢出专用）
+
+```sql
+-- =============================================================================
+-- EXPLICIT ACTIVATION / MONOTONIC CUTOFF ADVANCE (NOT AUTO-EXECUTED ON STARTUP)
+-- Aligned to next whole UTC second boundary: ((UNIX_TIMESTAMP(UTC_TIMESTAMP(3)) DIV 1) + 1) * 1000
+-- Operator must wait >= 1s after UPDATE before reopening login traffic!
+-- =============================================================================
+
+-- 1) 首次切流 / 新库显式激活（或单调上推水位）：禁止降级、禁止回拨
+UPDATE jwt_revocation_checkpoint
+SET
+    checkpoint_status = 'READY',
+    min_valid_iat_epoch_ms = GREATEST(
+        COALESCE(min_valid_iat_epoch_ms, 0),
+        (FLOOR(UNIX_TIMESTAMP(UTC_TIMESTAMP(3))) + 1) * 1000
+    ),
+    activated_at = COALESCE(activated_at, UTC_TIMESTAMP(3)),
+    updated_by = 'OPS_CUTOVER_OR_ROTATION'
+WHERE checkpoint_key = 'GLOBAL_JWT_CUTOFF'
+  AND checkpoint_status IN ('UNINITIALIZED', 'READY');
+
+-- 2) 校验检查点就绪（期望严格返回 1 行且 status='READY'、cutoff > 0）
+SELECT checkpoint_key, checkpoint_status, min_valid_iat_epoch_ms, activated_at, updated_by, updated_at
+FROM jwt_revocation_checkpoint
+WHERE checkpoint_key = 'GLOBAL_JWT_CUTOFF';
+```
+
+> [!WARNING]
+> 注意上例中的 `COALESCE(min_valid_iat_epoch_ms, 0)` **仅用于单调 `GREATEST(...)` 更新比较中读取前值 `NULL` 时的最大下界保护**，绝不用于认证查询路径！认证路径严格按照第 4.4 节执行无 `COALESCE` 联合查询并检查 `checkpoint_status = 'READY'`。
+
+### 6.3 H2 2.3.232 测试 Schema 兼容草案（`src/test/resources/schema.sql`）
 
 ```sql
 -- H2 MODE=MySQL parity draft (TIMESTAMP instead of DATETIME(3))
@@ -363,35 +436,60 @@ CREATE INDEX IF NOT EXISTS idx_jwt_revocation_user_id ON jwt_revocation (user_id
 
 CREATE TABLE IF NOT EXISTS jwt_revocation_checkpoint (
     checkpoint_key VARCHAR(64) PRIMARY KEY,
-    min_valid_iat_epoch_ms BIGINT NOT NULL DEFAULT 0,
+    checkpoint_status VARCHAR(20) NOT NULL DEFAULT 'UNINITIALIZED',
+    min_valid_iat_epoch_ms BIGINT NULL,
+    activated_at TIMESTAMP NULL,
     updated_by VARCHAR(64) NULL,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_jwt_checkpoint_status CHECK (checkpoint_status IN ('UNINITIALIZED', 'READY', 'INVALID')),
+    CONSTRAINT chk_jwt_checkpoint_ready_cutoff CHECK (
+        checkpoint_status <> 'READY' OR (min_valid_iat_epoch_ms IS NOT NULL AND min_valid_iat_epoch_ms >= 0)
+    )
 );
-MERGE INTO jwt_revocation_checkpoint (checkpoint_key, min_valid_iat_epoch_ms, updated_by)
-KEY (checkpoint_key) VALUES ('GLOBAL_JWT_CUTOFF', 0, 'SCHEMA_INIT');
+-- 注意：H2 测试夹具默认模拟“受控新库初始化”，显式以 READY + 0 作为初始测试基线（生产 V4_020 必须保持 UNINITIALIZED 直至运维切流激活）；
+-- 且仅当行不存在时写入（WHERE NOT EXISTS），严禁覆盖测试中途修改过的水位。
+INSERT INTO jwt_revocation_checkpoint (checkpoint_key, checkpoint_status, min_valid_iat_epoch_ms, activated_at, updated_by)
+SELECT 'GLOBAL_JWT_CUTOFF', 'READY', 0, CURRENT_TIMESTAMP, 'TEST_SCHEMA_INIT'
+WHERE NOT EXISTS (
+    SELECT 1 FROM jwt_revocation_checkpoint WHERE checkpoint_key = 'GLOBAL_JWT_CUTOFF'
+);
 ```
 
 *注：`user_id` 故意不加外键约束至 `sys_user`（或采用 `NULL` 可选），以便合成单测、`TokenRevocationService` 直接按 JTI 测试及未来异步清理都能保持独立解耦；不阻碍安全审计。*
 
 ---
 
-## 7. 代码模块级实施清单与下一轮修复拆分
+## 7. 代码模块级实施清单与门禁阶段分离
 
 ### 7.1 模块级实施清单
 
 | 文件 / 模块 | 下一轮变更内容 |
 |---|---|
-| `doc/database/migrations/V4_020_jwt_revocation.sql` | 正式落地 `jwt_revocation` 与 `jwt_revocation_checkpoint` 表及升级预检/回滚说明文档。 |
-| `src/test/resources/schema.sql` | 同步新增两张表的 H2 `MODE=MySQL` 定义与初始检查点行。 |
+| `doc/database/migrations/V4_020_jwt_revocation.sql` | 正式落地 `jwt_revocation` 与 `jwt_revocation_checkpoint`（`UNINITIALIZED | READY | INVALID`）及升级预检/整秒对齐激活/PITR 回滚 SOP。 |
+| `src/test/resources/schema.sql` | 同步新增两张表的 H2 `MODE=MySQL` 定义，并使用非覆盖 `INSERT ... WHERE NOT EXISTS` 初始化测试检查点行。 |
 | `RevocationProperties.java` | `Mode` 增加 `DURABLE_DB_REQUIRED`；新增 `cleanupGraceSkew`（默认 `PT5M`）、`dbCleanupBatchSize`（默认 `500`）等配置。 |
-| `security/DurableRevocationStore.java`（新增）+ `mapper/JwtRevocationMapper.xml` | 封装主库 `REQUIRES_NEW` 事务幂等写入、单次联合查询（`jti_revoked` + `min_valid_iat_epoch_ms`）、健康探活及分批清理；统一异常映射为 `RevocationStoreUnavailableException`。 |
-| `TokenRevocationService.java` | `validateConfiguration()` 校验生产环境强制 `DURABLE_DB_REQUIRED`；`revoke(...)` 先提交 DB 再 best-effort 写 Redis；`isRevoked(...)`（扩展接收 `jti`、`iat`、`exp`）先检查 Redis fast-reject 命中再无条件回源 DB；`requireLoginStore()` 探活 DB 持久存储；`cleanupExpired()` 在持久模式下同时清理 DB 过期批次。 |
+| `security/DurableRevocationStore.java`（新增）+ `mapper/JwtRevocationMapper.xml` | 封装主库 `REQUIRES_NEW` 事务幂等写入、无 `COALESCE` 单次联合查询（`jti_revoked` + `checkpoint_status` + `min_valid_iat_epoch_ms`）、单调水位更新、健康探活及分批清理；统一异常/缺失/`UNINITIALIZED`/`INVALID` 映射为 `RevocationStoreUnavailableException`。 |
+| `TokenRevocationService.java` | `validateConfiguration()` 校验生产环境强制 `DURABLE_DB_REQUIRED` 且启动检查点为 `READY`；`revoke(...)` 先提交 DB 再 best-effort 写 Redis；`isRevoked(...)` 先检查 Redis fast-reject 命中（401），MISS 或异常时无条件回源 MySQL 主库；`requireLoginStore()` 探活 DB 与检查点状态；`cleanupExpired()` 清理 DB 过期批次。 |
 | `JwtAuthenticationFilter.java` & `AuthService.java` | 传入 `claims.getIssuedAt()` 与 `userId` 给 `TokenRevocationService`，不改动 `JwtService` Payload 契约与 `LoginVO`。 |
 | `HealthController.java` | 新增 `revocationStoreStatus` / `revocationMode` 非敏感字段，保留 `permitAll()` 与 HTTP 200 语义。 |
-| `RevocationEvents.java` | 新增 DB/Cache 分离事件与限流统计，继续严格禁用明文 JTI/JWT/密码日志。 |
+| `RevocationEvents.java` | 新增 DB/Cache/Checkpoint 分离事件与限流统计，继续严格禁用明文 JTI/JWT/密码日志。 |
 
-### 7.2 建议拆分顺序（下一轮生产施工）
+### 7.2 门禁两阶段分离契约（审查阻断项 C）
 
-1. **Step 1（Schema 与 Store 层）**：提交 `V4_020_jwt_revocation.sql`、`schema.sql`、`JwtRevocationMapper` 与 `DurableRevocationStore`，配套 H2 与 MySQL 8.4 幂等插入/并发清理单测。
+为避免“用旧 `SHARED_REDIS_REQUIRED` 门禁或双 JVM 各自独立的 H2 内存库冒充未来 `DURABLE_DB_REQUIRED` 生产安全验收”，验证阶段严格拆分如下：
+
+1. **`BASELINE_RED`（基线缺陷复现门禁，当前已实现并可执行）**：
+   - 固定运行模式：`SHARED_REDIS_REQUIRED`；允许双 JVM 各自使用隔离 H2 + 同一隔离真实 Redis 8.10.3。
+   - 入口：`Issue64DurabilityRedGateTest`（`-Dissue64.red=true`）与 `python scripts/issue64/issue64_red_gate.py --stage baseline-red`。
+   - 预期结论：空 Redis 恢复后未过期旧 JWT 返回 HTTP `200`，判定 **`RED`（退出码 `2`）**；该门禁**仅用于表征基线结构性漏洞**。
+2. **`TARGET_GREEN`（方案 A 目标生产验收门禁，本轮状态：`NOT_RUN`）**：
+   - 必须运行于 **`DURABLE_DB_REQUIRED`** 模式。
+   - 两个独立 JVM **必须接入同一权威持久数据库**（推荐独立 MySQL 8.4 测试库；或显式共享 TCP 数据库实例），**严禁把两个 JVM 各自独立的 `jdbc:h2:mem:...` 内存库冒充共享持久库**。
+   - 关键行为差异：Redis 停机或丢失数据时，认证通过 MySQL 权威库安全完成（已吊销 `T1` 返回 `401`，有效 `T2` 返回 `200`，不再固定期望 Redis 停机返回 `503`）；MySQL 不可用或检查点缺失/`UNINITIALIZED`/`INVALID` 时返回 `503`。
+   - 入口：`Issue64TargetGreenGateTest`（`-Dissue64.target.green=true`，依赖目标模式前置）与 `python scripts/issue64/issue64_red_gate.py --stage target-green`；在 `src/main` 尚未落地 `DURABLE_DB_REQUIRED` 或未提供共享 DB 连接前，门禁必须明确失败为 `ERROR`（或记录 `NOT_RUN`），**绝不允许伪造 `PASS`**。
+
+### 7.3 建议拆分顺序（下一轮生产施工）
+
+1. **Step 1（Schema 与 Store 层）**：提交 `V4_020_jwt_revocation.sql`、`schema.sql`、`JwtRevocationMapper` 与 `DurableRevocationStore`，配套 H2 与 MySQL 8.4 幂等插入、检查点三态 fail-closed、单调更新、并发清理单测。
 2. **Step 2（核心吊销协议与模式切换）**：升级 `RevocationProperties`、`TokenRevocationService`、`JwtAuthenticationFilter`、`AuthService`、`HealthController` 与 `RevocationEvents`；调整并扩充 `S5A1StrictRevocationHttpIntegrationTest`、`RevocationConfigurationTest`、`TokenRevocationServiceConsistencyTest`。
-3. **Step 3（门禁转绿与全量验收）**：运行本轮交付的 `Issue64DurabilityRedGateTest`（`-Dissue64.red=true`）与 `scripts/issue64/issue64_red_gate.py` 验证由 `RED` 转为 `PASS`，并逐项执行 [issue64-durable-revocation-gate.md](issue64-durable-revocation-gate.md) 中的 MySQL 8.4 与真实 Redis 全矩阵验收后，方可提交独立审查。
+3. **Step 3（`TARGET_GREEN` 门禁验收）**：连接共享 MySQL 8.4 测试库运行 `scripts/issue64/issue64_red_gate.py --stage target-green` 验证由 `NOT_RUN` 转为 `PASS`，并逐项执行 [issue64-durable-revocation-gate.md](issue64-durable-revocation-gate.md) 全矩阵验收后，方可提交独立审查。

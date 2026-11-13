@@ -1,14 +1,22 @@
-"""Executable #64 durability RED gate (dual JVM + isolated Redis 8.10.3).
+"""Executable #64 durability gate (dual JVM + isolated Redis 8.10.3).
 
-Classifies the post-empty-Redis-recovery outcome strictly into:
-  PASS  (exit 0): revoked unexpired JWT is rejected with HTTP 401 on both A and B,
-                  and a fresh non-revoked JWT succeeds with HTTP 200.
-  RED   (exit 2): all pre-checks passed and Redis recovered empty cleanly, but the
-                  revoked unexpired JWT is accepted with HTTP 200 on A or B.
-  ERROR (exit 1): environment startup failure, missing binary/classpath, connection
-                  error, timeout, pre-check failure, or incomplete/inconsistent evidence.
+Supports two explicitly separated verification stages:
+  baseline-red : Runs against legacy SHARED_REDIS_REQUIRED mode to reproduce the
+                 unexpired-JWT resurrection after empty Redis recovery (RED = exit 2).
+  target-green : Runs against future DURABLE_DB_REQUIRED mode backed by a single shared
+                 authoritative persistent database (e.g. standalone MySQL 8.4 test DB).
+                 Fails with ERROR (exit 1) if DURABLE_DB_REQUIRED is not implemented yet
+                 or if shared DB coordinates are missing / per-JVM in-memory H2 is used.
 
-No full JWT, signing secret, or Redis password is ever logged.
+Classifies post-empty-recovery outcomes strictly into:
+  PASS  (exit 0): all prechecks/env ok, fresh JWT returns 200, and revoked old JWT
+                  returns 401 on both instances A and B.
+  RED   (exit 2): all prechecks/env ok, fresh JWT returns 200, old JWT statuses on A/B
+                  are strictly valid {200, 401}, and at least one instance returns 200.
+  ERROR (exit 1): environment failure, missing binary/classpath/DB, precheck failure,
+                  unverified empty-dir switch, fresh JWT != 200, or 500/503 on old JWT.
+
+No full JWT, signing secret, DB credential, or Redis password is ever logged.
 """
 from __future__ import annotations
 
@@ -33,6 +41,9 @@ from typing import Any, Callable
 EXIT_PASS = 0
 EXIT_ERROR = 1
 EXIT_RED = 2
+
+STAGE_BASELINE_RED = "baseline-red"
+STAGE_TARGET_GREEN = "target-green"
 
 DEFAULT_REDIS_BIN = pathlib.Path(
     r"C:\Users\jxgm\.codex\worktrees\issue29-64-real-redis\redis-isolated\bin\Redis-8.10.3-Windows-x64-msys2\redis-server.exe"
@@ -170,6 +181,40 @@ class GateResult:
     vulnerability_reproduced: bool
 
 
+def validate_stage_requirements(
+    stage: str,
+    repo_root: pathlib.Path,
+    shared_jdbc_url: str | None,
+    shared_db_user: str | None,
+) -> str:
+    """Validate stage prerequisites and return the required revocation mode.
+
+    BASELINE_RED strictly runs SHARED_REDIS_REQUIRED (isolated H2 per JVM permitted).
+    TARGET_GREEN strictly requires DURABLE_DB_REQUIRED implemented in src/main AND a
+    single shared authoritative persistent JDBC URL (never per-JVM H2 in-memory DBs).
+    """
+    if stage == STAGE_BASELINE_RED:
+        return "SHARED_REDIS_REQUIRED"
+    if stage != STAGE_TARGET_GREEN:
+        raise GateError(f"unsupported_stage: {stage}")
+
+    props_file = repo_root / "src" / "main" / "java" / "com" / "wjx871" / "population" / "security" / "RevocationProperties.java"
+    if not props_file.exists():
+        raise GateError(f"missing RevocationProperties.java: {props_file}")
+    props_text = props_file.read_text(encoding="utf-8")
+    if "DURABLE_DB_REQUIRED" not in props_text:
+        raise GateError("target_green_prereq_unmet: DURABLE_DB_REQUIRED is not implemented yet in RevocationProperties")
+
+    if not shared_jdbc_url or not shared_jdbc_url.strip():
+        raise GateError("target_green_prereq_unmet: --shared-jdbc-url is required for target-green stage")
+    lower_url = shared_jdbc_url.strip().lower()
+    if lower_url.startswith("jdbc:h2:mem:"):
+        raise GateError("target_green_prereq_unmet: isolated in-memory H2 cannot stand in for a shared persistent database")
+    if not shared_db_user or not shared_db_user.strip():
+        raise GateError("target_green_prereq_unmet: --shared-db-user is required for target-green stage")
+    return "DURABLE_DB_REQUIRED"
+
+
 def evaluate_post_empty_recovery(
     prechecks_ok: bool,
     empty_dir_verified: bool,
@@ -178,7 +223,11 @@ def evaluate_post_empty_recovery(
     b_old_status: int | None,
     fresh_b_status: int | None,
 ) -> GateResult:
-    """Strictly classify post-empty-recovery observations into PASS, RED, or ERROR."""
+    """Strictly classify post-empty-recovery observations into PASS, RED, or ERROR.
+
+    Both fresh_b_status == 200 AND valid old-token HTTP statuses in {200, 401} are
+    mandatory before emitting either PASS or RED.
+    """
     if not prechecks_ok:
         return GateResult("ERROR", EXIT_ERROR, "prechecks_failed", a_old_status, b_old_status, fresh_b_status, False)
     if not empty_dir_verified:
@@ -187,19 +236,28 @@ def evaluate_post_empty_recovery(
         return GateResult("ERROR", EXIT_ERROR, "redis_did_not_reconnect", a_old_status, b_old_status, fresh_b_status, False)
     if a_old_status is None or b_old_status is None or fresh_b_status is None:
         return GateResult("ERROR", EXIT_ERROR, "incomplete_http_observations", a_old_status, b_old_status, fresh_b_status, False)
-
-    if a_old_status == 200 or b_old_status == 200:
+    if fresh_b_status != 200:
         return GateResult(
-            "RED",
-            EXIT_RED,
-            "revoked_jwt_accepted_after_empty_redis_recovery",
+            "ERROR",
+            EXIT_ERROR,
+            f"fresh_token_not_valid(fresh={fresh_b_status},a={a_old_status},b={b_old_status})",
             a_old_status,
             b_old_status,
             fresh_b_status,
-            True,
+            False,
+        )
+    if a_old_status not in (200, 401) or b_old_status not in (200, 401):
+        return GateResult(
+            "ERROR",
+            EXIT_ERROR,
+            f"unexpected_old_token_statuses(a={a_old_status},b={b_old_status},fresh={fresh_b_status})",
+            a_old_status,
+            b_old_status,
+            fresh_b_status,
+            False,
         )
 
-    if a_old_status == 401 and b_old_status == 401 and fresh_b_status == 200:
+    if a_old_status == 401 and b_old_status == 401:
         return GateResult(
             "PASS",
             EXIT_PASS,
@@ -211,13 +269,13 @@ def evaluate_post_empty_recovery(
         )
 
     return GateResult(
-        "ERROR",
-        EXIT_ERROR,
-        f"unexpected_post_recovery_statuses(a={a_old_status},b={b_old_status},fresh={fresh_b_status})",
+        "RED",
+        EXIT_RED,
+        "revoked_jwt_accepted_after_empty_redis_recovery",
         a_old_status,
         b_old_status,
         fresh_b_status,
-        False,
+        True,
     )
 
 
@@ -298,7 +356,12 @@ def run_live_gate(
     cp_file: pathlib.Path,
     runtime_root: pathlib.Path,
     evidence_out: pathlib.Path | None,
+    stage: str = STAGE_BASELINE_RED,
+    shared_jdbc_url: str | None = None,
+    shared_db_user: str | None = None,
+    shared_db_password: str | None = None,
 ) -> int:
+    revocation_mode = validate_stage_requirements(stage, repo_root, shared_jdbc_url, shared_db_user)
     if not redis_bin.exists():
         raise GateError(f"redis-server binary not found: {redis_bin}")
     classpath = build_classpath(repo_root, cp_file)
@@ -388,10 +451,17 @@ def run_live_gate(
                 "SPRING_DATA_REDIS_PORT": str(rport),
                 "SPRING_DATA_REDIS_PASSWORD": app_password,
                 "POPULATION_REDIS_KEY_PREFIX": prefix,
-                "SECURITY_JWT_REVOCATION_MODE": "SHARED_REDIS_REQUIRED",
+                "SECURITY_JWT_REVOCATION_MODE": revocation_mode,
                 "JWT_SECRET": jwt_secret,
             }
         )
+        if stage == STAGE_TARGET_GREEN:
+            assert shared_jdbc_url is not None and shared_db_user is not None
+            env["SPRING_DATASOURCE_URL"] = shared_jdbc_url
+            env["SPRING_DATASOURCE_USERNAME"] = shared_db_user
+            if shared_db_password is not None:
+                env["SPRING_DATASOURCE_PASSWORD"] = shared_db_password
+
         log_path = run_dir / f"app-{name}.log"
         fh = log_path.open("wb")
         open_files.append(fh)
@@ -404,8 +474,11 @@ def run_live_gate(
             "--server.address=127.0.0.1",
             "--spring.data.redis.username=app",
             "--spring.data.redis.timeout=1s",
-            f"--spring.datasource.url=jdbc:h2:mem:issue64red_{run_id}_{name};MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
         ]
+        if stage == STAGE_BASELINE_RED:
+            args.append(
+                f"--spring.datasource.url=jdbc:h2:mem:issue64red_{run_id}_{name};MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE"
+            )
         proc = subprocess.Popen(
             args,
             env=env,
@@ -462,8 +535,16 @@ def run_live_gate(
 
         # 2. Logout on A -> A & B both reject with 401.
         must_status("A_logout", http_json(aport, "/api/auth/logout", old_token, {})[0], 200)
-        key = f"{prefix}:security:jwt:blacklist:{old_jti}"
-        marker_exists = redis_cmd(rport, admin_password, "EXISTS", key)
+        key_raw = f"{prefix}:security:jwt:blacklist:{old_jti}"
+        key_sha = f"{prefix}:security:jwt:blacklist:{hashlib.sha256(old_jti.encode('utf-8')).hexdigest()}"
+        key = key_raw
+        if stage == STAGE_BASELINE_RED:
+            marker_exists = redis_cmd(rport, admin_password, "EXISTS", key_raw)
+        else:
+            raw_exists = redis_cmd(rport, admin_password, "EXISTS", key_raw)
+            sha_exists = redis_cmd(rport, admin_password, "EXISTS", key_sha)
+            key = key_sha if sha_exists == 1 else key_raw
+            marker_exists = 1 if (raw_exists == 1 or sha_exists == 1) else 0
         if marker_exists != 1:
             raise GateError(f"expected redis marker EXISTS=1, got {marker_exists}")
         must_status("A_after_logout", http_json(aport, "/api/auth/me", old_token)[0], 401)
@@ -479,7 +560,7 @@ def run_live_gate(
         emit("token_issued", role="fresh", jti_sha256_prefix=short_jti_digest(fresh_jti), jti_distinct=True)
         must_status("B_fresh_valid", http_json(bport, "/api/auth/me", fresh_token)[0], 200)
 
-        # 4. Explicit SAVE, shutdown Redis, verify fail-closed 503 on auth and 200 on /api/health.
+        # 4. Explicit SAVE, shutdown Redis, verify outage behavior per stage and 200 on /api/health.
         if redis_cmd(rport, admin_password, "SAVE") != b"OK":
             raise GateError("explicit SAVE did not return OK")
         initial_dbsize = redis_cmd(rport, admin_password, "DBSIZE")
@@ -500,7 +581,11 @@ def run_live_gate(
         }
         emit("redis_down_after_save", **dir_evidence["initial"])
 
-        must_status("B_during_outage_fresh", http_json(bport, "/api/auth/me", fresh_token)[0], 503)
+        if stage == STAGE_BASELINE_RED:
+            must_status("B_during_outage_fresh", http_json(bport, "/api/auth/me", fresh_token)[0], 503)
+        else:
+            must_status("B_during_outage_old", http_json(bport, "/api/auth/me", old_token)[0], 401)
+            must_status("B_during_outage_fresh", http_json(bport, "/api/auth/me", fresh_token)[0], 200)
         must_status("A_during_outage_health", http_json(aport, "/api/health")[0], 200)
 
         # 5. Restart Redis on the SAME initial directory; verify preserved RDB rejects old_token (401)
@@ -608,6 +693,9 @@ def run_live_gate(
                 log_hashes[p.name] = sha256_file(p)
 
         summary = {
+            "stage": "BASELINE_RED" if stage == STAGE_BASELINE_RED else "TARGET_GREEN",
+            "revocation_mode": revocation_mode,
+            "shared_db_configured": stage == STAGE_TARGET_GREEN,
             "run_id": run_id,
             "runtime_dir": str(run_dir),
             "ports": {"redis": rport, "app_a": aport, "app_b": bport},
@@ -633,7 +721,16 @@ def run_live_gate(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Issue #64 dual-JVM + isolated Redis durability RED gate")
+    parser = argparse.ArgumentParser(description="Issue #64 dual-JVM + isolated Redis durability gate")
+    parser.add_argument(
+        "--stage",
+        choices=[STAGE_BASELINE_RED, STAGE_TARGET_GREEN],
+        default=STAGE_BASELINE_RED,
+        help="Verification stage: baseline-red (SHARED_REDIS_REQUIRED) or target-green (DURABLE_DB_REQUIRED + shared DB)",
+    )
+    parser.add_argument("--shared-jdbc-url", default=os.environ.get("ISSUE64_SHARED_JDBC_URL"), help="Shared authoritative JDBC URL (target-green only; rejects jdbc:h2:mem:)")
+    parser.add_argument("--shared-db-user", default=os.environ.get("ISSUE64_SHARED_DB_USER"), help="Shared DB username (target-green only)")
+    parser.add_argument("--shared-db-password-env", default="ISSUE64_SHARED_DB_PASSWORD", help="Env var holding shared DB password (target-green only)")
     parser.add_argument("--repo-root", type=pathlib.Path, default=pathlib.Path(__file__).resolve().parents[2])
     parser.add_argument("--redis-bin", type=pathlib.Path, default=pathlib.Path(os.environ.get("ISSUE64_REDIS_BIN", str(DEFAULT_REDIS_BIN))))
     parser.add_argument("--classpath-file", type=pathlib.Path, default=None)
@@ -642,10 +739,33 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     cp_file = args.classpath_file or (args.repo_root / "target" / "issue64-classpath.txt")
+    shared_db_password = os.environ.get(args.shared_db_password_env) if args.stage == STAGE_TARGET_GREEN else None
     try:
-        return run_live_gate(args.repo_root, args.redis_bin, cp_file, args.runtime_dir, args.evidence_out)
+        return run_live_gate(
+            repo_root=args.repo_root,
+            redis_bin=args.redis_bin,
+            cp_file=cp_file,
+            runtime_root=args.runtime_dir,
+            evidence_out=args.evidence_out,
+            stage=args.stage,
+            shared_jdbc_url=args.shared_jdbc_url,
+            shared_db_user=args.shared_db_user,
+            shared_db_password=shared_db_password,
+        )
     except GateError as exc:
-        print(json.dumps({"event": "FINAL_VERDICT", "verdict": "ERROR", "exit_code": EXIT_ERROR, "reason": str(exc)}), flush=True)
+        print(
+            json.dumps(
+                {
+                    "event": "FINAL_VERDICT",
+                    "stage": "BASELINE_RED" if args.stage == STAGE_BASELINE_RED else "TARGET_GREEN",
+                    "verdict": "ERROR",
+                    "exit_code": EXIT_ERROR,
+                    "reason": str(exc),
+                },
+                ensure_ascii=False,
+            ),
+            flush=True,
+        )
         return EXIT_ERROR
 
 

@@ -1,9 +1,10 @@
 # #64 持久吊销设计及可执行 RED 门禁证据索引
 
-当前状态：`#64 OPEN / DESIGN_CANDIDATE / RED_VERIFIED`
+当前状态：`#64 OPEN / DESIGN_CANDIDATE / RED_VERIFIED` · `TARGET_GREEN = NOT_RUN`
 
 - **基线提交**：`c74867721adea57ad16012b4785b4f952b92fe86`（`integration/20261101-backend-p0-security`）
-- **工作分支**：`audit/20261113-issue64-durability-design-red`
+- **第 1 轮工作分支**：`audit/20261113-issue64-durability-design-red`（`48c701fb6a02d78407897857ee0c3b8c9548dde9`，第 1 轮原始证据文件均原样保留、未改动）
+- **第 2 轮审查修正分支**：`audit/20261113-issue64-design-review-hardening`（基于 `48c701fb6a02d78407897857ee0c3b8c9548dde9` 创建）
 - **JDK / Python**：`Java 21.0.7` / `Python 3.12.4`
 
 > [!NOTE]
@@ -102,3 +103,42 @@
 - 对 `doc/development/evidence/issue64-durability-design/*` 全量 9 个文件执行正则扫描（`eyJ|Bearer\s+[A-Za-z0-9._-]+|requirepass|JWT_SECRET|password=`）：**命中数为 `0`**。
 - 对本机临时运行日志 `C:\Users\jxgm\AppData\Local\Temp\issue64-durability-red\run-3a6b04d933c7\*.log` 执行同规则扫描：**命中数为 `0`**。
 - JUnit Attempt 2 曾触发 MockMvc 默认失败转储的原始日志已移至 Git 忽略目录 `target/issue64-local-logs/junit-red-gate-attempt2-raw.log`，未纳入 Git。
+
+---
+
+## 4. 第 2 轮独立审查阻断项修正与复跑验证（`audit/20261113-issue64-design-review-hardening`）
+
+本轮严格保留第 1 轮全部原始证据文件（第 1~3 节所列 `junit-red-gate*`、`live-red-*`、`python-selftest.log`、`targeted-revocation-maven.log`、`full-maven.log`）原样不变，所有第 2 轮复跑输出使用独立 `round2-*` 文件名记录。
+
+### 4.1 第 2 轮门禁与回归复跑结果
+
+| 验证项 | 执行命令 | 实测结果 |
+|---|---|---|
+| **Python 分类器与阶段隔离自检（阻断项 C、D）** | `python -m unittest -v scripts/issue64/test_issue64_red_gate.py` | **7 运行，0 失败，0 错误**（`Ran 7 tests in 8.488s — OK`，退出码 `0`）。显式验证全部 6 组分类边界（含 `oldA=200, oldB=200, fresh=500 -> ERROR`、`oldA=200, oldB=401, fresh=200 -> RED`、`oldA=401, oldB=401, fresh=200 -> PASS`、`oldA=503, oldB=401, fresh=200 -> ERROR`、`oldA=200, oldB=500, fresh=200 -> ERROR`、`empty_dir_verified=False -> ERROR`）及 `--stage target-green` 拒绝对 `jdbc:h2:mem:` 或未实现状态伪造 PASS。 |
+| **`TARGET_GREEN` 前置拦截验证（Python）** | `python scripts/issue64/issue64_red_gate.py --stage target-green` | **退出码 `1`（`ERROR`）**，`reason="target_green_prereq_unmet: DURABLE_DB_REQUIRED is not implemented yet in RevocationProperties"`，`TARGET_GREEN = NOT_RUN`。 |
+| **`TARGET_GREEN` 前置拦截验证（JUnit）** | `.\mvnw.cmd test "-Dissue64.target.green=true" "-Dtest=Issue64TargetGreenGateTest"` | **1 运行，1 失败，0 错误，0 跳过**（退出码 `1`）：`TARGET_GREEN_NOT_READY (NOT_RUN)`，绝不冒充通过。 |
+| **双 JVM + 真实隔离 Redis `BASELINE_RED` 实时门禁** | `python scripts/issue64/issue64_red_gate.py --stage baseline-red --evidence-out doc/development/evidence/issue64-durability-design/round2-baseline-red-summary.json` | **`run_id=b4ff998c9a11`**（`stage="BASELINE_RED"`, `revocation_mode="SHARED_REDIS_REQUIRED"`, `shared_db_configured=false`；端口 Redis `14218` / A1 `14219` / B1 `14220`）。空目录切换校验 `verified_switch=true`（`dbsize=0`、`dump_rdb_exists=false`）；空库恢复后 `a_old_status=200`、`b_old_status=200`、`fresh_b_status=200`，**退出码 `2`（`verdict="RED"`, `vulnerability_reproduced=true`）**。 |
+| **JUnit Opt-In `BASELINE_RED` 门禁** | `.\mvnw.cmd test "-Dissue64.red=true" "-Dtest=Issue64DurabilityRedGateTest"` | **1 运行，1 失败，0 错误，0 跳过**（退出码 `1`）：`Issue64DurabilityRedGateTest.revokedJwtMustRemainRejectedAfterRedisEmptyRecovery:176 Status expected:<401> but was:<200>`。 |
+| **定向 JWT 撤销安全回归** | `.\mvnw.cmd test "-Dtest=S5A1StrictRevocationHttpIntegrationTest,TokenRevocationServiceConsistencyTest,RevocationConfigurationTest,Issue64ScheduledCleanupTest,Phase11TokenRevocationTest,RevocationEventsTest"` | **77 运行，0 失败，0 错误，0 跳过**（退出码 `0`）。 |
+| **完整 Maven 回归** | `.\mvnw.cmd test` | **1015 运行，0 失败，0 错误，6 跳过**（退出码 `0`）。**跳过项精确拆分**：4 项为基线既有跳过（`Issue34FirstIssueRedTest` 3 项、`Issue37ExpiryBatchIntegrationTest` 1 项）；**2 项为 `#64` opt-in 门禁（`Issue64DurabilityRedGateTest` 1 项 + `Issue64TargetGreenGateTest` 1 项）**。 |
+| **`TARGET_GREEN`（`DURABLE_DB_REQUIRED` + 共享 MySQL 8.4）** | — | **`NOT_RUN`**（留待下一轮生产实现后验收）。 |
+
+### 4.2 第 2 轮证据文件 SHA256 与敏感数据扫描
+
+| 文件名 | SHA256 | 入 Git / 说明 |
+|---|---|---|
+| `round2-python-selftest.log` | `c81a9d86011a29b71d36200b8e42fc3378ef47648a0166af5e1d81544d03a217` | `.gitignore` 忽略 `.log`，保留在本机 worktree；7/7 自检通过 |
+| `round2-baseline-red-events.jsonl` | `8ca5cef8be42220f609c72bf2a837c13863fe05710e99fdf6534ec241bdf5fcf` | **已入 Git**；第 2 轮 `BASELINE_RED` 实时事件流（退出码 `2`） |
+| `round2-baseline-red-summary.json` | `2b08693d26e4554ec77a31295d177f109e7d2fdd0736590a31d72f1b3f26b46f` | **已入 Git**；第 2 轮 `BASELINE_RED` 完整摘要（含 `stage`/`revocation_mode`） |
+| `round2-junit-red-gate.log` | `4f9f521c84afbf2b5c2cf02510013c71a3531b270c8d6a95bd7ee3f4844fbc85` | `.gitignore` 忽略 `.log`，保留在本机 worktree；复现第 176 行预期 401 实得 200 |
+| `round2-junit-target-guard.log` | `d51d39597e2695d0cd317d9898f3e2f1d835bd25a763f42f7aaa6754d78a128f` | `.gitignore` 忽略 `.log`，保留在本机 worktree；验证 `Issue64TargetGreenGateTest` 保护性失败 |
+| `round2-targeted-revocation-maven.log` | `8d30b3113b8bb220ad61c2342f097f7a9b3798ab794e207c814a832728f96153` | `.gitignore` 忽略 `.log`，保留在本机 worktree；77/77 通过 |
+| `round2-full-maven.log` | `31bddbdbf005cb045d09834cc929fbe4521565e7a5723318d8a2b0bd1ce9e3c1` | `.gitignore` 忽略 `.log`，保留在本机 worktree；1015 运行、0 失败、6 跳过 |
+
+- 第 2 轮本机临时运行日志（`C:\Users\jxgm\AppData\Local\Temp\issue64-durability-red\run-b4ff998c9a11\*.log`）：
+  - `redis-initial.log`: `fab6d34aae1ae3932cba2b349548b7c2359ac5a61ff6a2a7218547f055625f54`
+  - `redis-restart.log`: `c7a21c0eb555fa2eb389b79b2620be79f2c7db6bb0ebb244b1ca21c55eae4cc1`
+  - `redis-empty.log`: `60f8714dadb12be9ee96dee8c3abc5b30d9ae2cbfd2bceec368bcaebd011de91`
+  - `app-A1.log`: `f274e8f73d691e74f2acda1d3079b134af754f11da89f184b0764424e0769955`
+  - `app-B1.log`: `ae75a6919782354e36b0912b6a0fffc13459237fc991d4b412a535f73cfd8034`
+- **第 2 轮敏感数据扫描**：对上述全量 `round2-*` 文件及 `run-b4ff998c9a11\*.log` 执行正则扫描（`eyJ|Bearer\s+[A-Za-z0-9._-]+|requirepass|JWT_SECRET|password=`）：**命中数为 `0`**。

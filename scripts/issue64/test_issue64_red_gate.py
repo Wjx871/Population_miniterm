@@ -156,6 +156,71 @@ class Issue64RedGateSelfTest(unittest.TestCase):
         res_inc = gate.evaluate_post_empty_recovery(True, True, True, 401, 401, 500)
         self.assertEqual(res_inc.verdict, "ERROR")
         self.assertEqual(res_inc.exit_code, gate.EXIT_ERROR)
+        self.assertFalse(res_inc.vulnerability_reproduced)
+
+    def test_blocker_d_six_classifier_cases(self) -> None:
+        # Case 1: oldA=200, oldB=200, fresh=500 -> ERROR (never RED when fresh fails)
+        c1 = gate.evaluate_post_empty_recovery(True, True, True, 200, 200, 500)
+        self.assertEqual((c1.verdict, c1.exit_code, c1.vulnerability_reproduced), ("ERROR", gate.EXIT_ERROR, False))
+
+        # Case 2: oldA=200, oldB=401, fresh=200 -> RED
+        c2 = gate.evaluate_post_empty_recovery(True, True, True, 200, 401, 200)
+        self.assertEqual((c2.verdict, c2.exit_code, c2.vulnerability_reproduced), ("RED", gate.EXIT_RED, True))
+
+        # Case 3: oldA=401, oldB=401, fresh=200 -> PASS
+        c3 = gate.evaluate_post_empty_recovery(True, True, True, 401, 401, 200)
+        self.assertEqual((c3.verdict, c3.exit_code, c3.vulnerability_reproduced), ("PASS", gate.EXIT_PASS, False))
+
+        # Case 4: oldA=503, oldB=401, fresh=200 -> ERROR
+        c4 = gate.evaluate_post_empty_recovery(True, True, True, 503, 401, 200)
+        self.assertEqual((c4.verdict, c4.exit_code, c4.vulnerability_reproduced), ("ERROR", gate.EXIT_ERROR, False))
+
+        # Case 5: oldA=200, oldB=500, fresh=200 -> ERROR (never RED if peer returned 500)
+        c5 = gate.evaluate_post_empty_recovery(True, True, True, 200, 500, 200)
+        self.assertEqual((c5.verdict, c5.exit_code, c5.vulnerability_reproduced), ("ERROR", gate.EXIT_ERROR, False))
+
+        # Case 6: empty_dir_verified=False -> ERROR regardless of HTTP 200 statuses
+        c6 = gate.evaluate_post_empty_recovery(True, False, True, 200, 200, 200)
+        self.assertEqual((c6.verdict, c6.exit_code, c6.vulnerability_reproduced), ("ERROR", gate.EXIT_ERROR, False))
+
+        # Additional HTTP check: verify_post_empty_recovery_over_http with oldA=200, oldB=200, fresh=500 -> ERROR
+        routes_a = {("/api/auth/me", f"Bearer {self.OLD_TOKEN}"): [(200, {"code": 200})]}
+        routes_b = {
+            ("/api/health", ""): [(200, {"code": 200, "data": {"redisStatus": "UP"}})],
+            ("/api/auth/me", f"Bearer {self.OLD_TOKEN}"): [(200, {"code": 200})],
+            ("/api/auth/me", f"Bearer {self.FRESH_TOKEN}"): [(500, {"code": 500})],
+        }
+        with _MockInstance(routes_a) as a, _MockInstance(routes_b) as b:
+            http_c1 = gate.verify_post_empty_recovery_over_http(
+                a.port, b.port, self.OLD_TOKEN, self.FRESH_TOKEN,
+                prechecks_ok=True, empty_dir_verified=True, wait_timeout_s=2.0,
+            )
+        self.assertEqual((http_c1.verdict, http_c1.exit_code, http_c1.vulnerability_reproduced), ("ERROR", gate.EXIT_ERROR, False))
+
+    def test_stage_separation_guards_target_green_cannot_fake_pass(self) -> None:
+        repo_root = pathlib.Path(__file__).resolve().parents[2]
+        self.assertEqual(gate.validate_stage_requirements("baseline-red", repo_root, None, None), "SHARED_REDIS_REQUIRED")
+        # In current baseline/design state DURABLE_DB_REQUIRED is absent in src/main, so target-green MUST error.
+        with self.assertRaises(gate.GateError):
+            gate.validate_stage_requirements("target-green", repo_root, "jdbc:mysql://127.0.0.1:3306/test", "root")
+        exit_code = gate.main(["--stage", "target-green"])
+        self.assertEqual(exit_code, gate.EXIT_ERROR)
+
+        # Even when DURABLE_DB_REQUIRED exists, empty/missing shared DB or per-JVM jdbc:h2:mem: MUST error.
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_root = pathlib.Path(tmp)
+            fake_props = fake_root / "src" / "main" / "java" / "com" / "wjx871" / "population" / "security" / "RevocationProperties.java"
+            fake_props.parent.mkdir(parents=True, exist_ok=True)
+            fake_props.write_text("public enum Mode { SINGLE_INSTANCE_LOCAL, SHARED_REDIS_REQUIRED, DURABLE_DB_REQUIRED }", encoding="utf-8")
+            with self.assertRaises(gate.GateError):
+                gate.validate_stage_requirements("target-green", fake_root, None, "root")
+            with self.assertRaises(gate.GateError):
+                gate.validate_stage_requirements("target-green", fake_root, "jdbc:h2:mem:isolated;MODE=MySQL", "sa")
+            self.assertEqual(
+                gate.validate_stage_requirements("target-green", fake_root, "jdbc:mysql://127.0.0.1:3306/pop_test", "pop_test"),
+                "DURABLE_DB_REQUIRED",
+            )
 
     def test_jti_digest_does_not_leak_raw_jti(self) -> None:
         raw_jti = "sensitive-jti-uuid-1234"
