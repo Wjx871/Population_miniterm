@@ -304,8 +304,8 @@ sequenceDiagram
 
 | 方案 | 流程与原子要求 | 安全性与精度证明 |
 |---|---|---|
-| **方案 1：维护窗口停旧启新（推荐，默认生产路径）** | 1. 停止所有 `v_old` 实例接收流量（进入维护窗口，关闭登录/业务入口）。<br>2. 备份当前 MySQL，执行 `V4_020_jwt_revocation.sql`（创建表并将 `GLOBAL_JWT_CUTOFF` 初始写入为 `UNINITIALIZED`）。<br>3. 按整秒对齐规则计算切流水位：`cutoffMs = ((nowEpochMs / 1000L) + 1L) * 1000L`；显式执行激活 SQL 将 `GLOBAL_JWT_CUTOFF` 更新为 `checkpoint_status = 'READY'`、`min_valid_iat_epoch_ms = GREATEST(COALESCE(min_valid_iat_epoch_ms, 0), cutoffMs)`（并可同步轮换 `JWT_SECRET`，详见 [backend-v1-operations.md](../deployment/backend-v1-operations.md) 第 6 条）。<br>4. 等待至 `clock.millis() >= cutoffMs`（至多 1 秒）以跨过 `iat` 秒级整秒边界，然后**先验证检查点已处于 `READY` 且水位有效**，再启动 `v_new` 实例。 | 所有升级前签发的旧令牌满足 `(iat_sec * 1000) < cutoffMs`，无论是否曾写入新表、无论 Redis 是否清空，一律返回 401 强制重新登录；所有 `v_new` 启动后签发的新令牌满足 `(iat_sec * 1000) >= cutoffMs` 且 100% 处于 MySQL 持久吊销管控之下。 |
-| **方案 2：全新空库首次部署可验证激活条件** | 仅当满足全部可验证前提：**目标库为全新初始化库、历史上从未对外签发有效 JWT（或同步配置了全新生成的随机 `JWT_SECRET` 且在线无历史客户端流量）** 时，由部署初始化步骤执行一次显式激活 SQL，将 `checkpoint_status` 从 `UNINITIALIZED` 更新为 `READY`、`min_valid_iat_epoch_ms = ((nowEpochMs / 1000L) + 1L) * 1000L` 并等待至 `clock.millis() >= cutoffMs` 后再启动应用。 | 即使新库刚建表，也不依赖“0 水位默认有效”假设；`V4_020` 自身保持 `UNINITIALIZED`，未经显式激活无法放行请求或通过启动检查。 |
+| **方案 1：维护窗口停旧启新（推荐，默认生产路径）** | 1. 停止所有 `v_old` 实例接收流量（进入维护窗口，关闭登录/业务入口）。<br>2. 备份当前 MySQL，执行 `V4_020_jwt_revocation.sql`（创建表并将 `GLOBAL_JWT_CUTOFF` 初始写入为 `UNINITIALIZED`，**绝不自动标为 `READY`**）。<br>3. 按整秒对齐规则计算 UTC 水位：数据库侧严格使用无参数 UTC 函数 **`(UNIX_TIMESTAMP() + 1) * 1000`**（禁止 `UNIX_TIMESTAMP(UTC_TIMESTAMP(...))` 二次时区解释），或应用侧基于 UTC 时钟计算 `((utcNowEpochMs / 1000L) + 1L) * 1000L`；显式执行单调更新 SQL 将 `GLOBAL_JWT_CUTOFF` 推进为 `checkpoint_status = 'READY'`、`min_valid_iat_epoch_ms = GREATEST(COALESCE(min_valid_iat_epoch_ms, 0), (UNIX_TIMESTAMP() + 1) * 1000)`（并可同步轮换 `JWT_SECRET`，详见 [backend-v1-operations.md](../deployment/backend-v1-operations.md) 第 6 条）。<br>4. 必须等待当前**真实 UTC 时间**达到 `cutoffMs`（至多 1 秒）后再启动 `v_new` 并恢复登录签发，确保 `v_new` 签发的新 JWT 满足 `iat * 1000 >= cutoffMs`、旧 JWT 不会因会话时区偏移而逃逸。 | 所有升级前签发的旧令牌严格满足 `(iat_sec * 1000) < cutoffMs`，无论是否曾写入新表、无论数据库会话 `time_zone` 为何值、无论 Redis 是否清空，一律返回 401 强制重新登录；所有 `v_new` 恢复入口后签发的新令牌严格满足 `(iat_sec * 1000) >= cutoffMs` 且 100% 处于 MySQL 持久吊销管控之下。 |
+| **方案 2：全新空库首次部署可验证激活条件** | 仅当满足全部可验证前提：**目标库为全新初始化库、历史上从未对外签发有效 JWT（或同步配置了全新生成的随机 `JWT_SECRET` 且在线无历史客户端流量）** 时，由部署初始化步骤执行一次显式激活 SQL，将 `checkpoint_status` 从 `UNINITIALIZED` 更新为 `READY`、`min_valid_iat_epoch_ms = (UNIX_TIMESTAMP() + 1) * 1000`，并等待真实 UTC 时间跨过 `cutoffMs` 后再启动应用。 | 即使新库刚建表，也不依赖“0 水位默认有效”假设；`V4_020` 自身保持 `UNINITIALIZED`，未经显式激活无法放行请求或通过启动检查。 |
 | **方案 3：双阶段滚动过渡版本 `v_bridge`（仅在明确禁止维护窗口时启用）** | 若运维强制禁止停机窗口而保留 `v_bridge`：<br>1. `v_bridge` 开启**双写强一致确认（Dual-Write ACK）**：`POST /api/auth/logout` 期间，MySQL 主库提交 **AND** 旧 Redis 写入**两者都必须成功确认**，才允许返回 HTTP 200 与记录 `LOGOUT SUCCESS`；**只要 `v_old` 仍在运行，若旧 Redis 写入失败则 `v_bridge` 必须返回 503**（绝不能仅提交 MySQL 后返回 200，否则随后打到 `v_old` 的请求会立刻复活！）。认证阶段 `v_bridge` 同时查 Redis 与 MySQL，任一命中即拒。<br>2. 当全部实例确认升级至 `v_bridge` 且再无 `v_old` 实例在线后，将 `GLOBAL_JWT_CUTOFF` 显式单调推进至 `T_all_bridge`（整秒对齐，并等待 >= 1s）或等待超过完整 `JWT_EXPIRE_MINUTES`（默认 120 分钟），再滚动切换至 `v_new`。 | 消除了 `v_bridge` + `v_old` 混跑期间在 `v_bridge` 注销（Redis 失败却返回 200）→ `v_old` 放行的致命窗口。 |
 
 ### 5.3 混合部署与版本回滚铁律
@@ -323,8 +323,8 @@ MySQL 成为 JWT 吊销权威事实源后，数据库级时间点恢复（PITR�
 - **强制恢复 SOP（恢复流量前必须 100% 完成）**：
   1. 恢复期间保持所有后端应用实例下线或处于维护拦截状态，禁止在恢复后直接开放外网业务流量。
   2. 执行以下两项失效措施之一（优先同时执行）：
-     - **A（首选，最彻底）**：立即**轮换生产环境变量 `JWT_SECRET`**，令所有历史 JWT 签名立即失效；并将 `GLOBAL_JWT_CUTOFF.min_valid_iat_epoch_ms` 单调推进至当前恢复后时刻的下一整秒（`((now_ms / 1000) + 1) * 1000`）。
-     - **B（若受限暂不改密钥）**：由 DBA 在 MySQL 主库确认 `jwt_revocation_checkpoint` 为 `READY` 且**强制推进水位**至 `GREATEST(min_valid_iat_epoch_ms, ((now_ms / 1000) + 1) * 1000)`，等待跨过整秒边界后再启应用（确保还原时间点之前签发的所有未过期 JWT 均低于新水位而被强制 401 重新登录）。
+     - **A（首选，最彻底）**：立即**轮换生产环境变量 `JWT_SECRET`**，令所有历史 JWT 签名立即失效；并在 MySQL 主库使用无参 `(UNIX_TIMESTAMP() + 1) * 1000` 单调推进 `GLOBAL_JWT_CUTOFF.min_valid_iat_epoch_ms` 至当前恢复后 UTC 下一整秒（等待真实 UTC 达到 `cutoff` 后再开放签发）。
+     - **B（若受限暂不改密钥）**：由 DBA 在 MySQL 主库确认 `jwt_revocation_checkpoint` 为 `READY` 且**强制单调推进水位**至 `GREATEST(min_valid_iat_epoch_ms, (UNIX_TIMESTAMP() + 1) * 1000)`，等待真实 UTC 跨过整秒边界后再启应用并恢复签发（确保还原时间点之前签发的所有未过期 JWT 均低于新水位而被强制 401 重新登录，且不受数据库 `session time_zone` 影响）。
   3. 同时执行一次 Redis 黑名单关联核验或直接清理残留过期键（注意即使不清理 Redis，由于已改密钥或提升水位，旧令牌亦无法复用），确认 `/api/health` 与检查点启动自检全部通过后再恢复外部入口。
 
 ---
@@ -383,13 +383,14 @@ INSERT IGNORE INTO jwt_revocation_checkpoint (
 );
 ```
 
-### 6.2 检查点显式激活与单调更新 SQL 草案（运维切流 / 应急踢出专用）
+### 6.2 检查点显式激活与单调更新 SQL 草案（运维切流 / 应急踢出专用，审查阻断项 E 修正）
 
 ```sql
 -- =============================================================================
 -- EXPLICIT ACTIVATION / MONOTONIC CUTOFF ADVANCE (NOT AUTO-EXECUTED ON STARTUP)
--- Aligned to next whole UTC second boundary: ((UNIX_TIMESTAMP(UTC_TIMESTAMP(3)) DIV 1) + 1) * 1000
--- Operator must wait >= 1s after UPDATE before reopening login traffic!
+-- Uses parameterless MySQL UNIX_TIMESTAMP() so cutoff is ALWAYS next whole UTC
+-- second in epoch milliseconds, invariant to session time_zone (+00/+08/-05).
+-- Operator MUST wait until actual UTC epoch >= cutoffMs before resuming login!
 -- =============================================================================
 
 -- 1) 首次切流 / 新库显式激活（或单调上推水位）：禁止降级、禁止回拨
@@ -398,18 +399,30 @@ SET
     checkpoint_status = 'READY',
     min_valid_iat_epoch_ms = GREATEST(
         COALESCE(min_valid_iat_epoch_ms, 0),
-        (FLOOR(UNIX_TIMESTAMP(UTC_TIMESTAMP(3))) + 1) * 1000
+        (UNIX_TIMESTAMP() + 1) * 1000
     ),
     activated_at = COALESCE(activated_at, UTC_TIMESTAMP(3)),
     updated_by = 'OPS_CUTOVER_OR_ROTATION'
 WHERE checkpoint_key = 'GLOBAL_JWT_CUTOFF'
   AND checkpoint_status IN ('UNINITIALIZED', 'READY');
 
--- 2) 校验检查点就绪（期望严格返回 1 行且 status='READY'、cutoff > 0）
-SELECT checkpoint_key, checkpoint_status, min_valid_iat_epoch_ms, activated_at, updated_by, updated_at
+-- 2) 校验检查点就绪（期望严格返回 1 行且 status='READY'、cutoff 与当前 UNIX_TIMESTAMP()*1000 差值在数秒内）
+SELECT
+    checkpoint_key,
+    checkpoint_status,
+    min_valid_iat_epoch_ms,
+    UNIX_TIMESTAMP() * 1000 AS current_utc_epoch_ms,
+    activated_at,
+    updated_by,
+    updated_at
 FROM jwt_revocation_checkpoint
 WHERE checkpoint_key = 'GLOBAL_JWT_CUTOFF';
 ```
+
+> [!CAUTION]
+> **阻断项 E（MySQL 时区二次解释漏洞防呆）**：
+> - MySQL 8.4 文档规定：`UNIX_TIMESTAMP(date)` 会将传入的 `DATETIME` 参数按**当前连接 `session time_zone`** 重新解释后再换算 Unix 秒数，而 `UTC_TIMESTAMP(3)` 返回的是不含时区偏移标签的 UTC 日期时间值。因此旧草案 `(FLOOR(UNIX_TIMESTAMP(UTC_TIMESTAMP(3))) + 1) * 1000` 在 `+08:00` 会话下会把 UTC 时间误当成东八区时间再减 8 小时（导致切前 8 小时内的旧 JWT 全部逃逸），在 `-05:00` 会话下会反加 5 小时（导致误杀新令牌）。
+> - 本设计已彻底禁用 `UNIX_TIMESTAMP(UTC_TIMESTAMP(...))` 组合，统一改为不带参数的 **`(UNIX_TIMESTAMP() + 1) * 1000`**（MySQL 对无参 `UNIX_TIMESTAMP()` 直接返回真实 UTC epoch 秒，与会话 `time_zone` 完全无关）；并在第 4 节与矩阵第 27 项新增 `+00:00` / `+08:00` / `-05:00` 跨时区验收验证。
 
 > [!WARNING]
 > 注意上例中的 `COALESCE(min_valid_iat_epoch_ms, 0)` **仅用于单调 `GREATEST(...)` 更新比较中读取前值 `NULL` 时的最大下界保护**，绝不用于认证查询路径！认证路径严格按照第 4.4 节执行无 `COALESCE` 联合查询并检查 `checkpoint_status = 'READY'`。
@@ -474,22 +487,41 @@ WHERE NOT EXISTS (
 | `HealthController.java` | 新增 `revocationStoreStatus` / `revocationMode` 非敏感字段，保留 `permitAll()` 与 HTTP 200 语义。 |
 | `RevocationEvents.java` | 新增 DB/Cache/Checkpoint 分离事件与限流统计，继续严格禁用明文 JTI/JWT/密码日志。 |
 
-### 7.2 门禁两阶段分离契约（审查阻断项 C）
+### 7.2 两阶段门禁、非阻断 Redis 与安全隔离契约（审查阻断项 C、F、G、H）
 
-为避免“用旧 `SHARED_REDIS_REQUIRED` 门禁或双 JVM 各自独立的 H2 内存库冒充未来 `DURABLE_DB_REQUIRED` 生产安全验收”，验证阶段严格拆分如下：
+为避免“用旧 `SHARED_REDIS_REQUIRED` 门禁、双 JVM 独立 H2、轻量枚举静态检查或未核验 DB 的 HTTP 401 冒充未来 `DURABLE_DB_REQUIRED` 生产安全验收”，验证体系严格界定如下：
 
 1. **`BASELINE_RED`（基线缺陷复现门禁，当前已实现并可执行）**：
    - 固定运行模式：`SHARED_REDIS_REQUIRED`；允许双 JVM 各自使用隔离 H2 + 同一隔离真实 Redis 8.10.3。
+   - 前置契约：保留原 `Redis EXISTS marker == 1` 严格前置检验。
    - 入口：`Issue64DurabilityRedGateTest`（`-Dissue64.red=true`）与 `python scripts/issue64/issue64_red_gate.py --stage baseline-red`。
    - 预期结论：空 Redis 恢复后未过期旧 JWT 返回 HTTP `200`，判定 **`RED`（退出码 `2`）**；该门禁**仅用于表征基线结构性漏洞**。
-2. **`TARGET_GREEN`（方案 A 目标生产验收门禁，本轮状态：`NOT_RUN`）**：
-   - 必须运行于 **`DURABLE_DB_REQUIRED`** 模式。
-   - 两个独立 JVM **必须接入同一权威持久数据库**（推荐独立 MySQL 8.4 测试库；或显式共享 TCP 数据库实例），**严禁把两个 JVM 各自独立的 `jdbc:h2:mem:...` 内存库冒充共享持久库**。
-   - 关键行为差异：Redis 停机或丢失数据时，认证通过 MySQL 权威库安全完成（已吊销 `T1` 返回 `401`，有效 `T2` 返回 `200`，不再固定期望 Redis 停机返回 `503`）；MySQL 不可用或检查点缺失/`UNINITIALIZED`/`INVALID` 时返回 `503`。
-   - 入口：`Issue64TargetGreenGateTest`（`-Dissue64.target.green=true`，依赖目标模式前置）与 `python scripts/issue64/issue64_red_gate.py --stage target-green`；在 `src/main` 尚未落地 `DURABLE_DB_REQUIRED` 或未提供共享 DB 连接前，门禁必须明确失败为 `ERROR`（或记录 `NOT_RUN`），**绝不允许伪造 `PASS`**。
+2. **`TARGET_PREREQUISITE_CHECK`（快速前置预检 — 禁止当成生产安全 GREEN，阻断项 F）**：
+   - 独立入口：[Issue64TargetPrerequisiteCheckTest.java](../../src/test/java/com/wjx871/population/security/Issue64TargetPrerequisiteCheckTest.java)（`-Dissue64.target.prereq=true`）及 `issue64_red_gate.py --stage target-green` 启动前预检。
+   - **硬性定位**：仅快速核查 `DURABLE_DB_REQUIRED` 枚举、显式 opt-in、隔离测试库命名与连接边界等前置条件；**即使本预检返回 `PASS`，也绝不代表 `DURABLE_DB_REQUIRED` 已正确实现或 `TARGET_GREEN` 已通过，且严禁仅凭 `src/main` 源码出现 `DURABLE_DB_REQUIRED` 字符串就认定目标实现完成**。
+3. **`TARGET_GREEN`（方案 A 目标生产验收门禁 — 本轮状态：`NOT_RUN`，阻断项 F、G、H）**：
+   - **7 项强制动态验收条件**（全部满足并有实时动态证据才允许输出 `PASS`，缺一即 `NOT_RUN` 或 `ERROR`）：
+     1. `DURABLE_DB_REQUIRED` 模式在运行态已真实启用（通过运行期状态/行为核实，非仅源码字面检索）；
+     2. 独立 JVM A/B 接入**同一权威持久数据库**（独立测试 MySQL 8.4；严禁 `jdbc:h2:mem:`）；
+     3. 注销后经**数据库权威记录核查**确认 `jwt_revocation` 存在对应 `jti_sha256` 已提交行（不能单凭 HTTP `401` 或 Redis 存在标记宣称持久化正确；无法核查 DB 权威状态直接返回 `ERROR`）；
+     4. 空 Redis 恢复后旧 JWT 在 A/B 均返回 `401`；
+     5. 有效新 JWT 返回 `200`；
+     6. MySQL 故障时 fail-closed 返回 `503`；
+     7. 检查点缺失或状态无效（`UNINITIALIZED`/`INVALID`/NULL）时 fail-closed 返回 `503`。
+   - **Redis 辅助缓存非阻断原则（阻断项 H）**：
+     - `TARGET_GREEN` 阶段**不再要求** `Redis EXISTS revoked marker == 1`；Redis 标记仅作观察指标。
+     - Redis 写入失败、停机、空库或淘汰时，注销仍应由 MySQL 提交返回 `200`，A/B 跨实例认证必须继续通过 MySQL 主库拒绝旧 JWT（`401`）并放行有效新 JWT（`200`）。
+   - **测试数据库安全隔离防误操作护栏（阻断项 G）**：
+     - 仅允许显式 opt-in（`--allow-target-green`）触发；
+     - 目标库名必须严格匹配专用测试命名 `^issue64_test_[a-z0-9_]{4,40}$`，明文阻断 `population_miniterm`；
+     - 默认仅允许 loopback（`127.0.0.1` / `localhost` / `[::1]`）或经 `--approved-test-db-hosts` 显式批准的独立测试库主机，禁止连接未批准远端地址；
+     - 禁止复用生产 `JWT_SECRET`（门禁拒绝空/默认/非随机测试密钥，默认每次生成一次性强随机测试密钥），使用专用独立测试账号与测试数据，不触碰生产 Redis 或在服实例；
+     - 数据库密码仅通过环境变量传入，绝不出现在命令行、HTTP 日志或证据 JSON 中；
+     - **启动测试 JVM 前必须先完成真实测试库身份验证**（确认 `DATABASE()` 等身份一致，失败或不明一律 `ERROR` 且不得启动应用）；
+     - **隔离边界诚实声明**：上述命名与主机校验仅是**防误操作前置护栏（preflight guardrail），绝不构成完整物理隔离证明**；真实运行 `TARGET_GREEN` 仍必须具备独立的 MySQL 8.4 进程、实例或容器物理边界。
 
 ### 7.3 建议拆分顺序（下一轮生产施工）
 
-1. **Step 1（Schema 与 Store 层）**：提交 `V4_020_jwt_revocation.sql`、`schema.sql`、`JwtRevocationMapper` 与 `DurableRevocationStore`，配套 H2 与 MySQL 8.4 幂等插入、检查点三态 fail-closed、单调更新、并发清理单测。
+1. **Step 1（Schema 与 Store 层）**：提交 `V4_020_jwt_revocation.sql`、`schema.sql`、`JwtRevocationMapper` 与 `DurableRevocationStore`，配套 H2 与独立隔离 MySQL 8.4 幂等插入、检查点三态 fail-closed、单调更新、跨 `+00:00`/`+08:00`/`-05:00` 时区 `(UNIX_TIMESTAMP() + 1) * 1000` 校验及并发清理测试。
 2. **Step 2（核心吊销协议与模式切换）**：升级 `RevocationProperties`、`TokenRevocationService`、`JwtAuthenticationFilter`、`AuthService`、`HealthController` 与 `RevocationEvents`；调整并扩充 `S5A1StrictRevocationHttpIntegrationTest`、`RevocationConfigurationTest`、`TokenRevocationServiceConsistencyTest`。
-3. **Step 3（`TARGET_GREEN` 门禁验收）**：连接共享 MySQL 8.4 测试库运行 `scripts/issue64/issue64_red_gate.py --stage target-green` 验证由 `NOT_RUN` 转为 `PASS`，并逐项执行 [issue64-durable-revocation-gate.md](issue64-durable-revocation-gate.md) 全矩阵验收后，方可提交独立审查。
+3. **Step 3（`TARGET_GREEN` 真实双 JVM 动态验收）**：在独立物理边界的隔离 MySQL 8.4 测试库（库名 `issue64_test_*`）与隔离 Redis 8.10.3 上运行 `scripts/issue64/issue64_red_gate.py --stage target-green --allow-target-green ...` 完成上述 7 项动态断言并验证由 `NOT_RUN` 转为 `PASS`，逐项执行 [issue64-durable-revocation-gate.md](issue64-durable-revocation-gate.md) 全矩阵验收后，方可提交独立审查。

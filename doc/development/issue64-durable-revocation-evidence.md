@@ -142,3 +142,43 @@
   - `app-A1.log`: `f274e8f73d691e74f2acda1d3079b134af754f11da89f184b0764424e0769955`
   - `app-B1.log`: `ae75a6919782354e36b0912b6a0fffc13459237fc991d4b412a535f73cfd8034`
 - **第 2 轮敏感数据扫描**：对上述全量 `round2-*` 文件及 `run-b4ff998c9a11\*.log` 执行正则扫描（`eyJ|Bearer\s+[A-Za-z0-9._-]+|requirepass|JWT_SECRET|password=`）：**命中数为 `0`**。
+
+---
+
+## 五、第 3 轮最终审查修正复验（阻断项 E / F / G / H，2026-11-13）
+
+> 施工分支：`audit/20261113-issue64-final-design-gates`（严格自 `201caf2a7893f4196b7635a336bb26d2459511a2` 分出）；仅修订设计文档与测试门禁安全，未改动 `src/main/**`、正式 Schema 或历史第 1/2 轮证据文件。
+
+### 5.1 本轮门禁执行汇总（第 3 轮实跑输出，绝不伪装为 GREEN）
+
+| 门禁 / 用例 | 执行命令与参数 | 实测结果 | 运行结论 | 证据路径 |
+|---|---|---|---|---|
+| Python 分类器与 DB 隔离护栏自检 | `python -m unittest -v scripts/issue64/test_issue64_red_gate.py` | 8/8 用例通过（覆盖 6 项分类器边界、目标缺失阻断、`--allow-target-green`、`issue64_test_*` 命名、`population_miniterm`/特权用户/`jdbc:h2:mem:`/未批准远端主机/未验证 DB 身份拦截），退出码 `0` | **`EXECUTED_PASS`**（仅隔离逻辑自检） | [round3-python-selftest.log](evidence/issue64-durability-design/round3-python-selftest.log) |
+| `target-green` 无 opt-in / 未实现负向拦截 | `python scripts/issue64/issue64_red_gate.py --stage target-green` 及追加 `--allow-target-green` | 缺 opt-in 立即报 `target_green_opt_in_required`，加 opt-in 后立即报 `target_green_prereq_unmet: DURABLE_DB_REQUIRED is not implemented yet`，两次均未启动子进程且退出码 `1` | **`ERROR`（预期阻断；`TARGET_GREEN = NOT_RUN`）** | 第 3 轮终端实测 |
+| 真实 Redis + 双 JVM `BASELINE_RED` 复现 | `python scripts/issue64/issue64_red_gate.py --stage baseline-red --evidence-out .../round3-baseline-red-summary.json` | Redis `8.10.3` 临时目录 `run-7a064ef3eb47`（端口 `2675`、A1 `2676`、B1 `2677`）：注销后 RDB 保留恢复 `401`（`dump_rdb_bytes=389`），Redis 断连期间业务 `503`、`/api/health` `200`；切换空目录（`DBSIZE=0`、`EXISTS=0`）恢复后旧 JWT 在 A1、B1 **双双返回 `200`**，`fresh_b_status=200`，退出码 `2` | **`EXECUTED_RED`**（`vulnerability_reproduced=true`） | [round3-baseline-red-summary.json](evidence/issue64-durability-design/round3-baseline-red-summary.json) / [round3-baseline-red-events.jsonl](evidence/issue64-durability-design/round3-baseline-red-events.jsonl) |
+| JUnit RED 门禁 | `.\mvnw.cmd test "-Dissue64.red=true" "-Dtest=Issue64DurabilityRedGateTest"` | 运行 1，Failures: 1（第 177 行 `Status expected:<401> but was:<200>`），退出码 `1` | **`EXECUTED_RED`**（预期红灯） | [round3-junit-red-gate.log](evidence/issue64-durability-design/round3-junit-red-gate.log) |
+| 目标前置条件检查守卫 | `.\mvnw.cmd test "-Dissue64.target.prereq=true" "-Dtest=Issue64TargetPrerequisiteCheckTest"` | 运行 1，Failures: 1（`[TARGET_PREREQUISITE_CHECK] FAILED (TARGET_GREEN = NOT_RUN): RevocationProperties.Mode.DURABLE_DB_REQUIRED is not implemented yet`），退出码 `1` | **`FAILED`（前置守卫，非 `TARGET_GREEN`）** | [round3-junit-target-prereq-guard.log](evidence/issue64-durability-design/round3-junit-target-prereq-guard.log) |
+| `#64` 相关定向 Maven 回归 | `.\mvnw.cmd test "-Dtest=S5A1StrictRevocationHttpIntegrationTest,TokenRevocationServiceConsistencyTest,RevocationConfigurationTest,Issue64ScheduledCleanupTest,Phase11TokenRevocationTest,RevocationEventsTest"` | **77/77 通过**，0 失败，0 错误，0 跳过 | **`EXECUTED_PASS`** | [round3-targeted-revocation-maven.log](evidence/issue64-durability-design/round3-targeted-revocation-maven.log) |
+| 全量 Maven 测试套 | `.\mvnw.cmd test` | **1015 项运行，0 失败，0 错误，6 跳过**（既有基线 `Issue34FirstIssueRedTest` 3 + `Issue37ExpiryBatchIntegrationTest` 1 = 4 项；`#64` 显式 opt-in 门禁 `Issue64DurabilityRedGateTest` 1 + `Issue64TargetPrerequisiteCheckTest` 1 = 2 项） | **`EXECUTED_PASS`**（基线套件回归） | [round3-full-maven.log](evidence/issue64-durability-design/round3-full-maven.log) |
+| MySQL 8.4 跨时区 & 动态 `TARGET_GREEN` | 场景 #27（`+00:00`/`+08:00`/`-05:00`）及 7 项动态持久化验证 | 未连接真实 MySQL 8.4、未实现 `DURABLE_DB_REQUIRED` | **`NOT_RUN`**（严禁宣称通过） | [issue64-durable-revocation-gate.md](issue64-durable-revocation-gate.md) |
+
+### 5.2 第 3 轮证据文件 SHA256 与敏感信息审计
+
+- **提交入仓的第 3 轮文件 SHA256（无 UTF-8 BOM）**：
+  - `round3-baseline-red-events.jsonl`: `76597d9cdcbcfa0ebf3de8a5510aff6c2a8b43a66c6ae4a2163d7fa205f69a02` (`3674` bytes)
+  - `round3-baseline-red-summary.json`: `bc50c889db1d11f3b082eb5c06a01e8c2e9823cb0f72beaa78b6f5cf77f83b31` (`7081` bytes)
+- **本机验证日志 SHA256（位于同目录/临时目录并纳入审计记录）**：
+  - `round3-python-selftest.log`: `a63ea5997445d5322186ce0bccaac6e50ddd5867c81e9a8371f75a2b868392f9` (`1904` bytes)
+  - `round3-junit-red-gate.log`: `fb3cdf58f5df9db7e1178b5713c088d43fd2f71ed3d96de4d93ad5fd54436694` (`43406` bytes)
+  - `round3-junit-target-prereq-guard.log`: `207d40836212774f075fc4dc3606a5c3d9444ff407e2de0ce4ddf020f6039ecc` (`37222` bytes)
+  - `round3-targeted-revocation-maven.log`: `186ab8b506a1dee16f1d421a1188b9d9ba94f59a2ff8b79ce0984322803a0b15` (`44904` bytes)
+  - `round3-full-maven.log`: `6878a0dc3ffa522425f5f754b2ea17d5d6218c91f37e4f89bcf550184ffcca03` (`1899095` bytes)
+- **第 3 轮临时运行目录**（保留本机：`C:\Users\jxgm\AppData\Local\Temp\issue64-durability-red\run-7a064ef3eb47\`）：
+  - `data-initial\dump.rdb`: `2681e038f5ac644f007b8224cccbc189f4e24ee8d99c223223aefe8cd2f87dd4` (`389` bytes)
+  - `gate-summary.json`: `bc50c889db1d11f3b082eb5c06a01e8c2e9823cb0f72beaa78b6f5cf77f83b31` (`7081` bytes)
+  - `redis-initial.log`: `b7d0250aaac7c09a3a46a6e83aed2fb40877238f04013d45183cb610eba36314` (`1221` bytes)
+  - `redis-restart.log`: `d11b4b7f2a2b6e2abf374fc19e70e7ffef4ffbf32e799a5dc303fece3dffbd38` (`1291` bytes)
+  - `redis-empty.log`: `98ecc4e6214ec5a04b75c333031ce362b87b766d01f633aa1ab78f95b008cad2` (`940` bytes)
+  - `app-A1.log`: `aeb9c4c1de3c388bca9733ff24705f5d30b12a2625396ed2303f67cc03977352` (`10069` bytes)
+  - `app-B1.log`: `49befb11280af24dee5866ad95714ffd4c4df11956017ee80d3bda7f28e9e5d2` (`9480` bytes)
+- **第 3 轮敏感数据扫描**：对全部 7 个 `round3-*` 产物执行正则扫描（`eyJ|Bearer\s+[A-Za-z0-9._-]+|requirepass|JWT_SECRET|password=`）：**命中数为 `0`**。

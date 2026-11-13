@@ -26,6 +26,7 @@ import hashlib
 import json
 import os
 import pathlib
+import re
 import secrets
 import socket
 import subprocess
@@ -33,6 +34,7 @@ import sys
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 from dataclasses import dataclass
@@ -44,6 +46,11 @@ EXIT_RED = 2
 
 STAGE_BASELINE_RED = "baseline-red"
 STAGE_TARGET_GREEN = "target-green"
+
+ISOLATED_TEST_DB_PATTERN = re.compile(r"^issue64_test_[a-z0-9_]{4,40}$")
+FORBIDDEN_PROD_DB_NAMES = frozenset({"population_miniterm", "mysql", "information_schema", "performance_schema", "sys"})
+FORBIDDEN_PRIVILEGED_DB_USERS = frozenset({"root", "admin", "sa", "rdsadmin"})
+LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 
 DEFAULT_REDIS_BIN = pathlib.Path(
     r"C:\Users\jxgm\.codex\worktrees\issue29-64-real-redis\redis-isolated\bin\Redis-8.10.3-Windows-x64-msys2\redis-server.exe"
@@ -181,22 +188,155 @@ class GateResult:
     vulnerability_reproduced: bool
 
 
+def parse_isolated_mysql_jdbc_url(
+    jdbc_url: str | None,
+    approved_remote_hosts: set[str] | frozenset[str] | None = None,
+) -> tuple[str, int, str]:
+    """Validate and parse a target-green JDBC URL into (host, port, database_name).
+
+    Preflight guardrails only (NEVER a substitute for physical process/container isolation):
+      - Rejects jdbc:h2:mem: and any non-jdbc:mysql:// URL.
+      - Explicitly forbids production database name `population_miniterm` and system schemas.
+      - Enforces dedicated test schema pattern `^issue64_test_[a-z0-9_]{4,40}$`.
+      - Restricts target host to loopback unless explicitly listed in approved_remote_hosts.
+    """
+    if not jdbc_url or not jdbc_url.strip():
+        raise GateError("target_green_prereq_unmet: --shared-jdbc-url is required for target-green stage")
+    raw = jdbc_url.strip()
+    lower = raw.lower()
+    if lower.startswith("jdbc:h2:mem:"):
+        raise GateError("target_db_isolation_error: isolated in-memory H2 cannot stand in for a shared persistent database")
+    if not lower.startswith("jdbc:mysql://"):
+        raise GateError("target_db_isolation_error: only jdbc:mysql:// URLs targeting an isolated MySQL 8.4 test DB are permitted")
+
+    parsed = urllib.parse.urlsplit(raw[len("jdbc:"):])
+    host = (parsed.hostname or "").strip().lower()
+    if not host:
+        raise GateError("target_db_isolation_error: missing host in target JDBC URL")
+    port = parsed.port or 3306
+
+    approved = {h.strip().lower() for h in (approved_remote_hosts or ()) if h and h.strip()}
+    if host not in LOOPBACK_HOSTS and host not in approved:
+        raise GateError(
+            f"target_db_isolation_error: non-loopback host '{host}' is not in approved isolated test DB hosts"
+        )
+
+    db_name = parsed.path.lstrip("/").split("/", 1)[0].strip()
+    if not db_name:
+        raise GateError("target_db_isolation_error: missing database name in target JDBC URL")
+    if db_name.lower() in FORBIDDEN_PROD_DB_NAMES or "population_miniterm" in lower:
+        raise GateError(f"target_db_isolation_error: forbidden production/system database name '{db_name}'")
+    if not ISOLATED_TEST_DB_PATTERN.fullmatch(db_name):
+        raise GateError(
+            f"target_db_isolation_error: database name '{db_name}' must match dedicated pattern issue64_test_<id>"
+        )
+    return host, port, db_name
+
+
+def default_db_identity_verifier(
+    jdbc_url: str,
+    db_user: str,
+    db_password: str | None,
+    expected_db_name: str,
+) -> dict[str, Any]:
+    """Fail-closed placeholder until real MySQL target probe is executed on a live test instance.
+
+    Checks target DB identity via pymysql if installed; otherwise fails closed with ERROR so
+    unverified target databases can never launch test JVMs or claim TARGET_GREEN.
+    """
+    try:
+        import pymysql  # type: ignore[import-not-found]
+    except ImportError as exc:
+        raise GateError(
+            "target_db_identity_unverified: cannot verify live MySQL test DB identity (pymysql driver unavailable)"
+        ) from exc
+
+    if not db_password:
+        raise GateError("target_db_identity_unverified: DB password env var is empty")
+    host, port, db_name = parse_isolated_mysql_jdbc_url(jdbc_url, approved_remote_hosts={urllib.parse.urlsplit(jdbc_url[len("jdbc:"):]).hostname or ""})
+    if db_name != expected_db_name:
+        raise GateError(f"target_db_identity_mismatch: expected {expected_db_name}, parsed {db_name}")
+    try:
+        conn = pymysql.connect(host=host, port=port, user=db_user, password=db_password, database=db_name, connect_timeout=5, read_timeout=5)
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT DATABASE(), @@hostname, @@port, @@read_only")
+                row = cur.fetchone()
+        finally:
+            conn.close()
+    except Exception as exc:
+        raise GateError(f"target_db_identity_unverified: failed connecting to verify target DB: {type(exc).__name__}") from exc
+
+    if not row or row[0] != expected_db_name or (row[0] or "").lower() in FORBIDDEN_PROD_DB_NAMES:
+        raise GateError(f"target_db_identity_mismatch: server reported database={row[0] if row else None}")
+    if row[3] == 1:
+        raise GateError("target_db_identity_error: target database is read_only=1, expected primary RW test instance")
+    return {"database": row[0], "port": row[2], "verified": True}
+
+
+def default_db_revocation_verifier(
+    jdbc_url: str,
+    db_user: str,
+    db_password: str | None,
+    expected_db_name: str,
+    jti_sha256: str,
+) -> bool:
+    """Verify authoritative MySQL jwt_revocation row exists for sha256(jti) under TARGET_GREEN."""
+    try:
+        import pymysql  # type: ignore[import-not-found]
+    except ImportError as exc:
+        raise GateError(
+            "target_db_revocation_unverified: cannot query MySQL jwt_revocation (pymysql driver unavailable)"
+        ) from exc
+
+    if not db_password:
+        raise GateError("target_db_revocation_unverified: DB password env var is empty")
+    host, port, db_name = parse_isolated_mysql_jdbc_url(jdbc_url, approved_remote_hosts={urllib.parse.urlsplit(jdbc_url[len("jdbc:"):]).hostname or ""})
+    try:
+        conn = pymysql.connect(host=host, port=port, user=db_user, password=db_password, database=db_name, connect_timeout=5, read_timeout=5)
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT COUNT(*) FROM jwt_revocation WHERE jti_sha256 = %s AND expires_at_epoch_ms > (UNIX_TIMESTAMP() * 1000)",
+                    (jti_sha256,),
+                )
+                row = cur.fetchone()
+        finally:
+            conn.close()
+    except Exception as exc:
+        raise GateError(f"target_db_revocation_unverified: authoritative DB query failed: {type(exc).__name__}") from exc
+    return bool(row and int(row[0]) >= 1)
+
+
 def validate_stage_requirements(
     stage: str,
     repo_root: pathlib.Path,
     shared_jdbc_url: str | None,
     shared_db_user: str | None,
+    *,
+    allow_target_green: bool = False,
+    approved_remote_hosts: set[str] | frozenset[str] | None = None,
+    shared_db_password: str | None = None,
+    db_identity_verifier: Callable[[str, str, str | None, str], dict[str, Any]] | None = None,
+    verify_identity: bool = True,
 ) -> str:
     """Validate stage prerequisites and return the required revocation mode.
 
     BASELINE_RED strictly runs SHARED_REDIS_REQUIRED (isolated H2 per JVM permitted).
-    TARGET_GREEN strictly requires DURABLE_DB_REQUIRED implemented in src/main AND a
-    single shared authoritative persistent JDBC URL (never per-JVM H2 in-memory DBs).
+    TARGET_GREEN enforces explicit opt-in, isolated test DB naming/host guardrails,
+    pre-launch DB identity verification, and DURABLE_DB_REQUIRED runtime implementation.
+    Static source checks are ONLY fast preflight checks (TARGET_PREREQUISITE_CHECK),
+    never proof that TARGET_GREEN passes.
     """
     if stage == STAGE_BASELINE_RED:
         return "SHARED_REDIS_REQUIRED"
     if stage != STAGE_TARGET_GREEN:
         raise GateError(f"unsupported_stage: {stage}")
+
+    if not allow_target_green:
+        raise GateError(
+            "target_green_opt_in_required: target-green requires explicit --allow-target-green (or ISSUE64_ALLOW_TARGET_GREEN=true)"
+        )
 
     props_file = repo_root / "src" / "main" / "java" / "com" / "wjx871" / "population" / "security" / "RevocationProperties.java"
     if not props_file.exists():
@@ -205,13 +345,20 @@ def validate_stage_requirements(
     if "DURABLE_DB_REQUIRED" not in props_text:
         raise GateError("target_green_prereq_unmet: DURABLE_DB_REQUIRED is not implemented yet in RevocationProperties")
 
-    if not shared_jdbc_url or not shared_jdbc_url.strip():
-        raise GateError("target_green_prereq_unmet: --shared-jdbc-url is required for target-green stage")
-    lower_url = shared_jdbc_url.strip().lower()
-    if lower_url.startswith("jdbc:h2:mem:"):
-        raise GateError("target_green_prereq_unmet: isolated in-memory H2 cannot stand in for a shared persistent database")
+    _, _, db_name = parse_isolated_mysql_jdbc_url(shared_jdbc_url, approved_remote_hosts=approved_remote_hosts)
+
     if not shared_db_user or not shared_db_user.strip():
-        raise GateError("target_green_prereq_unmet: --shared-db-user is required for target-green stage")
+        raise GateError("target_db_isolation_error: --shared-db-user is required for target-green stage")
+    if shared_db_user.strip().lower() in FORBIDDEN_PRIVILEGED_DB_USERS:
+        raise GateError("target_db_isolation_error: dedicated isolated test DB account required (privileged user forbidden)")
+
+    if verify_identity:
+        verifier = db_identity_verifier or default_db_identity_verifier
+        assert shared_jdbc_url is not None
+        identity = verifier(shared_jdbc_url.strip(), shared_db_user.strip(), shared_db_password, db_name)
+        if not identity or not identity.get("verified") or identity.get("database") != db_name:
+            raise GateError("target_db_identity_unverified: pre-launch DB identity verification did not confirm test DB")
+
     return "DURABLE_DB_REQUIRED"
 
 
@@ -360,8 +507,22 @@ def run_live_gate(
     shared_jdbc_url: str | None = None,
     shared_db_user: str | None = None,
     shared_db_password: str | None = None,
+    allow_target_green: bool = False,
+    approved_remote_hosts: set[str] | frozenset[str] | None = None,
+    db_identity_verifier: Callable[[str, str, str | None, str], dict[str, Any]] | None = None,
+    db_revocation_verifier: Callable[[str, str, str | None, str, str], bool] | None = None,
 ) -> int:
-    revocation_mode = validate_stage_requirements(stage, repo_root, shared_jdbc_url, shared_db_user)
+    revocation_mode = validate_stage_requirements(
+        stage,
+        repo_root,
+        shared_jdbc_url,
+        shared_db_user,
+        allow_target_green=allow_target_green,
+        approved_remote_hosts=approved_remote_hosts,
+        shared_db_password=shared_db_password,
+        db_identity_verifier=db_identity_verifier,
+        verify_identity=True,
+    )
     if not redis_bin.exists():
         raise GateError(f"redis-server binary not found: {redis_bin}")
     classpath = build_classpath(repo_root, cp_file)
@@ -513,6 +674,9 @@ def run_live_gate(
     redis_logs: list[pathlib.Path] = []
     app_logs: list[pathlib.Path] = []
     dir_evidence: dict[str, Any] = {}
+    db_identity_verified = False
+    db_revocation_verified = False
+    redis_marker_observed: int | str = "NOT_CHECKED"
 
     try:
         rp, initial_dir, initial_conf, rlog_init = start_redis("initial")
@@ -521,12 +685,29 @@ def run_live_gate(
         app_b, alog_b = start_app("B1", bport)
         app_logs.extend([alog_a, alog_b])
 
+        expected_db_name = ""
+        if stage == STAGE_TARGET_GREEN:
+            assert shared_jdbc_url is not None and shared_db_user is not None
+            _, _, expected_db_name = parse_isolated_mysql_jdbc_url(
+                shared_jdbc_url, approved_remote_hosts=approved_remote_hosts
+            )
+            db_identity_verified = True
+            for inst, port in (("A1", aport), ("B1", bport)):
+                h_code, h_body = http_json(port, "/api/health")
+                must_status(f"{inst}_target_health", h_code, 200)
+                h_data = json.loads(h_body).get("data", {})
+                if h_data.get("revocationMode") != "DURABLE_DB_REQUIRED":
+                    raise GateError(
+                        f"target_mode_not_active_at_runtime: {inst} reported revocationMode={h_data.get('revocationMode')}"
+                    )
+
         # 1. Login on A with synthetic account `population` and verify valid before logout on A & B.
         login_status, login_body = http_json(aport, "/api/auth/login", body={"username": "population", "password": "123456"})
         must_status("login_population", login_status, 200)
         old_token = json.loads(login_body)["data"]["token"]
         old_claims = decode_jwt_claims(old_token)
         old_jti = old_claims["jti"]
+        old_jti_sha256 = hashlib.sha256(old_jti.encode("utf-8")).hexdigest()
         old_jti_digest = short_jti_digest(old_jti)
         emit("token_issued", role="old", jti_sha256_prefix=old_jti_digest)
 
@@ -536,17 +717,29 @@ def run_live_gate(
         # 2. Logout on A -> A & B both reject with 401.
         must_status("A_logout", http_json(aport, "/api/auth/logout", old_token, {})[0], 200)
         key_raw = f"{prefix}:security:jwt:blacklist:{old_jti}"
-        key_sha = f"{prefix}:security:jwt:blacklist:{hashlib.sha256(old_jti.encode('utf-8')).hexdigest()}"
+        key_sha = f"{prefix}:security:jwt:blacklist:{old_jti_sha256}"
         key = key_raw
         if stage == STAGE_BASELINE_RED:
             marker_exists = redis_cmd(rport, admin_password, "EXISTS", key_raw)
+            redis_marker_observed = marker_exists
+            if marker_exists != 1:
+                raise GateError(f"expected redis marker EXISTS=1, got {marker_exists}")
         else:
+            # Blocker H: under TARGET_GREEN, Redis marker is observational only; authoritative DB row is mandatory.
             raw_exists = redis_cmd(rport, admin_password, "EXISTS", key_raw)
             sha_exists = redis_cmd(rport, admin_password, "EXISTS", key_sha)
             key = key_sha if sha_exists == 1 else key_raw
-            marker_exists = 1 if (raw_exists == 1 or sha_exists == 1) else 0
-        if marker_exists != 1:
-            raise GateError(f"expected redis marker EXISTS=1, got {marker_exists}")
+            redis_marker_observed = 1 if (raw_exists == 1 or sha_exists == 1) else 0
+            emit("target_cache_observation", redis_marker_exists=redis_marker_observed, required_for_green=False)
+
+            rev_checker = db_revocation_verifier or default_db_revocation_verifier
+            assert shared_jdbc_url is not None and shared_db_user is not None
+            db_revocation_verified = rev_checker(
+                shared_jdbc_url.strip(), shared_db_user.strip(), shared_db_password, expected_db_name, old_jti_sha256
+            )
+            if not db_revocation_verified:
+                raise GateError("target_db_revocation_missing: logout returned 200 but jwt_revocation row is absent")
+            emit("target_db_revocation_verified", jti_sha256_prefix=old_jti_digest, verified=True)
         must_status("A_after_logout", http_json(aport, "/api/auth/me", old_token)[0], 401)
         must_status("B_after_logout", http_json(bport, "/api/auth/me", old_token)[0], 401)
 
@@ -584,8 +777,19 @@ def run_live_gate(
         if stage == STAGE_BASELINE_RED:
             must_status("B_during_outage_fresh", http_json(bport, "/api/auth/me", fresh_token)[0], 503)
         else:
+            # Under TARGET_GREEN (DURABLE_DB_REQUIRED), Redis outage must NOT block valid tokens or logout.
             must_status("B_during_outage_old", http_json(bport, "/api/auth/me", old_token)[0], 401)
             must_status("B_during_outage_fresh", http_json(bport, "/api/auth/me", fresh_token)[0], 200)
+            outage_login_status, outage_login_body = http_json(aport, "/api/auth/login", body={"username": "population", "password": "123456"})
+            must_status("A_during_outage_login", outage_login_status, 200)
+            outage_token = json.loads(outage_login_body)["data"]["token"]
+            outage_jti_sha256 = hashlib.sha256(decode_jwt_claims(outage_token)["jti"].encode("utf-8")).hexdigest()
+            must_status("A_during_outage_logout", http_json(aport, "/api/auth/logout", outage_token, {})[0], 200)
+            rev_checker = db_revocation_verifier or default_db_revocation_verifier
+            assert shared_jdbc_url is not None and shared_db_user is not None
+            if not rev_checker(shared_jdbc_url.strip(), shared_db_user.strip(), shared_db_password, expected_db_name, outage_jti_sha256):
+                raise GateError("target_db_revocation_missing: outage logout returned 200 without DB commit")
+            must_status("B_during_outage_revoked_without_redis", http_json(bport, "/api/auth/me", outage_token)[0], 401)
         must_status("A_during_outage_health", http_json(aport, "/api/health")[0], 200)
 
         # 5. Restart Redis on the SAME initial directory; verify preserved RDB rejects old_token (401)
@@ -652,6 +856,15 @@ def run_live_gate(
         }
         emit("redis_empty_dir_switch", **dir_evidence["empty"])
 
+        if stage == STAGE_TARGET_GREEN:
+            rev_checker = db_revocation_verifier or default_db_revocation_verifier
+            assert shared_jdbc_url is not None and shared_db_user is not None
+            db_revocation_verified = rev_checker(
+                shared_jdbc_url.strip(), shared_db_user.strip(), shared_db_password, expected_db_name, old_jti_sha256
+            )
+            if not db_revocation_verified:
+                raise GateError("target_db_revocation_missing: cannot verify authoritative DB record post empty recovery")
+
         result = verify_post_empty_recovery_over_http(
             aport=aport,
             bport=bport,
@@ -696,6 +909,12 @@ def run_live_gate(
             "stage": "BASELINE_RED" if stage == STAGE_BASELINE_RED else "TARGET_GREEN",
             "revocation_mode": revocation_mode,
             "shared_db_configured": stage == STAGE_TARGET_GREEN,
+            "db_identity_verified": db_identity_verified,
+            "db_authoritative_revocation_verified": db_revocation_verified,
+            "redis_marker_required_for_stage": stage == STAGE_BASELINE_RED,
+            "redis_marker_observed": redis_marker_observed,
+            "jwt_secret_ephemeral": True,
+            "isolation_guardrail_note": "Preflight naming/host/identity checks only; physical process/instance/container isolation is still required.",
             "run_id": run_id,
             "runtime_dir": str(run_dir),
             "ports": {"redis": rport, "app_a": aport, "app_b": bport},
@@ -728,9 +947,20 @@ def main(argv: list[str] | None = None) -> int:
         default=STAGE_BASELINE_RED,
         help="Verification stage: baseline-red (SHARED_REDIS_REQUIRED) or target-green (DURABLE_DB_REQUIRED + shared DB)",
     )
-    parser.add_argument("--shared-jdbc-url", default=os.environ.get("ISSUE64_SHARED_JDBC_URL"), help="Shared authoritative JDBC URL (target-green only; rejects jdbc:h2:mem:)")
-    parser.add_argument("--shared-db-user", default=os.environ.get("ISSUE64_SHARED_DB_USER"), help="Shared DB username (target-green only)")
-    parser.add_argument("--shared-db-password-env", default="ISSUE64_SHARED_DB_PASSWORD", help="Env var holding shared DB password (target-green only)")
+    parser.add_argument(
+        "--allow-target-green",
+        action="store_true",
+        default=os.environ.get("ISSUE64_ALLOW_TARGET_GREEN", "").strip().lower() == "true",
+        help="Explicit opt-in required to execute target-green stage",
+    )
+    parser.add_argument("--shared-jdbc-url", default=os.environ.get("ISSUE64_SHARED_JDBC_URL"), help="Isolated shared MySQL JDBC URL (issue64_test_<id> only)")
+    parser.add_argument("--shared-db-user", default=os.environ.get("ISSUE64_SHARED_DB_USER"), help="Dedicated isolated test DB username")
+    parser.add_argument("--shared-db-password-env", default="ISSUE64_SHARED_DB_PASSWORD", help="Env var holding test DB password (never logged)")
+    parser.add_argument(
+        "--approved-test-db-hosts",
+        default=os.environ.get("ISSUE64_APPROVED_TEST_DB_HOSTS", ""),
+        help="Comma-separated approved isolated test DB hosts beyond loopback",
+    )
     parser.add_argument("--repo-root", type=pathlib.Path, default=pathlib.Path(__file__).resolve().parents[2])
     parser.add_argument("--redis-bin", type=pathlib.Path, default=pathlib.Path(os.environ.get("ISSUE64_REDIS_BIN", str(DEFAULT_REDIS_BIN))))
     parser.add_argument("--classpath-file", type=pathlib.Path, default=None)
@@ -740,6 +970,7 @@ def main(argv: list[str] | None = None) -> int:
 
     cp_file = args.classpath_file or (args.repo_root / "target" / "issue64-classpath.txt")
     shared_db_password = os.environ.get(args.shared_db_password_env) if args.stage == STAGE_TARGET_GREEN else None
+    approved_hosts = {h.strip().lower() for h in args.approved_test_db_hosts.split(",") if h.strip()}
     try:
         return run_live_gate(
             repo_root=args.repo_root,
@@ -751,6 +982,8 @@ def main(argv: list[str] | None = None) -> int:
             shared_jdbc_url=args.shared_jdbc_url,
             shared_db_user=args.shared_db_user,
             shared_db_password=shared_db_password,
+            allow_target_green=args.allow_target_green,
+            approved_remote_hosts=approved_hosts,
         )
     except GateError as exc:
         print(

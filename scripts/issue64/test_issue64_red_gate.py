@@ -202,25 +202,170 @@ class Issue64RedGateSelfTest(unittest.TestCase):
         self.assertEqual(gate.validate_stage_requirements("baseline-red", repo_root, None, None), "SHARED_REDIS_REQUIRED")
         # In current baseline/design state DURABLE_DB_REQUIRED is absent in src/main, so target-green MUST error.
         with self.assertRaises(gate.GateError):
-            gate.validate_stage_requirements("target-green", repo_root, "jdbc:mysql://127.0.0.1:3306/test", "root")
-        exit_code = gate.main(["--stage", "target-green"])
-        self.assertEqual(exit_code, gate.EXIT_ERROR)
+            gate.validate_stage_requirements(
+                "target-green",
+                repo_root,
+                "jdbc:mysql://127.0.0.1:3306/issue64_test_ci01",
+                "issue64_tester",
+                allow_target_green=True,
+                shared_db_password="test-only-password",
+                db_identity_verifier=lambda *_args, **_kwargs: {"database": "issue64_test_ci01", "read_only": "0"},
+            )
+        self.assertEqual(gate.main(["--stage", "target-green"]), gate.EXIT_ERROR)
+        self.assertEqual(gate.main(["--stage", "target-green", "--allow-target-green"]), gate.EXIT_ERROR)
 
-        # Even when DURABLE_DB_REQUIRED exists, empty/missing shared DB or per-JVM jdbc:h2:mem: MUST error.
+    def test_target_green_db_isolation_guardrails(self) -> None:
         import tempfile
+
+        def ok_verifier(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+            return {"verified": True, "database": "issue64_test_ci01", "read_only": "0"}
+
+        def mismatched_verifier(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+            return {"verified": True, "database": "population_miniterm", "read_only": "0"}
+
+        def fail_verifier(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+            raise gate.GateError("Pre-launch DB identity check failed: connection refused")
+
         with tempfile.TemporaryDirectory() as tmp:
             fake_root = pathlib.Path(tmp)
-            fake_props = fake_root / "src" / "main" / "java" / "com" / "wjx871" / "population" / "security" / "RevocationProperties.java"
+            fake_props = (
+                fake_root
+                / "src"
+                / "main"
+                / "java"
+                / "com"
+                / "wjx871"
+                / "population"
+                / "security"
+                / "RevocationProperties.java"
+            )
             fake_props.parent.mkdir(parents=True, exist_ok=True)
-            fake_props.write_text("public enum Mode { SINGLE_INSTANCE_LOCAL, SHARED_REDIS_REQUIRED, DURABLE_DB_REQUIRED }", encoding="utf-8")
-            with self.assertRaises(gate.GateError):
-                gate.validate_stage_requirements("target-green", fake_root, None, "root")
-            with self.assertRaises(gate.GateError):
-                gate.validate_stage_requirements("target-green", fake_root, "jdbc:h2:mem:isolated;MODE=MySQL", "sa")
+            fake_props.write_text(
+                "public enum Mode { SINGLE_INSTANCE_LOCAL, SHARED_REDIS_REQUIRED, DURABLE_DB_REQUIRED }",
+                encoding="utf-8",
+            )
+
+            # 1. Valid isolated test DB params + explicit opt-in + verified DB identity -> pass preflight
             self.assertEqual(
-                gate.validate_stage_requirements("target-green", fake_root, "jdbc:mysql://127.0.0.1:3306/pop_test", "pop_test"),
+                gate.validate_stage_requirements(
+                    "target-green",
+                    fake_root,
+                    "jdbc:mysql://127.0.0.1:3306/issue64_test_ci01",
+                    "issue64_tester",
+                    allow_target_green=True,
+                    shared_db_password="isolated-pass-value",
+                    db_identity_verifier=ok_verifier,
+                ),
                 "DURABLE_DB_REQUIRED",
             )
+            # Approved non-loopback host allowed ONLY when explicitly whitelisted
+            self.assertEqual(
+                gate.validate_stage_requirements(
+                    "target-green",
+                    fake_root,
+                    "jdbc:mysql://ci-mysql.internal:3306/issue64_test_ci01",
+                    "issue64_tester",
+                    allow_target_green=True,
+                    approved_remote_hosts={"ci-mysql.internal"},
+                    shared_db_password="isolated-pass-value",
+                    db_identity_verifier=ok_verifier,
+                ),
+                "DURABLE_DB_REQUIRED",
+            )
+
+            # 2. Missing opt-in -> GateError
+            with self.assertRaises(gate.GateError):
+                gate.validate_stage_requirements(
+                    "target-green",
+                    fake_root,
+                    "jdbc:mysql://127.0.0.1:3306/issue64_test_ci01",
+                    "issue64_tester",
+                    allow_target_green=False,
+                    shared_db_password="isolated-pass-value",
+                    db_identity_verifier=ok_verifier,
+                )
+
+            # 3. Production or non-issue64_test_* DB name -> GateError
+            for bad_db in ("population_miniterm", "pop_test", "issue64_test_"):
+                with self.assertRaises(gate.GateError):
+                    gate.validate_stage_requirements(
+                        "target-green",
+                        fake_root,
+                        f"jdbc:mysql://127.0.0.1:3306/{bad_db}",
+                        "issue64_tester",
+                        allow_target_green=True,
+                        shared_db_password="isolated-pass-value",
+                        db_identity_verifier=ok_verifier,
+                    )
+
+            # 4. Privileged DB user -> GateError
+            for bad_user in ("root", "SA", "admin"):
+                with self.assertRaises(gate.GateError):
+                    gate.validate_stage_requirements(
+                        "target-green",
+                        fake_root,
+                        "jdbc:mysql://127.0.0.1:3306/issue64_test_ci01",
+                        bad_user,
+                        allow_target_green=True,
+                        shared_db_password="isolated-pass-value",
+                        db_identity_verifier=ok_verifier,
+                    )
+
+            # 5. jdbc:h2:mem: fake shared DB or empty URL -> GateError
+            for bad_url in (None, "jdbc:h2:mem:isolated;MODE=MySQL"):
+                with self.assertRaises(gate.GateError):
+                    gate.validate_stage_requirements(
+                        "target-green",
+                        fake_root,
+                        bad_url,
+                        "issue64_tester",
+                        allow_target_green=True,
+                        shared_db_password="isolated-pass-value",
+                        db_identity_verifier=ok_verifier,
+                    )
+
+            # 6. Unapproved remote host -> GateError
+            with self.assertRaises(gate.GateError):
+                gate.validate_stage_requirements(
+                    "target-green",
+                    fake_root,
+                    "jdbc:mysql://prod-db.internal:3306/issue64_test_ci01",
+                    "issue64_tester",
+                    allow_target_green=True,
+                    shared_db_password="isolated-pass-value",
+                    db_identity_verifier=ok_verifier,
+                )
+
+            # 7. Unverified DB identity (verifier failure, mismatched DB, or missing password without custom verifier) -> GateError
+            with self.assertRaises(gate.GateError):
+                gate.validate_stage_requirements(
+                    "target-green",
+                    fake_root,
+                    "jdbc:mysql://127.0.0.1:3306/issue64_test_ci01",
+                    "issue64_tester",
+                    allow_target_green=True,
+                    shared_db_password="isolated-pass-value",
+                    db_identity_verifier=mismatched_verifier,
+                )
+            with self.assertRaises(gate.GateError):
+                gate.validate_stage_requirements(
+                    "target-green",
+                    fake_root,
+                    "jdbc:mysql://127.0.0.1:3306/issue64_test_ci01",
+                    "issue64_tester",
+                    allow_target_green=True,
+                    shared_db_password="isolated-pass-value",
+                    db_identity_verifier=fail_verifier,
+                )
+            with self.assertRaises(gate.GateError):
+                gate.validate_stage_requirements(
+                    "target-green",
+                    fake_root,
+                    "jdbc:mysql://127.0.0.1:3306/issue64_test_ci01",
+                    "issue64_tester",
+                    allow_target_green=True,
+                    shared_db_password=None,
+                )
 
     def test_jti_digest_does_not_leak_raw_jti(self) -> None:
         raw_jti = "sensitive-jti-uuid-1234"

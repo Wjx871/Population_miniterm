@@ -54,9 +54,10 @@ import org.springframework.transaction.annotation.Transactional;
  * {@code c74867721adea57ad16012b4785b4f952b92fe86}.
  *
  * <p><strong>Do NOT use this test as proof of future production {@code DURABLE_DB_REQUIRED}
- * readiness.</strong> Target acceptance under {@code DURABLE_DB_REQUIRED} uses a separate
- * gate entry ({@link Issue64TargetGreenGateTest}) and real shared DB verification via
- * {@code scripts/issue64/issue64_red_gate.py --stage target-green}.
+ * readiness.</strong> Target prerequisite preflight uses {@link Issue64TargetPrerequisiteCheckTest}
+ * ({@code TARGET_PREREQUISITE_CHECK} only), while actual {@code TARGET_GREEN} requires dynamic
+ * multi-JVM verification with an isolated shared MySQL 8.4 database via
+ * {@code scripts/issue64/issue64_red_gate.py --stage target-green --allow-target-green}.
  */
 @EnabledIfSystemProperty(named = "issue64.red", matches = "true")
 @SpringBootTest(properties = {
