@@ -453,6 +453,20 @@ class Issue64RedGateSelfTest(unittest.TestCase):
                 "invalid_checkpoint_status": 503,
                 "uninitialized_checkpoint_status": 200,
             },
+            {
+                "executed": True,
+                "missing_checkpoint_status": 503,
+                "uninitialized_checkpoint_status": 503,
+                "invalid_checkpoint_status": 503,
+                "ready_null_cutoff_status": 200,
+            },
+            {
+                "executed": True,
+                "missing_checkpoint_status": 503,
+                "uninitialized_checkpoint_status": 503,
+                "invalid_checkpoint_status": 503,
+                "ready_negative_cutoff_status": 200,
+            },
         ):
             state = gate.evaluate_checkpoint_fault_observation(bad_obs)
             self.assertEqual(state, "FAIL")
@@ -463,6 +477,62 @@ class Issue64RedGateSelfTest(unittest.TestCase):
             self.assertEqual(res.exit_code, gate.EXIT_ERROR)
             self.assertFalse(res.target_green_pass)
             self.assertIn("checkpoint_invalid_fail_closed", res.failed_criteria)
+
+    def test_checkpoint_fault_requires_all_three_observations_no_pass_when_missing_any(self) -> None:
+        scenario_ok = gate.GateResult("PASS", gate.EXIT_PASS, "ok", 401, 401, 200, False)
+
+        # Not executed -> NOT_RUN -> INCOMPLETE
+        for not_run_obs in (
+            None,
+            {"executed": False},
+            {"executed": False, "missing_checkpoint_status": 503, "uninitialized_checkpoint_status": 503, "invalid_checkpoint_status": 503},
+        ):
+            state = gate.evaluate_checkpoint_fault_observation(not_run_obs)
+            self.assertEqual(state, "NOT_RUN")
+            criteria = {k: "PASS" for k in gate.TARGET_GREEN_CRITERIA_ORDER}
+            criteria["checkpoint_invalid_fail_closed"] = state
+            res = gate.evaluate_target_green_contract(criteria, prerequisite_passed=True, scenario_result=scenario_ok)
+            self.assertEqual(res.verdict, "INCOMPLETE")
+            self.assertFalse(res.target_green_pass)
+
+        # Missing UNINITIALIZED (or any one of the 3) must NEVER return PASS
+        for partial_obs in (
+            {"executed": True, "missing_checkpoint_status": 503, "invalid_checkpoint_status": 503},
+            {"executed": True, "missing_checkpoint_status": 503, "uninitialized_checkpoint_status": 503},
+            {"executed": True, "uninitialized_checkpoint_status": 503, "invalid_checkpoint_status": 503},
+        ):
+            state = gate.evaluate_checkpoint_fault_observation(partial_obs)
+            self.assertNotEqual(state, "PASS")
+            self.assertEqual(state, "NOT_RUN")
+            criteria = {k: "PASS" for k in gate.TARGET_GREEN_CRITERIA_ORDER}
+            criteria["checkpoint_invalid_fail_closed"] = state
+            res = gate.evaluate_target_green_contract(criteria, prerequisite_passed=True, scenario_result=scenario_ok)
+            self.assertEqual(res.verdict, "INCOMPLETE")
+            self.assertEqual(res.exit_code, gate.EXIT_ERROR)
+            self.assertFalse(res.target_green_pass)
+            self.assertIn("checkpoint_invalid_fail_closed", res.incomplete_criteria)
+
+        # Extended ready-check requirement: missing READY+NULL/negative when required -> NOT_RUN, all 503 -> PASS
+        base_three_obs = {
+            "executed": True,
+            "missing_checkpoint_status": 503,
+            "uninitialized_checkpoint_status": 503,
+            "invalid_checkpoint_status": 503,
+        }
+        self.assertEqual(gate.evaluate_checkpoint_fault_observation(base_three_obs), "PASS")
+        self.assertEqual(
+            gate.evaluate_checkpoint_fault_observation(base_three_obs, require_extended_ready_checks=True),
+            "NOT_RUN",
+        )
+        full_five_obs = {
+            **base_three_obs,
+            "ready_null_cutoff_status": 503,
+            "ready_negative_cutoff_status": 503,
+        }
+        self.assertEqual(
+            gate.evaluate_checkpoint_fault_observation(full_five_obs, require_extended_ready_checks=True),
+            "PASS",
+        )
 
     def test_target_mode_redis_exists_connection_error_is_non_blocking_while_env_failure_errors(self) -> None:
         def failing_exists(*_args: Any, **_kwargs: Any) -> Any:

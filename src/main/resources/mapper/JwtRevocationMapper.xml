@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wjx871.population.security.JwtRevocationMapper">
+
+    <resultMap id="AuthoritativeLookupRowMap" type="com.wjx871.population.security.JwtRevocationMapper$AuthoritativeLookupRow">
+        <result property="jtiRevoked" column="jti_revoked"/>
+        <result property="checkpointStatus" column="checkpoint_status"/>
+        <result property="minValidIatEpochMs" column="min_valid_iat_epoch_ms"/>
+    </resultMap>
+
+    <resultMap id="CheckpointRowMap" type="com.wjx871.population.security.JwtRevocationMapper$CheckpointRow">
+        <id property="checkpointKey" column="checkpoint_key"/>
+        <result property="checkpointStatus" column="checkpoint_status"/>
+        <result property="minValidIatEpochMs" column="min_valid_iat_epoch_ms"/>
+        <result property="activatedAt" column="activated_at"/>
+        <result property="updatedBy" column="updated_by"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insertRevocation">
+        INSERT INTO jwt_revocation (
+            jti_sha256,
+            user_id,
+            expires_at_epoch_ms,
+            token_expires_at,
+            revoked_at,
+            revocation_reason,
+            instance_id,
+            trace_id,
+            created_at
+        ) VALUES (
+            #{jtiSha256},
+            #{userId},
+            #{expiresAtEpochMs},
+            #{tokenExpiresAt},
+            #{revokedAt},
+            #{revocationReason},
+            #{instanceId},
+            #{traceId},
+            #{createdAt}
+        )
+    </insert>
+
+    <!-- Update token_expires_at and expires_at_epoch_ms atomically only when extending expiration -->
+    <update id="extendRevocationExpiryIfLater">
+        UPDATE jwt_revocation
+        SET token_expires_at = #{tokenExpiresAt},
+            expires_at_epoch_ms = #{expiresAtEpochMs}
+        WHERE jti_sha256 = #{jtiSha256}
+          AND expires_at_epoch_ms &lt; #{expiresAtEpochMs}
+    </update>
+
+    <select id="findRevocationIdByJtiSha256ForUpdate" resultType="long">
+        SELECT revocation_id
+        FROM jwt_revocation
+        WHERE jti_sha256 = #{jtiSha256}
+        FOR UPDATE
+    </select>
+
+    <!-- Single-query authoritative read: no COALESCE on missing checkpoint row -->
+    <select id="selectAuthoritativeState" resultMap="AuthoritativeLookupRowMap">
+        SELECT
+            CASE WHEN EXISTS(
+                SELECT 1
+                FROM jwt_revocation r
+                WHERE r.jti_sha256 = #{jtiSha256}
+                  AND r.expires_at_epoch_ms &gt; #{nowEpochMs}
+            ) THEN 1 ELSE 0 END AS jti_revoked,
+            c.checkpoint_status,
+            c.min_valid_iat_epoch_ms
+        FROM jwt_revocation_checkpoint c
+        WHERE c.checkpoint_key = #{checkpointKey}
+    </select>
+
+    <select id="selectCheckpoint" resultMap="CheckpointRowMap">
+        SELECT
+            checkpoint_key,
+            checkpoint_status,
+            min_valid_iat_epoch_ms,
+            activated_at,
+            updated_by,
+            updated_at
+        FROM jwt_revocation_checkpoint
+        WHERE checkpoint_key = #{checkpointKey}
+    </select>
+
+    <!-- Monotonic advance only from UNINITIALIZED or valid READY; never resets INVALID or lowers cutoff -->
+    <update id="advanceCheckpointMonotonic">
+        UPDATE jwt_revocation_checkpoint
+        SET checkpoint_status = 'READY',
+            min_valid_iat_epoch_ms = CASE
+                WHEN min_valid_iat_epoch_ms IS NULL OR min_valid_iat_epoch_ms &lt; #{newMinValidIatEpochMs}
+                THEN #{newMinValidIatEpochMs}
+                ELSE min_valid_iat_epoch_ms
+            END,
+            activated_at = CASE
+                WHEN activated_at IS NULL THEN #{nowUtc}
+                ELSE activated_at
+            END,
+            updated_by = #{updatedBy},
+            updated_at = #{nowUtc}
+        WHERE checkpoint_key = #{checkpointKey}
+          AND (
+              checkpoint_status = 'UNINITIALIZED'
+              OR (
+                  checkpoint_status = 'READY'
+                  AND min_valid_iat_epoch_ms IS NOT NULL
+                  AND min_valid_iat_epoch_ms &gt;= 0
+              )
+          )
+    </update>
+
+    <select id="selectExpiredRevocationIds" resultType="long">
+        SELECT revocation_id
+        FROM jwt_revocation
+        WHERE expires_at_epoch_ms &lt;= #{cutoffEpochMs}
+        ORDER BY expires_at_epoch_ms ASC, revocation_id ASC
+        LIMIT #{batchSize}
+    </select>
+
+    <delete id="deleteByRevocationIds">
+        DELETE FROM jwt_revocation
+        WHERE revocation_id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

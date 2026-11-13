@@ -241,19 +241,43 @@ def evaluate_mysql_fault_observation(observation: dict[str, Any] | None) -> str:
     return "PASS"
 
 
-def evaluate_checkpoint_fault_observation(observation: dict[str, Any] | None) -> str:
-    """Evaluate checkpoint missing/UNINITIALIZED/INVALID fail-closed evidence: non-503 -> FAIL."""
+def evaluate_checkpoint_fault_observation(
+    observation: dict[str, Any] | None,
+    *,
+    require_extended_ready_checks: bool = False,
+) -> str:
+    """Evaluate checkpoint missing/UNINITIALIZED/INVALID fail-closed evidence.
+
+    All three required observations (missing_checkpoint_status,
+    uninitialized_checkpoint_status, invalid_checkpoint_status) must be present
+    and equal 503 for PASS. Any observed non-503 status returns FAIL. If any
+    required observation is missing (None), returns NOT_RUN (never PASS).
+    When ready_null_cutoff_status or ready_negative_cutoff_status is supplied,
+    any non-503 status returns FAIL; when require_extended_ready_checks=True,
+    missing extended observations also return NOT_RUN (never PASS).
+    """
     if not observation or not observation.get("executed"):
         return "NOT_RUN"
     missing_status = observation.get("missing_checkpoint_status")
-    invalid_status = observation.get("invalid_checkpoint_status")
-    if missing_status != 503 or invalid_status != 503:
-        return "FAIL"
     uninit_status = observation.get("uninitialized_checkpoint_status")
-    if uninit_status is not None and uninit_status != 503:
-        return "FAIL"
+    invalid_status = observation.get("invalid_checkpoint_status")
+    required_statuses = [missing_status, uninit_status, invalid_status]
+
+    extended_statuses = [
+        observation.get("ready_null_cutoff_status"),
+        observation.get("ready_negative_cutoff_status"),
+    ]
+    for status in (*required_statuses, *extended_statuses):
+        if status is not None and status != 503:
+            return "FAIL"
+
     if observation.get("passed") is False:
         return "FAIL"
+
+    if any(status is None for status in required_statuses):
+        return "NOT_RUN"
+    if require_extended_ready_checks and any(status is None for status in extended_statuses):
+        return "NOT_RUN"
     return "PASS"
 
 

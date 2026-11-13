@@ -222,3 +222,35 @@
   - `app-A1.log`: `82619ae5a55c242af440286daa425826e704acb6c7cb9b100c807474ec97c9fe` (`10076` bytes)
   - `app-B1.log`: `e5582b22a93b13565bf4e328fd338baf2d109babca5b1d5408589e2deb9cf223` (`9489` bytes)
 - **第 4 轮敏感数据扫描**：对全部 7 个 `round4-*` 产物执行正则扫描（`eyJ|Bearer\s+[A-Za-z0-9._-]+|requirepass|JWT_SECRET|password=`）：**命中数为 `0`**。
+
+---
+
+## Step 1（2026-11-13）Schema + Durable Store 交付物与校验索引
+
+- **报告文档**：[issue64-step1-durable-store.md](issue64-step1-durable-store.md)
+- **状态**：`STEP1_IMPLEMENTED 待验收`；`Issue #64 = OPEN`；`TARGET_GREEN = NOT_RUN`
+- **关键实测计数**：
+  - Python 门禁修复自测（`python -m unittest -v scripts/issue64/test_issue64_red_gate.py`）：`15/15 PASS`
+  - 隔离 MySQL `8.4.8`（`127.0.0.1:7541`，`issue64_test_store01` / `issue64_test_mismatch01`，非 root `issue64_tester@127.0.0.1`）：`V4_020` 首次/幂等/`READY` 水位不覆盖/结构 mismatch 中止与运维激活脚本均 `PASS`；`DurableRevocationMySql84IT` `4/4 PASS`；清理后 `LISTEN_7541=0`
+  - H2 核心 Store/Checkpoint/Cleanup 测试：`21/21 PASS`
+  - 既有 JWT 吊销基线回归：`77/77 PASS`
+  - 全量默认 H2 测试集：`Tests run: 1036, Failures: 0, Errors: 0, Skipped: 6`（6 项为既有 opt-in 跳过：`Issue34FirstIssueRedTest` 3、`Issue37ExpiryBatchIntegrationTest` 1、`Issue64DurabilityRedGateTest` 1、`Issue64TargetPrerequisiteCheckTest` 1）
+  - `Issue64DurabilityRedGateTest`（`-Dissue64.red=true`）：`EXECUTED_RED`（`1/1 FAILURE: expected:<401> but was:<200>`）
+  - `Issue64TargetPrerequisiteCheckTest`（`-Dissue64.target.prereq=true`）：`EXECUTED_FAIL_AS_EXPECTED`（`TARGET_GREEN = NOT_RUN`）
+- **交付文件 SHA-256 索引**：
+  - `doc/database/migrations/V4_020_jwt_revocation.sql`: `ec9066101a6985f7e7b137c7acbc1d86239e51614fb1b0590e6c6c79785b0270` (`10254` bytes)
+  - `doc/database/activate_jwt_revocation_checkpoint.sql`: `c2a385f01f6cebb4ee015ba72c29db4b4ed6dfb0a0f55563bd5263fc72e3bf83` (`4972` bytes)
+  - `src/test/resources/schema.sql`: `947f0fe6f7c5861fb36bcf41890a0e2e72415e6c49b93c25e74d771a701033c6` (`51085` bytes)
+  - `src/main/java/com/wjx871/population/security/JwtRevocationMapper.java`: `7a1246a12d830ba88b8f7aa565246c888e53dfbf6a854e741625edf9104c306b` (`4591` bytes)
+  - `src/main/resources/mapper/JwtRevocationMapper.xml`: `5bce0f2e48c19f018887b04c03935039b5b6add2d971c91702504eea7a1e2920` (`4828` bytes)
+  - `src/main/java/com/wjx871/population/security/AuthoritativeRevocationState.java`: `499bd197a9ab88d37cc91f70471cd1cfa8d8329de7352af001c76629adbc99ef` (`4050` bytes)
+  - `src/main/java/com/wjx871/population/security/CheckpointSnapshot.java`: `e09c758f88e56e8b9490e30245c507e5aa369d0fee985f28ab00e2f47de8d94b` (`593` bytes)
+  - `src/main/java/com/wjx871/population/security/DurableRevocationTxExecutor.java`: `0524b7d842d9ecf7bb2020c601cb908f0d5f8b57b53a686348b15adff149145d` (`7203` bytes)
+  - `src/main/java/com/wjx871/population/security/DurableRevocationStore.java`: `b286624a26ea26267e694a4421aad855483580defb7fdc267b317fcb13b5b23b` (`15985` bytes)
+  - `src/test/java/com/wjx871/population/security/DurableRevocationStoreTest.java`: `f3c4c69ecc14ed563407b6d454b814e863a0007794e74634630c1ad95a6d8528` (`17916` bytes)
+  - `src/test/java/com/wjx871/population/security/DurableRevocationCheckpointTest.java`: `2106bc4e5beb2b2ee13ac3238db6ffbfce6cacc6af1dc7a677b55ae985fc8b45` (`13756` bytes)
+  - `src/test/java/com/wjx871/population/security/DurableRevocationCleanupTest.java`: `d9813f8363c007ac76b38960a3c2b6a8939652e4c6686a7091f9b1c882c8c5fe` (`5962` bytes)
+  - `src/test/java/com/wjx871/population/security/DurableRevocationMySql84IT.java`: `108779535a5440efa3eedec11877fbe4a541bdb48ef83dee33798a42b587e0ad` (`17871` bytes)
+  - `scripts/issue64/issue64_red_gate.py`: `44b9cd4df8cda845837d8d194d5d8bd514ea83bfd3dba423688d19d447003522` (`60495` bytes)
+  - `scripts/issue64/test_issue64_red_gate.py`: `042ae0b375e2ad7fc7349bba99835afdf4e3219e6e0372d39e42661ba8adb21c` (`29468` bytes)
+  - `doc/development/issue64-step1-durable-store.md`: `8c9a331c82aafd04ac42fa339e58ee5698695132e561ad553bd111b93d09e19e` (`9766` bytes)
