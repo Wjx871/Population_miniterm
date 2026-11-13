@@ -9,9 +9,9 @@
 
 ---
 
-## 1. 两阶段可执行门禁定义与严格分类契约（审查阻断项 C、D、F、G、H）
+## 1. 三层验证语义与可执行门禁契约（审查阻断项 C、D、F、G、H 及最终收口）
 
-验证体系严格拆分为 **`BASELINE_RED`**、**`TARGET_PREREQUISITE_CHECK`** 与 **`TARGET_GREEN`**（均仅使用合成测试账号 `population`/`viewer` 与完全隔离测试环境）：
+验证体系严格区分为 **`BASELINE_RED`** 与未来目标验证的 **三个独立层级**（`TARGET_PREREQUISITE_CHECK`、`TARGET_SCENARIO_PASS`、`TARGET_GREEN_PASS`），**前两者无论单独如何通过均绝不能替代全局 `TARGET_GREEN_PASS`**（均仅使用合成测试账号 `population`/`viewer` 与完全隔离测试环境）：
 
 ### 阶段一：`BASELINE_RED`（基线缺陷复现门禁 — 当前可执行）
 
@@ -22,28 +22,37 @@
     `.\mvnw.cmd test "-Dissue64.red=true" "-Dtest=Issue64DurabilityRedGateTest"`
 - **双 JVM + 真实隔离 Redis 8.10.3 Python 门禁**：[issue64_red_gate.py](../../scripts/issue64/issue64_red_gate.py)（配套自检 [test_issue64_red_gate.py](../../scripts/issue64/test_issue64_red_gate.py)）
   - 触发命令：
-    `python scripts/issue64/issue64_red_gate.py --stage baseline-red --evidence-out doc/development/evidence/issue64-durability-design/round3-baseline-red-summary.json`
+    `python scripts/issue64/issue64_red_gate.py --stage baseline-red --evidence-out doc/development/evidence/issue64-durability-design/round4-baseline-red-summary.json`
 
-### 快速前置：`TARGET_PREREQUISITE_CHECK`（禁止当成生产安全 GREEN，阻断项 F）
+### 目标验证层级 1：`TARGET_PREREQUISITE_CHECK`（前置预检 — 禁止替代 `TARGET_GREEN_PASS`）
 
 - **独立 JUnit 预检入口**：[Issue64TargetPrerequisiteCheckTest.java](../../src/test/java/com/wjx871/population/security/Issue64TargetPrerequisiteCheckTest.java)（`@EnabledIfSystemProperty(named = "issue64.target.prereq", matches = "true")`）
-- **定位限制**：仅核查 `DURABLE_DB_REQUIRED` 枚举、非 `jdbc:h2:mem:` 隔离测试库命名及参数完备性；**即使 `TARGET_PREREQUISITE_CHECK` 通过（PASS），也绝不代表 `TARGET_GREEN` 已通过或生产实现已完成；禁止仅凭 `src/main` 出现 `DURABLE_DB_REQUIRED` 字符串即认定实现完成**。
+- **定位限制**：仅核查 `DURABLE_DB_REQUIRED` 枚举、显式 opt-in、隔离测试库命名及参数完备性；**即使 `TARGET_PREREQUISITE_CHECK` 通过（PASS），也绝不代表 `DURABLE_DB_REQUIRED` 运行态正确、`TARGET_GREEN` 已通过或生产实现已完成；禁止仅凭 `src/main` 出现 `DURABLE_DB_REQUIRED` 字符串即认定实现完成**。
 
-### 阶段二：`TARGET_GREEN`（方案 A 生产目标验收门禁 — 本轮状态：`NOT_RUN`，阻断项 F、G、H）
+### 目标验证层级 2：`TARGET_SCENARIO_PASS`（局部 HTTP / 恢复场景通过 — 禁止替代全局 `TARGET_GREEN_PASS`）
 
-- **7 项必须全部动态验证的强制条件**（未全部完成前一律保持 **`TARGET_GREEN = NOT_RUN`**）：
-  1. 目标模式 `DURABLE_DB_REQUIRED` 已在运行态实际启用；
-  2. 双 JVM A/B 连接**同一独立权威测试数据库**；
-  3. 经数据库查询实证 MySQL 主库 `jwt_revocation` 已提交对应 `jti_sha256` 撤销记录（**不可仅凭 HTTP 401 或 Redis 存在标记宣称持久化通过**；无法核查 DB 权威状态一律判定 `ERROR`）；
-  4. 空 Redis 恢复后未过期旧 JWT 在 A/B 均返回 `401`；
-  5. 有效未撤销新 JWT 返回 `200`；
-  6. MySQL 不可用时认证与注销均 fail-closed 返回 `503`；
-  7. 检查点行缺失或 `UNINITIALIZED` / `INVALID` 时 fail-closed 返回 `503`。
-- **Redis 辅助缓存非阻断规则（阻断项 H）**：`TARGET_GREEN` **不要求** `Redis EXISTS == 1`；Redis 仅作观察指标（写失败/关闭/空库/淘汰时注销与跨实例认证必须通过 MySQL 主库继续保证 `200`/`401`）。
-- **测试数据库安全隔离防误操作护栏（阻断项 G）**：仅允许显式 opt-in `--allow-target-green`；库名强制匹配 `^issue64_test_[a-z0-9_]{4,40}$` 并明确禁止 `population_miniterm`；默认限制 loopback 或 `--approved-test-db-hosts` 显式批准主机；密码仅从环境变量读取且严禁入日志/命令回显；禁止复用生产 `JWT_SECRET`；启动 JVM 前必须完成真实测试库身份验证（失败则 `ERROR` 不启动 JVM）；且明确声明**命名/URL 校验只是前置护栏而非完整物理隔离证明，真实执行仍须独立进程/实例/容器边界**。
+- 指双 JVM 在指定场景（例如空 Redis 恢复后旧 JWT 在 A/B 均返回 `401` 且有效新 JWT 返回 `200`）满足 HTTP 断言。
+- **硬性约束**：**严禁将 `TARGET_SCENARIO_PASS` 直接输出为全局 `TARGET_GREEN_PASS`（退出码 `0`）**；若后续第 6/7 项动态条件尚未执行，全局判决只能是 **`INCOMPLETE`（退出码 `1`）**。
+
+### 目标验证层级 3：`TARGET_GREEN_PASS`（全局验收门禁 — 本轮状态：`NOT_RUN`）
+
+- **7 项独立动态验收证据**（`evaluate_target_green_contract` 逐项记为 `PASS` / `FAIL` / `NOT_RUN`，仅当全部 7 项均为 `PASS` 时才允许输出 `TARGET_GREEN PASS` 退出码 `0`）：
+  1. `durable_db_mode_active`：目标模式 `DURABLE_DB_REQUIRED` 已在 A/B 运行态实际启用；
+  2. `shared_authoritative_db`：双 JVM A/B 共用**同一独立权威持久测试数据库**（严禁 `jdbc:h2:mem:`）；
+  3. `mysql_revocation_committed`：经数据库查询实证 MySQL 主库 `jwt_revocation` 已提交对应 `jti_sha256` 撤销记录（**不可仅凭 HTTP 401 或 Redis 存在标记宣称持久化通过**）；
+  4. `post_empty_redis_old_jwt_401`：空 Redis 恢复后未过期旧 JWT 在 A/B 均返回 `401`；
+  5. `post_empty_redis_fresh_jwt_200`：有效未撤销新 JWT 返回 `200`；
+  6. `mysql_fault_fail_closed`：MySQL 不可用时认证与注销均 fail-closed 返回 `503`（未观察到 `503` 判 `FAIL`；尚未接入真实故障注入钩子时保留 `NOT_RUN`）；
+  7. `checkpoint_invalid_fail_closed`：检查点行缺失或 `UNINITIALIZED` / `INVALID` 时 fail-closed 返回 `503`（未观察到 `503` 判 `FAIL`；尚未接入钩子时保留 `NOT_RUN`）。
+- **部分完成保护契约**：任一项未执行（`NOT_RUN`）时全局判定为 **`INCOMPLETE`（退出码 `1`）**并在摘要 `incomplete_criteria` 中明确列出未完成项；任一项 `FAIL` 时判定 **`ERROR`（退出码 `1`）**。
+- **Redis 非阻断与环境错误规则（最终收口，阻断项 H）**：
+  - `BASELINE_RED` 仍严格要求 `Redis EXISTS == 1`；
+  - `TARGET_GREEN` 下 Redis 标记不存在是合法状态，且 `Redis EXISTS` 连接失败或超时被非阻断捕获，**不得直接把 MySQL 持久吊销判失败**，MySQL 正常时继续基于 MySQL 权威状态与 HTTP 行为判断安全性；
+  - 但当测试环境自身的 Redis 进程/容器异常导致无法完成“Redis 空库恢复后旧 JWT 仍为 401”等特定恢复验证（如 `empty_dir_verified=False` 或重连失败）时，必须明确输出 **`ERROR`（退出码 `1`）**，严禁伪造 `PASS`。
+- **测试数据库安全隔离防误操作护栏（阻断项 G）**：仅允许显式 opt-in `--allow-target-green`；库名强制匹配 `^issue64_test_[a-z0-9_]{4,40}$` 并禁止 `population_miniterm`；默认限制 loopback 或 `--approved-test-db-hosts` 显式批准主机；密码仅从环境变量读取；启动 JVM 前先完成真实测试库身份验证；明确命名/主机检查只是前置护栏而非物理隔离证明。
 - **独立目标验收入口**：
   - Python：`python scripts/issue64/issue64_red_gate.py --stage target-green --allow-target-green --shared-jdbc-url "jdbc:mysql://127.0.0.1:3306/issue64_test_xxx" --shared-db-user issue64_tester ...`
-- **未实现保护契约**：在 `src/main` 尚未完成方案 A、未传 `--allow-target-green`、隔离校验失败或未验证测试库身份前，`--stage target-green` 与 `Issue64TargetPrerequisiteCheckTest` 必须返回 **`ERROR`（退出码 `1`）** 并保持 **`TARGET_GREEN = NOT_RUN`**。
+- **未实现保护契约**：在 `src/main` 尚未完成方案 A、未传 `--allow-target-green`、隔离校验失败、未验证测试库身份或第 6/7 项尚未执行前，严禁输出 `TARGET_GREEN PASS`（保持 **`TARGET_GREEN = NOT_RUN`**）。
 
 ### 严格三态分类契约（`evaluate_post_empty_recovery`，阻断项 D）
 
@@ -55,7 +64,7 @@
 
 ---
 
-## 2. 28 项生产验收测试矩阵（含审查最终时区、隔离与目标行为项）
+## 2. 29 项生产验收测试矩阵（含审查最终时区、隔离与全局 PASS 收口项）
 
 | # | 场景名称 | 测试环境 | 操作步骤 | 预期 HTTP 行为 | 数据库 / Redis 断言 | 覆盖安全不变量 | 本轮执行状态 | 证据路径 |
 |---:|---|---|---|---|---|---|---|---|
@@ -87,3 +96,4 @@
 | 26 | **Python 分类器与阶段自检（阻断项 D）** | 本机隔离单元测试 `unittest` | 校验 `(oldA=200, oldB=200, fresh=500)`、`(oldA=200, oldB=401, fresh=200)`、`(oldA=401, oldB=401, fresh=200)`、`(oldA=503, oldB=401, fresh=200)`、`(oldA=200, oldB=500, fresh=200)`、`empty_dir_verified=False` 及 `--stage target-green` 未满足前置条件。 | 第 1/4/5/6 项与未就绪 `target-green` 一律返回 `ERROR`（退出码 `1`）；第 2 项返回 `RED`（`2`）；第 3 项返回 `PASS`（`0`）。 | 证明不把异常 `500`/`503` 或未核验目录包装为 `RED` 或 `PASS`。 | INV-04, INV-07 | **`EXECUTED_PASS`**（见第 3 轮证据文档） | [test_issue64_red_gate.py](../../scripts/issue64/test_issue64_red_gate.py) / [round3-python-selftest.log](evidence/issue64-durability-design/round3-python-selftest.log) |
 | 27 | **MySQL 8.4 跨时区 UTC 水位计算验收（阻断项 E）** | 隔离测试 MySQL 8.4（依次设置 `SET SESSION time_zone = '+00:00'`、`'+08:00'`、`'-05:00'`） | 分别在三种会话时区下执行激活表达式 `(UNIX_TIMESTAMP() + 1) * 1000` 并对比当前真实 `UNIX_TIMESTAMP() * 1000`（及对照验证 `UNIX_TIMESTAMP(UTC_TIMESTAMP(3))` 确实发生 `-8h`/`+5h` 错误偏移）；随后等待 UTC 达到 `cutoff` 再签发新 JWT。 | 三种会话时区下 `(UNIX_TIMESTAMP() + 1) * 1000` 均落在同一真实 UTC 秒上界（误差仅跨秒 `<= 1s`），**零按小时偏移**；旧令牌严格 `401`、等跨秒后新令牌严格 `200`。 | 实证 `cutoff` 与会话 `time_zone` 无关；`UNINITIALIZED` 绝不自动变为 `READY`。 | INV-02, INV-05 | **`NOT_RUN`**（本轮未连接/操作真实 MySQL 8.4，严禁宣称已动态验证） | — |
 | 28 | **目标数据库隔离护栏与非阻断 Redis 自检（阻断项 F、G、H）** | Python 单元测试 + `Issue64TargetPrerequisiteCheckTest` | 验证 `target-green` 防误操作护栏（合法 `issue64_test_*` 参数、`population_miniterm`、缺 `--allow-target-green`、`jdbc:h2:mem:`、未批准远端主机、未验证 DB 身份）、缺失权威 DB 撤销记录判 `ERROR`、Redis 标记缺失仅观察不阻断。 | 不合规参数/缺失 opt-in/身份未确认均立即 **`ERROR`（退出码 `1`）且不启动任何测试 JVM**；合规护栏仅代表预检通过，不冒充 `TARGET_GREEN PASS`。 | 环境变量传递密码，命令行/日志/JSON 均无密码与生产凭据。 | INV-04, INV-07 | **`EXECUTED_PASS`**（Python 隔离自检通过；真实 MySQL 动态阶段 `NOT_RUN`） | [test_issue64_red_gate.py](../../scripts/issue64/test_issue64_red_gate.py) / [round3-python-selftest.log](evidence/issue64-durability-design/round3-python-selftest.log) |
+| 29 | **`TARGET_GREEN_PASS` 7 项收口与 Redis 异常边界自检** | Python 单元测试（`evaluate_target_green_contract`、`observe_target_redis_marker` 等） | 校验：(1) 仅满足前 5 项、第 6/7 项 `NOT_RUN`；(2) 全部 7 项 `PASS`；(3) MySQL 故障未观察到 `503`；(4) 检查点异常未观察到 `503`；(5) 目标模式 `Redis EXISTS` 抛连接异常 vs 恢复环境自身异常；(6) 原 `BASELINE_RED` 仍输出 `RED`。 | 场景 (1) 输出 **`INCOMPLETE`（退出码 `1`）**且禁发 `PASS`；(2) 输出 **`PASS`（退出码 `0`）**；(3)(4) 输出 **`ERROR`（退出码 `1`）**；(5) `EXISTS` 抛异常非阻断继续查 DB，但恢复环境损坏报 `ERROR`；(6) 输出 **`RED`（退出码 `2`）**。 | 三层字段 `TARGET_PREREQUISITE_CHECK`、`TARGET_SCENARIO_PASS`、`TARGET_GREEN_PASS` 清晰分离；`incomplete_criteria` 明示未完成项。 | INV-03, INV-04, INV-07 | **`EXECUTED_PASS`**（第 4 轮 Python 隔离合同自检通过；真实 MySQL 动态阶段 `NOT_RUN`） | [test_issue64_red_gate.py](../../scripts/issue64/test_issue64_red_gate.py) / [round4-python-selftest.log](evidence/issue64-durability-design/round4-python-selftest.log) |

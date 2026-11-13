@@ -4,17 +4,25 @@ Supports two explicitly separated verification stages:
   baseline-red : Runs against legacy SHARED_REDIS_REQUIRED mode to reproduce the
                  unexpired-JWT resurrection after empty Redis recovery (RED = exit 2).
   target-green : Runs against future DURABLE_DB_REQUIRED mode backed by a single shared
-                 authoritative persistent database (e.g. standalone MySQL 8.4 test DB).
-                 Fails with ERROR (exit 1) if DURABLE_DB_REQUIRED is not implemented yet
-                 or if shared DB coordinates are missing / per-JVM in-memory H2 is used.
+                 authoritative persistent database (isolated MySQL 8.4 test DB).
 
-Classifies post-empty-recovery outcomes strictly into:
-  PASS  (exit 0): all prechecks/env ok, fresh JWT returns 200, and revoked old JWT
-                  returns 401 on both instances A and B.
-  RED   (exit 2): all prechecks/env ok, fresh JWT returns 200, old JWT statuses on A/B
-                  are strictly valid {200, 401}, and at least one instance returns 200.
-  ERROR (exit 1): environment failure, missing binary/classpath/DB, precheck failure,
-                  unverified empty-dir switch, fresh JWT != 200, or 500/503 on old JWT.
+Distinguishes three strictly separate verification levels (neither of the first two
+can ever substitute for the global TARGET_GREEN_PASS):
+  1. TARGET_PREREQUISITE_CHECK : Static/preflight DB & mode configuration checks.
+  2. TARGET_SCENARIO_PASS      : HTTP scenario pass (e.g. post-empty-Redis 401/200).
+  3. TARGET_GREEN_PASS         : Global PASS (exit 0) ONLY when ALL 7 independent
+                                 criteria pass dynamically without any FAIL or NOT_RUN.
+
+Classifies outcomes strictly into:
+  PASS       (exit 0): Under baseline-red, post-empty-recovery rejects old JWT (401/401)
+                       with fresh JWT 200; under target-green, ALL 7 independent
+                       criteria are dynamically observed as PASS.
+  RED        (exit 2): Under baseline-red, prechecks/env ok, fresh JWT returns 200,
+                       old JWT statuses on A/B are in {200, 401}, at least one is 200.
+  INCOMPLETE (exit 1): Under target-green, zero criteria failed but >=1 required
+                       criterion remains NOT_RUN (e.g. MySQL fault or checkpoint checks).
+  ERROR      (exit 1): Environment/harness failure, missing opt-in/prereq, DB isolation
+                       or identity failure, unexpected HTTP 500/503, or failed criterion.
 
 No full JWT, signing secret, DB credential, or Redis password is ever logged.
 """
@@ -179,13 +187,210 @@ def redis_cmd(port: int, password: str, *parts: str) -> Any:
 
 @dataclass
 class GateResult:
-    verdict: str  # PASS | RED | ERROR
+    verdict: str  # PASS | RED | INCOMPLETE | ERROR
     exit_code: int
     reason: str
     a_status: int | None
     b_status: int | None
     fresh_b_status: int | None
     vulnerability_reproduced: bool
+
+
+TARGET_GREEN_CRITERIA_ORDER = (
+    "durable_db_mode_active",
+    "shared_authoritative_db",
+    "mysql_revocation_committed",
+    "post_empty_redis_old_jwt_401",
+    "post_empty_redis_fresh_jwt_200",
+    "mysql_fault_fail_closed",
+    "checkpoint_invalid_fail_closed",
+)
+
+LEVEL_PREREQUISITE_CHECK = "TARGET_PREREQUISITE_CHECK"
+LEVEL_SCENARIO_PASS = "TARGET_SCENARIO_PASS"
+LEVEL_GREEN_PASS = "TARGET_GREEN_PASS"
+
+VALID_CRITERION_STATES = frozenset({"PASS", "FAIL", "NOT_RUN"})
+
+
+@dataclass
+class TargetGreenContractResult:
+    verdict: str  # PASS | INCOMPLETE | ERROR
+    exit_code: int
+    reason: str
+    levels: dict[str, str]
+    criteria: dict[str, str]
+    incomplete_criteria: list[str]
+    failed_criteria: list[str]
+    target_green_pass: bool
+
+
+def evaluate_mysql_fault_observation(observation: dict[str, Any] | None) -> str:
+    """Evaluate MySQL fault injection evidence strictly: missing/unexecuted -> NOT_RUN; non-503 -> FAIL."""
+    if not observation or not observation.get("executed"):
+        return "NOT_RUN"
+    auth_status = observation.get("auth_status")
+    logout_status = observation.get("logout_status")
+    login_status = observation.get("login_status")
+    if auth_status != 503 or logout_status != 503:
+        return "FAIL"
+    if login_status is not None and login_status != 503:
+        return "FAIL"
+    if observation.get("passed") is False:
+        return "FAIL"
+    return "PASS"
+
+
+def evaluate_checkpoint_fault_observation(observation: dict[str, Any] | None) -> str:
+    """Evaluate checkpoint missing/UNINITIALIZED/INVALID fail-closed evidence: non-503 -> FAIL."""
+    if not observation or not observation.get("executed"):
+        return "NOT_RUN"
+    missing_status = observation.get("missing_checkpoint_status")
+    invalid_status = observation.get("invalid_checkpoint_status")
+    if missing_status != 503 or invalid_status != 503:
+        return "FAIL"
+    uninit_status = observation.get("uninitialized_checkpoint_status")
+    if uninit_status is not None and uninit_status != 503:
+        return "FAIL"
+    if observation.get("passed") is False:
+        return "FAIL"
+    return "PASS"
+
+
+def evaluate_target_green_contract(
+    criteria: dict[str, str],
+    *,
+    prerequisite_passed: bool = True,
+    scenario_result: GateResult | None = None,
+) -> TargetGreenContractResult:
+    """Strict 7-criterion contract evaluator separating PREREQUISITE, SCENARIO_PASS, and TARGET_GREEN_PASS.
+
+    Global PASS (exit 0) requires ALL 7 independent criteria == 'PASS' plus
+    prerequisite_passed == True and (if provided) scenario_result.verdict == 'PASS'.
+    Any NOT_RUN criterion yields verdict='INCOMPLETE' (exit 1); any FAIL yields 'ERROR' (exit 1).
+    """
+    normalized: dict[str, str] = {}
+    for key in TARGET_GREEN_CRITERIA_ORDER:
+        raw = str(criteria.get(key, "NOT_RUN")).strip().upper()
+        normalized[key] = raw if raw in VALID_CRITERION_STATES else "NOT_RUN"
+
+    failed = [key for key in TARGET_GREEN_CRITERIA_ORDER if normalized[key] == "FAIL"]
+    incomplete = [key for key in TARGET_GREEN_CRITERIA_ORDER if normalized[key] == "NOT_RUN"]
+
+    scenario_core_keys = (
+        "durable_db_mode_active",
+        "shared_authoritative_db",
+        "mysql_revocation_committed",
+        "post_empty_redis_old_jwt_401",
+        "post_empty_redis_fresh_jwt_200",
+    )
+    if scenario_result is not None and scenario_result.verdict != "PASS":
+        scenario_level = "FAIL"
+    elif any(normalized[k] == "FAIL" for k in scenario_core_keys):
+        scenario_level = "FAIL"
+    elif all(normalized[k] == "PASS" for k in scenario_core_keys):
+        scenario_level = "PASS"
+    else:
+        scenario_level = "NOT_RUN"
+
+    prereq_level = "PASS" if prerequisite_passed else "FAIL"
+
+    if not prerequisite_passed:
+        return TargetGreenContractResult(
+            verdict="ERROR",
+            exit_code=EXIT_ERROR,
+            reason="target_green_prerequisite_failed",
+            levels={
+                LEVEL_PREREQUISITE_CHECK: prereq_level,
+                LEVEL_SCENARIO_PASS: scenario_level,
+                LEVEL_GREEN_PASS: "FAIL",
+            },
+            criteria=normalized,
+            incomplete_criteria=incomplete,
+            failed_criteria=failed,
+            target_green_pass=False,
+        )
+
+    if failed or (scenario_result is not None and scenario_result.verdict != "PASS"):
+        reason_detail = ",".join(failed) if failed else (scenario_result.reason if scenario_result else "scenario_failed")
+        return TargetGreenContractResult(
+            verdict="ERROR",
+            exit_code=EXIT_ERROR,
+            reason=f"target_green_criteria_failed:{reason_detail}",
+            levels={
+                LEVEL_PREREQUISITE_CHECK: prereq_level,
+                LEVEL_SCENARIO_PASS: scenario_level,
+                LEVEL_GREEN_PASS: "FAIL",
+            },
+            criteria=normalized,
+            incomplete_criteria=incomplete,
+            failed_criteria=failed,
+            target_green_pass=False,
+        )
+
+    if incomplete:
+        return TargetGreenContractResult(
+            verdict="INCOMPLETE",
+            exit_code=EXIT_ERROR,
+            reason=f"target_green_incomplete:missing[{','.join(incomplete)}]",
+            levels={
+                LEVEL_PREREQUISITE_CHECK: prereq_level,
+                LEVEL_SCENARIO_PASS: scenario_level,
+                LEVEL_GREEN_PASS: "INCOMPLETE",
+            },
+            criteria=normalized,
+            incomplete_criteria=incomplete,
+            failed_criteria=failed,
+            target_green_pass=False,
+        )
+
+    return TargetGreenContractResult(
+        verdict="PASS",
+        exit_code=EXIT_PASS,
+        reason="all_seven_target_green_criteria_passed",
+        levels={
+            LEVEL_PREREQUISITE_CHECK: prereq_level,
+            LEVEL_SCENARIO_PASS: scenario_level,
+            LEVEL_GREEN_PASS: "PASS",
+        },
+        criteria=normalized,
+        incomplete_criteria=[],
+        failed_criteria=[],
+        target_green_pass=True,
+    )
+
+
+def observe_target_redis_marker(
+    redis_cmd_fn: Callable[..., Any],
+    rport: int,
+    admin_password: str,
+    key_raw: str,
+    key_sha: str,
+) -> dict[str, Any]:
+    """Non-blocking cache marker observation under TARGET_GREEN.
+
+    Redis EXISTS absence, connection error, or timeout must NEVER directly fail
+    durable revocation or MySQL verification.
+    """
+    try:
+        raw_exists = redis_cmd_fn(rport, admin_password, "EXISTS", key_raw)
+        sha_exists = redis_cmd_fn(rport, admin_password, "EXISTS", key_sha)
+    except (GateError, OSError, TimeoutError) as exc:
+        return {
+            "key": key_raw,
+            "redis_marker_exists": None,
+            "observed_state": f"UNAVAILABLE:{type(exc).__name__}",
+            "observation_error": str(exc),
+            "required_for_green": False,
+        }
+    exists_flag = 1 if (raw_exists == 1 or sha_exists == 1) else 0
+    return {
+        "key": key_sha if sha_exists == 1 else key_raw,
+        "redis_marker_exists": exists_flag,
+        "observed_state": "PRESENT" if exists_flag == 1 else "ABSENT",
+        "observation_error": None,
+        "required_for_green": False,
+    }
 
 
 def parse_isolated_mysql_jdbc_url(
@@ -511,6 +716,8 @@ def run_live_gate(
     approved_remote_hosts: set[str] | frozenset[str] | None = None,
     db_identity_verifier: Callable[[str, str, str | None, str], dict[str, Any]] | None = None,
     db_revocation_verifier: Callable[[str, str, str | None, str, str], bool] | None = None,
+    mysql_fault_verifier: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
+    checkpoint_fault_verifier: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
 ) -> int:
     revocation_mode = validate_stage_requirements(
         stage,
@@ -677,6 +884,8 @@ def run_live_gate(
     db_identity_verified = False
     db_revocation_verified = False
     redis_marker_observed: int | str = "NOT_CHECKED"
+    target_criteria: dict[str, str] = {key: "NOT_RUN" for key in TARGET_GREEN_CRITERIA_ORDER}
+    target_contract: TargetGreenContractResult | None = None
 
     try:
         rp, initial_dir, initial_conf, rlog_init = start_redis("initial")
@@ -692,14 +901,17 @@ def run_live_gate(
                 shared_jdbc_url, approved_remote_hosts=approved_remote_hosts
             )
             db_identity_verified = True
+            target_criteria["shared_authoritative_db"] = "PASS"
             for inst, port in (("A1", aport), ("B1", bport)):
                 h_code, h_body = http_json(port, "/api/health")
                 must_status(f"{inst}_target_health", h_code, 200)
                 h_data = json.loads(h_body).get("data", {})
                 if h_data.get("revocationMode") != "DURABLE_DB_REQUIRED":
+                    target_criteria["durable_db_mode_active"] = "FAIL"
                     raise GateError(
                         f"target_mode_not_active_at_runtime: {inst} reported revocationMode={h_data.get('revocationMode')}"
                     )
+            target_criteria["durable_db_mode_active"] = "PASS"
 
         # 1. Login on A with synthetic account `population` and verify valid before logout on A & B.
         login_status, login_body = http_json(aport, "/api/auth/login", body={"username": "population", "password": "123456"})
@@ -725,12 +937,20 @@ def run_live_gate(
             if marker_exists != 1:
                 raise GateError(f"expected redis marker EXISTS=1, got {marker_exists}")
         else:
-            # Blocker H: under TARGET_GREEN, Redis marker is observational only; authoritative DB row is mandatory.
-            raw_exists = redis_cmd(rport, admin_password, "EXISTS", key_raw)
-            sha_exists = redis_cmd(rport, admin_password, "EXISTS", key_sha)
-            key = key_sha if sha_exists == 1 else key_raw
-            redis_marker_observed = 1 if (raw_exists == 1 or sha_exists == 1) else 0
-            emit("target_cache_observation", redis_marker_exists=redis_marker_observed, required_for_green=False)
+            # Non-blocking cache observation under TARGET_GREEN: missing OR EXISTS failure never fails DB verification.
+            marker_obs = observe_target_redis_marker(redis_cmd, rport, admin_password, key_raw, key_sha)
+            key = marker_obs["key"]
+            redis_marker_observed = (
+                marker_obs["redis_marker_exists"]
+                if marker_obs["redis_marker_exists"] is not None
+                else marker_obs["observed_state"]
+            )
+            emit(
+                "target_cache_observation",
+                redis_marker_exists=marker_obs["redis_marker_exists"],
+                observed_state=marker_obs["observed_state"],
+                required_for_green=False,
+            )
 
             rev_checker = db_revocation_verifier or default_db_revocation_verifier
             assert shared_jdbc_url is not None and shared_db_user is not None
@@ -738,7 +958,9 @@ def run_live_gate(
                 shared_jdbc_url.strip(), shared_db_user.strip(), shared_db_password, expected_db_name, old_jti_sha256
             )
             if not db_revocation_verified:
+                target_criteria["mysql_revocation_committed"] = "FAIL"
                 raise GateError("target_db_revocation_missing: logout returned 200 but jwt_revocation row is absent")
+            target_criteria["mysql_revocation_committed"] = "PASS"
             emit("target_db_revocation_verified", jti_sha256_prefix=old_jti_digest, verified=True)
         must_status("A_after_logout", http_json(aport, "/api/auth/me", old_token)[0], 401)
         must_status("B_after_logout", http_json(bport, "/api/auth/me", old_token)[0], 401)
@@ -863,9 +1085,11 @@ def run_live_gate(
                 shared_jdbc_url.strip(), shared_db_user.strip(), shared_db_password, expected_db_name, old_jti_sha256
             )
             if not db_revocation_verified:
+                target_criteria["mysql_revocation_committed"] = "FAIL"
                 raise GateError("target_db_revocation_missing: cannot verify authoritative DB record post empty recovery")
+            target_criteria["mysql_revocation_committed"] = "PASS"
 
-        result = verify_post_empty_recovery_over_http(
+        scenario_result = verify_post_empty_recovery_over_http(
             aport=aport,
             bport=bport,
             old_token=old_token,
@@ -874,19 +1098,103 @@ def run_live_gate(
             empty_dir_verified=empty_dir_verified,
             wait_timeout_s=20.0,
         )
-        emit(
-            "FINAL_VERDICT",
-            verdict=result.verdict,
-            exit_code=result.exit_code,
-            reason=result.reason,
-            a_old_status=result.a_status,
-            b_old_status=result.b_status,
-            fresh_b_status=result.fresh_b_status,
-            vulnerability_reproduced=result.vulnerability_reproduced,
-        )
+
+        if stage == STAGE_BASELINE_RED:
+            result = scenario_result
+            emit(
+                "FINAL_VERDICT",
+                verdict=result.verdict,
+                exit_code=result.exit_code,
+                reason=result.reason,
+                a_old_status=result.a_status,
+                b_old_status=result.b_status,
+                fresh_b_status=result.fresh_b_status,
+                vulnerability_reproduced=result.vulnerability_reproduced,
+                verification_levels={
+                    LEVEL_PREREQUISITE_CHECK: "NOT_RUN",
+                    LEVEL_SCENARIO_PASS: "NOT_RUN",
+                    LEVEL_GREEN_PASS: "NOT_RUN",
+                },
+            )
+        else:
+            if scenario_result.verdict == "PASS":
+                target_criteria["post_empty_redis_old_jwt_401"] = "PASS"
+                target_criteria["post_empty_redis_fresh_jwt_200"] = "PASS"
+            else:
+                target_criteria["post_empty_redis_old_jwt_401"] = "FAIL"
+                target_criteria["post_empty_redis_fresh_jwt_200"] = (
+                    "PASS" if scenario_result.fresh_b_status == 200 else "FAIL"
+                )
+
+            if mysql_fault_verifier is not None:
+                mysql_fault_obs = mysql_fault_verifier(
+                    {"aport": aport, "bport": bport, "old_token": old_token, "fresh_token": fresh_token, "expected_db_name": expected_db_name}
+                )
+                target_criteria["mysql_fault_fail_closed"] = evaluate_mysql_fault_observation(mysql_fault_obs)
+
+            if checkpoint_fault_verifier is not None:
+                cp_fault_obs = checkpoint_fault_verifier(
+                    {"aport": aport, "bport": bport, "old_token": old_token, "fresh_token": fresh_token, "expected_db_name": expected_db_name}
+                )
+                target_criteria["checkpoint_invalid_fail_closed"] = evaluate_checkpoint_fault_observation(cp_fault_obs)
+
+            target_contract = evaluate_target_green_contract(
+                target_criteria,
+                prerequisite_passed=True,
+                scenario_result=scenario_result,
+            )
+            result = GateResult(
+                verdict=target_contract.verdict,
+                exit_code=target_contract.exit_code,
+                reason=target_contract.reason,
+                a_status=scenario_result.a_status,
+                b_status=scenario_result.b_status,
+                fresh_b_status=scenario_result.fresh_b_status,
+                vulnerability_reproduced=(scenario_result.verdict == "RED"),
+            )
+            emit(
+                "FINAL_VERDICT",
+                verdict=result.verdict,
+                exit_code=result.exit_code,
+                reason=result.reason,
+                target_green_pass=target_contract.target_green_pass,
+                verification_levels=target_contract.levels,
+                criteria=target_contract.criteria,
+                incomplete_criteria=target_contract.incomplete_criteria,
+                failed_criteria=target_contract.failed_criteria,
+                a_old_status=result.a_status,
+                b_old_status=result.b_status,
+                fresh_b_status=result.fresh_b_status,
+                vulnerability_reproduced=result.vulnerability_reproduced,
+            )
     except Exception as exc:
         result = GateResult("ERROR", EXIT_ERROR, f"{type(exc).__name__}: {exc}", None, None, None, False)
-        emit("FINAL_VERDICT", verdict=result.verdict, exit_code=result.exit_code, reason=result.reason)
+        if stage == STAGE_TARGET_GREEN:
+            target_contract = TargetGreenContractResult(
+                verdict="ERROR",
+                exit_code=EXIT_ERROR,
+                reason=result.reason,
+                levels={
+                    LEVEL_PREREQUISITE_CHECK: "PASS",
+                    LEVEL_SCENARIO_PASS: "FAIL",
+                    LEVEL_GREEN_PASS: "FAIL",
+                },
+                criteria=target_criteria,
+                incomplete_criteria=[k for k in TARGET_GREEN_CRITERIA_ORDER if target_criteria.get(k) == "NOT_RUN"],
+                failed_criteria=[k for k in TARGET_GREEN_CRITERIA_ORDER if target_criteria.get(k) == "FAIL"],
+                target_green_pass=False,
+            )
+            emit(
+                "FINAL_VERDICT",
+                verdict=result.verdict,
+                exit_code=result.exit_code,
+                reason=result.reason,
+                target_green_pass=False,
+                verification_levels=target_contract.levels,
+                incomplete_criteria=target_contract.incomplete_criteria,
+            )
+        else:
+            emit("FINAL_VERDICT", verdict=result.verdict, exit_code=result.exit_code, reason=result.reason)
     finally:
         for proc in reversed(processes):
             try:
@@ -905,6 +1213,11 @@ def run_live_gate(
             if p.exists():
                 log_hashes[p.name] = sha256_file(p)
 
+        default_levels = (
+            {LEVEL_PREREQUISITE_CHECK: "NOT_RUN", LEVEL_SCENARIO_PASS: "NOT_RUN", LEVEL_GREEN_PASS: "NOT_RUN"}
+            if stage == STAGE_BASELINE_RED
+            else {LEVEL_PREREQUISITE_CHECK: "FAIL", LEVEL_SCENARIO_PASS: "NOT_RUN", LEVEL_GREEN_PASS: "FAIL"}
+        )
         summary = {
             "stage": "BASELINE_RED" if stage == STAGE_BASELINE_RED else "TARGET_GREEN",
             "revocation_mode": revocation_mode,
@@ -915,6 +1228,11 @@ def run_live_gate(
             "redis_marker_observed": redis_marker_observed,
             "jwt_secret_ephemeral": True,
             "isolation_guardrail_note": "Preflight naming/host/identity checks only; physical process/instance/container isolation is still required.",
+            "verification_levels": target_contract.levels if target_contract else default_levels,
+            "target_green_pass": target_contract.target_green_pass if target_contract else False,
+            "target_green_criteria": target_contract.criteria if target_contract else target_criteria,
+            "incomplete_criteria": target_contract.incomplete_criteria if target_contract else list(TARGET_GREEN_CRITERIA_ORDER),
+            "failed_criteria": target_contract.failed_criteria if target_contract else [],
             "run_id": run_id,
             "runtime_dir": str(run_dir),
             "ports": {"redis": rport, "app_a": aport, "app_b": bport},
@@ -986,6 +1304,11 @@ def main(argv: list[str] | None = None) -> int:
             approved_remote_hosts=approved_hosts,
         )
     except GateError as exc:
+        err_levels = (
+            {LEVEL_PREREQUISITE_CHECK: "NOT_RUN", LEVEL_SCENARIO_PASS: "NOT_RUN", LEVEL_GREEN_PASS: "NOT_RUN"}
+            if args.stage == STAGE_BASELINE_RED
+            else {LEVEL_PREREQUISITE_CHECK: "FAIL", LEVEL_SCENARIO_PASS: "NOT_RUN", LEVEL_GREEN_PASS: "NOT_RUN"}
+        )
         print(
             json.dumps(
                 {
@@ -994,6 +1317,7 @@ def main(argv: list[str] | None = None) -> int:
                     "verdict": "ERROR",
                     "exit_code": EXIT_ERROR,
                     "reason": str(exc),
+                    "verification_levels": err_levels,
                 },
                 ensure_ascii=False,
             ),

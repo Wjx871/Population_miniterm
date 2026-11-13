@@ -487,41 +487,42 @@ WHERE NOT EXISTS (
 | `HealthController.java` | 新增 `revocationStoreStatus` / `revocationMode` 非敏感字段，保留 `permitAll()` 与 HTTP 200 语义。 |
 | `RevocationEvents.java` | 新增 DB/Cache/Checkpoint 分离事件与限流统计，继续严格禁用明文 JTI/JWT/密码日志。 |
 
-### 7.2 两阶段门禁、非阻断 Redis 与安全隔离契约（审查阻断项 C、F、G、H）
+### 7.2 三层验证语义、非阻断 Redis 与安全隔离契约（审查阻断项 C、F、G、H 及最终收口）
 
-为避免“用旧 `SHARED_REDIS_REQUIRED` 门禁、双 JVM 独立 H2、轻量枚举静态检查或未核验 DB 的 HTTP 401 冒充未来 `DURABLE_DB_REQUIRED` 生产安全验收”，验证体系严格界定如下：
+为彻底消除“用旧 `SHARED_REDIS_REQUIRED` 门禁、前置预检、双 JVM 独立 H2 或局部 HTTP 场景通过冒充全局 `DURABLE_DB_REQUIRED` 生产安全验收”，验证体系严格拆分为 **三个独立层级**，前两层无论单独如何通过均**绝不能替代**全局 `TARGET_GREEN_PASS`：
 
 1. **`BASELINE_RED`（基线缺陷复现门禁，当前已实现并可执行）**：
    - 固定运行模式：`SHARED_REDIS_REQUIRED`；允许双 JVM 各自使用隔离 H2 + 同一隔离真实 Redis 8.10.3。
-   - 前置契约：保留原 `Redis EXISTS marker == 1` 严格前置检验。
+   - 前置契约：严格保留 `Redis EXISTS marker == 1` 前置检验。
    - 入口：`Issue64DurabilityRedGateTest`（`-Dissue64.red=true`）与 `python scripts/issue64/issue64_red_gate.py --stage baseline-red`。
-   - 预期结论：空 Redis 恢复后未过期旧 JWT 返回 HTTP `200`，判定 **`RED`（退出码 `2`）**；该门禁**仅用于表征基线结构性漏洞**。
-2. **`TARGET_PREREQUISITE_CHECK`（快速前置预检 — 禁止当成生产安全 GREEN，阻断项 F）**：
-   - 独立入口：[Issue64TargetPrerequisiteCheckTest.java](../../src/test/java/com/wjx871/population/security/Issue64TargetPrerequisiteCheckTest.java)（`-Dissue64.target.prereq=true`）及 `issue64_red_gate.py --stage target-green` 启动前预检。
-   - **硬性定位**：仅快速核查 `DURABLE_DB_REQUIRED` 枚举、显式 opt-in、隔离测试库命名与连接边界等前置条件；**即使本预检返回 `PASS`，也绝不代表 `DURABLE_DB_REQUIRED` 已正确实现或 `TARGET_GREEN` 已通过，且严禁仅凭 `src/main` 源码出现 `DURABLE_DB_REQUIRED` 字符串就认定目标实现完成**。
-3. **`TARGET_GREEN`（方案 A 目标生产验收门禁 — 本轮状态：`NOT_RUN`，阻断项 F、G、H）**：
-   - **7 项强制动态验收条件**（全部满足并有实时动态证据才允许输出 `PASS`，缺一即 `NOT_RUN` 或 `ERROR`）：
-     1. `DURABLE_DB_REQUIRED` 模式在运行态已真实启用（通过运行期状态/行为核实，非仅源码字面检索）；
-     2. 独立 JVM A/B 接入**同一权威持久数据库**（独立测试 MySQL 8.4；严禁 `jdbc:h2:mem:`）；
-     3. 注销后经**数据库权威记录核查**确认 `jwt_revocation` 存在对应 `jti_sha256` 已提交行（不能单凭 HTTP `401` 或 Redis 存在标记宣称持久化正确；无法核查 DB 权威状态直接返回 `ERROR`）；
-     4. 空 Redis 恢复后旧 JWT 在 A/B 均返回 `401`；
-     5. 有效新 JWT 返回 `200`；
-     6. MySQL 故障时 fail-closed 返回 `503`；
-     7. 检查点缺失或状态无效（`UNINITIALIZED`/`INVALID`/NULL）时 fail-closed 返回 `503`。
-   - **Redis 辅助缓存非阻断原则（阻断项 H）**：
-     - `TARGET_GREEN` 阶段**不再要求** `Redis EXISTS revoked marker == 1`；Redis 标记仅作观察指标。
-     - Redis 写入失败、停机、空库或淘汰时，注销仍应由 MySQL 提交返回 `200`，A/B 跨实例认证必须继续通过 MySQL 主库拒绝旧 JWT（`401`）并放行有效新 JWT（`200`）。
+   - 预期结论：空 Redis 恢复后未过期旧 JWT 返回 HTTP `200`，判定 **`RED`（退出码 `2`）**；仅用于复现基线结构性漏洞。
+2. **层级 1 — `TARGET_PREREQUISITE_CHECK`（前置条件预检，非 `TARGET_GREEN_PASS`）**：
+   - 入口：[Issue64TargetPrerequisiteCheckTest.java](../../src/test/java/com/wjx871/population/security/Issue64TargetPrerequisiteCheckTest.java)（`-Dissue64.target.prereq=true`）及 `issue64_red_gate.py --stage target-green` 启动前预检。
+   - **定位边界**：仅核查 `DURABLE_DB_REQUIRED` 枚举存在、显式 `--allow-target-green` opt-in、隔离测试库命名与连接白名单、DB 身份预检。即使本层级返回 `PASS`，也**绝不代表 `DURABLE_DB_REQUIRED` 运行正常或全局 `TARGET_GREEN_PASS` 通过**。
+3. **层级 2 — `TARGET_SCENARIO_PASS`（局部 HTTP / 恢复场景通过，非全局 `TARGET_GREEN_PASS`）**：
+   - 指双 JVM 在指定测试场景中（如空 Redis 恢复后旧 JWT 返回 `401`、有效新 JWT 返回 `200`）满足 HTTP 期望；仅表明已实测场景行为正确，**严禁用单个 HTTP 场景通过直接输出全局 `TARGET_GREEN_PASS`**。
+4. **层级 3 — `TARGET_GREEN_PASS`（全局验收通过 — 本轮状态：`NOT_RUN`）**：
+   - **7 项独立动态验收证据**（`evaluate_target_green_contract` 逐项记为 `PASS` / `FAIL` / `NOT_RUN`）：
+     1. `durable_db_mode_active`：`DURABLE_DB_REQUIRED` 运行态已在 A/B `/api/health` 实际启用；
+     2. `shared_authoritative_db`：A/B 共用同一隔离持久权威数据库（MySQL 8.4 测试库；严禁 `jdbc:h2:mem:`）；
+     3. `mysql_revocation_committed`：注销后经 MySQL 权威查询确认 `jwt_revocation` 存在对应 `jti_sha256` 已提交行；
+     4. `post_empty_redis_old_jwt_401`：Redis 空库恢复后旧 JWT 在 A/B 均返回 `401`；
+     5. `post_empty_redis_fresh_jwt_200`：有效新 JWT 返回 `200`；
+     6. `mysql_fault_fail_closed`：MySQL 故障（断连/超时）时认证与注销均 fail-closed 返回 `503`（未执行时通过可注入验收钩子保留 `NOT_RUN`，若实测未观察到 `503` 直接判 `FAIL`）；
+     7. `checkpoint_invalid_fail_closed`：检查点缺失、`UNINITIALIZED` 或 `INVALID` 时 fail-closed 返回 `503`（未执行保留 `NOT_RUN`，未观察到 `503` 直接判 `FAIL`）。
+   - **全局判决规则（`TARGET_GREEN` 契约）**：
+     - 仅当以上 **全部 7 项均为 `PASS`** 且无任何 `FAIL`/`NOT_RUN` 时，才输出全局 **`TARGET_GREEN PASS`（退出码 `0`）**；
+     - 任一项为 `FAIL` 或测试环境失败，输出 **`ERROR`（退出码 `1`）**；
+     - 无失败项但存在任一 `NOT_RUN`（例如仅完成了前 5 项、后 2 项故障/检查点验证尚未执行），输出 **`INCOMPLETE`（退出码 `1`）** 并在摘要 `incomplete_criteria` 中逐项列明未完成项，**绝不输出 `PASS`（退出码 `0`）**。
+   - **Redis 非阻断与环境错误边界（最终收口，阻断项 H）**：
+     - `BASELINE_RED` 继续严格要求 Redis 黑名单标记存在；
+     - `TARGET_GREEN` 下 Redis 标记不存在属合法状态，且 `observe_target_redis_marker` 对 `Redis EXISTS` 连接失败或超时做非阻断捕获（记录 `UNAVAILABLE:<Exc>`，`required_for_green=False`），**不得仅因 `EXISTS` 超时/断连将 MySQL 持久化判失败**，MySQL 正常时应继续使用 MySQL 权威状态与 HTTP 行为完成目标验证；
+     - **反之**，当测试框架内的隔离 Redis 自身环境异常导致特定恢复测试（例如空目录重启切换核验 `empty_dir_verified=False` 或进程崩溃）无法完成验证时，必须明确返回 **`ERROR`（退出码 `1`）**，严禁跳过或伪造 `PASS`。
    - **测试数据库安全隔离防误操作护栏（阻断项 G）**：
-     - 仅允许显式 opt-in（`--allow-target-green`）触发；
-     - 目标库名必须严格匹配专用测试命名 `^issue64_test_[a-z0-9_]{4,40}$`，明文阻断 `population_miniterm`；
-     - 默认仅允许 loopback（`127.0.0.1` / `localhost` / `[::1]`）或经 `--approved-test-db-hosts` 显式批准的独立测试库主机，禁止连接未批准远端地址；
-     - 禁止复用生产 `JWT_SECRET`（门禁拒绝空/默认/非随机测试密钥，默认每次生成一次性强随机测试密钥），使用专用独立测试账号与测试数据，不触碰生产 Redis 或在服实例；
-     - 数据库密码仅通过环境变量传入，绝不出现在命令行、HTTP 日志或证据 JSON 中；
-     - **启动测试 JVM 前必须先完成真实测试库身份验证**（确认 `DATABASE()` 等身份一致，失败或不明一律 `ERROR` 且不得启动应用）；
-     - **隔离边界诚实声明**：上述命名与主机校验仅是**防误操作前置护栏（preflight guardrail），绝不构成完整物理隔离证明**；真实运行 `TARGET_GREEN` 仍必须具备独立的 MySQL 8.4 进程、实例或容器物理边界。
+     - 仅允许显式 `--allow-target-green` opt-in；目标库名匹配 `^issue64_test_[a-z0-9_]{4,40}$` 并禁止 `population_miniterm`；默认 loopback 或 `--approved-test-db-hosts` 白名单；禁止 `root`/`sa`/`admin` 等特权账号与复用生产 `JWT_SECRET`；密码仅环境变量传入且不落盘/不入日志；启动 JVM 前先验库身份；且明确上述均为前置护栏，实际运行时仍须具备独立进程/实例/容器物理隔离边界。
 
 ### 7.3 建议拆分顺序（下一轮生产施工）
 
 1. **Step 1（Schema 与 Store 层）**：提交 `V4_020_jwt_revocation.sql`、`schema.sql`、`JwtRevocationMapper` 与 `DurableRevocationStore`，配套 H2 与独立隔离 MySQL 8.4 幂等插入、检查点三态 fail-closed、单调更新、跨 `+00:00`/`+08:00`/`-05:00` 时区 `(UNIX_TIMESTAMP() + 1) * 1000` 校验及并发清理测试。
 2. **Step 2（核心吊销协议与模式切换）**：升级 `RevocationProperties`、`TokenRevocationService`、`JwtAuthenticationFilter`、`AuthService`、`HealthController` 与 `RevocationEvents`；调整并扩充 `S5A1StrictRevocationHttpIntegrationTest`、`RevocationConfigurationTest`、`TokenRevocationServiceConsistencyTest`。
-3. **Step 3（`TARGET_GREEN` 真实双 JVM 动态验收）**：在独立物理边界的隔离 MySQL 8.4 测试库（库名 `issue64_test_*`）与隔离 Redis 8.10.3 上运行 `scripts/issue64/issue64_red_gate.py --stage target-green --allow-target-green ...` 完成上述 7 项动态断言并验证由 `NOT_RUN` 转为 `PASS`，逐项执行 [issue64-durable-revocation-gate.md](issue64-durable-revocation-gate.md) 全矩阵验收后，方可提交独立审查。
+3. **Step 3（`TARGET_GREEN` 真实双 JVM 动态验收）**：在独立物理边界的隔离 MySQL 8.4 测试库（库名 `issue64_test_*`）与隔离 Redis 8.10.3 上运行 `scripts/issue64/issue64_red_gate.py --stage target-green --allow-target-green ...` 及 MySQL 故障 / 检查点异常验收钩子，完成全部 7 项独立动态断言使 `TARGET_GREEN_PASS` 由 `NOT_RUN` 转为 `PASS`（若任一项未运行仍只输出 `INCOMPLETE`，退出码 `1`），逐项执行 [issue64-durable-revocation-gate.md](issue64-durable-revocation-gate.md) 全矩阵验收后，方可提交独立审查。

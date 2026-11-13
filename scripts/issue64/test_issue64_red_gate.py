@@ -367,6 +367,133 @@ class Issue64RedGateSelfTest(unittest.TestCase):
                     shared_db_password=None,
                 )
 
+    def test_target_green_contract_five_of_seven_cannot_global_pass(self) -> None:
+        scenario_ok = gate.GateResult("PASS", gate.EXIT_PASS, "ok", 401, 401, 200, False)
+        partial_criteria = {
+            "durable_db_mode_active": "PASS",
+            "shared_authoritative_db": "PASS",
+            "mysql_revocation_committed": "PASS",
+            "post_empty_redis_old_jwt_401": "PASS",
+            "post_empty_redis_fresh_jwt_200": "PASS",
+            "mysql_fault_fail_closed": "NOT_RUN",
+            "checkpoint_invalid_fail_closed": "NOT_RUN",
+        }
+        res = gate.evaluate_target_green_contract(partial_criteria, prerequisite_passed=True, scenario_result=scenario_ok)
+        self.assertEqual(res.verdict, "INCOMPLETE")
+        self.assertEqual(res.exit_code, gate.EXIT_ERROR)
+        self.assertFalse(res.target_green_pass)
+        self.assertEqual(res.levels[gate.LEVEL_PREREQUISITE_CHECK], "PASS")
+        self.assertEqual(res.levels[gate.LEVEL_SCENARIO_PASS], "PASS")
+        self.assertEqual(res.levels[gate.LEVEL_GREEN_PASS], "INCOMPLETE")
+        self.assertEqual(
+            res.incomplete_criteria,
+            ["mysql_fault_fail_closed", "checkpoint_invalid_fail_closed"],
+        )
+
+    def test_target_green_contract_all_seven_pass_required_for_global_pass(self) -> None:
+        scenario_ok = gate.GateResult("PASS", gate.EXIT_PASS, "ok", 401, 401, 200, False)
+        mysql_status = gate.evaluate_mysql_fault_observation(
+            {"executed": True, "auth_status": 503, "logout_status": 503, "login_status": 503, "passed": True}
+        )
+        cp_status = gate.evaluate_checkpoint_fault_observation(
+            {
+                "executed": True,
+                "missing_checkpoint_status": 503,
+                "invalid_checkpoint_status": 503,
+                "uninitialized_checkpoint_status": 503,
+                "passed": True,
+            }
+        )
+        self.assertEqual(mysql_status, "PASS")
+        self.assertEqual(cp_status, "PASS")
+        full_criteria = {
+            "durable_db_mode_active": "PASS",
+            "shared_authoritative_db": "PASS",
+            "mysql_revocation_committed": "PASS",
+            "post_empty_redis_old_jwt_401": "PASS",
+            "post_empty_redis_fresh_jwt_200": "PASS",
+            "mysql_fault_fail_closed": mysql_status,
+            "checkpoint_invalid_fail_closed": cp_status,
+        }
+        res = gate.evaluate_target_green_contract(full_criteria, prerequisite_passed=True, scenario_result=scenario_ok)
+        self.assertEqual(res.verdict, "PASS")
+        self.assertEqual(res.exit_code, gate.EXIT_PASS)
+        self.assertTrue(res.target_green_pass)
+        self.assertEqual(res.levels[gate.LEVEL_PREREQUISITE_CHECK], "PASS")
+        self.assertEqual(res.levels[gate.LEVEL_SCENARIO_PASS], "PASS")
+        self.assertEqual(res.levels[gate.LEVEL_GREEN_PASS], "PASS")
+        self.assertEqual(res.incomplete_criteria, [])
+        self.assertEqual(res.failed_criteria, [])
+
+    def test_mysql_fault_without_503_cannot_pass(self) -> None:
+        scenario_ok = gate.GateResult("PASS", gate.EXIT_PASS, "ok", 401, 401, 200, False)
+        for bad_obs in (
+            {"executed": True, "auth_status": 200, "logout_status": 503},
+            {"executed": True, "auth_status": 503, "logout_status": 200},
+            {"executed": True, "auth_status": 503, "logout_status": 503, "login_status": 200},
+        ):
+            state = gate.evaluate_mysql_fault_observation(bad_obs)
+            self.assertEqual(state, "FAIL")
+            criteria = {k: "PASS" for k in gate.TARGET_GREEN_CRITERIA_ORDER}
+            criteria["mysql_fault_fail_closed"] = state
+            res = gate.evaluate_target_green_contract(criteria, prerequisite_passed=True, scenario_result=scenario_ok)
+            self.assertEqual(res.verdict, "ERROR")
+            self.assertEqual(res.exit_code, gate.EXIT_ERROR)
+            self.assertFalse(res.target_green_pass)
+            self.assertIn("mysql_fault_fail_closed", res.failed_criteria)
+
+    def test_checkpoint_fault_without_503_cannot_pass(self) -> None:
+        scenario_ok = gate.GateResult("PASS", gate.EXIT_PASS, "ok", 401, 401, 200, False)
+        for bad_obs in (
+            {"executed": True, "missing_checkpoint_status": 200, "invalid_checkpoint_status": 503},
+            {"executed": True, "missing_checkpoint_status": 503, "invalid_checkpoint_status": 401},
+            {
+                "executed": True,
+                "missing_checkpoint_status": 503,
+                "invalid_checkpoint_status": 503,
+                "uninitialized_checkpoint_status": 200,
+            },
+        ):
+            state = gate.evaluate_checkpoint_fault_observation(bad_obs)
+            self.assertEqual(state, "FAIL")
+            criteria = {k: "PASS" for k in gate.TARGET_GREEN_CRITERIA_ORDER}
+            criteria["checkpoint_invalid_fail_closed"] = state
+            res = gate.evaluate_target_green_contract(criteria, prerequisite_passed=True, scenario_result=scenario_ok)
+            self.assertEqual(res.verdict, "ERROR")
+            self.assertEqual(res.exit_code, gate.EXIT_ERROR)
+            self.assertFalse(res.target_green_pass)
+            self.assertIn("checkpoint_invalid_fail_closed", res.failed_criteria)
+
+    def test_target_mode_redis_exists_connection_error_is_non_blocking_while_env_failure_errors(self) -> None:
+        def failing_exists(*_args: Any, **_kwargs: Any) -> Any:
+            raise ConnectionRefusedError("simulated Redis connection timeout on EXISTS")
+
+        obs = gate.observe_target_redis_marker(failing_exists, 6379, "pw", "k:raw", "k:sha")
+        self.assertFalse(obs["required_for_green"])
+        self.assertIsNone(obs["redis_marker_exists"])
+        self.assertEqual(obs["observed_state"], "UNAVAILABLE:ConnectionRefusedError")
+
+        # When MySQL & HTTP succeed despite absent/unavailable Redis cache marker, contract evaluates remaining criteria.
+        criteria = {k: "PASS" for k in gate.TARGET_GREEN_CRITERIA_ORDER}
+        scenario_ok = gate.GateResult("PASS", gate.EXIT_PASS, "ok", 401, 401, 200, False)
+        res = gate.evaluate_target_green_contract(criteria, prerequisite_passed=True, scenario_result=scenario_ok)
+        self.assertEqual(res.verdict, "PASS")
+        self.assertEqual(res.exit_code, gate.EXIT_PASS)
+
+        # However, if Redis recovery test environment itself fails (cannot reconnect / empty dir unverified), NEVER fake PASS.
+        recovery_err = gate.evaluate_post_empty_recovery(True, False, False, None, None, None)
+        self.assertEqual(recovery_err.verdict, "ERROR")
+        criteria_env_fail = dict(criteria)
+        criteria_env_fail["post_empty_redis_old_jwt_401"] = "FAIL"
+        res_err = gate.evaluate_target_green_contract(criteria_env_fail, prerequisite_passed=True, scenario_result=recovery_err)
+        self.assertEqual(res_err.verdict, "ERROR")
+        self.assertEqual(res_err.exit_code, gate.EXIT_ERROR)
+        self.assertFalse(res_err.target_green_pass)
+
+    def test_baseline_red_still_emits_red_exit_code_2(self) -> None:
+        red = gate.evaluate_post_empty_recovery(True, True, True, 200, 200, 200)
+        self.assertEqual((red.verdict, red.exit_code, red.vulnerability_reproduced), ("RED", gate.EXIT_RED, True))
+
     def test_jti_digest_does_not_leak_raw_jti(self) -> None:
         raw_jti = "sensitive-jti-uuid-1234"
         digest = gate.short_jti_digest(raw_jti)
