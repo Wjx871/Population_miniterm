@@ -2,9 +2,9 @@
 
 当前状态：`#64 OPEN / DESIGN_CANDIDATE / RED_VERIFIED`
 
-基线提交：`c74867721adea57ad16012b4785b4f952b92fe86`（`integration/20261101-backend-p0-security`）  
-工作分支：`audit/20261113-issue64-durability-design-red`  
-JDK / Python：`Java 21.0.7` / `Python 3.12.4`
+- **基线提交**：`c74867721adea57ad16012b4785b4f952b92fe86`（`integration/20261101-backend-p0-security`）
+- **工作分支**：`audit/20261113-issue64-durability-design-red`
+- **JDK / Python**：`Java 21.0.7` / `Python 3.12.4`
 
 > [!NOTE]
 > 本轮未修改 `src/main` 生产代码、未修改正式 MySQL Schema 或迁移脚本、未触碰生产 Redis/MySQL，也未清理上一轮 `#29/#64` 外部 Redis 证据目录。
@@ -75,7 +75,7 @@ JDK / Python：`Java 21.0.7` / `Python 3.12.4`
 
 ## 3. 证据文件 SHA256 与敏感数据扫描结论
 
-### 3.1 入库证据文件（`doc/development/evidence/issue64-durability-design/`）
+### 3.1 证据文件清单（`doc/development/evidence/issue64-durability-design/`，其中 `.jsonl`/`.json` 已入 Git，`.log` 按 `.gitignore` 保留在本机 worktree）
 
 | 文件名 | SHA256 | 用途说明 |
 |---|---|---|
