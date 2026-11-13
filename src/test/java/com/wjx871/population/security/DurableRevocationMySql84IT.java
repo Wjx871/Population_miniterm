@@ -3,13 +3,13 @@ package com.wjx871.population.security;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Clock;
@@ -32,9 +32,14 @@ import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -50,6 +55,11 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
  * and a dedicated non-root user configured via environment variables:
  * {@code ISSUE64_MYSQL84_DB_URL}, {@code ISSUE64_MYSQL84_DB_USERNAME},
  * {@code ISSUE64_MYSQL84_DB_PASSWORD}.
+ *
+ * <p>Note: full {@code DELIMITER}-aware execution of {@code V4_020_jwt_revocation.sql}
+ * (including {@code v4_020_preflight_guard()}) is run separately via real {@code mysql} CLI
+ * against dedicated isolated databases; this IT focuses on Spring/MyBatis/InnoDB runtime
+ * behavior under MySQL 8.4 {@code REPEATABLE-READ}.
  */
 @SpringBootTest(properties = {
         "spring.sql.init.mode=never",
@@ -61,6 +71,47 @@ class DurableRevocationMySql84IT {
 
     private static final Pattern ISOLATED_URL = Pattern.compile(
             "^jdbc:mysql://127\\.0\\.0\\.1:(?<port>[0-9]+)/(?<schema>issue64_test_[a-z0-9_]{4,40})\\?(?<options>.*)$");
+
+    private static final AtomicReference<BeforeDeleteHook> BEFORE_DELETE_HOOK = new AtomicReference<>();
+
+    @TestConfiguration
+    static class MysqlCleanupInterceptionConfig {
+        @Bean
+        static BeanPostProcessor mysqlCleanupMapperPauseProxy() {
+            return new BeanPostProcessor() {
+                @Override
+                public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+                    if (!(bean instanceof JwtRevocationMapper target)) {
+                        return bean;
+                    }
+                    return Proxy.newProxyInstance(
+                            JwtRevocationMapper.class.getClassLoader(),
+                            new Class<?>[] {JwtRevocationMapper.class},
+                            (proxy, method, args) -> {
+                                if ("deleteByRevocationIds".equals(method.getName())) {
+                                    BeforeDeleteHook hook = BEFORE_DELETE_HOOK.getAndSet(null);
+                                    if (hook != null) {
+                                        @SuppressWarnings("unchecked")
+                                        List<Long> ids = (List<Long>) args[0];
+                                        long cutoff = (Long) args[1];
+                                        hook.beforeDelete(ids, cutoff);
+                                    }
+                                }
+                                try {
+                                    return method.invoke(target, args);
+                                } catch (InvocationTargetException ex) {
+                                    throw ex.getTargetException();
+                                }
+                            });
+                }
+            };
+        }
+    }
+
+    @FunctionalInterface
+    private interface BeforeDeleteHook {
+        void beforeDelete(List<Long> selectedIds, long cutoffEpochMs) throws Exception;
+    }
 
     @Autowired
     private DurableRevocationStore store;
@@ -139,6 +190,7 @@ class DurableRevocationMySql84IT {
     }
 
     private void resetState() {
+        BEFORE_DELETE_HOOK.set(null);
         jdbcTemplate.update("DELETE FROM jwt_revocation");
         jdbcTemplate.update("DELETE FROM jwt_revocation_checkpoint WHERE checkpoint_key = ?",
                 DurableRevocationStore.GLOBAL_CHECKPOINT_KEY);
@@ -149,28 +201,33 @@ class DurableRevocationMySql84IT {
                 DurableRevocationStore.GLOBAL_CHECKPOINT_KEY);
     }
 
+    /**
+     * JDBC single-statement verification for the non-overwriting checkpoint initializer plus static
+     * V4_020 SQL hygiene assertions (full V4_020 execution including DELIMITER preflight guard is run
+     * via mysql CLI in the isolated MySQL 8.4 acceptance gate).
+     */
     @Test
-    void migrationV4020IsIdempotentPreservesReadyWatermarkAndDetectsMismatch() throws Exception {
+    void checkpointPlaceholderSqlPreservesExistingReadyWatermarkAndStaticV4020Checks() throws Exception {
         // 1. Simulate pre-existing READY checkpoint with non-zero cutoff
         long existingCutoff = 1_794_537_555_000L;
         CheckpointSnapshot ready = store.advanceCheckpoint(existingCutoff, "IT_PRE_MIGRATION");
         assertThat(ready.minValidIatEpochMs()).isEqualTo(existingCutoff);
 
-        // 2. Re-run V4_020 SQL statements via JDBC (non-DELIMITER statements + preflight logic)
+        // 2. Static SQL hygiene checks on V4_020 executable statements
         String migrationSql = Files.readString(Path.of("doc/database/migrations/V4_020_jwt_revocation.sql"));
         String executableSql = migrationSql.replaceAll("(?m)--.*$", "");
         assertThat(executableSql).doesNotContainIgnoringCase("USE population_miniterm");
         assertThat(executableSql).doesNotMatch("(?is).*\\bUSE\\s+\\w+.*");
         assertThat(executableSql).doesNotContainIgnoringCase("UNIX_TIMESTAMP(UTC_TIMESTAMP");
 
-        // Execute idempotent CREATE TABLE IF NOT EXISTS + non-overwriting INSERT
+        // 3. JDBC verification of non-overwriting placeholder INSERT statement
         jdbcTemplate.execute(
                 "INSERT INTO jwt_revocation_checkpoint "
                         + "(checkpoint_key, checkpoint_status, min_valid_iat_epoch_ms, updated_by) "
                         + "SELECT 'GLOBAL_JWT_CUTOFF', 'UNINITIALIZED', NULL, 'V4_020_DDL_INIT' "
                         + "WHERE NOT EXISTS (SELECT 1 FROM jwt_revocation_checkpoint WHERE checkpoint_key = 'GLOBAL_JWT_CUTOFF')");
 
-        // 3. Verify READY watermark was NOT overwritten
+        // 4. Verify READY watermark was NOT overwritten
         CheckpointSnapshot afterRerun = store.requireReadyCheckpoint();
         assertThat(afterRerun.checkpointStatus()).isEqualTo("READY");
         assertThat(afterRerun.minValidIatEpochMs()).isEqualTo(existingCutoff);
@@ -340,6 +397,120 @@ class DurableRevocationMySql84IT {
                 "UPDATE jwt_revocation_checkpoint SET checkpoint_status = 'READY', min_valid_iat_epoch_ms = -1 "
                         + "WHERE checkpoint_key = 'GLOBAL_JWT_CUTOFF'"))
                 .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void concurrentExtendBetweenSelectAndDeletePreservesExtendedRowUnderMysql84RepeatableRead() throws Exception {
+        store.advanceCheckpoint(0L, "IT_RACE");
+        Instant now = Instant.parse("2030-05-01T12:00:00.000Z");
+        DurableRevocationStore clockedStore = new DurableRevocationStore(txExecutor, new MutableClock(now));
+
+        String jtiT1 = "mysql84-race-ext-" + UUID.randomUUID();
+        String shaT1 = DurableRevocationStore.sha256Hex(jtiT1);
+        String jtiT2 = "mysql84-race-exp-" + UUID.randomUUID();
+        String shaT2 = DurableRevocationStore.sha256Hex(jtiT2);
+
+        clockedStore.saveRevocation(jtiT1, now.minusMillis(400_000L));
+        clockedStore.saveRevocation(jtiT2, now.minusMillis(450_000L));
+
+        Instant extendedExp = now.plusSeconds(1200);
+        CountDownLatch cleanupSelectedIds = new CountDownLatch(1);
+        CountDownLatch extendCommitted = new CountDownLatch(1);
+        AtomicReference<List<Long>> selectedIdsRef = new AtomicReference<>();
+
+        BEFORE_DELETE_HOOK.set((ids, cutoffEpochMs) -> {
+            selectedIdsRef.set(List.copyOf(ids));
+            cleanupSelectedIds.countDown();
+            if (!extendCommitted.await(10, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("Timed out waiting for extend transaction commit");
+            }
+        });
+
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            Future<Integer> cleanupFuture = pool.submit(() -> clockedStore.cleanupExpiredBatch(10));
+            assertThat(cleanupSelectedIds.await(10, TimeUnit.SECONDS)).isTrue();
+            assertThat(selectedIdsRef.get()).hasSize(2);
+
+            Future<?> extendFuture = pool.submit(() -> {
+                clockedStore.saveRevocation(jtiT1, extendedExp, 77L, "ADMIN_REVOKE", "it-inst", "it-trace");
+                return null;
+            });
+            extendFuture.get(10, TimeUnit.SECONDS);
+            extendCommitted.countDown();
+
+            int deletedCount = cleanupFuture.get(10, TimeUnit.SECONDS);
+            assertThat(deletedCount).isEqualTo(1);
+        } finally {
+            extendCommitted.countDown();
+            pool.shutdownNow();
+        }
+
+        // T2 deleted; T1 survived InnoDB current-read delete with extended UTC expiry
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM jwt_revocation WHERE jti_sha256 = ?", Integer.class, shaT2)).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM jwt_revocation WHERE jti_sha256 = ?", Integer.class, shaT1)).isEqualTo(1);
+
+        Map<String, Object> t1Row = jdbcTemplate.queryForMap(
+                "SELECT expires_at_epoch_ms, token_expires_at FROM jwt_revocation WHERE jti_sha256 = ?", shaT1);
+        assertThat(((Number) t1Row.get("expires_at_epoch_ms")).longValue()).isEqualTo(extendedExp.toEpochMilli());
+        Object rawDt = t1Row.get("token_expires_at");
+        LocalDateTime storedUtc = rawDt instanceof LocalDateTime ldt ? ldt : ((Timestamp) rawDt).toLocalDateTime();
+        assertThat(storedUtc).isEqualTo(LocalDateTime.ofInstant(extendedExp, ZoneOffset.UTC));
+
+        assertThat(clockedStore.readAuthoritativeState(jtiT1).getStatus())
+                .isEqualTo(AuthoritativeRevocationState.Status.REVOKED);
+
+        // Concurrent stress: simultaneous cleanup and save/extend under InnoDB without deadlocks or duplicates
+        String hotJti = "mysql84-hot-" + UUID.randomUUID();
+        String hotSha = DurableRevocationStore.sha256Hex(hotJti);
+        clockedStore.saveRevocation(hotJti, now.minusMillis(400_000L));
+        for (int i = 0; i < 8; i++) {
+            clockedStore.saveRevocation("mysql84-exp-stress-" + i, now.minusMillis(400_000L + i * 1000L));
+        }
+        ExecutorService stressPool = Executors.newFixedThreadPool(8);
+        CountDownLatch ready = new CountDownLatch(8);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Future<?>> futures = new ArrayList<>();
+        try {
+            for (int i = 0; i < 4; i++) {
+                final int idx = i;
+                futures.add(stressPool.submit(() -> {
+                    ready.countDown();
+                    start.await(5, TimeUnit.SECONDS);
+                    clockedStore.saveRevocation(hotJti, now.plusSeconds(600 + idx * 60L));
+                    return null;
+                }));
+            }
+            for (int i = 0; i < 4; i++) {
+                futures.add(stressPool.submit(() -> {
+                    ready.countDown();
+                    start.await(5, TimeUnit.SECONDS);
+                    clockedStore.cleanupExpiredBatch(4);
+                    return null;
+                }));
+            }
+            assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+            for (Future<?> f : futures) {
+                f.get(20, TimeUnit.SECONDS);
+            }
+        } finally {
+            stressPool.shutdownNow();
+        }
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM jwt_revocation WHERE jti_sha256 = ?", Integer.class, hotSha)).isEqualTo(1);
+        assertThat(clockedStore.readAuthoritativeState(hotJti).getStatus())
+                .isEqualTo(AuthoritativeRevocationState.Status.REVOKED);
+
+        // DB failure in delete phase still propagates fail-closed without swallowing as 0
+        clockedStore.saveRevocation("mysql84-fail-del", now.minusMillis(400_000L));
+        BEFORE_DELETE_HOOK.set((ids, cutoffEpochMs) -> {
+            throw new DataAccessResourceFailureException("simulated mysql delete failure");
+        });
+        assertThatThrownBy(() -> clockedStore.cleanupExpiredBatch(10))
+                .isInstanceOf(RevocationStoreUnavailableException.class);
     }
 
     private static final class MutableClock extends Clock {

@@ -254,3 +254,26 @@
   - `scripts/issue64/issue64_red_gate.py`: `44b9cd4df8cda845837d8d194d5d8bd514ea83bfd3dba423688d19d447003522` (`60495` bytes)
   - `scripts/issue64/test_issue64_red_gate.py`: `042ae0b375e2ad7fc7349bba99835afdf4e3219e6e0372d39e42661ba8adb21c` (`29468` bytes)
   - `doc/development/issue64-step1-durable-store.md`: `8c9a331c82aafd04ac42fa339e58ee5698695132e561ad553bd111b93d09e19e` (`9766` bytes)
+
+---
+
+## Step 1 独立复核安全补丁（2026-11-13，`fix/20261113-issue64-step1-cleanup-schema-guard`）
+
+- **补丁报告**：[issue64-step1-durable-store.md](issue64-step1-durable-store.md) 第 4 节
+- **补丁基线**：`731189f7338bf5acd5d8b42d3ab96d82cf6aaef2`；`Issue #64 = OPEN`；`TARGET_GREEN = NOT_RUN`；已登记 `STEP2_PRECONDITION`（`advanceCheckpoint(0)` 生产切流防呆边界）
+- **关键实测计数**：
+  - 隔离 MySQL `8.4.8` CLI 完整 `V4_020` 执行（`127.0.0.1:5218`，非 root `issue64_tester@127.0.0.1`）：3 项正例全过（首次 `UNINITIALIZED + NULL`、重复幂等、激活 `READY + 1794582830000` 后不覆盖），7 项结构反例全拒（额外列、复合唯一索引、`CHECK` 放行 `'BOGUS'`、`CHECK NOT ENFORCED`、`revocation_reason` 长度/默认值不符、`checkpoint_status DEFAULT 'READY'`、`MyISAM` 引擎均准确 `exit 1` 中止）
+  - 隔离 MySQL `8.4.8` `DurableRevocationMySql84IT`（含真实 InnoDB `REPEATABLE-READ` 先选后延确定性交错 + 8 线程压力 + 删除阶段故障 fail-closed）：`5/5 PASS`；完成后 `listen_count=0`
+  - H2 Step 1 核心测试：`24/24 PASS`（含 `DurableRevocationCleanupTest` 确定性先选后延并发时序 `6/6`）
+  - Python 门禁自测：`15/15 PASS`；JWT 基线回归：`77/77 PASS`
+  - 全量洁净 `.\mvnw.cmd clean test`：`Tests run: 1039, Failures: 0, Errors: 0, Skipped: 6`（6 项为既有 opt-in 跳过）
+  - `Issue64DurabilityRedGateTest`：`EXECUTED_RED`（`expected:<401> but was:<200>`）；`Issue64TargetPrerequisiteCheckTest`：`EXECUTED_FAIL_AS_EXPECTED`（`TARGET_GREEN = NOT_RUN`）
+- **补丁更新文件 SHA-256 索引**：
+  - `doc/database/migrations/V4_020_jwt_revocation.sql`: `42cf468f4e3fc40adb344f1185e5fd8dd7eddd2fb7326c6fe3d2348af215d4a4` (`16635` bytes)
+  - `src/main/java/com/wjx871/population/security/JwtRevocationMapper.java`: `bef9fffac218795f148135b490b65b5b4960798c36f50548d9e27f7a0ec57fa9` (`4808` bytes)
+  - `src/main/resources/mapper/JwtRevocationMapper.xml`: `9d459efaf8ad1fb313d5747e1307dd7435a0516b95b5d296eba0fc427554ce46` (`5214` bytes)
+  - `src/main/java/com/wjx871/population/security/DurableRevocationTxExecutor.java`: `2bc55defe7c3420c4a584a831fdb03dbedc1d3e6b1c49248d1f88888d03e8af` (`7541` bytes)
+  - `src/test/java/com/wjx871/population/security/DurableRevocationCleanupTest.java`: `10d797413ddf87417ed4d7432e851f303a08ca6737299a1e4731e2ec4ab7d48e` (`15107` bytes)
+  - `src/test/java/com/wjx871/population/security/DurableRevocationMySql84IT.java`: `1709b506686598221b04d32621e366caf504018aa34125d96e09bdd27f66566d` (`27104` bytes)
+  - `doc/development/issue64-step1-durable-store.md`: `dca301810ec2fa5265ac571d393af8df0328cf06aa9b801b70f8bf427d14e535` (`17184` bytes)
+  - `doc/testing/2026-11-02-antigravity-audit-ledger.md`: `b931165c9282600470de55236556c77cb39f972074e9bbc0009781f6381fb45d` (`31594` bytes)

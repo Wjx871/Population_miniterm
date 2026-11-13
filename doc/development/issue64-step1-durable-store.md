@@ -56,3 +56,57 @@
 | 目标前置条件门禁 | `.\mvnw.cmd test "-Dissue64.target.prereq=true" "-Dtest=Issue64TargetPrerequisiteCheckTest"` | `EXECUTED_FAIL_AS_EXPECTED`（`TARGET_GREEN = NOT_RUN`） | `Tests run: 1, Failures: 1, Errors: 0, Skipped: 0`（`DURABLE_DB_REQUIRED is not implemented yet`） |
 | 全量默认 H2 测试集 | `.\mvnw.cmd test` | `EXECUTED_PASS`（含 6 项既有 opt-in 跳过） | `Tests run: 1036, Failures: 0, Errors: 0, Skipped: 6`（跳过项均为既有 opt-in 用例：`Issue34FirstIssueRedTest` 3、`Issue37ExpiryBatchIntegrationTest` 1、`Issue64DurabilityRedGateTest` 1、`Issue64TargetPrerequisiteCheckTest` 1） |
 | `TARGET_GREEN` 全量端到端门禁 | — | `NOT_RUN` | Step 2/3 尚未接入主链路前禁止运行或宣称 `PASS` |
+
+---
+
+## 4. 独立复核安全补丁（`fix/20261113-issue64-step1-cleanup-schema-guard`）
+
+- **补丁基线**：`feat/20261113-issue64-durable-store-step1` @ `731189f7338bf5acd5d8b42d3ab96d82cf6aaef2`
+- **补丁范围**：仅修复阻断项 1（清理与延期写入竞态）、阻断项 2（`V4_020` 已有表结构预检强化）、补充 H2/MySQL 8.4 确定性并发回归与 CLI 正反例验证，并登记 `STEP2_PRECONDITION` 生产切流防呆风险；仍**未接入**认证/注销主链路及 `DURABLE_DB_REQUIRED`。
+
+### 4.1 阻断项 1 修复：清理与延期并发竞态
+
+1. **缺陷成因**：原 `JwtRevocationMapper.deleteByRevocationIds(@Param("ids"))` 仅凭前序快照查询的 `revocation_id IN (...)` 执行删除，若在 `selectExpiredRevocationIds` 与 `deleteByRevocationIds` 之间有并发 `REQUIRES_NEW` 事务通过 `saveRevocation()` 延长了某条记录的 `expires_at_epoch_ms`，则无条件 `DELETE` 会误删已重新有效的吊销记录。
+2. **修复要点**：
+   - 将签名修改为 `deleteByRevocationIds(@Param("ids") List<Long> ids, @Param("cutoffEpochMs") long cutoffEpochMs)`，`DurableRevocationTxExecutor.executeCleanupBatch` 将本次 `cutoffEpochMs` 透传给删除语句；
+   - `JwtRevocationMapper.xml` 改为 `DELETE FROM jwt_revocation WHERE expires_at_epoch_ms <= #{cutoffEpochMs} AND revocation_id IN (...)`：在 InnoDB（`REPEATABLE-READ` / `READ-COMMITTED`）及 H2 MVStore 中，DML 删除均为当前读（current read），仅对 PK `IN (...)` 命中的最新已提交行重新核验权威过期条件，不扩大范围 gap 锁，也不会阻塞并发 `saveRevocation()` 导致新死锁；异常继续 fail-closed 抛出 `RevocationStoreUnavailableException`，绝不吞异常返回 `0`。
+3. **确定性并发时序验证结果**：
+   - **H2 (`DurableRevocationCleanupTest`)**：通过测试代理在 `selectExpiredRevocationIds` 选中 `[T2_expired, T1_extended]` 后、调用 `deleteByRevocationIds` 前暂停线程 A；线程 B 调用正式 `store.saveRevocation(T1, extendedExp)` 延长到期时间并提交；放行线程 A 后，`cleanupExpiredBatch` 精确返回 `1`（仅删除真正过期的 `T2`），`T1` 完整保留且 `expires_at_epoch_ms` / UTC `token_expires_at` 与延期一致、`readAuthoritativeState(T1) == REVOKED`；同时验证 8 线程清理+延期混跑无死锁/无重复行、`deleteByRevocationIds` DB 异常不返回 `0`。
+   - **隔离 MySQL 8.4.8 (`DurableRevocationMySql84IT`)**：在真实 InnoDB `REPEATABLE-READ`（`127.0.0.1:5218`，非 root `issue64_tester@127.0.0.1`）复现同一先选后延确定性交错时序与 8 线程竞争压力测试，`Tests run: 5, Failures: 0, Errors: 0, Skipped: 0`。
+
+### 4.2 阻断项 2 修复：`V4_020` 预检强化与隔离 MySQL 8.4 CLI 实测
+
+1. **修复要点**：`doc/database/migrations/V4_020_jwt_revocation.sql` 的 `v4_020_preflight_guard()` 现对已存在的两张表严格核验：
+   - 存储引擎必须为 `InnoDB`；
+   - `information_schema.columns` 总列数必须精确等于 `10`（`jwt_revocation`）与 `6`（`jwt_revocation_checkpoint`），且逐列核对类型、长度/精度、`IS_NULLABLE`、`COLUMN_DEFAULT`、`EXTRA`（含 `auto_increment`、`on update CURRENT_TIMESTAMP(3)`）；
+   - `jwt_revocation` 的 `PRIMARY`（`revocation_id`）、`uk_jwt_revocation_jti_sha256`（`non_unique = 0` 且仅含单列 `jti_sha256`）、`idx_jwt_revocation_expires_ms`、`idx_jwt_revocation_user_id` 均为单列精确匹配，且 `jwt_revocation_checkpoint` 的 `PRIMARY` 仅含 `checkpoint_key`；
+   - `information_schema.table_constraints` + `information_schema.check_constraints` 强制核验 `chk_jwt_checkpoint_status` 与 `chk_jwt_checkpoint_ready_cutoff` 均为 `ENFORCED = 'YES'`，且归一化去除字符集前缀（如 `_gbk` / `_utf8mb4`）后的真实 `check_clause` 表达式完全一致。
+2. **真实 `mysql.exe 8.4.8` CLI 正反例实测（每例独立库，非 root `issue64_tester@127.0.0.1`）**：
+   - 首次建表（`issue64_test_store01`）-> 成功，初始化 `UNINITIALIZED + NULL`；
+   - 正确结构重复执行 -> 成功幂等；
+   - 运维激活 `READY + 1794582830000` 后第三次执行 -> 成功且保留原 `READY` 水位（`1794582830000` 未被覆盖）；
+   - 反例 1（`jwt_revocation` 增加额外列）-> 中止（`exit 1`，`V4_020_ABORT_EXISTING_JWT_REVOCATION_SCHEMA_MISMATCH`）；
+   - 反例 2（`uk_jwt_revocation_jti_sha256` 改为 `(jti_sha256, user_id)` 复合唯一索引）-> 中止（`exit 1`）；
+   - 反例 3（`chk_jwt_checkpoint_status` 同名但放行 `'BOGUS'`）-> 中止（`exit 1`，`V4_020_ABORT_EXISTING_JWT_CHECKPOINT_SCHEMA_MISMATCH`）；
+   - 反例 4（`chk_jwt_checkpoint_ready_cutoff` 设为 `NOT ENFORCED`）-> 中止（`exit 1`）；
+   - 反例 5（`jwt_revocation.revocation_reason` 改为 `VARCHAR(16) DEFAULT 'NONE'`）-> 中止（`exit 1`）；
+   - 反例 6（`jwt_revocation_checkpoint.checkpoint_status` 默认值改为 `'READY'`）-> 中止（`exit 1`）；
+   - 反例 7（`jwt_revocation` 存储引擎改为 `MyISAM`）-> 中止（`exit 1`）。
+
+### 4.3 补丁后全量回归统计
+
+- Python 门禁自测：`python -m unittest -v scripts/issue64/test_issue64_red_gate.py` -> `15/15 PASS`
+- H2 核心 Store/Checkpoint/Cleanup 测试：`24/24 PASS`（`CheckpointTest` 7 + `CleanupTest` 6 + `StoreTest` 11）
+- 隔离 MySQL `8.4.8` `DurableRevocationMySql84IT`：`5/5 PASS`（端口 `5218`，完成后 `listen_count=0`，临时数据目录已清理）
+- 既有 JWT 吊销定向回归：`77/77 PASS`
+- 全量洁净测试：`.\mvnw.cmd clean test` -> `Tests run: 1039, Failures: 0, Errors: 0, Skipped: 6`（6 项跳过为既有 opt-in：`Issue34FirstIssueRedTest` 3、`Issue37ExpiryBatchIntegrationTest` 1、`Issue64DurabilityRedGateTest` 1、`Issue64TargetPrerequisiteCheckTest` 1）
+- 基线 RED 门禁：`Issue64DurabilityRedGateTest`（`-Dissue64.red=true`）-> `EXECUTED_RED`（`expected:<401> but was:<200>`）
+- 目标前置条件门禁：`Issue64TargetPrerequisiteCheckTest`（`-Dissue64.target.prereq=true`）-> `EXECUTED_FAIL_AS_EXPECTED`（`TARGET_GREEN = NOT_RUN`）
+
+### 4.4 `STEP2_PRECONDITION` 下一阶段风险登记
+
+- **已知风险**：`DurableRevocationStore.advanceCheckpoint(long candidateMinValidIatEpochMs, String updatedBy)` 当前允许调用方传入 `0L`（用于 H2/IT 合成测试夹具）；若后续升级切流流程中存在任意代码路径或运维脚本在真实生产环境将 `UNINITIALIZED` 直接激活为 `READY + 0`，会绕过既有的旧版本签发 JWT 强制失效保障（`iat_ms < cutoff`）。
+- **前置门禁要求（`STEP2_PRECONDITION`，本轮未视为已解决）**：在 Step 2 接入认证/登录/注销主链路及 `DURABLE_DB_REQUIRED` 前，**必须**设计并验证生产激活防呆边界：
+  1. 任何应用启动、健康检查或生产运维流程不得自动将检查点激活为 `READY + 0`；
+  2. 首次生产切流从 `UNINITIALIZED` 激活至 `READY` 时，必须强制使用当前 UTC 下一整秒有效水位（`(UNIX_TIMESTAMP() + 1) * 1000`），并等待真实 UTC 时间跨过该 `cutoff` 后才能恢复 JWT 登录签发；
+  3. `src/test/resources/schema.sql` 及测试调用的 `READY + 0` 合成夹具不得作为生产默认行为或无保护暴露给生产入口。

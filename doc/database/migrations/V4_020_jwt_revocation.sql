@@ -34,11 +34,24 @@ BEGIN
     DECLARE v_read_only INT DEFAULT 0;
     DECLARE v_super_read_only INT DEFAULT 0;
     DECLARE v_rev_table_exists INT DEFAULT 0;
+    DECLARE v_rev_engine VARCHAR(64) DEFAULT '';
+    DECLARE v_rev_total_cols INT DEFAULT 0;
     DECLARE v_rev_col_count INT DEFAULT 0;
-    DECLARE v_rev_idx_count INT DEFAULT 0;
+    DECLARE v_rev_pk_ok INT DEFAULT 0;
+    DECLARE v_rev_pk_cols INT DEFAULT 0;
+    DECLARE v_rev_uk_ok INT DEFAULT 0;
+    DECLARE v_rev_uk_cols INT DEFAULT 0;
+    DECLARE v_rev_exp_idx_ok INT DEFAULT 0;
+    DECLARE v_rev_exp_idx_cols INT DEFAULT 0;
+    DECLARE v_rev_usr_idx_ok INT DEFAULT 0;
+    DECLARE v_rev_usr_idx_cols INT DEFAULT 0;
     DECLARE v_cp_table_exists INT DEFAULT 0;
+    DECLARE v_cp_engine VARCHAR(64) DEFAULT '';
+    DECLARE v_cp_total_cols INT DEFAULT 0;
     DECLARE v_cp_col_count INT DEFAULT 0;
-    DECLARE v_cp_chk_count INT DEFAULT 0;
+    DECLARE v_cp_pk_ok INT DEFAULT 0;
+    DECLARE v_cp_pk_cols INT DEFAULT 0;
+    DECLARE v_cp_chk_ok INT DEFAULT 0;
 
     IF v_db IS NULL OR v_db = '' THEN
         SIGNAL SQLSTATE '45000'
@@ -56,73 +69,195 @@ BEGIN
             SET MESSAGE_TEXT = 'V4_020_ABORT_READ_ONLY_INSTANCE';
     END IF;
 
-    -- Verify existing jwt_revocation structure if table already exists
-    SELECT COUNT(*) INTO v_rev_table_exists
+    -- Verify existing jwt_revocation structure (engine, exact columns/types/lengths/defaults/auto_increment, exact single-column indexes)
+    SELECT COUNT(*), COALESCE(MAX(engine), '') INTO v_rev_table_exists, v_rev_engine
     FROM information_schema.tables
     WHERE table_schema = v_db AND table_name = 'jwt_revocation';
 
     IF v_rev_table_exists > 0 THEN
+        SELECT COUNT(*) INTO v_rev_total_cols
+        FROM information_schema.columns
+        WHERE table_schema = v_db
+          AND table_name = 'jwt_revocation';
+
         SELECT COUNT(*) INTO v_rev_col_count
         FROM information_schema.columns
         WHERE table_schema = v_db
           AND table_name = 'jwt_revocation'
           AND (
-              (column_name = 'revocation_id' AND data_type = 'bigint' AND is_nullable = 'NO')
-              OR (column_name = 'jti_sha256' AND data_type = 'char' AND character_maximum_length = 64 AND is_nullable = 'NO')
-              OR (column_name = 'user_id' AND data_type = 'bigint' AND is_nullable = 'YES')
-              OR (column_name = 'expires_at_epoch_ms' AND data_type = 'bigint' AND is_nullable = 'NO')
-              OR (column_name = 'token_expires_at' AND data_type = 'datetime' AND datetime_precision = 3 AND is_nullable = 'NO')
-              OR (column_name = 'revoked_at' AND data_type = 'datetime' AND datetime_precision = 3 AND is_nullable = 'NO')
-              OR (column_name = 'revocation_reason' AND data_type = 'varchar' AND is_nullable = 'NO')
-              OR (column_name = 'instance_id' AND data_type = 'varchar')
-              OR (column_name = 'trace_id' AND data_type = 'varchar')
-              OR (column_name = 'created_at' AND data_type = 'datetime' AND datetime_precision = 3 AND is_nullable = 'NO')
+              (column_name = 'revocation_id'
+                  AND LOWER(data_type) = 'bigint'
+                  AND is_nullable = 'NO'
+                  AND column_default IS NULL
+                  AND LOWER(extra) LIKE '%auto_increment%')
+              OR (column_name = 'jti_sha256'
+                  AND LOWER(data_type) = 'char'
+                  AND character_maximum_length = 64
+                  AND is_nullable = 'NO'
+                  AND column_default IS NULL)
+              OR (column_name = 'user_id'
+                  AND LOWER(data_type) = 'bigint'
+                  AND is_nullable = 'YES'
+                  AND column_default IS NULL)
+              OR (column_name = 'expires_at_epoch_ms'
+                  AND LOWER(data_type) = 'bigint'
+                  AND is_nullable = 'NO'
+                  AND column_default IS NULL)
+              OR (column_name = 'token_expires_at'
+                  AND LOWER(data_type) = 'datetime'
+                  AND datetime_precision = 3
+                  AND is_nullable = 'NO'
+                  AND column_default IS NULL)
+              OR (column_name = 'revoked_at'
+                  AND LOWER(data_type) = 'datetime'
+                  AND datetime_precision = 3
+                  AND is_nullable = 'NO'
+                  AND column_default IS NULL)
+              OR (column_name = 'revocation_reason'
+                  AND LOWER(data_type) = 'varchar'
+                  AND character_maximum_length = 32
+                  AND is_nullable = 'NO'
+                  AND column_default = 'LOGOUT')
+              OR (column_name = 'instance_id'
+                  AND LOWER(data_type) = 'varchar'
+                  AND character_maximum_length = 64
+                  AND is_nullable = 'YES'
+                  AND column_default IS NULL)
+              OR (column_name = 'trace_id'
+                  AND LOWER(data_type) = 'varchar'
+                  AND character_maximum_length = 64
+                  AND is_nullable = 'YES'
+                  AND column_default IS NULL)
+              OR (column_name = 'created_at'
+                  AND LOWER(data_type) = 'datetime'
+                  AND datetime_precision = 3
+                  AND is_nullable = 'NO'
+                  AND LOWER(column_default) LIKE 'current_timestamp(3)%')
           );
 
-        SELECT COUNT(DISTINCT index_name) INTO v_rev_idx_count
+        SELECT
+            COALESCE(SUM(CASE WHEN index_name = 'PRIMARY' AND non_unique = 0 AND seq_in_index = 1 AND column_name = 'revocation_id' THEN 1 ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN index_name = 'PRIMARY' THEN 1 ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN index_name = 'uk_jwt_revocation_jti_sha256' AND non_unique = 0 AND seq_in_index = 1 AND column_name = 'jti_sha256' THEN 1 ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN index_name = 'uk_jwt_revocation_jti_sha256' THEN 1 ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN index_name = 'idx_jwt_revocation_expires_ms' AND seq_in_index = 1 AND column_name = 'expires_at_epoch_ms' THEN 1 ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN index_name = 'idx_jwt_revocation_expires_ms' THEN 1 ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN index_name = 'idx_jwt_revocation_user_id' AND seq_in_index = 1 AND column_name = 'user_id' THEN 1 ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN index_name = 'idx_jwt_revocation_user_id' THEN 1 ELSE 0 END), 0)
+        INTO
+            v_rev_pk_ok, v_rev_pk_cols,
+            v_rev_uk_ok, v_rev_uk_cols,
+            v_rev_exp_idx_ok, v_rev_exp_idx_cols,
+            v_rev_usr_idx_ok, v_rev_usr_idx_cols
         FROM information_schema.statistics
         WHERE table_schema = v_db
-          AND table_name = 'jwt_revocation'
-          AND (
-              (index_name = 'PRIMARY' AND column_name = 'revocation_id')
-              OR (index_name = 'uk_jwt_revocation_jti_sha256' AND non_unique = 0 AND column_name = 'jti_sha256')
-              OR (index_name = 'idx_jwt_revocation_expires_ms' AND column_name = 'expires_at_epoch_ms')
-              OR (index_name = 'idx_jwt_revocation_user_id' AND column_name = 'user_id')
-          );
+          AND table_name = 'jwt_revocation';
 
-        IF v_rev_col_count <> 10 OR v_rev_idx_count <> 4 THEN
+        IF LOWER(v_rev_engine) <> 'innodb'
+           OR v_rev_total_cols <> 10
+           OR v_rev_col_count <> 10
+           OR v_rev_pk_ok <> 1 OR v_rev_pk_cols <> 1
+           OR v_rev_uk_ok <> 1 OR v_rev_uk_cols <> 1
+           OR v_rev_exp_idx_ok <> 1 OR v_rev_exp_idx_cols <> 1
+           OR v_rev_usr_idx_ok <> 1 OR v_rev_usr_idx_cols <> 1 THEN
             SIGNAL SQLSTATE '45000'
                 SET MESSAGE_TEXT = 'V4_020_ABORT_EXISTING_JWT_REVOCATION_SCHEMA_MISMATCH';
         END IF;
     END IF;
 
-    -- Verify existing jwt_revocation_checkpoint structure if table already exists
-    SELECT COUNT(*) INTO v_cp_table_exists
+    -- Verify existing jwt_revocation_checkpoint structure (engine, exact columns, PK, and enforced CHECK semantics)
+    SELECT COUNT(*), COALESCE(MAX(engine), '') INTO v_cp_table_exists, v_cp_engine
     FROM information_schema.tables
     WHERE table_schema = v_db AND table_name = 'jwt_revocation_checkpoint';
 
     IF v_cp_table_exists > 0 THEN
+        SELECT COUNT(*) INTO v_cp_total_cols
+        FROM information_schema.columns
+        WHERE table_schema = v_db
+          AND table_name = 'jwt_revocation_checkpoint';
+
         SELECT COUNT(*) INTO v_cp_col_count
         FROM information_schema.columns
         WHERE table_schema = v_db
           AND table_name = 'jwt_revocation_checkpoint'
           AND (
-              (column_name = 'checkpoint_key' AND data_type = 'varchar' AND is_nullable = 'NO')
-              OR (column_name = 'checkpoint_status' AND data_type = 'varchar' AND is_nullable = 'NO')
-              OR (column_name = 'min_valid_iat_epoch_ms' AND data_type = 'bigint' AND is_nullable = 'YES')
-              OR (column_name = 'activated_at' AND data_type = 'datetime' AND datetime_precision = 3)
-              OR (column_name = 'updated_by' AND data_type = 'varchar')
-              OR (column_name = 'updated_at' AND data_type = 'datetime' AND datetime_precision = 3 AND is_nullable = 'NO')
+              (column_name = 'checkpoint_key'
+                  AND LOWER(data_type) = 'varchar'
+                  AND character_maximum_length = 64
+                  AND is_nullable = 'NO'
+                  AND column_default IS NULL)
+              OR (column_name = 'checkpoint_status'
+                  AND LOWER(data_type) = 'varchar'
+                  AND character_maximum_length = 20
+                  AND is_nullable = 'NO'
+                  AND column_default = 'UNINITIALIZED')
+              OR (column_name = 'min_valid_iat_epoch_ms'
+                  AND LOWER(data_type) = 'bigint'
+                  AND is_nullable = 'YES'
+                  AND column_default IS NULL)
+              OR (column_name = 'activated_at'
+                  AND LOWER(data_type) = 'datetime'
+                  AND datetime_precision = 3
+                  AND is_nullable = 'YES'
+                  AND column_default IS NULL)
+              OR (column_name = 'updated_by'
+                  AND LOWER(data_type) = 'varchar'
+                  AND character_maximum_length = 64
+                  AND is_nullable = 'YES'
+                  AND column_default IS NULL)
+              OR (column_name = 'updated_at'
+                  AND LOWER(data_type) = 'datetime'
+                  AND datetime_precision = 3
+                  AND is_nullable = 'NO'
+                  AND LOWER(column_default) LIKE 'current_timestamp(3)%'
+                  AND LOWER(extra) LIKE '%on update current_timestamp(3)%')
           );
 
-        SELECT COUNT(*) INTO v_cp_chk_count
-        FROM information_schema.table_constraints
+        SELECT
+            COALESCE(SUM(CASE WHEN index_name = 'PRIMARY' AND non_unique = 0 AND seq_in_index = 1 AND column_name = 'checkpoint_key' THEN 1 ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN index_name = 'PRIMARY' THEN 1 ELSE 0 END), 0)
+        INTO v_cp_pk_ok, v_cp_pk_cols
+        FROM information_schema.statistics
         WHERE table_schema = v_db
-          AND table_name = 'jwt_revocation_checkpoint'
-          AND constraint_type = 'CHECK'
-          AND constraint_name IN ('chk_jwt_checkpoint_status', 'chk_jwt_checkpoint_ready_cutoff');
+          AND table_name = 'jwt_revocation_checkpoint';
 
-        IF v_cp_col_count <> 6 OR v_cp_chk_count <> 2 THEN
+        SELECT COUNT(*) INTO v_cp_chk_ok
+        FROM information_schema.table_constraints tc
+        INNER JOIN information_schema.check_constraints cc
+            ON cc.constraint_schema = tc.constraint_schema
+           AND cc.constraint_name = tc.constraint_name
+        WHERE tc.table_schema = v_db
+          AND tc.table_name = 'jwt_revocation_checkpoint'
+          AND tc.constraint_type = 'CHECK'
+          AND tc.enforced = 'YES'
+          AND (
+              (
+                  tc.constraint_name = 'chk_jwt_checkpoint_status'
+                  AND REGEXP_REPLACE(
+                          REGEXP_REPLACE(
+                              REPLACE(REPLACE(LOWER(cc.check_clause), '`', ''), CHAR(92 USING utf8mb4), ''),
+                              '_[a-z0-9_]+''', ''''
+                          ),
+                          '[[:space:]]+', ' '
+                      ) = '(checkpoint_status in (''uninitialized'',''ready'',''invalid''))'
+              )
+              OR (
+                  tc.constraint_name = 'chk_jwt_checkpoint_ready_cutoff'
+                  AND REGEXP_REPLACE(
+                          REGEXP_REPLACE(
+                              REPLACE(REPLACE(LOWER(cc.check_clause), '`', ''), CHAR(92 USING utf8mb4), ''),
+                              '_[a-z0-9_]+''', ''''
+                          ),
+                          '[[:space:]]+', ' '
+                      ) = '((checkpoint_status <> ''ready'') or ((min_valid_iat_epoch_ms is not null) and (min_valid_iat_epoch_ms >= 0)))'
+              )
+          );
+
+        IF LOWER(v_cp_engine) <> 'innodb'
+           OR v_cp_total_cols <> 6
+           OR v_cp_col_count <> 6
+           OR v_cp_pk_ok <> 1 OR v_cp_pk_cols <> 1
+           OR v_cp_chk_ok <> 2 THEN
             SIGNAL SQLSTATE '45000'
                 SET MESSAGE_TEXT = 'V4_020_ABORT_EXISTING_JWT_CHECKPOINT_SCHEMA_MISMATCH';
         END IF;

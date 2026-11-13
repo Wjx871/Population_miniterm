@@ -118,9 +118,12 @@
         LIMIT #{batchSize}
     </select>
 
+    <!-- Guarded bounded delete: re-verify authoritative expires_at_epoch_ms <= cutoffEpochMs
+         on the current row version so concurrent REQUIRES_NEW expiry extensions are never deleted. -->
     <delete id="deleteByRevocationIds">
         DELETE FROM jwt_revocation
-        WHERE revocation_id IN
+        WHERE expires_at_epoch_ms &lt;= #{cutoffEpochMs}
+          AND revocation_id IN
         <foreach collection="ids" item="id" open="(" separator="," close=")">
             #{id}
         </foreach>

@@ -49,7 +49,9 @@ public interface JwtRevocationMapper {
             @Param("cutoffEpochMs") long cutoffEpochMs,
             @Param("batchSize") int batchSize);
 
-    int deleteByRevocationIds(@Param("ids") List<Long> ids);
+    int deleteByRevocationIds(
+            @Param("ids") List<Long> ids,
+            @Param("cutoffEpochMs") long cutoffEpochMs);
 
     /**
      * Raw single-round-trip row returned by {@link #selectAuthoritativeState}.

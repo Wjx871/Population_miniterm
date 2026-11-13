@@ -129,7 +129,9 @@ public class DurableRevocationTxExecutor {
     }
 
     /**
-     * Deletes a single bounded batch of expired revocations in an independent {@code REQUIRES_NEW} transaction.
+     * Deletes a single bounded batch of expired revocations in an independent {@code REQUIRES_NEW}
+     * transaction, passing {@code cutoffEpochMs} to {@link JwtRevocationMapper#deleteByRevocationIds}
+     * so records extended concurrently after ID selection are preserved.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public int executeCleanupBatch(long cutoffEpochMs, int batchSize, AtomicBoolean committed) {
@@ -138,7 +140,7 @@ public class DurableRevocationTxExecutor {
         if (ids == null || ids.isEmpty()) {
             return 0;
         }
-        return mapper.deleteByRevocationIds(ids);
+        return mapper.deleteByRevocationIds(ids, cutoffEpochMs);
     }
 
     private void registerCommitProof(AtomicBoolean committed) {
