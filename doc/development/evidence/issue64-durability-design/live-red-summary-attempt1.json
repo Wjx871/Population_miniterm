@@ -1,0 +1,230 @@
+{
+  "run_id": "851138995e97",
+  "runtime_dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-851138995e97",
+  "ports": {
+    "redis": 5138,
+    "app_a": 5139,
+    "app_b": 5140
+  },
+  "key_prefix": "issue64red-851138995e97",
+  "dir_evidence": {
+    "initial": {
+      "dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-851138995e97\\data-initial",
+      "dbsize_before_shutdown": 3,
+      "dump_rdb_exists": true,
+      "dump_rdb_bytes": 389,
+      "dump_rdb_sha256": "4c21776508388a96e5b3b744e8355142e905aa1e7677adabf23f0f5f1f752fa5"
+    },
+    "empty": {
+      "dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-851138995e97\\data-empty",
+      "redis_reported_dir": "/cygdrive/c/Users/jxgm/AppData/Local/Temp/issue64-durability-red/run-851138995e97/data-empty",
+      "dbsize": 0,
+      "revocation_key_exists": 0,
+      "dump_rdb_exists": false,
+      "verified_switch": false
+    }
+  },
+  "verdict": "ERROR",
+  "exit_code": 1,
+  "reason": "empty_dir_switch_unverified",
+  "a_old_status": 200,
+  "b_old_status": 200,
+  "fresh_b_status": 200,
+  "vulnerability_reproduced": false,
+  "log_sha256": {
+    "redis-initial.log": "73b3ca65c061b1f016bad0e50acb87153763afea65509179485e5b30e6a85313",
+    "redis-restart.log": "2e6bab1487c24817402770c3d3fd9991e1d9b3260c28968951be0c91b66896f1",
+    "redis-empty.log": "bd7ce3e1095be7a39973ef314eca4a7b597efa3744cb37a0f56444811412047a",
+    "app-A1.log": "53908865fcdf7d487e5b52173e51ea78503e2ab9665c1923d99a62af1149106c",
+    "app-B1.log": "3fef9b841fd4e32cf155c484575490ba7c50877cb251905da562f05e14ed3c29"
+  },
+  "events": [
+    {
+      "event": "redis_started",
+      "ts": "2026-11-13T02:35:50Z",
+      "label": "initial",
+      "pid": 38480,
+      "port": 5138,
+      "data_dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-851138995e97\\data-initial"
+    },
+    {
+      "event": "app_started",
+      "ts": "2026-11-13T02:36:00Z",
+      "instance": "A1",
+      "pid": 4140,
+      "port": 5139
+    },
+    {
+      "event": "app_started",
+      "ts": "2026-11-13T02:36:10Z",
+      "instance": "B1",
+      "pid": 23340,
+      "port": 5140
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-13T02:36:11Z",
+      "step": "login_population",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "token_issued",
+      "ts": "2026-11-13T02:36:11Z",
+      "role": "old",
+      "jti_sha256_prefix": "a03a6c0b5a3c"
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-13T02:36:11Z",
+      "step": "A_before_logout",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-13T02:36:11Z",
+      "step": "B_before_logout",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-13T02:36:11Z",
+      "step": "A_logout",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-13T02:36:11Z",
+      "step": "A_after_logout",
+      "actual": 401,
+      "expected": 401,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-13T02:36:11Z",
+      "step": "B_after_logout",
+      "actual": 401,
+      "expected": 401,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-13T02:36:11Z",
+      "step": "login_fresh",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "token_issued",
+      "ts": "2026-11-13T02:36:11Z",
+      "role": "fresh",
+      "jti_sha256_prefix": "bbb22c333781",
+      "jti_distinct": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-13T02:36:11Z",
+      "step": "B_fresh_valid",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "redis_down_after_save",
+      "ts": "2026-11-13T02:36:11Z",
+      "dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-851138995e97\\data-initial",
+      "dbsize_before_shutdown": 3,
+      "dump_rdb_exists": true,
+      "dump_rdb_bytes": 389,
+      "dump_rdb_sha256": "4c21776508388a96e5b3b744e8355142e905aa1e7677adabf23f0f5f1f752fa5"
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-13T02:36:12Z",
+      "step": "B_during_outage_fresh",
+      "actual": 503,
+      "expected": 503,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-13T02:36:13Z",
+      "step": "A_during_outage_health",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-13T02:36:14Z",
+      "step": "A_after_preserved_rdb_old",
+      "actual": 401,
+      "expected": 401,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-13T02:36:14Z",
+      "step": "B_after_preserved_rdb_old",
+      "actual": 401,
+      "expected": 401,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-13T02:36:14Z",
+      "step": "B_after_preserved_rdb_fresh",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "preserved_rdb_observation",
+      "ts": "2026-11-13T02:36:14Z",
+      "durable_guarantee_proven": false
+    },
+    {
+      "event": "redis_started",
+      "ts": "2026-11-13T02:36:15Z",
+      "label": "empty",
+      "pid": 35900,
+      "port": 5138,
+      "data_dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-851138995e97\\data-empty"
+    },
+    {
+      "event": "redis_empty_dir_switch",
+      "ts": "2026-11-13T02:36:15Z",
+      "dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-851138995e97\\data-empty",
+      "redis_reported_dir": "/cygdrive/c/Users/jxgm/AppData/Local/Temp/issue64-durability-red/run-851138995e97/data-empty",
+      "dbsize": 0,
+      "revocation_key_exists": 0,
+      "dump_rdb_exists": false,
+      "verified_switch": false
+    },
+    {
+      "event": "FINAL_VERDICT",
+      "ts": "2026-11-13T02:36:15Z",
+      "verdict": "ERROR",
+      "exit_code": 1,
+      "reason": "empty_dir_switch_unverified",
+      "a_old_status": 200,
+      "b_old_status": 200,
+      "fresh_b_status": 200,
+      "vulnerability_reproduced": false
+    },
+    {
+      "event": "own_processes_stopped",
+      "ts": "2026-11-13T02:36:15Z",
+      "count": 5
+    }
+  ]
+}

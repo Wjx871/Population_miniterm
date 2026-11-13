@@ -69,7 +69,7 @@
 | 61 | HIGH | 过期 Bearer Token 阻断匿名登录 | FIXED_VERIFIED | JWT filter 豁免精确公开登录路径；失效 Token 登录可继续，受保护 API 仍 401；`AuthRbacIntegrationTest`，`0d84620`。 | 后端已完成 |
 | 62 | MEDIUM | 业务申请和审批区划判定曾分裂 | FIXED_VERIFIED | 独立 H2 真实认证、授权及 MyBatis 测试覆盖多子区划、同级和伪前缀排除、列表/审批对照及分页等；原 Mapper 未改。 [本轮报告](../development/issue30-62-70-batch-review-2026-11-11.md)。 | 已验证；未声明生产部署 |
 | 63 | MEDIUM | 统计接口未使用调用者数据范围 | FIXED_VERIFIED | 统计 Service/Mapper 传递 `DataScopeCriteria`；部门/SELF/REGION/ALL 测试通过；`8509d78`。 | 后端已完成 |
-| 64 | MEDIUM | 本地 Token 黑名单无主动清理/分布式同步 | OPEN | 真实 Redis 双 JVM 跨实例注销和保存后重启通过；模拟数据丢失时未过期的已注销令牌重新可用，安全恢复机制和生产持久化验收待设计验证。 [证据](../development/issue29-64-real-validation-2026-11-12.md)。 | 后端/运维继续验证共享存储 |
+| 64 | MEDIUM | 本地 Token 黑名单无主动清理/分布式同步 | OPEN | 2026-11-12 真实 Redis 双 JVM 跨实例注销与正常 RDB 恢复通过，空目录恢复旧令牌重新返回 200。2026-11-13 完成方案 A（MySQL `jwt_revocation` 权威事实源 + Redis 可选快速拒绝缓存）架构设计、20 项验收矩阵与双端可执行 RED 门禁（JUnit opt-in + 隔离 Redis 8.10.3 双 JVM 均复现 RED HTTP 200）；未修改生产代码与 Schema，MySQL 8.4 与修复实现待下一轮验收。 [ADR](../development/issue64-durable-revocation-adr.md) / [矩阵](../development/issue64-durable-revocation-gate.md) / [证据](../development/issue64-durable-revocation-evidence.md)。 | 后端实施下一轮方案 A 与验收 |
 | 65 | LOW | 会话恢复初次挂载可能丢角色权限 | FIXED_NOT_VERIFIED | `user.js` 现会恢复持久化角色/权限并核验 `/auth/me`；未找到 UI 初次挂载闪烁专测。 | 前端补测 |
 | 66 | CRITICAL | 统计 SQL 用中文状态与标准状态不匹配 | FIXED_VERIFIED | 统计查询使用 ACTIVE 等业务枚举；统计集成测试验证合成 ACTIVE 记录；`8509d78`。 | 后端已完成 |
 | 67 | HIGH | 综合档案抽屉 prop 名与组件声明失配 | FRONTEND_HANDOFF | `ComprehensiveProfileDrawer.vue`/`DetailDrawer` 绑定需前端核验；本轮未改前端。 | 前端组 |
