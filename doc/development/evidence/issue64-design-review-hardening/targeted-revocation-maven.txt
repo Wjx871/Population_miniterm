@@ -1,0 +1,207 @@
+[INFO] Scanning for projects...
+[INFO]
+[INFO] -------------------< com.wjx871:population-miniterm >-------------------
+[INFO] Building population-miniterm 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.14:prepare-agent (coverage-agent) @ population-miniterm ---
+[INFO] argLine set to -javaagent:C:\\Users\\jxgm\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.14\\org.jacoco.agent-0.8.14-runtime.jar=destfile=D:\\ѧϰ��\\�����\\Сѧ��-issue64-design-review-hardening\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.3.1:resources (default-resources) @ population-miniterm ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 42 resources from src\main\resources to target\classes
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ population-miniterm ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 324 source files with javac [debug parameters release 17] to target\classes
+[INFO]
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ population-miniterm ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ population-miniterm ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 117 source files with javac [debug parameters release 17] to target\test-classes
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[96,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiConfirmIntegrationTest.java:[97,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/ai/precheck/AiPrecheckIntegrationTest.java:[85,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/cancellation/Issue30CancellationReturnIntegrationTest.java:[3,701] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/cancellation/Issue30CancellationReturnIntegrationTest.java:[3,701] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/cancellation/Issue30CancellationReturnIntegrationTest.java:[3,701] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/cancellation/Issue30CancellationReturnIntegrationTest.java:[3,701] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/cancellation/Issue30CancellationReturnIntegrationTest.java:[3,701] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/cancellation/Phase04CancellationIntegrationTest.java:[3,379] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue34HttpSupport.java:[35,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[72,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[72,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[72,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[72,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[72,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[73,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[73,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[73,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[73,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Issue37ExpiryBatchIntegrationTest.java:[73,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/floating/Phase05FloatingResidenceIntegrationTest.java:[5,130] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/keypopulation/Issue4145KeyPopulationScopeHttpIntegrationTest.java:[415,234] ���һ������ʹ���˲�׼ȷ�ı������͵� varargs �����ķ� varargs ����;
+  ���� varargs ����, Ӧʹ�� java.lang.Object
+  ���ڷ� varargs ����, Ӧʹ�� java.lang.Object[], ����Ҳ�������ƴ˾���
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/keypopulation/MySql84KeyPopulationC2RepeatableReadIT.java:[60,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/keypopulation/Phase10KeyPopulationGateIntegrationTest.java:[37,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/material/ApplicationMaterialSubmitConcurrencyIntegrationTest.java:[61,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/migration/Issue22ArchiveAffectedRowsIntegrationTest.java:[42,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/migration/Issue22ArchiveAffectedRowsIntegrationTest.java:[42,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/migration/Issue22ArchiveAffectedRowsIntegrationTest.java:[42,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/migration/Issue22ArchiveAffectedRowsIntegrationTest.java:[42,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/migration/Issue22ArchiveAffectedRowsIntegrationTest.java:[42,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/migration/Phase03MigrationIntegrationTest.java:[8,138] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/mysqlgate/MySql84CriticalAcceptanceIT.java:[67,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.MockBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3CommitOutcomeIntegrationTest.java:[45,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[118,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[119,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[120,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[WARNING] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java:[121,6] org.springframework.boot.test.mock.mockito �е� org.springframework.boot.test.mock.mockito.SpyBean �ѹ�ʱ, �ұ��Ϊ��ɾ��
+[INFO] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/cache/OptionalRedisServiceTest.java: D:\ѧϰ��\�����\Сѧ��-issue64-design-review-hardening\src\test\java\com\wjx871\population\cache\OptionalRedisServiceTest.javaʹ�û򸲸����ѹ�ʱ�� API��
+[INFO] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/cache/OptionalRedisServiceTest.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:deprecation ���±��롣
+[INFO] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/person/idcard/Issue3OcrTransactionIntegrationTest.java: ĳЩ�����ļ�����ʹ�û򸲸��˱��Ϊ��ɾ�����ѹ�ʱ API��
+[INFO] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/cache/S5A1StrictRedisServiceTest.java: ĳЩ�����ļ�ʹ����δ�����򲻰�ȫ�Ĳ�����
+[INFO] /D:/ѧϰ��/�����/Сѧ��-issue64-design-review-hardening/src/test/java/com/wjx871/population/cache/S5A1StrictRedisServiceTest.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:unchecked ���±��롣
+[INFO]
+[INFO] --- surefire:3.5.3:test (default-test) @ population-miniterm ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.wjx871.population.security.Issue64ScheduledCleanupTest
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (C:\Users\jxgm\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.6\byte-buddy-agent-1.17.6.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.965 s -- in com.wjx871.population.security.Issue64ScheduledCleanupTest
+[INFO] Running com.wjx871.population.security.Phase11TokenRevocationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.542 s -- in com.wjx871.population.security.Phase11TokenRevocationTest
+[INFO] Running com.wjx871.population.security.RevocationConfigurationTest
+2026-11-14T12:32:02.504936100Z main WARN event=REVOCATION_PRODUCTION_LOCAL_EXCEPTION mode=SINGLE_INSTANCE_LOCAL approval=SEC-2026/APPROVAL:17
+[INFO] Tests run: 27, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.531 s -- in com.wjx871.population.security.RevocationConfigurationTest
+[INFO] Running com.wjx871.population.security.RevocationEventsTest
+2026-11-14T12:32:02.625936300Z main WARN event=REVOCATION_READ_UNAVAILABLE traceId=safe-trace-123 instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f operation=AUTHENTICATE mode=SHARED_REDIS_REQUIRED errorCategory=CONNECTION elapsedMs=1 count=1
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in com.wjx871.population.security.RevocationEventsTest
+[INFO] Running com.wjx871.population.security.S5A1StrictRevocationHttpIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.3)
+
+2026-11-14 20:32:03.655 INFO  [traceId= instanceId=] [main] com.wjx871.population.security.S5A1StrictRevocationHttpIntegrationTest - Starting S5A1StrictRevocationHttpIntegrationTest using Java 21.0.7 with PID 35128 (started by jxgm in D:\ѧϰ��\�����\Сѧ��-issue64-design-review-hardening)
+2026-11-14 20:32:03.663 INFO  [traceId= instanceId=] [main] com.wjx871.population.security.S5A1StrictRevocationHttpIntegrationTest - No active profile set, falling back to 1 default profile: "default"
+2026-11-14 20:32:03.671 INFO  [traceId= instanceId=] [background-preinit] org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2026-11-14 20:32:08.963 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-11-14 20:32:08.967 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-11-14 20:32:09.018 INFO  [traceId= instanceId=] [main] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 33 ms. Found 0 Redis repository interfaces.
+2026-11-14 20:32:10.180 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-11-14 20:32:10.473 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:s5a1-strict-http-43623702-a2e5-4de4-8a0f-0ac609bedfc2 user=SA
+2026-11-14 20:32:10.476 INFO  [traceId= instanceId=] [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-11-14 20:32:11.638 INFO  [traceId= instanceId=] [main] com.wjx871.population.assistant.PolicyAssistantService - Policy knowledge base loaded: 56 chunks across 19 registered sources
+2026-11-14 20:32:12.417 INFO  [traceId= instanceId=] [main] org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name authService
+2026-11-14 20:32:13.943 INFO  [traceId= instanceId=] [main] org.springframework.boot.test.mock.web.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2026-11-14 20:32:13.943 INFO  [traceId= instanceId=] [main] org.springframework.test.web.servlet.TestDispatcherServlet - Initializing Servlet ''
+2026-11-14 20:32:13.944 INFO  [traceId= instanceId=] [main] org.springframework.test.web.servlet.TestDispatcherServlet - Completed initialization in 1 ms
+2026-11-14 20:32:13.968 INFO  [traceId= instanceId=] [main] com.wjx871.population.security.S5A1StrictRevocationHttpIntegrationTest - Started S5A1StrictRevocationHttpIntegrationTest in 10.755 seconds (process running for 17.728)
+2026-11-14 20:32:14.713 WARN  [traceId=510ff519-c116-403f-9695-deff4498f7ab instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f] [main] com.wjx871.population.security.RevocationEvents - event=REVOCATION_READ_UNAVAILABLE traceId=510ff519-c116-403f-9695-deff4498f7ab instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f operation=AUTHENTICATE mode=SHARED_REDIS_REQUIRED errorCategory=UNCONFIRMED elapsedMs=0 count=1
+2026-11-14 20:32:14.851 INFO  [traceId=69dbc799-fe20-4cc0-b9a1-201421750157 instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f] [main] com.wjx871.population.security.RevocationEvents - event=REVOCATION_REJECTED traceId=69dbc799-fe20-4cc0-b9a1-201421750157 instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f operation=AUTHENTICATE mode=SHARED_REDIS_REQUIRED errorCategory=NONE elapsedMs=0 count=1
+2026-11-14 20:32:15.060 INFO  [traceId=30a631e7-45bc-4c21-8c71-9ff8c27bc01e instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f] [main] com.wjx871.population.security.RevocationEvents - event=REVOCATION_CONFIRMED traceId=30a631e7-45bc-4c21-8c71-9ff8c27bc01e instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f operation=LOGOUT mode=SHARED_REDIS_REQUIRED errorCategory=NONE elapsedMs=3 count=1
+2026-11-14 20:32:15.080 INFO  [traceId=60f01d76-8268-4cb0-9709-a01fd00a8815 instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f] [main] com.wjx871.population.security.RevocationEvents - event=REVOCATION_REJECTED traceId=60f01d76-8268-4cb0-9709-a01fd00a8815 instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f operation=AUTHENTICATE mode=SHARED_REDIS_REQUIRED errorCategory=NONE elapsedMs=0 count=2
+2026-11-14 20:32:15.084 INFO  [traceId=fcb73743-7b69-4232-a736-c82d18a768fe instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f] [main] com.wjx871.population.security.RevocationEvents - event=REVOCATION_REJECTED traceId=fcb73743-7b69-4232-a736-c82d18a768fe instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f operation=AUTHENTICATE mode=SHARED_REDIS_REQUIRED errorCategory=NONE elapsedMs=0 count=3
+2026-11-14 20:32:15.334 WARN  [traceId=a45e65f9-70ab-447a-92e8-7a7662daa16b instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f] [main] com.wjx871.population.security.RevocationEvents - event=REVOCATION_READ_UNAVAILABLE traceId=a45e65f9-70ab-447a-92e8-7a7662daa16b instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f operation=LOGIN_PREFLIGHT mode=SHARED_REDIS_REQUIRED errorCategory=UNCONFIRMED elapsedMs=0 count=6
+2026-11-14 20:32:15.372 INFO  [traceId=7e24ae09-e5ba-47d2-9f87-ee0effed3f5b instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f] [main] com.wjx871.population.security.RevocationEvents - event=REVOCATION_REJECTED traceId=7e24ae09-e5ba-47d2-9f87-ee0effed3f5b instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f operation=AUTHENTICATE mode=SHARED_REDIS_REQUIRED errorCategory=NONE elapsedMs=0 count=4
+2026-11-14 20:32:15.668 WARN  [traceId=ebbb1ac2-222c-4e69-b031-33203835c06b instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f] [main] com.wjx871.population.security.RevocationEvents - event=REVOCATION_WRITE_UNAVAILABLE traceId=ebbb1ac2-222c-4e69-b031-33203835c06b instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f operation=LOGOUT mode=SHARED_REDIS_REQUIRED errorCategory=CONNECTION elapsedMs=0 count=1
+2026-11-14 20:32:15.688 WARN  [traceId= instanceId=] [main] com.wjx871.population.cache.OptionalRedisService - Redis unavailable; falling back to MySQL/local mode
+2026-11-14 20:32:16.056 WARN  [traceId=38c645b0-2de0-4af1-b579-9f7d1286fedf instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f] [main] com.wjx871.population.security.RevocationEvents - event=REVOCATION_WRITE_UNAVAILABLE traceId=38c645b0-2de0-4af1-b579-9f7d1286fedf instanceId=b36b865b-8c2c-4c86-90dd-9d6cce9f0e4f operation=LOGIN_PREFLIGHT mode=SHARED_REDIS_REQUIRED errorCategory=UNCONFIRMED elapsedMs=0 count=2
+[INFO] Tests run: 23, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.61 s -- in com.wjx871.population.security.S5A1StrictRevocationHttpIntegrationTest
+[INFO] Running com.wjx871.population.security.TokenRevocationServiceConsistencyTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.095 s -- in com.wjx871.population.security.TokenRevocationServiceConsistencyTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 77, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] --- jacoco:0.8.14:report (coverage-report) @ population-miniterm ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  39.228 s
+[INFO] Finished at: 2026-11-14T20:32:17+08:00
+[INFO] ------------------------------------------------------------------------

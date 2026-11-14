@@ -102,3 +102,58 @@
 - 对 `doc/development/evidence/issue64-durability-design/*` 全量 9 个文件执行正则扫描（`eyJ|Bearer\s+[A-Za-z0-9._-]+|requirepass|JWT_SECRET|password=`）：**命中数为 `0`**。
 - 对本机临时运行日志 `C:\Users\jxgm\AppData\Local\Temp\issue64-durability-red\run-3a6b04d933c7\*.log` 执行同规则扫描：**命中数为 `0`**。
 - JUnit Attempt 2 曾触发 MockMvc 默认失败转储的原始日志已移至 Git 忽略目录 `target/issue64-local-logs/junit-red-gate-attempt2-raw.log`，未纳入 Git。
+
+---
+
+## 4. 独立审查修正与复核验证（`audit/20261113-issue64-design-review-hardening`）
+
+> 第 1~3 节保留基线 `48c701fb6a02d78407897857ee0c3b8c9548dde9` 下的全部原始 RED 证据、历史运行与日志哈希，未作删除、覆盖或重新解释。本节仅记录审查修正分支上的新增验证结果。
+
+### 4.1 原始证据完整性核对
+
+基线目录 `doc/development/evidence/issue64-durability-design/` 中全部 4 个跟踪文件 SHA-256 与基线提交一致：
+
+- `live-red-events-attempt1.jsonl`: `838d0947e04dfd2439ad5102bf8ff815f89ad373db0d4fba7516a5d9c4685e7d`
+- `live-red-events.jsonl`: `0d26de578d7c9c589d40b92e61896534de285dc34474093c24b0a3af37ab7480`
+- `live-red-summary-attempt1.json`: `ba6419dda8396ac2cc8fff36897f0d8eb4fa48069f4e3b6a105d36964f3b015b`
+- `live-red-summary.json`: `bab742ef87d894198df2b25978bc40822afe21b32d583d5362c27f7990892b6b`
+
+### 4.2 本轮可执行验证与守卫检查结果
+
+| 验证项 | 命令 | 退出码 | 核心观察 | 证据文件 |
+| --- | --- | --- | --- | --- |
+| Python 分类器与 `TARGET_GREEN` 前置守卫自检 | `python -m unittest -v scripts/issue64/test_issue64_red_gate.py` | `0` | `Ran 6 tests in 12.011s - OK`（覆盖 `200/200/500 -> ERROR`、`200/401/200 -> RED`、`401/401/200 -> PASS`、`503/401/200 -> ERROR`、`200/500/200 -> ERROR`、`verified_switch=False -> ERROR` 及 `TARGET_GREEN` 守卫） | [python-selftest.txt](evidence/issue64-design-review-hardening/python-selftest.txt) |
+| Python `TARGET_GREEN` 门禁未就绪守卫 | `python scripts/issue64/issue64_red_gate.py --gate-stage TARGET_GREEN` | `1` | `verdict="ERROR"`，`reason="target_mode_not_implemented: DURABLE_DB_REQUIRED not found in RevocationProperties.Mode (TARGET_GREEN=NOT_RUN)"` | [target-green-guard.txt](evidence/issue64-design-review-hardening/target-green-guard.txt) |
+| JUnit `BASELINE_RED` 门禁（`SHARED_REDIS_REQUIRED`） | `mvnw.cmd test -Dissue64.red=true -Dtest=Issue64DurabilityRedGateTest` | `1` | `Tests run: 1, Failures: 1, Errors: 0, Skipped: 0`；`Issue64DurabilityRedGateTest.java:172` 断言 `Status expected:<401> but was:<200>`，无 MockMvc 原始头部/JWT 转储 | [junit-baseline-red.txt](evidence/issue64-design-review-hardening/junit-baseline-red.txt) |
+| JUnit `TARGET_GREEN` 入口守卫（`DURABLE_DB_REQUIRED` 未实现） | `mvnw.cmd test -Dissue64.target.green=true -Dtest=Issue64DurableDbTargetGateTest` | `1` | `Tests run: 1, Failures: 1, Errors: 0, Skipped: 0`；`Issue64DurableDbTargetGateTest.java:34->53` 失败提示 `TARGET_GREEN_NOT_IMPLEMENTED: RevocationProperties.Mode.DURABLE_DB_REQUIRED does not exist yet (TARGET_GREEN=NOT_RUN; refusing to fall back to SHARED_REDIS_REQUIRED)` | [junit-target-green-guard.txt](evidence/issue64-design-review-hardening/junit-target-green-guard.txt) |
+| 隔离真实 Redis 8.10.3 + 双 JVM `BASELINE_RED` | `python scripts/issue64/issue64_red_gate.py --gate-stage BASELINE_RED --redis-bin ... --classpath-file target/issue64-classpath.txt` | `2` | `run_id=0359668c1b23`（端口 Redis `13296` / A1 `13297` / B1 `13298`）；初始 `dbsize_before_shutdown=3`、`dump.rdb` 389 字节（SHA-256: `9ff06dd688ad19eace17b7ce7206df900172e5c7a4a5c6396b3aad75003ce5cb`）；空目录切换 `verified_switch=true`、`dbsize=0`、`revocation_key_exists=0`；最终 `a_old_status=200`、`b_old_status=200`、`fresh_b_status=200`、`verdict="RED"`、`exit_code=2` | [live-baseline-red-summary.json](evidence/issue64-design-review-hardening/live-baseline-red-summary.json) / [live-baseline-red-events.jsonl](evidence/issue64-design-review-hardening/live-baseline-red-events.jsonl) |
+| 定向 JWT 吊销 Maven 回归 | `mvnw.cmd test -Dtest=S5A1StrictRevocationHttpIntegrationTest,TokenRevocationServiceConsistencyTest,RevocationConfigurationTest,Issue64ScheduledCleanupTest,Phase11TokenRevocationTest,RevocationEventsTest` | `0` | `Tests run: 77, Failures: 0, Errors: 0, Skipped: 0`（`Issue64ScheduledCleanupTest`: 1、`Phase11TokenRevocationTest`: 6、`RevocationConfigurationTest`: 27、`RevocationEventsTest`: 2、`S5A1StrictRevocationHttpIntegrationTest`: 23、`TokenRevocationServiceConsistencyTest`: 18） | [targeted-revocation-maven.txt](evidence/issue64-design-review-hardening/targeted-revocation-maven.txt) |
+| 全量 Maven 测试回归（常规构建） | `mvnw.cmd test` | `0` | `Tests run: 1015, Failures: 0, Errors: 0, Skipped: 6`（较基线 `1014 / Skipped: 5` 仅新增 1 个 opt-in `Issue64DurableDbTargetGateTest`；Skipped 明细：`Issue34FirstIssueRedTest` 3、`Issue37ExpiryBatchIntegrationTest` 1、`Issue64DurabilityRedGateTest` 1、`Issue64DurableDbTargetGateTest` 1） | [full-maven.txt](evidence/issue64-design-review-hardening/full-maven.txt) |
+
+- **目标模式验收状态**：`TARGET_GREEN = NOT_RUN`（本轮仅完成设计文档、门禁边界分离与未实现守卫，未修改 `src/main/**`、正式 Schema 或迁移 SQL；`#64` 审计账本保持 `OPEN`）。
+
+### 4.3 本轮新增证据与临时日志 SHA-256
+
+`doc/development/evidence/issue64-design-review-hardening/`：
+
+- `full-maven.txt`: `f32d1bb603c9e9a35496c8772205c65d6728002eeb2611a49f804093b0234abd`
+- `junit-baseline-red.txt`: `1493adbb0381d2056c8da68bbdd306b9f986cc138bab32abb56977deb826cf06`
+- `junit-target-green-guard.txt`: `e455b10d59dab72ae3dd5b3ea8414487889a48848cb329596617969f70bf8d2e`
+- `live-baseline-red-events.jsonl`: `9b56fae7f3a2cfaf3d1884f3ce1764fd8d0f850dc700a2117690377a6cbf97a8`
+- `live-baseline-red-summary.json`: `c6bf66001f7f146388ac3c5e5363602c62fa8dbbb00b51bb241d093cd27cb5d2`
+- `python-selftest.txt`: `20255435fb0adcabca9cd20684b323fed4e282b8370e2b83cfe18b40d6c9882b`
+- `target-green-guard.txt`: `2ac4f75f26e4acd54d17f221c64a89580f6158ec7b93978518d0eefa293e448b`
+- `targeted-revocation-maven.txt`: `764d64d2c1a684070160b4a37826348535cf26c8fab00e8f2b3134c812d928ec`
+
+本机临时目录 `C:\Users\jxgm\AppData\Local\Temp\issue64-durability-red\run-0359668c1b23\`：
+
+- `app-A1.log`: `cf363538e45ba84a0ec18c8e0a14a2b998aa8fa51cb659fdbf6b6d7b67d44c5a`
+- `app-B1.log`: `dfa56cef17dd4b9889e117843fe007831c63f9ec8c33377cdae1fd18056915ad`
+- `redis-empty.log`: `0f9b45a847dfcaa4350aae155e4b5f46ced0cae9dedc0204634f429b022dcf4d`
+- `redis-initial.log`: `580bd182271754a0f56f7f9cf96ad4f9742f88dc642f146a52995589af0ed8a2`
+- `redis-restart.log`: `a0fd12126eb88a25fa4623a4ab0fd2fca71d7907b25f72a4eb21b6a42736331e`
+
+### 4.4 敏感数据扫描结论
+
+- 对 `doc/development/evidence/issue64-design-review-hardening/*` 全部 8 个文件执行正则扫描（`eyJ|Bearer\s+[A-Za-z0-9._-]+|requirepass|JWT_SECRET|password=`）：**命中数为 `0`**。
+- 对本机新运行日志 `C:\Users\jxgm\AppData\Local\Temp\issue64-durability-red\run-0359668c1b23\*.log` 全部 5 个文件执行同规则扫描：**命中数为 `0`**。

@@ -1,0 +1,11 @@
+test_error_controls_never_report_red_or_pass (scripts.issue64.test_issue64_red_gate.Issue64RedGateSelfTest.test_error_controls_never_report_red_or_pass) ... ok
+test_jti_digest_and_db_url_sanitization_do_not_leak_secrets (scripts.issue64.test_issue64_red_gate.Issue64RedGateSelfTest.test_jti_digest_and_db_url_sanitization_do_not_leak_secrets) ... ok
+test_negative_controls_when_old_token_returns_200_with_fresh_200_must_report_red (scripts.issue64.test_issue64_red_gate.Issue64RedGateSelfTest.test_negative_controls_when_old_token_returns_200_with_fresh_200_must_report_red) ... ok
+test_positive_control_when_vulnerability_fixed_must_report_pass_not_red (scripts.issue64.test_issue64_red_gate.Issue64RedGateSelfTest.test_positive_control_when_vulnerability_fixed_must_report_pass_not_red) ... ok
+test_target_green_prerequisites_reject_unimplemented_or_unsafe_dbs (scripts.issue64.test_issue64_red_gate.Issue64RedGateSelfTest.test_target_green_prerequisites_reject_unimplemented_or_unsafe_dbs) ... ok
+test_transient_503_before_200_still_classifies_red (scripts.issue64.test_issue64_red_gate.Issue64RedGateSelfTest.test_transient_503_before_200_still_classifies_red) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 12.011s
+
+OK

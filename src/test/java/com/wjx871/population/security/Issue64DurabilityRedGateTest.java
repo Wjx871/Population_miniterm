@@ -42,14 +42,17 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Opt-in executable RED gate for #64 (JWT revocation durability across Redis empty recovery).
+ * Opt-in BASELINE_RED gate for #64 (characterizes the legacy {@code SHARED_REDIS_REQUIRED} defect).
  *
  * <p>Run explicitly on baseline:
- * {@code .\mvnw.cmd test -Dissue64.red=true -Dtest=Issue64DurabilityRedGateTest}
+ * {@code .\mvnw.cmd test "-Dissue64.red=true" "-Dtest=Issue64DurabilityRedGateTest"}
  *
- * <p>Asserts the target security contract (INV-01..INV-05): once a JWT is revoked, wiping Redis
- * to an empty store must NOT resurrect the unexpired JWT as HTTP 200. Expected to fail (RED) on
- * the unmodified baseline {@code c74867721adea57ad16012b4785b4f952b92fe86}.
+ * <p><strong>Scope boundary</strong>: this class binds specifically to the legacy
+ * {@code SHARED_REDIS_REQUIRED} mode where a Redis outage fails closed (503) and wiping Redis
+ * resurrects an unexpired revoked JWT as HTTP 200 (expected RED on baseline
+ * {@code c74867721adea57ad16012b4785b4f952b92fe86}). It MUST NOT be used to claim
+ * {@code TARGET_GREEN} acceptance for the future {@code DURABLE_DB_REQUIRED} architecture;
+ * see {@link Issue64DurableDbTargetGateTest} for the target-mode entry point.
  */
 @EnabledIfSystemProperty(named = "issue64.red", matches = "true")
 @SpringBootTest(properties = {

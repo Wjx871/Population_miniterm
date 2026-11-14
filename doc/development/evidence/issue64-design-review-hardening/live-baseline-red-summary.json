@@ -1,0 +1,244 @@
+{
+  "run_id": "0359668c1b23",
+  "gate_stage": "BASELINE_RED",
+  "revocation_mode": "SHARED_REDIS_REQUIRED",
+  "target_db_url": "per_jvm_h2_mem(baseline_only)",
+  "runtime_dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-0359668c1b23",
+  "ports": {
+    "redis": 13296,
+    "app_a": 13297,
+    "app_b": 13298
+  },
+  "key_prefix": "issue64red-0359668c1b23",
+  "dir_evidence": {
+    "initial": {
+      "dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-0359668c1b23\\data-initial",
+      "dbsize_before_shutdown": 3,
+      "dump_rdb_exists": true,
+      "dump_rdb_bytes": 389,
+      "dump_rdb_sha256": "9ff06dd688ad19eace17b7ce7206df900172e5c7a4a5c6396b3aad75003ce5cb"
+    },
+    "empty": {
+      "dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-0359668c1b23\\data-empty",
+      "redis_reported_dir": "/cygdrive/c/Users/jxgm/AppData/Local/Temp/issue64-durability-red/run-0359668c1b23/data-empty",
+      "dbsize": 0,
+      "revocation_key_exists": 0,
+      "dump_rdb_exists": false,
+      "verified_switch": true
+    }
+  },
+  "verdict": "RED",
+  "exit_code": 2,
+  "reason": "revoked_jwt_accepted_after_empty_redis_recovery",
+  "a_old_status": 200,
+  "b_old_status": 200,
+  "fresh_b_status": 200,
+  "vulnerability_reproduced": true,
+  "log_sha256": {
+    "redis-initial.log": "580bd182271754a0f56f7f9cf96ad4f9742f88dc642f146a52995589af0ed8a2",
+    "redis-restart.log": "a0fd12126eb88a25fa4623a4ab0fd2fca71d7907b25f72a4eb21b6a42736331e",
+    "redis-empty.log": "0f9b45a847dfcaa4350aae155e4b5f46ced0cae9dedc0204634f429b022dcf4d",
+    "app-A1.log": "cf363538e45ba84a0ec18c8e0a14a2b998aa8fa51cb659fdbf6b6d7b67d44c5a",
+    "app-B1.log": "dfa56cef17dd4b9889e117843fe007831c63f9ec8c33377cdae1fd18056915ad"
+  },
+  "events": [
+    {
+      "event": "gate_stage_selected",
+      "ts": "2026-11-14T12:31:00Z",
+      "gate_stage": "BASELINE_RED",
+      "revocation_mode": "SHARED_REDIS_REQUIRED",
+      "target_db_url": "per_jvm_h2_mem(baseline_only)"
+    },
+    {
+      "event": "redis_started",
+      "ts": "2026-11-14T12:31:00Z",
+      "label": "initial",
+      "pid": 36644,
+      "port": 13296,
+      "data_dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-0359668c1b23\\data-initial"
+    },
+    {
+      "event": "app_started",
+      "ts": "2026-11-14T12:31:10Z",
+      "instance": "A1",
+      "pid": 9012,
+      "port": 13297,
+      "revocation_mode": "SHARED_REDIS_REQUIRED"
+    },
+    {
+      "event": "app_started",
+      "ts": "2026-11-14T12:31:19Z",
+      "instance": "B1",
+      "pid": 37572,
+      "port": 13298,
+      "revocation_mode": "SHARED_REDIS_REQUIRED"
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-14T12:31:19Z",
+      "step": "login_population",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "token_issued",
+      "ts": "2026-11-14T12:31:19Z",
+      "role": "old",
+      "jti_sha256_prefix": "46528f46eefe"
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-14T12:31:19Z",
+      "step": "A_before_logout",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-14T12:31:20Z",
+      "step": "B_before_logout",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-14T12:31:20Z",
+      "step": "A_logout",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-14T12:31:20Z",
+      "step": "A_after_logout",
+      "actual": 401,
+      "expected": 401,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-14T12:31:20Z",
+      "step": "B_after_logout",
+      "actual": 401,
+      "expected": 401,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-14T12:31:20Z",
+      "step": "login_fresh",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "token_issued",
+      "ts": "2026-11-14T12:31:20Z",
+      "role": "fresh",
+      "jti_sha256_prefix": "30b9fdff71fc",
+      "jti_distinct": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-14T12:31:20Z",
+      "step": "B_fresh_valid",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "redis_down_after_save",
+      "ts": "2026-11-14T12:31:20Z",
+      "dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-0359668c1b23\\data-initial",
+      "dbsize_before_shutdown": 3,
+      "dump_rdb_exists": true,
+      "dump_rdb_bytes": 389,
+      "dump_rdb_sha256": "9ff06dd688ad19eace17b7ce7206df900172e5c7a4a5c6396b3aad75003ce5cb"
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-14T12:31:21Z",
+      "step": "B_during_outage_fresh",
+      "actual": 503,
+      "expected": 503,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-14T12:31:22Z",
+      "step": "A_during_outage_health",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-14T12:31:23Z",
+      "step": "A_after_preserved_rdb_old",
+      "actual": 401,
+      "expected": 401,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-14T12:31:23Z",
+      "step": "B_after_preserved_rdb_old",
+      "actual": 401,
+      "expected": 401,
+      "passed": true
+    },
+    {
+      "event": "check",
+      "ts": "2026-11-14T12:31:23Z",
+      "step": "B_after_preserved_rdb_fresh",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "event": "preserved_rdb_observation",
+      "ts": "2026-11-14T12:31:23Z",
+      "durable_guarantee_proven": false
+    },
+    {
+      "event": "redis_started",
+      "ts": "2026-11-14T12:31:23Z",
+      "label": "empty",
+      "pid": 10568,
+      "port": 13296,
+      "data_dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-0359668c1b23\\data-empty"
+    },
+    {
+      "event": "redis_empty_dir_switch",
+      "ts": "2026-11-14T12:31:23Z",
+      "dir": "C:\\Users\\jxgm\\AppData\\Local\\Temp\\issue64-durability-red\\run-0359668c1b23\\data-empty",
+      "redis_reported_dir": "/cygdrive/c/Users/jxgm/AppData/Local/Temp/issue64-durability-red/run-0359668c1b23/data-empty",
+      "dbsize": 0,
+      "revocation_key_exists": 0,
+      "dump_rdb_exists": false,
+      "verified_switch": true
+    },
+    {
+      "event": "FINAL_VERDICT",
+      "ts": "2026-11-14T12:31:23Z",
+      "gate_stage": "BASELINE_RED",
+      "revocation_mode": "SHARED_REDIS_REQUIRED",
+      "verdict": "RED",
+      "exit_code": 2,
+      "reason": "revoked_jwt_accepted_after_empty_redis_recovery",
+      "a_old_status": 200,
+      "b_old_status": 200,
+      "fresh_b_status": 200,
+      "vulnerability_reproduced": true
+    },
+    {
+      "event": "own_processes_stopped",
+      "ts": "2026-11-14T12:31:23Z",
+      "count": 5
+    }
+  ]
+}

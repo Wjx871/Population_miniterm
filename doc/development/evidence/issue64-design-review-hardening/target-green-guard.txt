@@ -1,0 +1,1 @@
+{"event": "FINAL_VERDICT", "gate_stage": "TARGET_GREEN", "verdict": "ERROR", "exit_code": 1, "reason": "target_mode_not_implemented: DURABLE_DB_REQUIRED not found in RevocationProperties.Mode (TARGET_GREEN=NOT_RUN)"}
