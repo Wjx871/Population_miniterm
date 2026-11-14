@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HexFormat;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 import lombok.RequiredArgsConstructor;
@@ -250,6 +251,36 @@ public class DurableRevocationStore {
                             + snapshot.checkpointStatus() + ", cutoff=" + snapshot.minValidIatEpochMs()));
         }
         return snapshot;
+    }
+
+    /**
+     * Read-only authoritative store integrity probe proving both {@code jwt_revocation_checkpoint}
+     * (row present, {@code READY}, non-negative cutoff) and {@code jwt_revocation} (truly readable)
+     * are healthy on Primary DB. Does not write, initialize checkpoints, or use Redis/JVM cache.
+     */
+    public CheckpointSnapshot probeAuthoritativeStore() {
+        String probeJtiSha256 = sha256Hex("probe-" + UUID.randomUUID());
+        return probeAuthoritativeStore(probeJtiSha256);
+    }
+
+    CheckpointSnapshot probeAuthoritativeStore(String probeJtiSha256) {
+        if (probeJtiSha256 == null || probeJtiSha256.isBlank()) {
+            throw new IllegalArgumentException("probeJtiSha256 must not be blank");
+        }
+        AuthoritativeRevocationState state = queryAuthoritativeState(probeJtiSha256, false, null);
+        if (state.getStatus() == AuthoritativeRevocationState.Status.STORE_UNAVAILABLE) {
+            Throwable cause = state.getCause() != null
+                    ? state.getCause()
+                    : new IllegalStateException("Authoritative revocation store unavailable: " + state.getFailureReason());
+            throw new RevocationStoreUnavailableException(cause);
+        }
+        return new CheckpointSnapshot(
+                GLOBAL_CHECKPOINT_KEY,
+                state.getCheckpointStatus(),
+                state.getMinValidIatEpochMs(),
+                null,
+                null,
+                null);
     }
 
     /**

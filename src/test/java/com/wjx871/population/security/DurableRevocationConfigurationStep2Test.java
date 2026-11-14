@@ -111,7 +111,7 @@ class DurableRevocationConfigurationStep2Test {
     @Test
     void scenario3_durableModeStartsWithReadyNonZeroCheckpointWithOrWithoutRedis() {
         DurableRevocationStore store = mock(DurableRevocationStore.class);
-        when(store.requireReadyCheckpoint()).thenReturn(readySnapshot(1_794_537_301_000L));
+        when(store.probeAuthoritativeStore()).thenReturn(readySnapshot(1_794_537_301_000L));
 
         for (boolean redisEnabled : new boolean[] {false, true}) {
             durableRunner(store, redisEnabled)
@@ -141,14 +141,14 @@ class DurableRevocationConfigurationStep2Test {
                 .run(context -> assertThat(context).hasFailed().getFailure()
                         .hasRootCauseInstanceOf(IllegalStateException.class));
 
-        // 4b. requireReadyCheckpoint throws RevocationStoreUnavailableException (missing/UNINITIALIZED/INVALID/DB down)
+        // 4b. probeAuthoritativeStore throws RevocationStoreUnavailableException (missing/UNINITIALIZED/INVALID/DB down)
         for (Throwable cause : List.of(
                 new IllegalStateException("Missing checkpoint row: GLOBAL_JWT_CUTOFF"),
                 new IllegalStateException("Untrusted checkpoint state: status=UNINITIALIZED, cutoff=null"),
                 new IllegalStateException("Untrusted checkpoint state: status=INVALID, cutoff=1000"),
                 new DataAccessResourceFailureException("Simulated MySQL connection failure"))) {
             DurableRevocationStore failingStore = mock(DurableRevocationStore.class);
-            when(failingStore.requireReadyCheckpoint()).thenThrow(new RevocationStoreUnavailableException(cause));
+            when(failingStore.probeAuthoritativeStore()).thenThrow(new RevocationStoreUnavailableException(cause));
             durableRunner(failingStore, true)
                     .withPropertyValues(PREFIX + "mode=DURABLE_DB_REQUIRED")
                     .run(context -> {
@@ -167,7 +167,7 @@ class DurableRevocationConfigurationStep2Test {
                 new CheckpointSnapshot(DurableRevocationStore.GLOBAL_CHECKPOINT_KEY, "UNINITIALIZED", null, null, "X", null)
         }) {
             DurableRevocationStore badStore = mock(DurableRevocationStore.class);
-            when(badStore.requireReadyCheckpoint()).thenReturn(badSnapshot);
+            when(badStore.probeAuthoritativeStore()).thenReturn(badSnapshot);
             durableRunner(badStore, false)
                     .withPropertyValues(PREFIX + "mode=DURABLE_DB_REQUIRED")
                     .run(context -> assertThat(context).hasFailed().getFailure()
@@ -176,7 +176,7 @@ class DurableRevocationConfigurationStep2Test {
 
         // 4d. Negative cleanupGraceSkew rejected
         DurableRevocationStore okStore = mock(DurableRevocationStore.class);
-        when(okStore.requireReadyCheckpoint()).thenReturn(readySnapshot(1_794_537_301_000L));
+        when(okStore.probeAuthoritativeStore()).thenReturn(readySnapshot(1_794_537_301_000L));
         durableRunner(okStore, false)
                 .withPropertyValues(PREFIX + "mode=DURABLE_DB_REQUIRED", PREFIX + "cleanup-grace-skew=-1s")
                 .run(context -> assertThat(context).hasFailed().getFailure()
@@ -188,7 +188,7 @@ class DurableRevocationConfigurationStep2Test {
     @ValueSource(strings = {"prod", "production"})
     void scenario5_zeroCutoffRefusedInProductionAndWithoutTestSwitch(String profile) {
         DurableRevocationStore zeroCutoffStore = mock(DurableRevocationStore.class);
-        when(zeroCutoffStore.requireReadyCheckpoint()).thenReturn(readySnapshot(0L));
+        when(zeroCutoffStore.probeAuthoritativeStore()).thenReturn(readySnapshot(0L));
 
         // Non-prod WITHOUT allowZeroCutoffForTest=true MUST refuse READY+0
         durableRunner(zeroCutoffStore, false)
@@ -229,6 +229,13 @@ class DurableRevocationConfigurationStep2Test {
         try {
             org.springframework.jdbc.core.JdbcTemplate jdbc = new org.springframework.jdbc.core.JdbcTemplate(db);
             jdbc.execute("""
+                    CREATE TABLE jwt_revocation (
+                        revocation_id BIGINT PRIMARY KEY,
+                        jti_sha256 CHAR(64) NOT NULL,
+                        expires_at_epoch_ms BIGINT NOT NULL
+                    )
+                    """);
+            jdbc.execute("""
                     CREATE TABLE jwt_revocation_checkpoint (
                         checkpoint_key VARCHAR(64) PRIMARY KEY,
                         checkpoint_status VARCHAR(20) NOT NULL DEFAULT 'UNINITIALIZED',
@@ -268,6 +275,20 @@ class DurableRevocationConfigurationStep2Test {
                     "SELECT checkpoint_status, min_valid_iat_epoch_ms FROM jwt_revocation_checkpoint WHERE checkpoint_key='GLOBAL_JWT_CUTOFF'");
             assertThat(row.get("checkpoint_status")).isEqualTo("UNINITIALIZED");
             assertThat(row.get("min_valid_iat_epoch_ms")).isNull();
+
+            // Case D: READY checkpoint + missing jwt_revocation fails startup & /api/health never reports DB_PRIMARY_UP
+            jdbc.update("""
+                    UPDATE jwt_revocation_checkpoint
+                    SET checkpoint_status = 'READY', min_valid_iat_epoch_ms = 1794537301000, updated_by = 'TEST'
+                    WHERE checkpoint_key = 'GLOBAL_JWT_CUTOFF'
+                    """);
+            jdbc.execute("DROP TABLE jwt_revocation");
+            assertThatThrownBy(svc::validateConfiguration).isInstanceOf(IllegalStateException.class);
+            Map<String, Object> bodyMissingRevocation = health.health().data();
+            assertThat(bodyMissingRevocation)
+                    .containsEntry("database", "UP")
+                    .containsEntry("revocationMode", "DURABLE_DB_REQUIRED")
+                    .containsEntry("revocationStoreStatus", "DB_REVOCATION_UNAVAILABLE");
         } finally {
             db.shutdown();
         }
@@ -289,6 +310,7 @@ class DurableRevocationConfigurationStep2Test {
         verify(redis).strictPutMarker(org.mockito.ArgumentMatchers.eq("population:security:jwt:blacklist:raw-legacy-jti"), any());
         verify(durableStore, never()).saveRevocation(anyString(), any(), any(), any(), any(), any());
         verify(durableStore, never()).readAuthoritativeState(anyString(), any());
+        verify(durableStore, never()).probeAuthoritativeStore();
         verify(durableStore, never()).requireReadyCheckpoint();
 
         HealthController health = new HealthController(
@@ -341,10 +363,19 @@ class DurableRevocationConfigurationStep2Test {
         }
 
         @Override
-        public CheckpointSnapshot requireReadyCheckpoint() {
-            List<Map<String, Object>> rows = jdbc.queryForList(
-                    "SELECT checkpoint_key, checkpoint_status, min_valid_iat_epoch_ms FROM jwt_revocation_checkpoint WHERE checkpoint_key = ?",
-                    GLOBAL_CHECKPOINT_KEY);
+        public CheckpointSnapshot probeAuthoritativeStore() {
+            List<Map<String, Object>> rows;
+            try {
+                rows = jdbc.queryForList(
+                        "SELECT c.checkpoint_key, c.checkpoint_status, c.min_valid_iat_epoch_ms, "
+                                + "EXISTS(SELECT 1 FROM jwt_revocation r WHERE r.jti_sha256 = ? AND r.expires_at_epoch_ms > ?) AS jti_revoked "
+                                + "FROM jwt_revocation_checkpoint c WHERE c.checkpoint_key = ?",
+                        "0".repeat(64),
+                        Instant.now().toEpochMilli(),
+                        GLOBAL_CHECKPOINT_KEY);
+            } catch (RuntimeException ex) {
+                throw new RevocationStoreUnavailableException(ex);
+            }
             if (rows.isEmpty()) {
                 throw new RevocationStoreUnavailableException(new IllegalStateException("Missing checkpoint row"));
             }
@@ -358,6 +389,11 @@ class DurableRevocationConfigurationStep2Test {
                         new IllegalStateException("Untrusted checkpoint state: " + status));
             }
             return snap;
+        }
+
+        @Override
+        public CheckpointSnapshot requireReadyCheckpoint() {
+            return probeAuthoritativeStore();
         }
     }
 

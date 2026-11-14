@@ -161,6 +161,7 @@ class DurableAuthStep2MySql84IT {
     @Autowired private JdbcTemplate jdbc;
     @Autowired private JwtService jwtService;
     @Autowired private DurableRevocationStore durableStore;
+    @Autowired private TokenRevocationService tokenRevocationService;
     @Autowired private OptionalRedisService optionalRedis;
     @Autowired private RevocationProperties revocationProperties;
     @Autowired private RevocationEvents events;
@@ -593,6 +594,11 @@ class DurableAuthStep2MySql84IT {
         mockMvc.perform(login("admin", "123456"))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.code").value(503));
+        mockMvc.perform(get("/api/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.database").value("UP"))
+                .andExpect(jsonPath("$.data.revocationMode").value("DURABLE_DB_REQUIRED"))
+                .andExpect(jsonPath("$.data.revocationStoreStatus").value("DB_REVOCATION_UNAVAILABLE"));
         SIMULATE_REVOCATION_MAPPER_OUTAGE.set(false);
 
         // 2. Full DataSource connection outage -> /me & /logout fail closed 503, /api/health reports DOWN / DB_PRIMARY_DOWN
@@ -619,6 +625,75 @@ class DurableAuthStep2MySql84IT {
                 .andExpect(jsonPath("$.data.revocationStoreStatus").value("DB_PRIMARY_UP"));
         mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void realMysqlMissingJwtRevocationTableFailsClosedAtStartupLoginHealthAuthLogoutAndRecovers()
+            throws Exception {
+        String validToken = loginToken("admin", "123456");
+        jdbc.update("DELETE FROM operation_log");
+        jdbc.update("UPDATE sys_user SET last_login_time = NULL, last_login_ip = NULL");
+
+        // Real MySQL 8.4 DDL fault: jwt_revocation_checkpoint stays READY + non-zero cutoff,
+        // while jwt_revocation is genuinely renamed/missing on MySQL 8.4 Primary.
+        jdbc.execute("RENAME TABLE jwt_revocation TO jwt_revocation_hidden");
+        try {
+            assertThatThrownBy(() -> tokenRevocationService.validateConfiguration())
+                    .isInstanceOf(IllegalStateException.class);
+
+            String healthBody = mockMvc.perform(get("/api/health"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.database").value("UP"))
+                    .andExpect(jsonPath("$.data.revocationMode").value("DURABLE_DB_REQUIRED"))
+                    .andExpect(jsonPath("$.data.revocationStoreStatus").value("DB_REVOCATION_UNAVAILABLE"))
+                    .andReturn().getResponse().getContentAsString();
+            assertThat(healthBody).doesNotContain("DB_PRIMARY_UP", "password=masked", "SQLException");
+
+            String loginBody = mockMvc.perform(login("admin", "123456"))
+                    .andExpect(status().isServiceUnavailable())
+                    .andExpect(jsonPath("$.code").value(503))
+                    .andExpect(jsonPath("$.message", containsString("REVOCATION_STORE_UNAVAILABLE")))
+                    .andReturn().getResponse().getContentAsString();
+            assertThat(loginBody).doesNotContain("eyJ", "\"token\":\"");
+
+            Integer loginSuccess = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM operation_log WHERE operation_type = 'LOGIN_SUCCESS' AND operation_result = 'SUCCESS'",
+                    Integer.class);
+            assertThat(loginSuccess).isZero();
+            Map<String, Object> loginCols = jdbc.queryForMap(
+                    "SELECT last_login_time, last_login_ip FROM sys_user WHERE username = 'admin'");
+            assertThat(loginCols.values()).containsOnlyNulls();
+
+            mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + validToken))
+                    .andExpect(status().isServiceUnavailable())
+                    .andExpect(jsonPath("$.code").value(503));
+            mockMvc.perform(post("/api/auth/logout").header("Authorization", "Bearer " + validToken))
+                    .andExpect(status().isServiceUnavailable())
+                    .andExpect(jsonPath("$.code").value(503));
+            assertThat(logoutSuccessCount()).isZero();
+        } finally {
+            Integer hiddenExists = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM information_schema.tables "
+                            + "WHERE table_schema = DATABASE() AND table_name = 'jwt_revocation_hidden'",
+                    Integer.class);
+            if (hiddenExists != null && hiddenExists > 0) {
+                jdbc.execute("RENAME TABLE jwt_revocation_hidden TO jwt_revocation");
+            }
+        }
+
+        // Real MySQL recovery verification
+        tokenRevocationService.validateConfiguration();
+        mockMvc.perform(get("/api/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.database").value("UP"))
+                .andExpect(jsonPath("$.data.revocationStoreStatus").value("DB_PRIMARY_UP"));
+        String recoveredToken = loginToken("admin", "123456");
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + recoveredToken))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/auth/logout").header("Authorization", "Bearer " + recoveredToken))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + recoveredToken))
+                .andExpect(status().isUnauthorized());
     }
 
     private void activateReadyCutoffAndWaitUtc() throws InterruptedException {

@@ -100,7 +100,7 @@ class DurableLoginHealthCleanupTest {
                             JwtRevocationMapper.class.getClassLoader(),
                             new Class<?>[] {JwtRevocationMapper.class},
                             (proxy, method, args) -> {
-                                if ("selectCheckpoint".equals(method.getName())
+                                if ("selectAuthoritativeState".equals(method.getName())
                                         && RACE_ADVANCE_ON_SECOND_CHECKPOINT_READ.get()) {
                                     int callIndex = CHECKPOINT_READ_COUNT.incrementAndGet();
                                     if (callIndex == 2) {

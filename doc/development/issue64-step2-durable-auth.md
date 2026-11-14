@@ -92,3 +92,27 @@
 1. **真实双 JVM 门禁未执行（`TARGET_GREEN = NOT_RUN`）**：Step 2 中的 `DurableLogoutAndRedisFaultTest` 仅在单 JVM 内通过独立 `TokenRevocationService` 实例模拟“另一实例未清理内存”，未启动双独立 JVM 进程连接共享 MySQL `8.4` 与 Redis 完成 `issue64_red_gate.py --stage target-green`（以及 Redis 清空/RDB 重启后旧 Token 仍被主库拒绝 401）。
 2. **上线前生产切换前置约束**：沿用 Step 1 `STEP2_PRECONDITION`，生产切换至 `DURABLE_DB_REQUIRED` 前必须通过 `activate_jwt_revocation_checkpoint.sql` 设置下一整秒有效 UTC 水位并等待跨秒，`prod`/`production` 环境严禁 `READY + 0`。
 3. **审计台账状态**：`doc/testing/2026-11-02-antigravity-audit-ledger.md` 中 Issue `#64` 继续保持 `OPEN`，待 Step 3 完成真实双 JVM `TARGET_GREEN` 门禁及独立复核后再评估状态关闭。
+
+---
+
+## 6. 独立复核安全补丁（`fix/20261114-issue64-step2-authority-preflight`）
+
+基于原 Step 2 提交 `8da6e547729a1b458734b0285aadbe2148206f25`，补齐了权威撤销存储的完整只读探针校验，修复“`jwt_revocation_checkpoint` 为 `READY` 但 `jwt_revocation` 缺失、无 `SELECT` 权限或查询失败时启动、登录、签发复核及健康检查仍误放行 / 误报 `DB_PRIMARY_UP`”的阻断项：
+
+1. **只读权威存储完整性探针（`DurableRevocationStore`）**：
+   - 新增 `probeAuthoritativeStore()`（及包内重载 `probeAuthoritativeStore(String probeJtiSha256)`），复用 MyBatis `selectAuthoritativeState(GLOBAL_JWT_CUTOFF, probeJtiSha256, nowEpochMs)`，在单次主库读写事务中同时校验：`jwt_revocation_checkpoint` 可读、`GLOBAL_JWT_CUTOFF` 行存在且 `READY` 与非负水位、以及 `jwt_revocation` 通过 `EXISTS(...)` 真实可读；不写库、不创建/激活检查点、不依赖 Redis 或 JVM 缓存；若随机摘要发生碰撞命中（`REVOKED`）仍判定存储健康可读；SQL/权限/缺表错误映射为非 `IllegalStateException` 根因的 `RevocationStoreUnavailableException`。
+   - 保留原有 `requireReadyCheckpoint()` 供 Step 1 测试使用。
+2. **启动、登录、签发窗口、健康检查与注销前接线**：
+   - `TokenRevocationService.validateConfiguration()`：启动改调 `durableStore.probeAuthoritativeStore()`，任一表不可读/未就绪均 fail-fast 抛出 `IllegalStateException`。
+   - `TokenRevocationService.requireLoginStore()` & `verifyIssuedTokenNotSuperseded(Instant)`：统一通过 `requireTrustedAuthoritativeStore("LOGIN_PREFLIGHT", started)` 调用 `probeAuthoritativeStore()`，登录前与 JWT 签发后写入前均 fails closed `503`，不返回 JWT、不写 `LOGIN_SUCCESS`、不更新 `last_login_time`/`last_login_ip`。
+   - `TokenRevocationService.revokeDurable(...)`：在 `durableStore.saveRevocation(...)` 之前先执行 `requireTrustedAuthoritativeStore("LOGOUT", started)` 预检，在认证过滤后、提交前发生检查点篡改或主表不可用时直接 503，不改变已有 `REQUIRES_NEW` 提交与尽力而为 Redis 补偿边界。
+   - `HealthController.resolveDurableStoreStatus(boolean)`：保持 HTTP 200 且不泄露秘密/SQL/URL；`SELECT 1` 正常但 `probeAuthoritativeStore()` 因 `jwt_revocation` 缺失/SQL 错误失败时返回 `DB_REVOCATION_UNAVAILABLE`（绝不返回 `DB_PRIMARY_UP`）；检查点未激活/异常仍返回 `DB_CHECKPOINT_NOT_READY`；仅 `!database` 或 Store 缺失返回 `DB_PRIMARY_DOWN`。
+3. **补丁后复测事实（全部基于真实 SQL/隔离 MySQL 8.4.8 与 H2，无伪装模拟）**：
+
+| 检查项 | 命令/方式 | 判定 | 实测结果 |
+|---|---|---|---|
+| 探针/负例+Step1/2 核心 H2 | `mvnw.cmd test -Dtest=DurableAuthStep2AuthorityPreflightNegativeTest,...`（8 类） | `EXECUTED_PASS` | `51 run, 0 failed, 0 errors, 0 skipped` |
+| Python 门禁自测 | `python -m unittest -v scripts/issue64/test_issue64_red_gate.py` | `EXECUTED_PASS` | `15 tests OK` |
+| 独立隔离 MySQL 8.4.8 | `127.0.0.1:10932` 非 root `issue64_app`，导入 `V4_020`+激活脚本，`DurableAuthStep2MySql84IT`（含真实 `RENAME TABLE jwt_revocation` 故障与恢复） | `EXECUTED_PASS` | `6 run, 0 failed, 0 errors, 0 skipped`；完成后停库验证 `listen_count=0` 并清理临时目录 |
+| 全量洁净回归 | `.\mvnw.cmd clean test` | `EXECUTED_PASS` | `Tests run: 1073, Failures: 0, Errors: 0, Skipped: 6`（同前 6 项既有 opt-in 跳过；其中 `AuthRbacIntegrationTest`(19)+`Phase11TokenRevocationTest`(6)+`RevocationConfigurationTest`(27)+`S5A1StrictRevocationHttpIntegrationTest`(23)+`RevocationEventsTest`(2) 既有 JWT 回归 `77/77` 通过） |
+| 真实双 JVM `TARGET_GREEN` | 双 JVM 联调门禁 | **`NOT_RUN`** | 仍留待 Step 3 执行，#64 保持 `OPEN` |

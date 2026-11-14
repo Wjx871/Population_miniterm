@@ -67,7 +67,7 @@ public class HealthController {
             return "DB_PRIMARY_DOWN";
         }
         try {
-            CheckpointSnapshot snapshot = store.requireReadyCheckpoint();
+            CheckpointSnapshot snapshot = store.probeAuthoritativeStore();
             boolean production = revocationProperties.isProduction()
                     || (environment != null && environment.acceptsProfiles(Profiles.of("prod", "production")));
             boolean zeroCutoffAllowed = !production && revocationProperties.isAllowZeroCutoffForTest();
@@ -80,9 +80,9 @@ public class HealthController {
             if (ex.getCause() instanceof IllegalStateException) {
                 return "DB_CHECKPOINT_NOT_READY";
             }
-            return "DB_PRIMARY_DOWN";
+            return "DB_REVOCATION_UNAVAILABLE";
         } catch (RuntimeException ex) {
-            return "DB_PRIMARY_DOWN";
+            return "DB_REVOCATION_UNAVAILABLE";
         }
     }
 }

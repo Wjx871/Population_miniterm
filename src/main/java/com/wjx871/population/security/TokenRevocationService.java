@@ -96,10 +96,10 @@ public class TokenRevocationService {
             }
             CheckpointSnapshot snapshot;
             try {
-                snapshot = durableStore.requireReadyCheckpoint();
+                snapshot = durableStore.probeAuthoritativeStore();
             } catch (RevocationStoreUnavailableException ex) {
                 throw new IllegalStateException(
-                        "DURABLE_DB_REQUIRED startup failed: GLOBAL_JWT_CUTOFF checkpoint is missing, "
+                        "DURABLE_DB_REQUIRED startup failed: authoritative revocation store is missing, "
                                 + "uninitialized, invalid, or database is unreachable",
                         ex);
             }
@@ -193,7 +193,7 @@ public class TokenRevocationService {
     public void requireLoginStore() {
         if (durable()) {
             long started = System.nanoTime();
-            CheckpointSnapshot snapshot = requireTrustedCheckpointForLogin(started);
+            CheckpointSnapshot snapshot = requireTrustedAuthoritativeStore("LOGIN_PREFLIGHT", started);
             long currentWholeSecondMs = clock.instant().getEpochSecond() * 1000L;
             if (currentWholeSecondMs < snapshot.minValidIatEpochMs()) {
                 events.record(RevocationEvents.REVOCATION_DB_UNAVAILABLE, "LOGIN_PREFLIGHT",
@@ -222,7 +222,7 @@ public class TokenRevocationService {
             return;
         }
         long started = System.nanoTime();
-        CheckpointSnapshot snapshot = requireTrustedCheckpointForLogin(started);
+        CheckpointSnapshot snapshot = requireTrustedAuthoritativeStore("LOGIN_PREFLIGHT", started);
         if (issuedAt == null || issuedAt.toEpochMilli() < snapshot.minValidIatEpochMs()) {
             events.record(RevocationEvents.REVOCATION_DB_UNAVAILABLE, "LOGIN_PREFLIGHT",
                     properties.getMode(), "TOKEN_SUPERSEDED", started);
@@ -232,12 +232,7 @@ public class TokenRevocationService {
     }
 
     private void revokeDurable(String jti, Instant expiresAt, Long userId, long started) {
-        if (durableStore == null) {
-            events.record(RevocationEvents.REVOCATION_DB_UNAVAILABLE, "LOGOUT",
-                    properties.getMode(), "DB_UNAVAILABLE", started);
-            throw new RevocationStoreUnavailableException(
-                    new IllegalStateException("DurableRevocationStore unavailable"));
-        }
+        requireTrustedAuthoritativeStore("LOGOUT", started);
         try {
             durableStore.saveRevocation(jti, expiresAt, userId, DurableRevocationStore.DEFAULT_REASON, null, null);
         } catch (RevocationStoreUnavailableException ex) {
@@ -322,31 +317,31 @@ public class TokenRevocationService {
         return true;
     }
 
-    private CheckpointSnapshot requireTrustedCheckpointForLogin(long started) {
+    private CheckpointSnapshot requireTrustedAuthoritativeStore(String operation, long started) {
         if (durableStore == null) {
-            events.record(RevocationEvents.REVOCATION_DB_UNAVAILABLE, "LOGIN_PREFLIGHT",
+            events.record(RevocationEvents.REVOCATION_DB_UNAVAILABLE, operation,
                     properties.getMode(), "DB_UNAVAILABLE", started);
             throw new RevocationStoreUnavailableException(
                     new IllegalStateException("DurableRevocationStore unavailable"));
         }
         CheckpointSnapshot snapshot;
         try {
-            snapshot = durableStore.requireReadyCheckpoint();
+            snapshot = durableStore.probeAuthoritativeStore();
         } catch (RevocationStoreUnavailableException ex) {
-            events.record(RevocationEvents.REVOCATION_DB_UNAVAILABLE, "LOGIN_PREFLIGHT",
+            events.record(RevocationEvents.REVOCATION_DB_UNAVAILABLE, operation,
                     properties.getMode(), "CHECKPOINT_UNAVAILABLE", started);
             throw ex;
         } catch (RuntimeException ex) {
-            events.record(RevocationEvents.REVOCATION_DB_UNAVAILABLE, "LOGIN_PREFLIGHT",
+            events.record(RevocationEvents.REVOCATION_DB_UNAVAILABLE, operation,
                     properties.getMode(), "DB_READ_ERROR", started);
             throw new RevocationStoreUnavailableException(ex);
         }
         if (snapshot == null || !snapshot.isReady()
                 || (snapshot.minValidIatEpochMs() == 0L && !isZeroCutoffAllowed())) {
-            events.record(RevocationEvents.REVOCATION_DB_UNAVAILABLE, "LOGIN_PREFLIGHT",
+            events.record(RevocationEvents.REVOCATION_DB_UNAVAILABLE, operation,
                     properties.getMode(), "ZERO_CUTOFF_FORBIDDEN", started);
             throw new RevocationStoreUnavailableException(
-                    new IllegalStateException("Untrusted zero cutoff checkpoint for login preflight"));
+                    new IllegalStateException("Untrusted zero cutoff checkpoint for " + operation));
         }
         return snapshot;
     }
