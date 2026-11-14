@@ -7,9 +7,9 @@
 - **历史审查来源**：`origin/audit/20261113-issue64-design-review-hardening` @ `85bd1612ccc9e50df8b018db2ed8b3c7789474d5`
 - **共同祖先（Merge-Base）**：`48c701fb6a02d78407897857ee0c3b8c9548dde9`
 - **施工分支**：`audit/20261114-issue64-design-reconciliation`
-- **总结论**：**无须迁移代码或门禁脚本，建议直接以当前 `integration` 为准（仅保留本核对报告）。**
+- **总结论**：**核心安全目标均已在当前 `integration` 覆盖（历史方案未逐项全量照搬），无须迁移代码或门禁脚本（仅保留本核对报告及勘误）。**
 
-`85bd161` 仅包含 1 个相对 `48c701f` 的审查硬化提交（涉及 15 个文件：8 个运行日志/证据文件、3 份开发文档、2 个 Python 门禁脚本及单测、2 个 Java 测试类）；而当前 `bb33028` 已在 `48c701f` 之上演进 7 个提交，完成了 `V4_020` 正式 Schema、Step 1 持久存储层、Step 2 认证与吊销主链路接入、权威性前置探针、三层门禁与全局七项 `TARGET_GREEN` 合同、以及隔离 MySQL `8.4.8` 实测。`85bd161` 中的全部有效设计约束均已被 `bb33028` 覆盖并进一步收严，未发现需要从历史审查分支反向迁入的代码约束；历史占位门禁类与大容量运行日志亦按规则不予迁移。
+`85bd161` 仅包含 1 个相对 `48c701f` 的审查硬化提交（涉及 15 个文件：8 个运行日志/证据文件、3 份开发文档、2 个 Python 门禁脚本及单测、2 个 Java 测试类）；而当前 `bb33028` 已在 `48c701f` 之上演进 7 个提交，完成了 `V4_020` 正式 Schema、Step 1 持久存储层、Step 2 认证与吊销主链路接入、权威性前置探针、三层门禁与全局七项 `TARGET_GREEN` 合同、以及隔离 MySQL `8.4.8` 实测。需要严格区分**“核心安全目标已覆盖”**与**“历史方案全部实现”**：`85bd161` 针对阻断项 A–D 及隔离/时区边界的核心安全目标均已在 `bb33028` 中通过等价或更严格的方案覆盖，但历史提案中的 `activation_mode`、`checkpoint_version`、`checkpoint_state` 及数据库触发器 `trg_jwt_revocation_checkpoint_monotonic_update` 等具体机制并未实施；当前方案无需反向迁入这些未落地机制，历史占位门禁类与大容量运行日志亦按规则不予迁移。
 
 ---
 
@@ -17,7 +17,7 @@
 
 | 核对项 | 历史审查 (`85bd161`) | 当前集成 (`bb33028`) | 核对结论 |
 | :--- | :--- | :--- | :--- |
-| **A. 检查点缺失、非法状态、未激活水位 Fail-Closed 契约** | ADR 要求取消 `COALESCE(MAX(...), 0)` 默认放行，对缺失/非法/`UNINITIALIZED`/`NULL`/`0` 水位执行 Fail-Closed（503 + 禁止启动），禁止 `INSERT IGNORE` 覆盖已有水位；草案包含 `checkpoint_state`、`activation_mode`、`checkpoint_version` 及单调更新触发器 | 正式 `doc/database/migrations/V4_020_jwt_revocation.sql` 落地 6 列 `jwt_revocation_checkpoint`（`checkpoint_key`, `checkpoint_status` `UNINITIALIZED\|READY\|INVALID`, `min_valid_iat_epoch_ms`, `activated_at`, `updated_by`, `updated_at`）与两条强制 `CHECK` 约束，并用 `INSERT ... SELECT ... WHERE NOT EXISTS` 与 `v4_020_preflight_guard()` 防止误覆盖；`JwtRevocationMapper.xml` 去除 `COALESCE`；`CheckpointSnapshot.isReady()`、`DurableRevocationStore.probeAuthoritativeStore()` 与 `TokenRevocationService` 在启动、登录前、签发后复核、注销提交前、鉴权 MISS 与 `/api/health`（`DB_REVOCATION_UNAVAILABLE`）全链路执行 Fail-Closed（503），且非测试环境禁止 `READY + 0` | **已完整覆盖并精简落地**（无需迁移） |
+| **A. 检查点缺失、非法状态、未激活水位 Fail-Closed 契约** | ADR 要求取消 `COALESCE(MAX(...), 0)` 默认放行，对缺失/非法/`UNINITIALIZED`/`NULL`/`0` 水位执行 Fail-Closed（503 + 禁止启动），禁止 `INSERT IGNORE` 覆盖已有水位；草案包含 `checkpoint_state`、`activation_mode`、`checkpoint_version` 及单调更新触发器 | 正式 `doc/database/migrations/V4_020_jwt_revocation.sql` 落地 6 列 `jwt_revocation_checkpoint`（`checkpoint_key`, `checkpoint_status` `UNINITIALIZED\|READY\|INVALID`, `min_valid_iat_epoch_ms`, `activated_at`, `updated_by`, `updated_at`）与两条强制 `CHECK` 约束，并用 `INSERT ... SELECT ... WHERE NOT EXISTS` 与 `v4_020_preflight_guard()` 防止误覆盖；`JwtRevocationMapper.xml` 去除 `COALESCE`；`CheckpointSnapshot.isReady()`、`DurableRevocationStore.probeAuthoritativeStore()` 与 `TokenRevocationService` 在启动、登录前、签发后复核、注销提交前、鉴权 MISS 与 `/api/health`（`DB_REVOCATION_UNAVAILABLE`）全链路执行 Fail-Closed（503），且非测试环境禁止 `READY + 0`（注：草案中的 `activation_mode`、`checkpoint_version`、`checkpoint_state` 与触发器未实施） | **核心安全目标已覆盖**（历史草案部分具体机制未实施，无需迁移） |
 | **B. Redis MISS 后 MySQL 主库查询、禁止陈旧 JVM 缓存** | 明确 Redis MISS 不得直接信任放行，禁止在 JVM 内存缓存 `min_valid_iat_epoch_ms` | `TokenRevocationService.isRevokedDurable` 在 Redis 命中时返回 401，在 Redis MISS 或异常（记录 `REVOCATION_CACHE_READ_UNAVAILABLE`）时同步回落至 `DurableRevocationStore.readAuthoritativeState`；后者通过 `DurableRevocationTxExecutor`（`Propagation.NOT_SUPPORTED`, `readOnly = false`）直连 MySQL 主库执行单次查询，无 JVM 水位缓存 | **已完整覆盖**（无需迁移） |
 | **C. `BASELINE_RED` 与 `TARGET_GREEN` 独立验收语义** | 将 `issue64_red_gate.py` 拆分为 `baseline-red` 与 `target-green`（需 `--allow-target-green`），并新增占位测试类 `Issue64DurableDbTargetGateTest` | 进一步升级为三层验证级别（`TARGET_PREREQUISITE_CHECK`、`TARGET_SCENARIO_PASS`、`TARGET_GREEN_PASS`）与全局七项合同（`evaluate_target_green_contract`）；用显式 opt-in 的 `Issue64TargetPrerequisiteCheckTest` 替代占位类，且 `Issue64DurabilityRedGateTest` 明确限定 `SHARED_REDIS_REQUIRED` 边界；当前诚实保持 `TARGET_GREEN = NOT_RUN` | **已被更严格实现取代**（禁止回迁旧占位类） |
 | **D. HTTP 分类器异常、环境错误及不完整观测判定** | 修正 HTTP 500/503、`None` 观测或 `empty_dir_verified`/`redis_up` 失败被误判为 `RED` 的漏洞，要求 `fresh_b_status == 200` 且旧 token 状态仅允许 `{200, 401}` | 完整保留并扩展为 `evaluate_post_empty_recovery`、`verify_post_empty_recovery_over_http`、`evaluate_mysql_fault_observation`、`evaluate_checkpoint_fault_observation` 与 `observe_target_redis_marker`；`scripts/issue64/test_issue64_red_gate.py`（15 项单元测试）覆盖 6 种分类器分支、HTTP 500/503/超时/不完整状态及 `5/7 -> INCOMPLETE`、`7/7 -> PASS` 边界 | **已完整覆盖**（无需迁移） |
@@ -41,7 +41,7 @@
    - `scripts/issue64/issue64_red_gate.py` 强制实施 `^issue64_test_[a-z0-9_]{4,40}$` 库名正则、禁止生产/系统库名（`FORBIDDEN_PROD_DB_NAMES`）、禁止高权限账号（`FORBIDDEN_PRIVILEGED_DB_USERS`）、仅允许环回或显式白名单远端主机，且在启动 `TARGET_GREEN` JVM 前通过 `default_db_identity_verifier` 连接实时查询 `SELECT DATABASE(), @@hostname, @@port, @@read_only`。
    - `V4_020_jwt_revocation.sql` 与 `activate_jwt_revocation_checkpoint.sql` 内置 `v4_020_preflight_guard()` / 激活前置守卫，拒绝系统库与只读库。
 5. **`TARGET_GREEN` 全局七项合同不得退化**：
-   - `evaluate_target_green_contract` 严格要求 7 项运行时观测（`http_post_empty_recovery`、`mysql_shared_revocation_write`、`mysql_outage_failover`、`mysql_fault_fail_closed`、`checkpoint_fault_fail_closed`、`redis_optional_after_db`、`db_identity_verified`）全部 `PASS` 方可给出 `TARGET_GREEN_PASS`（exit 0）；当前状态下各台账均诚实标注 `TARGET_GREEN = NOT_RUN`。
+   - `evaluate_target_green_contract` 严格要求 `TARGET_GREEN_CRITERIA_ORDER` 中的 7 项合同键（`durable_db_mode_active`、`shared_authoritative_db`、`mysql_revocation_committed`、`post_empty_redis_old_jwt_401`、`post_empty_redis_fresh_jwt_200`、`mysql_fault_fail_closed`、`checkpoint_invalid_fail_closed`）全部 `PASS` 方可给出 `TARGET_GREEN_PASS`（exit 0）；当前状态下各台账均诚实标注 `TARGET_GREEN = NOT_RUN`。
 
 ---
 
@@ -72,3 +72,17 @@
 - **Maven Java 回归测试（未重跑，标注跳过原因）**：本轮核对结论为无须修改测试代码、`src/main`、正式 SQL 或配置，未执行 Java 回归重跑；当前 `integration`（`bb33028`）在交付台账 `doc/testing/2026-11-02-antigravity-audit-ledger.md` 中登记的最近基线实测记录为 Step 1/2 H2（`51/51`）、既有 JWT 回归（`77/77`）、隔离 MySQL 8.4.8 `DurableAuthStep2MySql84IT`（`6/6`）及全量 `1073` 项（含 `6` 项 opt-in 跳过）。
 - **端到端双 JVM `TARGET_GREEN` 门禁（`NOT_RUN`）**：未执行，严禁改写或伪造为 `PASS`，留待 Step 3 独立执行。
 - **空白与变更范围检查（已执行）**：`git diff --check` 无告警，仅新增本审查报告。
+
+---
+
+## 7. 勘误说明与 Git 误推送根因调查（脱敏记录）
+
+1. **事实勘误说明**：
+   - 更正第 3.5 节对 `scripts/issue64/issue64_red_gate.py` 中 `TARGET_GREEN_CRITERIA_ORDER` 七个合同键名的误记，对齐为真实键名：`durable_db_mode_active`、`shared_authoritative_db`、`mysql_revocation_committed`、`post_empty_redis_old_jwt_401`、`post_empty_redis_fresh_jwt_200`、`mysql_fault_fail_closed`、`checkpoint_invalid_fail_closed`。
+   - 限定第 1 节与第 2 节表述，明确区分“核心安全目标已覆盖”与“历史方案全部实现”：`activation_mode`、`checkpoint_version`、`checkpoint_state` 及触发器 `trg_jwt_revocation_checkpoint_monotonic_update` 为未实施的历史提案，当前通过 `V4_020` 6 列结构、`CHECK` 约束、`v4_020_preflight_guard()`、`WHERE NOT EXISTS` 及应用/脚本守卫实现等价安全目标。
+2. **Git 误推送根因调查（`f9cefb8` 推进 `origin/integration/20261101-backend-p0-security`）**：
+   - **已核实配置与操作证据（已脱敏）**：
+     - 仓库 `.git/config` 设置了 `push.default = upstream`，未设置 `remote.origin.push`。
+     - 新建分支 `audit/20261114-issue64-design-reconciliation` 时执行的是 `git worktree add -b audit/20261114-issue64-design-reconciliation <path> origin/integration/20261101-backend-p0-security`（未带 `--no-track`，由该分支的 reflog `Created from origin/integration/20261101-backend-p0-security` 证实），使 Git 自动将 `branch.audit/20261114-issue64-design-reconciliation.remote` 设为 `origin`、`.merge` 设为 `refs/heads/integration/20261101-backend-p0-security`。
+     - 首次推送执行的命令为省略 `:<dst>` 的单参数 refspec：`git push -u origin audit/20261114-issue64-design-reconciliation`（日志记录输出 `branch 'audit/20261114-issue64-design-reconciliation' set up to track 'origin/integration/20261101-backend-p0-security'` 及 `audit/20261114-issue64-design-reconciliation -> integration/20261101-backend-p0-security`；远端该 reflog 记录 `bb33028..f9cefb8 update by push`）。
+   - **对照实验证明（`git version 2.52.0.windows.1`）**：在隔离本地临时裸仓库复现上述相同建分支与推送命令，实测 `push.default=simple` 与 `push.default=current` 下均推向同名新分支；仅当同时满足 **（1）分支 `.merge` 已绑定异名上游、（2）`push.default=upstream`、（3）推送命令未显式指定 `:<dst>` 完整 refspec** 三项条件时，Git 2.52.0 会将该无冒号单分支参数解析并推送至其 `.merge` 指向的远端上游分支。因此并非 `push.default=upstream` 单一配置导致，而是三者叠加触发；后续所有受保护约束环境推送须统一使用 `git push origin HEAD:refs/heads/<target-branch>` 并先执行 `--dry-run`。
