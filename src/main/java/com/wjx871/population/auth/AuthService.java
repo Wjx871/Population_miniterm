@@ -8,9 +8,12 @@ import com.wjx871.population.security.JwtService;
 import com.wjx871.population.security.TokenRevocationService;
 import com.wjx871.population.s2.trace.S2TraceContext;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +21,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class AuthService implements UserDetailsService {
@@ -44,14 +48,17 @@ public class AuthService implements UserDetailsService {
             throw new BusinessException(HttpStatus.FORBIDDEN, "角色已停用");
         }
 
+        AuthenticatedUser user;
+        JwtService.IssuedJwt issued;
         try (S2TraceContext.Scope ignored = S2TraceContext.open(httpRequest.getHeader(S2TraceContext.TRACE_HEADER))) {
             revocations.requireLoginStore();
+            user = toAuthenticatedUser(systemUser);
+            issued = jwtService.createIssuedToken(user);
+            revocations.verifyIssuedTokenNotSuperseded(issued.issuedAt());
         }
-        AuthenticatedUser user = toAuthenticatedUser(systemUser);
-        String token = jwtService.createToken(user);
         authMapper.updateLastLogin(user.userId(), operationLogService.clientIp(httpRequest));
         operationLogService.record(user.userId(), "LOGIN_SUCCESS", "SUCCESS", null, httpRequest);
-        return new LoginVO(token, "Bearer", jwtService.getExpireSeconds(), UserVO.from(user));
+        return new LoginVO(issued.token(), "Bearer", jwtService.getExpireSeconds(), UserVO.from(user));
     }
 
     @Transactional(readOnly = true)
@@ -81,14 +88,28 @@ public class AuthService implements UserDetailsService {
 
     public void logout(AuthenticatedUser user, HttpServletRequest request) {
         String authorization = request.getHeader("Authorization");
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            Claims claims = jwtService.parseClaims(authorization.substring(7));
-            if (claims.getExpiration() == null) throw new BusinessException(HttpStatus.UNAUTHORIZED, "身份令牌无效");
-            revocations.revoke(claims.getId(), claims.getExpiration().toInstant());
-        } else {
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
             throw new BusinessException(HttpStatus.UNAUTHORIZED, "缺少有效身份令牌");
         }
-        operationLogService.record(user.userId(), "LOGOUT", "SUCCESS", null, request);
+        Claims claims;
+        try {
+            claims = jwtService.parseClaims(authorization.substring(7));
+        } catch (ExpiredJwtException exception) {
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "身份令牌已过期");
+        } catch (JwtException | IllegalArgumentException exception) {
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "身份令牌无效");
+        }
+        if (claims.getId() == null || claims.getId().isBlank() || claims.getExpiration() == null) {
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "身份令牌无效");
+        }
+        Long userId = user != null ? user.userId() : null;
+        revocations.revoke(claims.getId(), claims.getExpiration().toInstant(), userId);
+        try {
+            operationLogService.record(userId, "LOGOUT", "SUCCESS", null, request);
+        } catch (RuntimeException exception) {
+            log.error("Failed to record LOGOUT audit log after revocation commit userId={} errorType={}",
+                    userId, exception.getClass().getSimpleName());
+        }
     }
 
     private AuthenticatedUser toAuthenticatedUser(SystemUser user) {

@@ -44,10 +44,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try (S2TraceContext.Scope ignored = S2TraceContext.open(request.getHeader(S2TraceContext.TRACE_HEADER))) {
             Claims claims = jwtService.parseClaims(authorization.substring(7));
-            if (claims.getId() == null || claims.getId().isBlank() || claims.getExpiration() == null) {
+            if (claims.getId() == null || claims.getId().isBlank()
+                    || claims.getSubject() == null || claims.getSubject().isBlank()
+                    || claims.getIssuedAt() == null
+                    || claims.getExpiration() == null) {
                 throw new IllegalArgumentException("Missing required JWT claims");
             }
-            if (revocations.isRevoked(claims.getId())) {
+            if (revocations.isRevoked(
+                    claims.getId(),
+                    claims.getIssuedAt().toInstant(),
+                    claims.getExpiration().toInstant())) {
                 SecurityContextHolder.clearContext();
                 responseWriter.write(response, HttpServletResponse.SC_UNAUTHORIZED, "身份令牌已撤销");
                 return;
@@ -67,6 +73,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (BusinessException exception) {
             SecurityContextHolder.clearContext();
             responseWriter.write(response, exception.getStatus().value(), exception.getMessage());
+        } catch (RuntimeException exception) {
+            SecurityContextHolder.clearContext();
+            throw exception;
         }
     }
 }
