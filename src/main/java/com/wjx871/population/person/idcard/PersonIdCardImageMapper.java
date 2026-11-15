@@ -14,6 +14,8 @@ public interface PersonIdCardImageMapper {
 
     Optional<PersonIdCardImage> selectById(@Param("imageId") Long imageId);
 
+    Optional<PersonIdCardImage> selectByIdForUpdate(@Param("imageId") Long imageId);
+
     Optional<PersonIdCardImage> selectBySha256(@Param("fileSha256") String fileSha256);
 
     Optional<PersonIdCardImage> selectByPersonId(@Param("personId") Long personId);
@@ -29,8 +31,7 @@ public interface PersonIdCardImageMapper {
                        @Param("birthDate") LocalDate birthDate,
                        @Param("gender") String gender,
                        @Param("ethnicity") String ethnicity,
-                       @Param("address") String address,
-                       @Param("rawJson") String rawJson);
+                       @Param("address") String address);
 
     int markOcrFailed(@Param("imageId") Long imageId,
                       @Param("ocrProvider") String provider,

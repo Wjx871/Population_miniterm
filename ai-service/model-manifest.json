@@ -1,0 +1,40 @@
+{
+  "embedding": {
+    "repo": "BAAI/bge-small-zh-v1.5",
+    "revision": "7999e1d3359715c523056ef9478215996d62a620",
+    "files": {
+      "1_Pooling/config.json": "aaa8861589f80c961a03cc86c7eeaef7605c1676b9ab55329d33a304738769c6",
+      "config.json": "3853a7979202c348751b753e36f579c41d8da7d36af617d3d907e1fc9b441f2a",
+      "config_sentence_transformers.json": "940d5f50db195fa6e5e6a4f122c095f77880de259d74b14a65779ed48bdd7c56",
+      "model.safetensors": "354763b9b1357bc9c44f62c6be2276321081ed2567773608c0d0785b61d5a026",
+      "modules.json": "84e40c8e006c9b1d6c122e02cba9b02458120b5fb0c87b746c41e0207cf642cf",
+      "sentence_bert_config.json": "84e39fda68ccbff05bfa723ae9c0e70e23e2ec373b76e0f8c6e71af72a693cbf",
+      "special_tokens_map.json": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3",
+      "tokenizer.json": "48cea5d44424912a6fd1ea647bf4fe50b55ab8b1e5879c3275f80e339e8fae26",
+      "tokenizer_config.json": "e6f3b96db926a37d4039995fbf5ad17de158dfb8f6343d607e4dbaad18d75f5a",
+      "vocab.txt": "45bbac6b341c319adc98a532532882e91a9cefc0329aa57bac9ae761c27b291c"
+    },
+    "filename": null
+  },
+  "reranker": {
+    "repo": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+    "revision": "1427fd652930e4ba29e8149678df786c240d8825",
+    "filename": null,
+    "files": {
+      "model.safetensors": "5daeca2481a76b5976a2bdc32f0a78532b6716da4f8cd3ff59460ef8d2f359b4",
+      "tokenizer_config.json": "e7fbfbfa6347b4e414c1cee50d142e2c2f9a895dad68b068ae83a8b564c3837e",
+      "special_tokens_map.json": "378eb3bf733eb16e65792d7e3fda5b8a4631387ca04d2015199c4d4f22ae554d",
+      "sentencepiece.bpe.model": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+      "config.json": "cc2cfe51aa3fd759d21d21acf5dfd6994aa67a3c9210636d22e143699d336c77",
+      "tokenizer.json": "62c24cdc13d4c9952d63718d6c9fa4c287974249e16b7ade6d5a85e7bbb75626"
+    }
+  },
+  "generation": {
+    "repo": "Qwen/Qwen2.5-3B-Instruct-GGUF",
+    "revision": "7dabda4d13d513e3e842b20f0d435c732f172cbe",
+    "filename": "qwen2.5-3b-instruct-q4_k_m.gguf",
+    "files": {
+      "qwen2.5-3b-instruct-q4_k_m.gguf": "626b4a6678b86442240e33df819e00132d3ba7dddfe1cdc4fbb18e0a9615c62d"
+    }
+  }
+}

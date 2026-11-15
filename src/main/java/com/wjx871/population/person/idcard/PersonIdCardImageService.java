@@ -7,6 +7,7 @@ import com.wjx871.population.material.LocalFileStorageService;
 import com.wjx871.population.security.SensitiveDataMaskingService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.log4j.Log4j2;
@@ -25,7 +26,6 @@ public class PersonIdCardImageService {
     private final LocalFileStorageService storage;
     private final PaddleOcrHttpClient ocrClient;
     private final IdCardOcrProperties ocrProperties;
-    private final OcrLogRedactor ocrLogRedactor;
     private final SensitiveDataMaskingService masking;
     private final OperationLogMapper operationLogMapper;
 
@@ -33,14 +33,12 @@ public class PersonIdCardImageService {
                                     LocalFileStorageService storage,
                                     PaddleOcrHttpClient ocrClient,
                                     IdCardOcrProperties ocrProperties,
-                                    OcrLogRedactor ocrLogRedactor,
                                     SensitiveDataMaskingService masking,
                                     OperationLogMapper operationLogMapper) {
         this.mapper = mapper;
         this.storage = storage;
         this.ocrClient = ocrClient;
         this.ocrProperties = ocrProperties;
-        this.ocrLogRedactor = ocrLogRedactor;
         this.masking = masking;
         this.operationLogMapper = operationLogMapper;
     }
@@ -59,7 +57,11 @@ public class PersonIdCardImageService {
 
         Optional<PersonIdCardImage> existing = mapper.selectBySha256(stored.sha256());
         if (existing.isPresent()) {
+            storage.delete(stored.stored());
             row = existing.get();
+            if (row.getPersonId() != null || !Objects.equals(row.getUserId(), userId)) {
+                throw new BusinessException(HttpStatus.CONFLICT, "该影印本不可复用，请重新选择文件");
+            }
         } else {
             row = new PersonIdCardImage();
             row.setDraftUuid(UUID.randomUUID().toString());
@@ -81,56 +83,42 @@ public class PersonIdCardImageService {
         }
 
         // 2) OCR 调度
-        if (skipOcr) {
+        if (skipOcr || !ocrProperties.isConfigured()) {
             mapper.markOcrSkipped(row.getImageId());
-            row.setOcrStatus(OcrStatus.SKIPPED);
             recordAudit(userId, "PERSON_IDCARD_IMAGE_UPLOAD", "SKIPPED", null, http);
         } else {
             long t0 = System.currentTimeMillis();
+            String provider = ocrProperties.useBaiduDirect() ? "BAIDU_AI_PLATFORM" : ocrProperties.getProvider();
+            String engine = ocrProperties.useBaiduDirect() ? "baidu-ocr-idcard-v1" : ocrProperties.getEngineVersion();
+            IdCardOcrProperties.OcrResult result;
             try {
-                IdCardOcrProperties.OcrResult r = ocrClient.recognize(file.getBytes(), file.getContentType());
-                long elapsed = System.currentTimeMillis() - t0;
-                String masked = masking.identity(r.idCard());
-                String redactedRaw = ocrLogRedactor.redact(r.rawJson());
-                mapper.markOcrSuccess(row.getImageId(),
-                        ocrProperties.getProvider(),
-                        ocrProperties.getEngineVersion(),
-                        (int) elapsed,
-                        r.confidence(),
-                        r.idCard(),
-                        masked,
-                        r.name(),
-                        r.birthDate(),
-                        r.gender(),
-                        r.ethnicity(),
-                        r.address(),
-                        redactedRaw);
-                row.setOcrStatus(OcrStatus.SUCCESS);
-                row.setOcrIdcardFull(r.idCard());
-                row.setOcrIdcardMasked(masked);
-                recordAudit(userId, "PERSON_IDCARD_IMAGE_RECOGNIZED", "SUCCESS", null, http);
+                result = ocrClient.recognize(file.getBytes(), stored.contentType());
             } catch (Exception e) {
                 long elapsed = System.currentTimeMillis() - t0;
-                String msg = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
-                if (msg.length() > 240) msg = msg.substring(0, 240);
-                mapper.markOcrFailed(row.getImageId(),
-                        ocrProperties.getProvider(),
-                        ocrProperties.getEngineVersion(),
-                        (int) elapsed,
-                        msg);
-                row.setOcrStatus(OcrStatus.FAILED);
-                row.setOcrError(msg);
+                String msg = e instanceof PaddleOcrHttpClient.RecognitionFailure ? e.getMessage()
+                        : "OCR 处理失败，请重新上传或手工录入";
+                mapper.markOcrFailed(row.getImageId(), provider, engine, (int) elapsed, msg);
                 recordAudit(userId, "PERSON_IDCARD_IMAGE_RECOGNIZED", "FAILED", msg, http);
+                return view(row.getImageId(), true);
             }
+            mapper.markOcrSuccess(row.getImageId(), provider, engine, (int) (System.currentTimeMillis() - t0),
+                    result.confidence(), result.idCard(), masking.identity(result.idCard()), result.name(),
+                    result.birthDate(), result.gender(), result.ethnicity(), result.address());
+            recordAudit(userId, "PERSON_IDCARD_IMAGE_RECOGNIZED", "SUCCESS", null, http);
         }
-        return PersonIdCardImageView.from(row);
+        return view(row.getImageId(), true);
     }
 
     @Transactional(readOnly = true)
-    public PersonIdCardImageView getById(Long imageId) {
+    public PersonIdCardImageView getById(Long imageId, Long userId) {
         return mapper.selectById(imageId)
-                .map(PersonIdCardImageView::from)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "身份证影印本不存在: " + imageId));
+                .filter(row -> Objects.equals(row.getUserId(), userId))
+                .map(row -> PersonIdCardImageView.from(row, false))
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "身份证影印本不存在"));
+    }
+
+    private PersonIdCardImageView view(Long imageId, boolean includeFullId) {
+        return PersonIdCardImageView.from(mapper.selectById(imageId).orElseThrow(), includeFullId);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

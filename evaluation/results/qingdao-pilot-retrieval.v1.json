@@ -1,0 +1,554 @@
+{
+  "created_at_utc": "2026-11-15T07:31:21.677281+00:00",
+  "as_of": "2026-11-15",
+  "dataset_sha256": "3e186d0c419e4188198729bbb730874acfbaa09055bc6b67adc8a8bdc76dea61",
+  "conditions": {
+    "generation": false,
+    "query_expansion": false,
+    "top_k_metrics": [
+      1,
+      4
+    ]
+  },
+  "before": {
+    "knowledge_version": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+    "metrics": {
+      "status": "MEASURED",
+      "positive_cases": 3,
+      "section_hit_at_1": 0,
+      "section_hit_at_4": 0,
+      "mrr_at_4": 0
+    },
+    "rows": [
+      {
+        "id": "QD01",
+        "question": "我在青岛租房，居住登记已经办了，但房屋租赁合同尚未备案。能按租房落户吗？",
+        "history": [],
+        "candidate_ranks": {},
+        "checks": {
+          "document_hit_at_4": false,
+          "reciprocal_rank_at_4": 0,
+          "section_hit_at_4": false,
+          "reason_match": null,
+          "behavior_shape": false,
+          "human_answer_grade": null
+        },
+        "response": {
+          "schemaVersion": "1.0",
+          "traceId": "QD01",
+          "mode": "RETRIEVAL_ONLY",
+          "evidenceStatus": "INSUFFICIENT",
+          "answer": "知识库暂缺适用于青岛的正式政策，不能确认当地是否采用同样条件。请核对青岛主管部门的文件。",
+          "citations": [],
+          "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+          "retrievalEngine": "java-bigram-bm25-style-v1",
+          "timingMs": 0.396,
+          "warnings": [],
+          "standaloneQuestion": "我在青岛租房，居住登记已经办了，但房屋租赁合同尚未备案。能按租房落户吗？",
+          "reasonCode": "NO_APPLICABLE_SOURCE",
+          "generationMode": "DISABLED",
+          "modelVersions": {},
+          "stageTimingsMs": {},
+          "retrievalQueries": [],
+          "scopeSource": null
+        }
+      },
+      {
+        "id": "QD02",
+        "question": "我在青岛有稳定工作，人在这里住但还没办居住登记，可以直接按就业落户吗？",
+        "history": [],
+        "candidate_ranks": {},
+        "checks": {
+          "document_hit_at_4": false,
+          "reciprocal_rank_at_4": 0,
+          "section_hit_at_4": false,
+          "reason_match": null,
+          "behavior_shape": false,
+          "human_answer_grade": null
+        },
+        "response": {
+          "schemaVersion": "1.0",
+          "traceId": "QD02",
+          "mode": "RETRIEVAL_ONLY",
+          "evidenceStatus": "INSUFFICIENT",
+          "answer": "知识库暂缺适用于青岛的正式政策，不能确认当地是否采用同样条件。请核对青岛主管部门的文件。",
+          "citations": [],
+          "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+          "retrievalEngine": "java-bigram-bm25-style-v1",
+          "timingMs": 0.054,
+          "warnings": [],
+          "standaloneQuestion": "我在青岛有稳定工作，人在这里住但还没办居住登记，可以直接按就业落户吗？",
+          "reasonCode": "NO_APPLICABLE_SOURCE",
+          "generationMode": "DISABLED",
+          "modelVersions": {},
+          "stageTimingsMs": {},
+          "retrievalQueries": [],
+          "scopeSource": null
+        }
+      },
+      {
+        "id": "QD03",
+        "question": "我和配偶在青岛都没有产权房，准备落在亲属家，亲属那套房已经登记了别人的户口，还能用购房这条吗？",
+        "history": [],
+        "candidate_ranks": {},
+        "checks": {
+          "document_hit_at_4": false,
+          "reciprocal_rank_at_4": 0,
+          "section_hit_at_4": false,
+          "reason_match": null,
+          "behavior_shape": false,
+          "human_answer_grade": null
+        },
+        "response": {
+          "schemaVersion": "1.0",
+          "traceId": "QD03",
+          "mode": "RETRIEVAL_ONLY",
+          "evidenceStatus": "INSUFFICIENT",
+          "answer": "知识库暂缺适用于青岛的正式政策，不能确认当地是否采用同样条件。请核对青岛主管部门的文件。",
+          "citations": [],
+          "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+          "retrievalEngine": "java-bigram-bm25-style-v1",
+          "timingMs": 0.044,
+          "warnings": [],
+          "standaloneQuestion": "我和配偶在青岛都没有产权房，准备落在亲属家，亲属那套房已经登记了别人的户口，还能用购房这条吗？",
+          "reasonCode": "NO_APPLICABLE_SOURCE",
+          "generationMode": "DISABLED",
+          "modelVersions": {},
+          "stageTimingsMs": {},
+          "retrievalQueries": [],
+          "scopeSource": null
+        }
+      },
+      {
+        "id": "QD04",
+        "question": "上一问说的是青岛，换成潍坊还能照这个条件办吗？",
+        "history": [
+          {
+            "role": "user",
+            "content": "我和配偶在青岛都没有产权房，准备落在亲属家，亲属那套房已经登记了别人的户口，还能用购房这条吗？"
+          }
+        ],
+        "candidate_ranks": {},
+        "checks": {
+          "document_hit_at_4": null,
+          "reciprocal_rank_at_4": null,
+          "section_hit_at_4": null,
+          "reason_match": true,
+          "behavior_shape": true,
+          "human_answer_grade": null
+        },
+        "response": {
+          "schemaVersion": "1.0",
+          "traceId": "QD04",
+          "mode": "RETRIEVAL_ONLY",
+          "evidenceStatus": "INSUFFICIENT",
+          "answer": "知识库暂缺适用于潍坊的正式政策，不能确认当地是否采用同样条件。请核对潍坊主管部门的文件。",
+          "citations": [],
+          "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+          "retrievalEngine": "java-bigram-bm25-style-v1",
+          "timingMs": 0.047,
+          "warnings": [],
+          "standaloneQuestion": "上一问说的是青岛，换成潍坊还能照这个条件办吗？",
+          "reasonCode": "NO_APPLICABLE_SOURCE",
+          "generationMode": "DISABLED",
+          "modelVersions": {},
+          "stageTimingsMs": {},
+          "retrievalQueries": [],
+          "scopeSource": null
+        }
+      },
+      {
+        "id": "QD05",
+        "question": "请用 2023 年的青岛通知判断我在 2022 年能不能按租房落户。",
+        "history": [],
+        "candidate_ranks": {},
+        "checks": {
+          "document_hit_at_4": null,
+          "reciprocal_rank_at_4": null,
+          "section_hit_at_4": null,
+          "reason_match": false,
+          "behavior_shape": true,
+          "human_answer_grade": null
+        },
+        "response": {
+          "schemaVersion": "1.0",
+          "traceId": "QD05",
+          "mode": "RETRIEVAL_ONLY",
+          "evidenceStatus": "INSUFFICIENT",
+          "answer": "知识库暂缺适用于青岛的正式政策，不能确认当地是否采用同样条件。请核对青岛主管部门的文件。",
+          "citations": [],
+          "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+          "retrievalEngine": "java-bigram-bm25-style-v1",
+          "timingMs": 0.031,
+          "warnings": [],
+          "standaloneQuestion": "请用 2023 年的青岛通知判断我在 2022 年能不能按租房落户。",
+          "reasonCode": "NO_APPLICABLE_SOURCE",
+          "generationMode": "DISABLED",
+          "modelVersions": {},
+          "stageTimingsMs": {},
+          "retrievalQueries": [],
+          "scopeSource": null
+        }
+      },
+      {
+        "id": "QD06",
+        "question": "2026 年 11 月 8 日还能把山东“1+6”那份通知当作现行依据吗？",
+        "history": [],
+        "candidate_ranks": {},
+        "checks": {
+          "document_hit_at_4": null,
+          "reciprocal_rank_at_4": null,
+          "section_hit_at_4": null,
+          "reason_match": false,
+          "behavior_shape": true,
+          "human_answer_grade": null
+        },
+        "response": {
+          "schemaVersion": "1.0",
+          "traceId": "QD06",
+          "mode": "RETRIEVAL_ONLY",
+          "evidenceStatus": "INSUFFICIENT",
+          "answer": "知识库暂缺适用于山东的正式政策，不能确认当地是否采用同样条件。请核对山东主管部门的文件。",
+          "citations": [],
+          "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+          "retrievalEngine": "java-bigram-bm25-style-v1",
+          "timingMs": 0.041,
+          "warnings": [],
+          "standaloneQuestion": "2026 年 11 月 8 日还能把山东“1+6”那份通知当作现行依据吗？",
+          "reasonCode": "NO_APPLICABLE_SOURCE",
+          "generationMode": "DISABLED",
+          "modelVersions": {},
+          "stageTimingsMs": {},
+          "retrievalQueries": [],
+          "scopeSource": null
+        }
+      }
+    ]
+  },
+  "lexical": {
+    "knowledge_version": "441f036f04e075e1644cc4f4b8cd806bea286dfe2b158076a5d083bec2d91bf6",
+    "metrics": {
+      "status": "MEASURED",
+      "positive_cases": 3,
+      "section_hit_at_1": 3,
+      "section_hit_at_4": 3,
+      "mrr_at_4": 1.0
+    },
+    "rows": [
+      {
+        "id": "QD01",
+        "question": "我在青岛租房，居住登记已经办了，但房屋租赁合同尚未备案。能按租房落户吗？",
+        "history": [],
+        "candidate_ranks": {
+          "lexical": [
+            "qingdao-household-reform-2023#第二条第二项 · 租房落户",
+            "qingdao-household-reform-2023#第四条 · 稳定就业落户",
+            "qingdao-household-reform-2023#第二条第一项 · 近亲属产权房落户"
+          ]
+        },
+        "checks": {
+          "document_hit_at_4": true,
+          "reciprocal_rank_at_4": 1.0,
+          "section_hit_at_4": true,
+          "reason_match": null,
+          "behavior_shape": true,
+          "human_answer_grade": null
+        },
+        "response": {
+          "schemaVersion": "1.0",
+          "traceId": "QD01",
+          "mode": "RETRIEVAL_ONLY",
+          "evidenceStatus": "CANDIDATES_ONLY",
+          "answer": "青岛城镇租房落户同时要求租赁合同备案和居住登记，租赁合同尚未备案时，该渠道的条件尚未满足。申请人及其配偶均须在青岛市无合法产权住房，并在租赁期内提出申请。符合条件时，本人及近亲属可申请落入城镇近亲属家庭户，或租住房屋所在地的城镇社区集体户。 [1]\n\n以上为所引政策条款摘要。实际申请由主管部门结合材料核定。",
+          "citations": [
+            {
+              "index": 1,
+              "logicalPath": "qingdao-household-reform-2023",
+              "section": "第二条第二项 · 租房落户",
+              "title": "青岛市人民政府关于进一步深化户籍制度改革的通知",
+              "category": "迁入",
+              "sourceType": "OFFICIAL_POLICY",
+              "sourceVersion": "青政字〔2023〕32号",
+              "effectiveDate": "2023-11-07",
+              "excerpt": "青岛城镇租房落户同时要求租赁合同备案和居住登记，租赁合同尚未备案时，该渠道的条件尚未满足。申请人及其配偶均须在青岛市无合法产权住房，并在租赁期内提出申请。符合条件时，本人及近亲属可申请落入城镇近亲属家庭户，或租住房屋所在地的城镇社区集体户。",
+              "retrievalScore": 0.009016,
+              "chunkId": "qingdao-household-reform-2023#第二条第二项 · 租房落户",
+              "semanticScore": null,
+              "rerankScore": null,
+              "sourceUrl": "https://www.qingdao.gov.cn/zwgk/xxgk/bgt/gkml/gwfg/202311/t20231117_7662257.shtml",
+              "regionCodes": [
+                "370200"
+              ]
+            }
+          ],
+          "knowledgeVersion": "441f036f04e075e1644cc4f4b8cd806bea286dfe2b158076a5d083bec2d91bf6",
+          "retrievalEngine": "java-bigram-bm25-style-v1",
+          "timingMs": 0.233,
+          "warnings": [
+            "LEXICAL_BASELINE_ONLY"
+          ],
+          "standaloneQuestion": "我在青岛租房，居住登记已经办了，但房屋租赁合同尚未备案。能按租房落户吗？",
+          "reasonCode": null,
+          "generationMode": "DISABLED",
+          "modelVersions": {},
+          "stageTimingsMs": {
+            "retrieval": 0.072
+          },
+          "retrievalQueries": [
+            "我在青岛租房，居住登记已经办了，但房屋租赁合同尚未备案。能按租房落户吗？"
+          ],
+          "scopeSource": null
+        }
+      },
+      {
+        "id": "QD02",
+        "question": "我在青岛有稳定工作，人在这里住但还没办居住登记，可以直接按就业落户吗？",
+        "history": [],
+        "candidate_ranks": {
+          "lexical": [
+            "qingdao-household-reform-2023#第四条 · 稳定就业落户",
+            "qingdao-household-reform-2023#第二条第二项 · 租房落户",
+            "qingdao-household-reform-2023#第二条第一项 · 近亲属产权房落户"
+          ]
+        },
+        "checks": {
+          "document_hit_at_4": true,
+          "reciprocal_rank_at_4": 1.0,
+          "section_hit_at_4": true,
+          "reason_match": null,
+          "behavior_shape": true,
+          "human_answer_grade": null
+        },
+        "response": {
+          "schemaVersion": "1.0",
+          "traceId": "QD02",
+          "mode": "RETRIEVAL_ONLY",
+          "evidenceStatus": "CANDIDATES_ONLY",
+          "answer": "青岛城镇稳定就业落户同时要求稳定就业和居住登记，尚未办妥居住登记时，该渠道的条件尚未满足。申请人和配偶都须在青岛市无合法产权住房，申请须在就业期间提交。符合条件时，本人及近亲属可申请落入城镇近亲属家庭户、单位集体户或就业地的城镇社区集体户。 [1]\n\n以上为所引政策条款摘要。实际申请由主管部门结合材料核定。",
+          "citations": [
+            {
+              "index": 1,
+              "logicalPath": "qingdao-household-reform-2023",
+              "section": "第四条 · 稳定就业落户",
+              "title": "青岛市人民政府关于进一步深化户籍制度改革的通知",
+              "category": "迁入",
+              "sourceType": "OFFICIAL_POLICY",
+              "sourceVersion": "青政字〔2023〕32号",
+              "effectiveDate": "2023-11-07",
+              "excerpt": "青岛城镇稳定就业落户同时要求稳定就业和居住登记，尚未办妥居住登记时，该渠道的条件尚未满足。申请人和配偶都须在青岛市无合法产权住房，申请须在就业期间提交。符合条件时，本人及近亲属可申请落入城镇近亲属家庭户、单位集体户或就业地的城镇社区集体户。",
+              "retrievalScore": 0.009016,
+              "chunkId": "qingdao-household-reform-2023#第四条 · 稳定就业落户",
+              "semanticScore": null,
+              "rerankScore": null,
+              "sourceUrl": "https://www.qingdao.gov.cn/zwgk/xxgk/bgt/gkml/gwfg/202311/t20231117_7662257.shtml",
+              "regionCodes": [
+                "370200"
+              ]
+            }
+          ],
+          "knowledgeVersion": "441f036f04e075e1644cc4f4b8cd806bea286dfe2b158076a5d083bec2d91bf6",
+          "retrievalEngine": "java-bigram-bm25-style-v1",
+          "timingMs": 0.13,
+          "warnings": [
+            "LEXICAL_BASELINE_ONLY"
+          ],
+          "standaloneQuestion": "我在青岛有稳定工作，人在这里住但还没办居住登记，可以直接按就业落户吗？",
+          "reasonCode": null,
+          "generationMode": "DISABLED",
+          "modelVersions": {},
+          "stageTimingsMs": {
+            "retrieval": 0.045
+          },
+          "retrievalQueries": [
+            "我在青岛有稳定工作，人在这里住但还没办居住登记，可以直接按就业落户吗？"
+          ],
+          "scopeSource": null
+        }
+      },
+      {
+        "id": "QD03",
+        "question": "我和配偶在青岛都没有产权房，准备落在亲属家，亲属那套房已经登记了别人的户口，还能用购房这条吗？",
+        "history": [],
+        "candidate_ranks": {
+          "lexical": [
+            "qingdao-household-reform-2023#第二条第一项 · 近亲属产权房落户",
+            "qingdao-household-reform-2023#第四条 · 稳定就业落户",
+            "qingdao-household-reform-2023#第二条第二项 · 租房落户"
+          ]
+        },
+        "checks": {
+          "document_hit_at_4": true,
+          "reciprocal_rank_at_4": 1.0,
+          "section_hit_at_4": true,
+          "reason_match": null,
+          "behavior_shape": true,
+          "human_answer_grade": null
+        },
+        "response": {
+          "schemaVersion": "1.0",
+          "traceId": "QD03",
+          "mode": "RETRIEVAL_ONLY",
+          "evidenceStatus": "CANDIDATES_ONLY",
+          "answer": "使用近亲属在青岛城镇取得的合法产权房申请落户，须同时满足以下条件：拟落户房屋未登记户口，申请人和配偶在青岛市均无合法产权住房，且产权人书面同意。房屋已有户口登记时，不满足这一渠道的住房条件。本人购房与亲属投靠分别适用各自的条件。 [1]\n\n以上为所引政策条款摘要。实际申请由主管部门结合材料核定。",
+          "citations": [
+            {
+              "index": 1,
+              "logicalPath": "qingdao-household-reform-2023",
+              "section": "第二条第一项 · 近亲属产权房落户",
+              "title": "青岛市人民政府关于进一步深化户籍制度改革的通知",
+              "category": "迁入",
+              "sourceType": "OFFICIAL_POLICY",
+              "sourceVersion": "青政字〔2023〕32号",
+              "effectiveDate": "2023-11-07",
+              "excerpt": "使用近亲属在青岛城镇取得的合法产权房申请落户，须同时满足以下条件：拟落户房屋未登记户口，申请人和配偶在青岛市均无合法产权住房，且产权人书面同意。房屋已有户口登记时，不满足这一渠道的住房条件。本人购房与亲属投靠分别适用各自的条件。",
+              "retrievalScore": 0.009016,
+              "chunkId": "qingdao-household-reform-2023#第二条第一项 · 近亲属产权房落户",
+              "semanticScore": null,
+              "rerankScore": null,
+              "sourceUrl": "https://www.qingdao.gov.cn/zwgk/xxgk/bgt/gkml/gwfg/202311/t20231117_7662257.shtml",
+              "regionCodes": [
+                "370200"
+              ]
+            }
+          ],
+          "knowledgeVersion": "441f036f04e075e1644cc4f4b8cd806bea286dfe2b158076a5d083bec2d91bf6",
+          "retrievalEngine": "java-bigram-bm25-style-v1",
+          "timingMs": 0.132,
+          "warnings": [
+            "LEXICAL_BASELINE_ONLY"
+          ],
+          "standaloneQuestion": "我和配偶在青岛都没有产权房，准备落在亲属家，亲属那套房已经登记了别人的户口，还能用购房这条吗？",
+          "reasonCode": null,
+          "generationMode": "DISABLED",
+          "modelVersions": {},
+          "stageTimingsMs": {
+            "retrieval": 0.052
+          },
+          "retrievalQueries": [
+            "我和配偶在青岛都没有产权房，准备落在亲属家，亲属那套房已经登记了别人的户口，还能用购房这条吗？"
+          ],
+          "scopeSource": null
+        }
+      },
+      {
+        "id": "QD04",
+        "question": "上一问说的是青岛，换成潍坊还能照这个条件办吗？",
+        "history": [
+          {
+            "role": "user",
+            "content": "我和配偶在青岛都没有产权房，准备落在亲属家，亲属那套房已经登记了别人的户口，还能用购房这条吗？"
+          }
+        ],
+        "candidate_ranks": {},
+        "checks": {
+          "document_hit_at_4": null,
+          "reciprocal_rank_at_4": null,
+          "section_hit_at_4": null,
+          "reason_match": true,
+          "behavior_shape": true,
+          "human_answer_grade": null
+        },
+        "response": {
+          "schemaVersion": "1.0",
+          "traceId": "QD04",
+          "mode": "RETRIEVAL_ONLY",
+          "evidenceStatus": "INSUFFICIENT",
+          "answer": "知识库暂缺适用于潍坊的正式政策，不能确认当地是否采用同样条件。请核对潍坊主管部门的文件。",
+          "citations": [],
+          "knowledgeVersion": "441f036f04e075e1644cc4f4b8cd806bea286dfe2b158076a5d083bec2d91bf6",
+          "retrievalEngine": "java-bigram-bm25-style-v1",
+          "timingMs": 0.061,
+          "warnings": [],
+          "standaloneQuestion": "上一问说的是青岛，换成潍坊还能照这个条件办吗？",
+          "reasonCode": "NO_APPLICABLE_SOURCE",
+          "generationMode": "DISABLED",
+          "modelVersions": {},
+          "stageTimingsMs": {},
+          "retrievalQueries": [],
+          "scopeSource": null
+        }
+      },
+      {
+        "id": "QD05",
+        "question": "请用 2023 年的青岛通知判断我在 2022 年能不能按租房落户。",
+        "history": [],
+        "candidate_ranks": {},
+        "checks": {
+          "document_hit_at_4": null,
+          "reciprocal_rank_at_4": null,
+          "section_hit_at_4": null,
+          "reason_match": true,
+          "behavior_shape": true,
+          "human_answer_grade": null
+        },
+        "response": {
+          "schemaVersion": "1.0",
+          "traceId": "QD05",
+          "mode": "RETRIEVAL_ONLY",
+          "evidenceStatus": "INSUFFICIENT",
+          "answer": "青政字〔2023〕32号自 2023-11-07 施行，无法支持所问时段。请核对办理当时适用的正式文件。",
+          "citations": [],
+          "knowledgeVersion": "441f036f04e075e1644cc4f4b8cd806bea286dfe2b158076a5d083bec2d91bf6",
+          "retrievalEngine": "java-bigram-bm25-style-v1",
+          "timingMs": 0.045,
+          "warnings": [],
+          "standaloneQuestion": "请用 2023 年的青岛通知判断我在 2022 年能不能按租房落户。",
+          "reasonCode": "SOURCE_NOT_YET_EFFECTIVE",
+          "generationMode": "DISABLED",
+          "modelVersions": {},
+          "stageTimingsMs": {},
+          "retrievalQueries": [],
+          "scopeSource": {
+            "title": "青岛市人民政府关于进一步深化户籍制度改革的通知",
+            "sourceVersion": "青政字〔2023〕32号",
+            "sourceUrl": "https://www.qingdao.gov.cn/zwgk/xxgk/bgt/gkml/gwfg/202311/t20231117_7662257.shtml",
+            "effectiveDate": "2023-11-07",
+            "expiresOn": null
+          }
+        }
+      },
+      {
+        "id": "QD06",
+        "question": "2026 年 11 月 8 日还能把山东“1+6”那份通知当作现行依据吗？",
+        "history": [],
+        "candidate_ranks": {},
+        "checks": {
+          "document_hit_at_4": null,
+          "reciprocal_rank_at_4": null,
+          "section_hit_at_4": null,
+          "reason_match": true,
+          "behavior_shape": true,
+          "human_answer_grade": null
+        },
+        "response": {
+          "schemaVersion": "1.0",
+          "traceId": "QD06",
+          "mode": "RETRIEVAL_ONLY",
+          "evidenceStatus": "INSUFFICIENT",
+          "answer": "鲁公通〔2021〕157号原文有效期截至 2026-10-31。当前知识库没有核验通过的续期依据，无法确认在所问日期仍适用。",
+          "citations": [],
+          "knowledgeVersion": "441f036f04e075e1644cc4f4b8cd806bea286dfe2b158076a5d083bec2d91bf6",
+          "retrievalEngine": "java-bigram-bm25-style-v1",
+          "timingMs": 0.043,
+          "warnings": [],
+          "standaloneQuestion": "2026 年 11 月 8 日还能把山东“1+6”那份通知当作现行依据吗？",
+          "reasonCode": "SOURCE_TERM_ENDED",
+          "generationMode": "DISABLED",
+          "modelVersions": {},
+          "stageTimingsMs": {},
+          "retrievalQueries": [],
+          "scopeSource": {
+            "title": "山东省公安厅关于进一步深化户籍管理“1+6”综合服务模式的通知",
+            "sourceVersion": "鲁公通〔2021〕157号",
+            "sourceUrl": "https://www.qingdao.gov.cn/ywdt/zwzl/zfwjymtc/gr/hjbl/202408/t20240808_8170159.shtml",
+            "effectiveDate": "2021-11-01",
+            "expiresOn": "2026-10-31"
+          }
+        }
+      }
+    ]
+  },
+  "remote": {
+    "status": "NOT_RUN_NO_PROVIDER"
+  }
+}

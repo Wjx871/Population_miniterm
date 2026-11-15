@@ -1,0 +1,36 @@
+[Unit]
+Description=Yixun lightweight RAG API
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=yixun-ai
+Group=yixun-ai
+WorkingDirectory=/opt/yixun-ai/current
+EnvironmentFile=/etc/yixun-ai/service.env
+EnvironmentFile=-/etc/yixun-ai/provider.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/yixun-ai/venv/bin/python -m uvicorn yixun_ai.app:create_app --factory --host 127.0.0.1 --port 8091 --workers 1 --limit-concurrency 8 --no-access-log
+Restart=on-failure
+RestartSec=5
+MemoryHigh=192M
+MemoryMax=256M
+CPUQuota=50%
+TasksMax=32
+LimitNOFILE=1024
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

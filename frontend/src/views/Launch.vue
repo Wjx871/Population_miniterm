@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user.js'
 import launchVisual from '../assets/images/launch-visual.webp'
 import launchSapphireVisual from '../assets/images/launch-visual-sapphire.png'
+import BrandMark from '../components/BrandMark.vue'
+import { BRAND } from '../constants/brand.js'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -247,11 +249,12 @@ onBeforeUnmount(() => {
     <div class="visual-shade" aria-hidden="true" />
 
     <section class="launch-copy" aria-labelledby="launch-title">
+      <div class="launch-brand"><BrandMark :size="60" /><span>{{ BRAND.latin }}</span></div>
       <h1 id="launch-title">
-        <span class="title-primary">人口数据库</span>
-        <span class="title-secondary">管理系统</span>
+        <span class="title-primary">{{ BRAND.name }}</span>
+        <span class="title-secondary">{{ BRAND.product }}</span>
       </h1>
-      <p>Population Management System</p>
+      <p>{{ BRAND.tagline }}</p>
       <button type="button" :disabled="isLeaving" @click="enterSystem">
         <span>进入系统</span>
         <span class="button-arrow" aria-hidden="true">→</span>
@@ -509,6 +512,9 @@ onBeforeUnmount(() => {
   line-height: 1;
   text-shadow: 0 2px 28px rgba(0, 0, 0, 0.36);
 }
+
+.launch-brand { display: flex; align-items: center; gap: 18px; margin-bottom: 28px; }
+.launch-brand span { font-size: 15px; font-weight: 600; letter-spacing: 4px; color: #7ce5d3; }
 
 .launch-copy h1::before {
   position: absolute;

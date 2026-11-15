@@ -28,8 +28,9 @@ public record PersonIdCardImageView(
         String ocrError,
         LocalDateTime createdAt
 ) {
-    public static PersonIdCardImageView from(PersonIdCardImage row) {
-        String full = row.getOcrStatus() == OcrStatus.SUCCESS ? row.getOcrIdcardFull() : null;
+    public static PersonIdCardImageView from(PersonIdCardImage row, boolean includeFullId) {
+        boolean success = row.getOcrStatus() == OcrStatus.SUCCESS;
+        String full = success && includeFullId ? row.getOcrIdcardFull() : null;
         return new PersonIdCardImageView(
                 row.getImageId(),
                 row.getPersonId(),
@@ -43,13 +44,13 @@ public record PersonIdCardImageView(
                 row.getOcrElapsedMs(),
                 row.getOcrConfidence(),
                 full,
-                row.getOcrIdcardMasked(),
-                row.getOcrName(),
-                row.getOcrBirthDate(),
-                row.getOcrGender(),
-                row.getOcrEthnicity(),
-                row.getOcrAddress(),
-                row.getOcrError(),
+                success ? row.getOcrIdcardMasked() : null,
+                success && includeFullId ? row.getOcrName() : null,
+                success && includeFullId ? row.getOcrBirthDate() : null,
+                success && includeFullId ? row.getOcrGender() : null,
+                success && includeFullId ? row.getOcrEthnicity() : null,
+                success && includeFullId ? row.getOcrAddress() : null,
+                row.getOcrStatus() == OcrStatus.FAILED ? row.getOcrError() : null,
                 row.getCreatedAt()
         );
     }

@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "population.person.idcard.ocr")
 public class IdCardOcrProperties {
 
-    /** 远程 PaddleOCR HTTP 服务地址，例 http://127.0.0.1:8866。留空或 unavailable 时回退 SKIPPED。 */
+    /** 兼容的 OCR 子服务地址，例如 http://127.0.0.1:8866。 */
     private String url = "";
 
     /** 接口路径，默认 /recognize/idcard。 */
@@ -22,6 +22,10 @@ public class IdCardOcrProperties {
     /** HTTP 超时毫秒。 */
     private int timeoutMs = 8000;
 
+    /** 百度 OCR 应用凭证，由后端通过 OAuth 换取访问令牌。 */
+    private String baiduApiKey = "";
+    private String baiduSecretKey = "";
+
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }
     public String getPath() { return path; }
@@ -32,6 +36,16 @@ public class IdCardOcrProperties {
     public void setProvider(String provider) { this.provider = provider; }
     public int getTimeoutMs() { return timeoutMs; }
     public void setTimeoutMs(int timeoutMs) { this.timeoutMs = timeoutMs; }
+    public String getBaiduApiKey() { return baiduApiKey; }
+    public void setBaiduApiKey(String baiduApiKey) { this.baiduApiKey = baiduApiKey; }
+
+    public String getBaiduSecretKey() { return baiduSecretKey; }
+    public void setBaiduSecretKey(String baiduSecretKey) { this.baiduSecretKey = baiduSecretKey; }
+
+    public boolean useBaiduDirect() {
+        return (baiduApiKey != null && !baiduApiKey.isBlank()) || (baiduSecretKey != null && !baiduSecretKey.isBlank());
+    }
+    public boolean isConfigured() { return useBaiduDirect() || (url != null && !url.isBlank()); }
 
     /** OCR 子结果。 */
     public record OcrResult(
@@ -41,7 +55,6 @@ public class IdCardOcrProperties {
             String gender,
             String ethnicity,
             String address,
-            Double confidence,
-            String rawJson
+            Double confidence
     ) {}
 }

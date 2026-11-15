@@ -25,7 +25,17 @@
           <section v-if="message.response.requiredMaterials?.length"><h3>所需材料</h3><ul><li v-for="item in message.response.requiredMaterials" :key="item">{{ item }}</li></ul></section>
           <section v-if="message.response.steps?.length"><h3>办理步骤</h3><ul><li v-for="item in message.response.steps" :key="item">{{ item }}</li></ul></section>
           <section v-if="message.response.warnings?.length"><h3>注意事项</h3><ul><li v-for="item in message.response.warnings" :key="item">{{ item }}</li></ul></section>
-          <section v-if="message.response.citations?.length"><h3>政策依据</h3><ol><li v-for="citation in message.response.citations" :key="citation.index"><b>[{{ citation.index }}] {{ citation.title }}</b> · {{ citation.section }}<div>{{ citation.summary }}</div></li></ol></section>
+          <section v-if="message.response.citations?.length">
+            <h3>{{ message.response.citations[0].sourceType === 'POLICY_STATUS' ? '文件时效依据' : '政策依据' }}</h3>
+            <ol><li v-for="citation in message.response.citations" :key="citation.index">
+              <b>[{{ citation.index }}] {{ citation.title }}</b> · {{ citation.section }}
+              <div v-if="citation.sourceUrl">
+                {{ citation.version }}<span v-if="citation.effectiveDate"> · {{ citation.effectiveDate }} 施行</span>
+                · <a :href="citation.sourceUrl" target="_blank" rel="noopener noreferrer">查看官方原文</a>
+              </div>
+              <div v-if="citation.summary">{{ citation.summary }}</div>
+            </li></ol>
+          </section>
           <section v-if="message.response.nextActions?.length"><h3>权限内下一步</h3><el-button v-for="action in message.response.nextActions" :key="action.path" link type="primary" @click="go(action.path)">{{ action.label }} →</el-button></section>
         </template>
       </div>

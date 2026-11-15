@@ -3,7 +3,7 @@
     <template #header>上传申请材料</template>
     <el-form :model="form" label-width="100px" @submit.prevent>
       <el-form-item label="材料类型" required>
-        <el-select v-model="form.materialType" placeholder="请选择业务规则要求的材料" style="width: 100%" @change="applyMaterialRule">
+        <el-select v-model="form.materialType" :disabled="uploading" placeholder="请选择业务规则要求的材料" style="width: 100%" @change="applyMaterialRule">
           <el-option v-for="item in materialOptions" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </el-form-item>
@@ -15,10 +15,13 @@
         <span v-if="materialRuleText" class="rule-text">{{ materialRuleText }}</span>
       </el-form-item>
       <el-form-item label="选择文件" required>
-        <el-upload :auto-upload="false" :limit="1" :accept="ACCEPTED_MATERIAL_TYPES" :on-change="onFileChange" :on-remove="onFileRemove">
+        <el-upload ref="uploadRef" :disabled="uploading" :auto-upload="false" :limit="1" :accept="ACCEPTED_MATERIAL_TYPES" :on-change="onFileChange" :on-remove="onFileRemove">
           <el-button type="primary">选择 PDF/JPG/PNG 文件</el-button>
           <template #tip><div class="el-upload__tip">仅支持 PDF、JPG、JPEG、PNG，文件不超过 10MB。</div></template>
         </el-upload>
+      </el-form-item>
+      <el-form-item v-if="enableMigrationOcr && file && ['HOUSEHOLD_BOOK', 'APPLICATION_FORM'].includes(form.materialType)" label="识别预览">
+        <MigrationMaterialOcrReview :application-id="applicationId" :file="file" :material-type="form.materialType" />
       </el-form-item>
       <el-button type="primary" :loading="uploading" :disabled="!canUpload" @click="submit">上传材料</el-button>
     </el-form>
@@ -28,6 +31,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import MigrationMaterialOcrReview from './MigrationMaterialOcrReview.vue'
 import { uploadMaterial } from '../../api/materials'
 import { ACCEPTED_MATERIAL_TYPES, MATERIAL_ACCEPTED_MIME_TYPES, MAX_MATERIAL_SIZE } from '../../constants/material'
 
@@ -35,9 +39,11 @@ const props = defineProps({
   applicationId: { type: [Number, String], required: true },
   materialOptions: { type: Array, required: true },
   materialRuleText: { type: String, default: '' },
+  enableMigrationOcr: { type: Boolean, default: false },
 })
 const emit = defineEmits(['uploaded'])
 const uploading = ref(false)
+const uploadRef = ref()
 const file = ref(null)
 const form = reactive({ materialType: '', materialName: '', requiredFlag: true, conditionallyRequired: false })
 const canUpload = computed(() => Boolean(props.applicationId && form.materialType && form.materialName && file.value))
@@ -71,12 +77,13 @@ function applyMaterialRule(materialType) {
 }
 
 async function submit() {
-  if (!canUpload.value) return
+  if (!canUpload.value || uploading.value) return
   uploading.value = true
   try {
     await uploadMaterial(props.applicationId, { ...form, file: file.value })
     ElMessage.success('材料上传成功')
     Object.assign(form, { materialType: '', materialName: '', requiredFlag: true, conditionallyRequired: false })
+    uploadRef.value?.clearFiles()
     file.value = null
     emit('uploaded')
   } finally {

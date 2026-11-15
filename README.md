@@ -1,8 +1,15 @@
-# Population Miniterm
+# 邑循 YIXUN
+
+**邑循——基于检索增强生成与多模态文档理解的人口治理平台**
+
+人口有迹，治理有序。品牌规范与素材说明见 [BRAND.md](BRAND.md)，本地品牌预览见 `/brand/index.html`。
+项目基于 Population Miniterm 继续建设；名称中的检索增强生成与多模态文档理解为持续完善方向，当前实现范围以下文说明为准。
+
+王家兴负责的轻量 RAG 已部署到独立服务器，使用 DeepSeek API 进行检索词改写和原文证据选择；已通过受限 SSH 隧道接入本地 Java 与页面。真实 40 题诊断的正向文档命中为 22/22、回答/拒答行为检查为 40/40；Java 20 题回归和页面正向/无依据场景均已验证。文档命中不等于答案准确率。详见 [验收报告](docs/assistant/deepseek-rag-validation-report.md)、[AI 服务](ai-service/README.md)、[部署说明](docs/assistant/deepseek-deployment.md)。本机不下载或运行模型，心灵树洞主机未改动。青岛首批官方条款已入库并完成六题实测，远程向量与重排序等待服务配置。材料预审已接入身份证、户口簿和迁入申请表的 OCR 与字段核对。 [青岛六题复核](evaluation/qingdao-pilot-findings.md)
 
 当前后端发布候选版本为 Backend V1.0.0：课程设计级、可完整演示和原生部署的单体后端。正式 API 总索引见 `doc/api/backend-api-index.md`，部署与运维见 `doc/deployment/backend-v1-deployment.md`。
 
-后端已进入 Phase 14：在新增人员（`POST /api/persons`）前必须先上传身份证影印本接口（`POST /api/persons/idcard-image`），服务端自动调用可选的 PaddleOCR 子服务进行识别，仅将识别结果（姓名、性别、出生日期、民族、地址）与脱敏身份证号回填到前端；使用者可在 OCR 不可达或不可读时点击「跳过 OCR」上传。身份证影印本与人员档案在数据库中通过 `person_idcard_image.person_id` 绑定，编辑时只允许沿用既有图，禁止换图。MySQL 仍是唯一事实来源，OCR 识别失败不影响主流程。详细规范见 `doc/database/migrations/V4_013_person_idcard_image.sql`。
+新增人员（`POST /api/persons`）前需先上传身份证影印本（`POST /api/persons/idcard-image`）。后端支持可选的百度身份证正面 OCR 和兼容子服务。页面展示原图与识别字段，人工核对后才回填，证件住址和现居住地址分别处理。OCR 未配置或识别失败时可手工录入。影印本通过 `person_idcard_image.person_id` 与人员档案绑定。 [配置与验收步骤](doc/deployment/macos-local.md#身份证远程-ocr)
 
 后端已进入 Phase 11：提供综合人口/家庭户/迁移历史查询、统一统计口径、只读日志查询，以及默认关闭、故障可降级的 Redis 缓存与 JWT 注销撤销。MySQL 始终是唯一事实来源；Redis 不保存人口敏感业务数据。详见 `doc/development/phase-11-query-redis-summary.md`。
 
@@ -12,7 +19,7 @@
 
 系统现支持申请制迁入/迁出、单级审批后的显式业务执行、当前户籍唯一登记、家庭成员同步、迁出历史快照、户主变更及同市跨区批次关联。操作顺序为：创建迁移草稿 → 上传必需材料 → 提交/审批 → 授权经办人确认执行。审批通过不会自动改变户籍。
 
-增量升级依次执行 `doc/database/migrations` 下的 `V4_001` 至 `V4_013`。数据库通过 `DB_URL/DB_USERNAME/DB_PASSWORD`，JWT 通过 `JWT_SECRET` 配置，上传目录通过 `APP_UPLOAD_DIR` 配置。OCR 子服务通过 `IDCARD_OCR_URL`（默认空，子服务不可达时自动回退为 SKIPPED）配置。演示账号仍为 `viewer/population/household/approver/admin`，课程环境初始密码 `123456`。
+增量升级依次执行 `doc/database/migrations` 下的 `V4_001` 至 `V4_013`。数据库通过 `DB_URL/DB_USERNAME/DB_PASSWORD`，JWT 通过 `JWT_SECRET` 配置，上传目录通过 `APP_UPLOAD_DIR` 配置。OCR 默认关闭，可由后端配置百度 OCR 应用凭证或 `IDCARD_OCR_URL`。演示账号仍为 `viewer/population/household/approver/admin`，课程环境初始密码 `123456`。
 
 ## 第四阶段：注销管理
 
@@ -78,6 +85,10 @@ powershell -ExecutionPolicy Bypass -File scripts/windows/init_database.ps1 -Mode
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/windows/init_database.ps1 -Mode Verify -Database population_miniterm_integration_verify
 ```
+
+## macOS 本地运行
+
+已完成本地数据库初始化和 `.env.local` 配置的工作区，可执行 `bash scripts/macos/start.sh` 启动前后端，执行 `bash scripts/macos/stop.sh --all` 停止项目服务。环境说明、初始化顺序和验证命令见 [macOS 本地运行](doc/deployment/macos-local.md)。启动脚本不会自动建库或迁移。
 
 ## Windows 一键启动（推荐）
 

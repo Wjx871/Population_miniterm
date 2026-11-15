@@ -2,8 +2,10 @@ package com.wjx871.population.person;
 
 import com.wjx871.population.person.idcard.PersonIdCardImage;
 import com.wjx871.population.person.idcard.PersonIdCardImageMapper;
+import com.wjx871.population.person.idcard.OcrStatus;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
@@ -81,13 +83,15 @@ public class PersonService {
         if (request.idCardImageId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "新增人口必须先上传身份证影印本");
         }
-        PersonIdCardImage img = idCardImageMapper.selectById(request.idCardImageId())
+        AuthenticatedUser operator = CurrentUserContext.requireUser();
+        PersonIdCardImage img = idCardImageMapper.selectByIdForUpdate(request.idCardImageId())
+                .filter(row -> Objects.equals(row.getUserId(), operator.userId()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "身份证影印本不存在: " + request.idCardImageId()));
         if (img.getPersonId() != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "该身份证影印本已被使用");
         }
         // 图与号一致性：仅 OCR 成功时有 ocrIdcardFull；FAILED/SKIPPED 跳过一致性校验
-        if (img.getOcrIdcardFull() != null
+        if (img.getOcrStatus() == OcrStatus.SUCCESS && img.getOcrIdcardFull() != null
                 && !img.getOcrIdcardFull().equalsIgnoreCase(idCard)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "上传图片识别出的身份证号与填写不一致（识别：" + masking.identity(img.getOcrIdcardFull()) + "）");
@@ -96,7 +100,6 @@ public class PersonService {
         LocalDateTime now = LocalDateTime.now();
         Person person = new Person();
         apply(request, person, identity);
-        AuthenticatedUser operator = CurrentUserContext.requireUser();
         person.setIdCard(idCard);
         person.setCreatedByUserId(operator.userId());
         person.setCreatedDepartmentId(operator.departmentId());

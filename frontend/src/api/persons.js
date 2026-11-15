@@ -50,6 +50,7 @@ export function uploadIdCardImage(formData, options = {}) {
     method: 'post',
     data: formData,
     params: options.skipOcr ? { skipOcr: 'true' } : undefined,
+    timeout: options.skipOcr ? 10000 : 45000,
     silent: options.silent,
   })
 }

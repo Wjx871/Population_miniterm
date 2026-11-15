@@ -40,7 +40,7 @@ export async function loginAs(page, account) {
 
 export async function assertCurrentUser(page, account) {
   const result = await page.evaluate(async () => {
-    const session = JSON.parse(localStorage.getItem('population_user_v2') || '{}')
+    const session = JSON.parse(sessionStorage.getItem('population_user_v2') || '{}')
     const response = await fetch('/api/auth/me', {
       headers: { Authorization: `${session.tokenType || 'Bearer'} ${session.accessToken || ''}` },
     })

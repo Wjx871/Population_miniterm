@@ -22,13 +22,14 @@
       <div class="login-left">
         <div class="left-content fade-in">
           <div class="brand-header">
-            <h1 class="brand-title-cn">人口数据库管理系统</h1>
-            <p class="brand-title-en">Population Database Management System</p>
+            <div class="brand-signature"><BrandMark :size="64" /><span>{{ BRAND.latin }}</span></div>
+            <h1 class="brand-title-cn">{{ BRAND.name }}<span class="brand-product-name">{{ BRAND.product }}</span></h1>
+            <p class="brand-title-en">{{ BRAND.tagline }}</p>
             <div class="sub-title-line"></div>
           </div>
 
           <div class="sub-title-wrapper slide-in">
-            <h2>基层人口信息统一管理与分析平台</h2>
+            <h2>连接人口信息，贯通治理流程</h2>
           </div>
 
           <!-- 3列网格功能卡片，完美复刻参考图 -->
@@ -70,9 +71,9 @@
       <!-- 右侧：悬浮在背景上的纯白登录卡片 -->
       <div class="login-right">
         <div class="login-card fade-in-up">
-          <!-- 顶部加盖深蓝色官方象征徽章 -->
+          <!-- 项目品牌标志 -->
           <div class="badge-container">
-            <img class="emblem-img" src="../assets/images/login-badge.png" alt="徽章" />
+            <BrandMark :size="64" />
           </div>
 
           <div class="card-header">
@@ -150,7 +151,7 @@
         <el-icon><CircleCheck /></el-icon> 依法管理人口信息 &nbsp; 服务社会治理现代化
       </div>
       <div class="footer-right">
-        © 2026 Population Database Management System 版权所有
+        {{ BRAND.name }} {{ BRAND.latin }} · 人口治理平台
       </div>
     </footer>
   </div>
@@ -165,6 +166,8 @@ import {
 import { ElMessage } from 'element-plus';
 import { useUserStore } from '../stores/user';
 import { resolveLandingPath } from '../utils/routeAccess';
+import BrandMark from '../components/BrandMark.vue';
+import { BRAND } from '../constants/brand.js';
 
 const router = useRouter();
 const route = useRoute();
@@ -317,6 +320,9 @@ const handleLoginSubmit = () => {
 .brand-header {
   margin-bottom: 24px;
 }
+.brand-signature { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+.brand-signature span { color: #7ce5d3; font-size: 16px; font-weight: 600; letter-spacing: 3px; }
+.brand-product-name { font-size: 24px; font-weight: 400; letter-spacing: 1px; margin-left: 16px; white-space: nowrap; }
 .brand-title-cn {
   font-size: 42px;
   font-weight: 700;

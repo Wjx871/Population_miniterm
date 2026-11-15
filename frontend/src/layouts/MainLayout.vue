@@ -2,8 +2,9 @@
   <div class="layout-container">
     <header class="navbar" v-if="!isImmersive">
       <div class="logo-area">
-        <el-icon class="logo-icon"><Platform /></el-icon>
-        <span class="system-title">人口数据库管理系统</span>
+        <BrandMark :size="40" />
+        <span class="system-title">{{ BRAND.name }} <small>{{ BRAND.latin }}</small></span>
+        <span class="brand-product">{{ BRAND.product }}</span>
         <span class="system-badge">管理后台</span>
       </div>
       <div class="user-area" v-if="userStore.isLoggedIn">
@@ -63,7 +64,7 @@
             <span class="shortcut-arrow">→</span>
           </button>
           <p>系统版本 V1.0</p>
-          <p>东软政府事业部</p>
+          <p>{{ BRAND.tagline }}</p>
         </div>
       </aside>
 
@@ -125,6 +126,8 @@ import { PERMISSIONS } from '../constants/permissions.js';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import AssistantRobot from '../components/assistant/AssistantRobot.vue';
+import BrandMark from '../components/BrandMark.vue';
+import { BRAND } from '../constants/brand.js';
 
 const userStore = useUserStore();
 const router = useRouter();
@@ -311,6 +314,13 @@ export default {
   font-size: 21px;
   font-weight: 700;
   letter-spacing: .5px;
+}
+
+.system-title small { font-size: 11px; font-weight: 500; letter-spacing: 1.5px; margin-left: 6px; color: #7ce5d3; }
+.brand-product { font-size: 13px; color: #d1e1eb; }
+
+@media (max-width: 900px) {
+  .brand-product, .system-badge, .system-title small { display: none; }
 }
 
 .system-badge {

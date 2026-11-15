@@ -25,7 +25,7 @@
           当前影印本不能用于该身份证号建档。请核对后重新扫描；若 OCR 识别有误，可重新上传后选择“跳过 OCR”，再人工录入并核对证件信息。
         </template>
       </el-alert>
-      <IdCardScannerDialog v-model:visible="scannerVisible" @recognized="onRecognized" @skipped="onSkipped" />
+      <IdCardScannerDialog v-model:visible="scannerVisible" @recognized="onRecognized" />
 
       <el-form-item label="姓名" prop="name"><el-input v-model="form.name" placeholder="请输入姓名" maxlength="50" show-word-limit /></el-form-item>
       <el-form-item label="性别" prop="gender"><el-radio-group v-model="form.gender"><el-radio value="男">男</el-radio><el-radio value="女">女</el-radio></el-radio-group></el-form-item>
@@ -84,10 +84,16 @@ const idCardOcrMismatch = computed(() => {
 function changeRegistrationType() { Object.keys(documentFiles).forEach(key => delete documentFiles[key]); form.idCardImageId = null; image.value = null; formRef.value?.clearValidate() }
 function selectDocument(type, file) { if (file?.raw) documentFiles[type] = { name: file.name, raw: file.raw } }
 function disableFutureDate(date) { const today = new Date(); today.setHours(23, 59, 59, 999); return date.getTime() > today.getTime() }
-function syncFromModel(value) { Object.assign(form, { registrationType: value?.registrationType || 'ID_CARD_ARCHIVE', name: value?.name ?? '', gender: value?.gender || '男', idCard: value?.idCard ?? '', birthDate: value?.birthDate ? formatDate(value.birthDate) : '', ethnicity: value?.ethnicity ?? '汉族', phone: value?.phone ?? '', currentAddress: value?.currentAddress ?? '', idCardImageId: value?.idCardImageId ?? null }); if (props.isEdit) image.value = value?.idCardImage || null }
+function syncFromModel(value) { Object.assign(form, { registrationType: value?.registrationType || 'ID_CARD_ARCHIVE', name: value?.name ?? '', gender: value?.gender ?? '男', idCard: value?.idCard ?? '', birthDate: value?.birthDate ? formatDate(value.birthDate) : '', ethnicity: value?.ethnicity ?? '汉族', phone: value?.phone ?? '', currentAddress: value?.currentAddress ?? '', idCardImageId: value?.idCardImageId ?? null }); if (props.isEdit) image.value = value?.idCardImage || null }
 function onRecognized(result) { if (!result?.imageId) return ElMessage.warning('上传成功但未返回影印本标识'); image.value = { imageId: result.imageId, fileName: result.originalFilename, fileSize: result.fileSize, ocrStatus: result.ocrStatus, maskedIdCard: result.ocrIdcardMasked, ocrIdCard: result.ocrIdcardFull || null }; form.idCardImageId = result.imageId; applyOcrToForm(result); scannerVisible.value = false }
-function onSkipped(result) { if (result?.imageId) onRecognized({ ...result, ocrStatus: 'SKIPPED', ocrIdcardMasked: null }); else scannerVisible.value = false }
-function applyOcrToForm(result) { if (result.ocrStatus !== 'SUCCESS') return; if (!form.idCard && result.ocrIdcardFull) form.idCard = result.ocrIdcardFull; if (!form.name && result.ocrName) form.name = result.ocrName; if (result.ocrGender === 'M') form.gender = '男'; else if (result.ocrGender === 'F') form.gender = '女'; if (!form.birthDate && result.ocrBirthDate) form.birthDate = String(result.ocrBirthDate).substring(0, 10); if (!form.ethnicity && result.ocrEthnicity) form.ethnicity = result.ocrEthnicity; if (!form.currentAddress && result.ocrAddress) form.currentAddress = result.ocrAddress }
+function applyOcrToForm(result) {
+  if (result.ocrStatus !== 'SUCCESS') return
+  form.idCard = result.ocrIdcardFull ?? ''
+  form.name = result.ocrName ?? ''
+  form.gender = { M: '男', F: '女' }[result.ocrGender] ?? ''
+  form.birthDate = result.ocrBirthDate ?? ''
+  form.ethnicity = result.ocrEthnicity ?? ''
+}
 function clearImage() { image.value = null; form.idCardImageId = null }
 function normalizeIdCard(value) { return String(value || '').trim().toUpperCase() }
 function formatBytes(value) { if (!value) return '0 B'; return `${(Number(value) / 1024 / 1024).toFixed(2)} MB` }

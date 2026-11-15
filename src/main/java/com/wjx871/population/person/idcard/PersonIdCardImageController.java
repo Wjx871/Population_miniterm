@@ -3,7 +3,9 @@ package com.wjx871.population.person.idcard;
 import com.wjx871.population.common.ApiResponse;
 import com.wjx871.population.security.CurrentUserContext;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,14 +29,17 @@ public class PersonIdCardImageController {
     public ApiResponse<PersonIdCardImageView> upload(
             @RequestPart("file") MultipartFile file,
             @RequestParam(name = "skipOcr", defaultValue = "false") boolean skipOcr,
-            HttpServletRequest http) {
+            HttpServletRequest http,
+            HttpServletResponse response) {
+        response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
         Long userId = CurrentUserContext.requireUser().userId();
         return ApiResponse.ok(service.uploadAndRecognize(file, skipOcr, userId, http));
     }
 
     @GetMapping("/idcard-image/{id}")
     @PreAuthorize("hasAuthority('population:view')")
-    public ApiResponse<PersonIdCardImageView> get(@PathVariable Long id) {
-        return ApiResponse.ok(service.getById(id));
+    public ApiResponse<PersonIdCardImageView> get(@PathVariable Long id, HttpServletResponse response) {
+        response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+        return ApiResponse.ok(service.getById(id, CurrentUserContext.requireUser().userId()));
     }
 }

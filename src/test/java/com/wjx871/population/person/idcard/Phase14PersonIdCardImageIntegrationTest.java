@@ -3,6 +3,9 @@ package com.wjx871.population.person.idcard;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -11,15 +14,24 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestTemplate;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 /** Phase 14 / V4_013 身份证影印本 + 新增人口门控集成测试。 */
-@SpringBootTest
+@SpringBootTest(properties = {
+        "population.person.idcard.ocr.baidu-api-key=synthetic-test-key",
+        "population.person.idcard.ocr.baidu-secret-key=synthetic-test-secret"
+})
 @AutoConfigureMockMvc
 class Phase14PersonIdCardImageIntegrationTest {
 
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
+    @Autowired PaddleOcrHttpClient ocrClient;
 
     private static final String ID_CARD_FEMALE = "110105196001020047";
     private static final String ID_CARD_MALE   = "110105199001010010";
@@ -42,6 +54,64 @@ class Phase14PersonIdCardImageIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         long imageId = json.readTree(b).path("data").path("imageId").asLong();
         Assertions.assertTrue(jdbc.queryForObject("SELECT file_size FROM person_idcard_image WHERE image_id=?", Long.class, imageId) > 0);
+    }
+
+    @Test
+    void recognizesBaiduFieldsAndClearsThemWhenOwnerChoosesManualEntry() throws Exception {
+        RestTemplate rest = (RestTemplate) ReflectionTestUtils.getField(ocrClient, "restTemplate");
+        var originalFactory = rest.getRequestFactory();
+        var server = MockRestServiceServer.bindTo(rest).build();
+        server.expect(requestTo("https://aip.baidubce.com/oauth/2.0/token"))
+                .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("grant_type=client_credentials")))
+                .andRespond(withSuccess("{\"access_token\":\"synthetic-token\",\"expires_in\":3600}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://aip.baidubce.com/rest/2.0/ocr/v1/idcard?access_token=synthetic-token"))
+                .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("id_card_side=front")))
+                .andRespond(withSuccess("""
+                        {"image_status":"normal","words_result":{
+                          "姓名":{"words":"测试样例"},"公民身份号码":{"words":"110105196001020047"},
+                          "性别":{"words":"女"},"出生":{"words":"19600102"},
+                          "民族":{"words":"汉"},"住址":{"words":"虚构地址"}
+                        }}
+                        """, MediaType.APPLICATION_JSON));
+        try {
+            var buffer = new ByteArrayOutputStream();
+            ImageIO.write(new BufferedImage(32, 32, BufferedImage.TYPE_INT_RGB), "png", buffer);
+            var file = new MockMultipartFile("file", "phase14-ocr.png", "image/png", buffer.toByteArray());
+            String authorization = bearer();
+            String response = mvc.perform(multipart("/api/persons/idcard-image").file(file)
+                            .header("Authorization", authorization))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("Cache-Control", "no-store"))
+                    .andExpect(jsonPath("$.data.ocrStatus").value("SUCCESS"))
+                    .andExpect(jsonPath("$.data.ocrIdcardFull").value(ID_CARD_FEMALE))
+                    .andExpect(jsonPath("$.data.ocrName").value("测试样例"))
+                    .andExpect(jsonPath("$.data.ocrBirthDate").value("1960-01-02"))
+                    .andExpect(jsonPath("$.data.ocrGender").value("F"))
+                    .andExpect(jsonPath("$.data.ocrEthnicity").value("汉族"))
+                    .andExpect(jsonPath("$.data.ocrAddress").value("虚构地址"))
+                    .andExpect(jsonPath("$.data.ocrConfidence").doesNotExist())
+                    .andReturn().getResponse().getContentAsString();
+            long imageId = json.readTree(response).path("data").path("imageId").asLong();
+            mvc.perform(get("/api/persons/idcard-image/{id}", imageId).header("Authorization", authorization))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.ocrIdcardFull").doesNotExist())
+                    .andExpect(jsonPath("$.data.ocrAddress").doesNotExist());
+            mvc.perform(get("/api/persons/idcard-image/{id}", imageId).header("Authorization", viewerBearer()))
+                    .andExpect(status().isNotFound());
+            mvc.perform(multipart("/api/persons/idcard-image").file(file).param("skipOcr", "true")
+                            .header("Authorization", authorization))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.imageId").value(imageId))
+                    .andExpect(jsonPath("$.data.ocrStatus").value("SKIPPED"))
+                    .andExpect(jsonPath("$.data.ocrIdcardFull").doesNotExist());
+            Assertions.assertNull(jdbc.queryForObject(
+                    "SELECT ocr_idcard_full FROM person_idcard_image WHERE image_id=?", String.class, imageId));
+            server.verify();
+        } finally {
+            rest.setRequestFactory(originalFactory);
+        }
     }
 
     @Test
