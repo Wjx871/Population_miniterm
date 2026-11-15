@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.*;
@@ -19,8 +20,11 @@ public class ResidencePermitExpiryService {
     private final ResidencePermitExpiryWorker worker;
     private final ResidencePermitProperties properties;
 
+    @Value("${population.scheduling.enabled:true}")
+    private boolean scheduledEnabled = true;
+
     @Scheduled(cron="${residence-permit.expiry-cron:0 0 2 * * *}")
-    public void scheduled() { runNow(); }
+    public void scheduled() { if (scheduledEnabled) runNow(); }
 
     /** Returns candidates visited, including records that became ineligible before locking.
      * A worker failure still propagates; earlier REQUIRES_NEW commits remain durable.

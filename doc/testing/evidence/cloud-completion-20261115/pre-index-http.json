@@ -1,0 +1,4676 @@
+{
+  "dataset": {
+    "synthetic_people": 20000,
+    "synthetic_floating_rows": 20000,
+    "total_people": 20000,
+    "active_floating": 5000
+  },
+  "method": {
+    "rounds": 3,
+    "seconds_per_trial": 12,
+    "concurrency": 8,
+    "warmup_requests": 40,
+    "load": "closed_loop",
+    "background": "both JVMs and both MySQL nodes remain running in all cases",
+    "single_definition": "Nginx routes only to backend-1; backend-2 remains idle",
+    "index_candidate": "removed before HTTP comparison",
+    "limits": "Shared 4-core GitHub runner; synthetic data; no production capacity or write workload claim."
+  },
+  "trials": [
+    {
+      "round": 1,
+      "scenario": "single_primary_cache_off",
+      "metrics": {
+        "url": "http://127.0.0.1:8088/api/statistics/overview",
+        "requests": 1573,
+        "duration_target_seconds": 12.0,
+        "concurrency": 8,
+        "business_data_validated": true,
+        "load_model": "closed_loop",
+        "warmup_requests": 40,
+        "elapsed_seconds": 12.0191,
+        "percentile_method": "nearest_rank_all_requests",
+        "p50_ms": 58.238,
+        "p95_ms": 99.283,
+        "throughput_rps": 130.875,
+        "successful_throughput_rps": 130.875,
+        "error_rate": 0.0,
+        "statuses": {
+          "200": 1573
+        },
+        "instances": {
+          "backend-1": 1573
+        }
+      },
+      "before": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:19:47.715930504Z",
+          "uptimeMs": 20709,
+          "requests": {
+            "totalRequests": 4,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 4,
+            "capacityLimited": false,
+            "p50Ms": 141.235192,
+            "p95Ms": 1044.147079,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 100420840,
+          "heapCommittedBytes": 190840832,
+          "nonHeapUsedBytes": 106314000,
+          "liveThreads": 30,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:19:48.026832192Z",
+          "uptimeMs": 21040,
+          "requests": {
+            "totalRequests": 2,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 2,
+            "capacityLimited": false,
+            "p50Ms": 3.854853,
+            "p95Ms": 981.838035,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 75164112,
+          "heapCommittedBytes": 146800640,
+          "nonHeapUsedBytes": 103003040,
+          "liveThreads": 30,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "waitingThreads": 0,
+              "started": true,
+              "total": 10,
+              "maximum": 10,
+              "idle": 10
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 12,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 6,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.18%",
+            "Container": "d01ff2ccd7c590a0d386a4463cedcad1e942a0131ed5be0b538591fbf006a4ec",
+            "ID": "d01ff2ccd7c5",
+            "MemPerc": "2.56%",
+            "MemUsage": "408.7MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "77.5kB / 51.8kB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.17%",
+            "Container": "72ca9cadaf8ee4bffdcccdb8cfee86788563ce69e218b0df8f4779e7bc620201",
+            "ID": "72ca9cadaf8e",
+            "MemPerc": "2.26%",
+            "MemUsage": "360.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "65.4kB / 38.6kB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "67.8MB / 453MB",
+            "CPUPerc": "0.30%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.06%",
+            "MemUsage": "488.5MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "822kB / 6.33MB",
+            "PIDs": "55"
+          },
+          {
+            "BlockIO": "41.4MB / 111MB",
+            "CPUPerc": "4.41%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.15%",
+            "MemUsage": "504.3MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "4.88MB / 21.3kB",
+            "PIDs": "41"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.36%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "110MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "5.53kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "8.19kB / 0B",
+            "CPUPerc": "0.37%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.121MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "41.9kB / 103kB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.68MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "6.29kB / 6.54kB",
+            "PIDs": "5"
+          }
+        ]
+      },
+      "after": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:20:04.692300831Z",
+          "uptimeMs": 37686,
+          "requests": {
+            "totalRequests": 1621,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 1621,
+            "capacityLimited": false,
+            "p50Ms": 52.326299,
+            "p95Ms": 92.348566,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 144536208,
+          "heapCommittedBytes": 190840832,
+          "nonHeapUsedBytes": 124148152,
+          "liveThreads": 30,
+          "processCpuRatio": 0.40429948109710895,
+          "systemCpuRatio": 0.8053659060529159,
+          "connectionPools": {
+            "primary": {
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:20:04.822490484Z",
+          "uptimeMs": 37835,
+          "requests": {
+            "totalRequests": 6,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 6,
+            "capacityLimited": false,
+            "p50Ms": 12.881608,
+            "p95Ms": 981.838035,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 79358416,
+          "heapCommittedBytes": 146800640,
+          "nonHeapUsedBytes": 103966808,
+          "liveThreads": 29,
+          "processCpuRatio": 0.01648433987711674,
+          "systemCpuRatio": 0.804648442972626,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "waitingThreads": 0,
+              "started": true,
+              "total": 10,
+              "maximum": 10,
+              "idle": 10
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 3242,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 10,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.12%",
+            "Container": "d01ff2ccd7c590a0d386a4463cedcad1e942a0131ed5be0b538591fbf006a4ec",
+            "ID": "d01ff2ccd7c5",
+            "MemPerc": "2.78%",
+            "MemUsage": "444.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "11.8MB / 12.3MB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.15%",
+            "Container": "72ca9cadaf8ee4bffdcccdb8cfee86788563ce69e218b0df8f4779e7bc620201",
+            "ID": "72ca9cadaf8e",
+            "MemPerc": "2.19%",
+            "MemUsage": "350.5MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "77.4kB / 45kB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "67.8MB / 453MB",
+            "CPUPerc": "0.30%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.07%",
+            "MemUsage": "490.8MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "10.6MB / 16.4MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 112MB",
+            "CPUPerc": "0.31%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.15%",
+            "MemUsage": "503.8MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "4.88MB / 21.4kB",
+            "PIDs": "41"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.07%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "109.8MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "5.53kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "8.19kB / 0B",
+            "CPUPerc": "0.33%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "42kB / 103kB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "5.254MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "3.83MB / 4.32MB",
+            "PIDs": "5"
+          }
+        ]
+      }
+    },
+    {
+      "round": 1,
+      "scenario": "single_primary_cache_on",
+      "metrics": {
+        "url": "http://127.0.0.1:8088/api/statistics/overview",
+        "requests": 4391,
+        "duration_target_seconds": 12.0,
+        "concurrency": 8,
+        "business_data_validated": true,
+        "load_model": "closed_loop",
+        "warmup_requests": 40,
+        "elapsed_seconds": 12.0251,
+        "percentile_method": "nearest_rank_all_requests",
+        "p50_ms": 20.155,
+        "p95_ms": 36.37,
+        "throughput_rps": 365.153,
+        "successful_throughput_rps": 365.153,
+        "error_rate": 0.0,
+        "statuses": {
+          "200": 4391
+        },
+        "instances": {
+          "backend-1": 4391
+        }
+      },
+      "before": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:20:30.123957019Z",
+          "uptimeMs": 21145,
+          "requests": {
+            "totalRequests": 4,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 4,
+            "capacityLimited": false,
+            "p50Ms": 198.264852,
+            "p95Ms": 1977.220439,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 53757616,
+          "heapCommittedBytes": 130023424,
+          "nonHeapUsedBytes": 113588704,
+          "liveThreads": 31,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.25,
+          "connectionPools": {
+            "primary": {
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:20:30.491580183Z",
+          "uptimeMs": 21480,
+          "requests": {
+            "totalRequests": 2,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 2,
+            "capacityLimited": false,
+            "p50Ms": 4.710905,
+            "p95Ms": 1537.677118,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 42359184,
+          "heapCommittedBytes": 146800640,
+          "nonHeapUsedBytes": 110138488,
+          "liveThreads": 31,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 1,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 12,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 6,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.16%",
+            "Container": "146d21b06d92235e501b790fee60d6ab6b62ee1eaac8a8bf9cbd42d5be8c06ff",
+            "ID": "146d21b06d92",
+            "MemPerc": "2.23%",
+            "MemUsage": "356.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "79kB / 54.8kB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.15%",
+            "Container": "caf13295b90e70ec7abcf958d22ff81655bb895749d005e112648cfca7c37341",
+            "ID": "caf13295b90e",
+            "MemPerc": "2.52%",
+            "MemUsage": "402.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "66.3kB / 40.5kB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "67.8MB / 455MB",
+            "CPUPerc": "4.58%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.08%",
+            "MemUsage": "492.5MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "10.7MB / 16.6MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 115MB",
+            "CPUPerc": "0.45%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.15%",
+            "MemUsage": "504.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "4.88MB / 21.7kB",
+            "PIDs": "41"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.08%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "109.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "5.94kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "16.4kB / 0B",
+            "CPUPerc": "0.33%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.512MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "46.7kB / 105kB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.648MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "6.36kB / 6.54kB",
+            "PIDs": "5"
+          }
+        ]
+      },
+      "after": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:20:46.740272501Z",
+          "uptimeMs": 37761,
+          "requests": {
+            "totalRequests": 4439,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 4096,
+            "capacityLimited": true,
+            "p50Ms": 14.768623,
+            "p95Ms": 27.346314,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 64879208,
+          "heapCommittedBytes": 130023424,
+          "nonHeapUsedBytes": 135572384,
+          "liveThreads": 33,
+          "processCpuRatio": 0.5273556231003039,
+          "systemCpuRatio": 0.8069282138229025,
+          "connectionPools": {
+            "primary": {
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:20:46.895743527Z",
+          "uptimeMs": 37885,
+          "requests": {
+            "totalRequests": 6,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 6,
+            "capacityLimited": false,
+            "p50Ms": 13.252185,
+            "p95Ms": 1537.677118,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 46553488,
+          "heapCommittedBytes": 146800640,
+          "nonHeapUsedBytes": 111178136,
+          "liveThreads": 30,
+          "processCpuRatio": 0.018789465578315106,
+          "systemCpuRatio": 0.8066550527206348,
+          "connectionPools": {
+            "primary": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 4431,
+            "misses": 1,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 4447,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 10,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.20%",
+            "Container": "146d21b06d92235e501b790fee60d6ab6b62ee1eaac8a8bf9cbd42d5be8c06ff",
+            "ID": "146d21b06d92",
+            "MemPerc": "2.56%",
+            "MemUsage": "410MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "25.5MB / 16.6MB",
+            "PIDs": "49"
+          },
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.11%",
+            "Container": "caf13295b90e70ec7abcf958d22ff81655bb895749d005e112648cfca7c37341",
+            "ID": "caf13295b90e",
+            "MemPerc": "2.47%",
+            "MemUsage": "394.8MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "78.6kB / 47.8kB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "67.8MB / 455MB",
+            "CPUPerc": "0.30%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.08%",
+            "MemUsage": "493MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "18.9MB / 33.6MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 115MB",
+            "CPUPerc": "0.29%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.15%",
+            "MemUsage": "503.8MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "4.88MB / 21.7kB",
+            "PIDs": "41"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "120.57%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "110.1MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "5.94kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "16.4kB / 0B",
+            "CPUPerc": "3.19%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.52MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "1.54MB / 4.07MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.04%",
+            "MemUsage": "5.957MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "10.6MB / 11.9MB",
+            "PIDs": "5"
+          }
+        ]
+      }
+    },
+    {
+      "round": 1,
+      "scenario": "single_replica_cache_off",
+      "metrics": {
+        "url": "http://127.0.0.1:8088/api/statistics/overview",
+        "requests": 1593,
+        "duration_target_seconds": 12.0,
+        "concurrency": 8,
+        "business_data_validated": true,
+        "load_model": "closed_loop",
+        "warmup_requests": 40,
+        "elapsed_seconds": 12.0488,
+        "percentile_method": "nearest_rank_all_requests",
+        "p50_ms": 57.044,
+        "p95_ms": 98.354,
+        "throughput_rps": 132.213,
+        "successful_throughput_rps": 132.213,
+        "error_rate": 0.0,
+        "statuses": {
+          "200": 1593
+        },
+        "instances": {
+          "backend-1": 1593
+        }
+      },
+      "before": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:21:11.750983072Z",
+          "uptimeMs": 20537,
+          "requests": {
+            "totalRequests": 4,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 4,
+            "capacityLimited": false,
+            "p50Ms": 159.962846,
+            "p95Ms": 731.530951,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 99057784,
+          "heapCommittedBytes": 146800640,
+          "nonHeapUsedBytes": 106160528,
+          "liveThreads": 32,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "waitingThreads": 0,
+              "started": true,
+              "total": 10,
+              "maximum": 10,
+              "idle": 10
+            },
+            "replica": {
+              "active": 0,
+              "waitingThreads": 0,
+              "started": true,
+              "total": 1,
+              "maximum": 5,
+              "idle": 1
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:21:12.022431938Z",
+          "uptimeMs": 20744,
+          "requests": {
+            "totalRequests": 2,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 2,
+            "capacityLimited": false,
+            "p50Ms": 5.327573,
+            "p95Ms": 829.219502,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 70790744,
+          "heapCommittedBytes": 161480704,
+          "nonHeapUsedBytes": 102802576,
+          "liveThreads": 30,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.5,
+          "connectionPools": {
+            "primary": {
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0
+            },
+            "replica": {
+              "started": false
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": true,
+            "primaryConnections": 11,
+            "replicaConnections": 1,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": true,
+            "primaryConnections": 6,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.12%",
+            "Container": "11e5deab97f81ad9bfba31e0b357ea734728e7715e68af29df91fa74a20889c0",
+            "ID": "11e5deab97f8",
+            "MemPerc": "2.35%",
+            "MemUsage": "376.1MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "83.5kB / 55.3kB",
+            "PIDs": "48"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.26%",
+            "Container": "a34006de71068428b1e46b013e66277ccbb9703686e08ccbd69eb50e283856e5",
+            "ID": "a34006de7106",
+            "MemPerc": "2.27%",
+            "MemUsage": "362.5MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "65.3kB / 38.6kB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "67.8MB / 456MB",
+            "CPUPerc": "0.41%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.09%",
+            "MemUsage": "493.3MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "19MB / 33.8MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 116MB",
+            "CPUPerc": "0.30%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.15%",
+            "MemUsage": "504.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "4.89MB / 29.9kB",
+            "PIDs": "41"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.09%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "109.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "6.19kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "20.5kB / 0B",
+            "CPUPerc": "0.32%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.293MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "1.55MB / 4.07MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.684MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "6.4kB / 6.48kB",
+            "PIDs": "5"
+          }
+        ]
+      },
+      "after": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:21:28.558628017Z",
+          "uptimeMs": 37344,
+          "requests": {
+            "totalRequests": 1641,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 1641,
+            "capacityLimited": false,
+            "p50Ms": 51.632386,
+            "p95Ms": 91.778438,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 54071936,
+          "heapCommittedBytes": 176160768,
+          "nonHeapUsedBytes": 124048576,
+          "liveThreads": 32,
+          "processCpuRatio": 0.40194756554307115,
+          "systemCpuRatio": 0.7984986295507882,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "waitingThreads": 0,
+              "started": true,
+              "total": 10,
+              "maximum": 10,
+              "idle": 10
+            },
+            "replica": {
+              "active": 0,
+              "waitingThreads": 0,
+              "started": true,
+              "total": 5,
+              "maximum": 5,
+              "idle": 5
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:21:28.690963275Z",
+          "uptimeMs": 37412,
+          "requests": {
+            "totalRequests": 6,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 6,
+            "capacityLimited": false,
+            "p50Ms": 13.114741,
+            "p95Ms": 829.219502,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 72887896,
+          "heapCommittedBytes": 161480704,
+          "nonHeapUsedBytes": 103744984,
+          "liveThreads": 29,
+          "processCpuRatio": 0.006647529838344161,
+          "systemCpuRatio": 0.7986986019251802,
+          "connectionPools": {
+            "primary": {
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0
+            },
+            "replica": {
+              "started": false
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": true,
+            "primaryConnections": 1648,
+            "replicaConnections": 1634,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": true,
+            "primaryConnections": 10,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.11%",
+            "Container": "11e5deab97f81ad9bfba31e0b357ea734728e7715e68af29df91fa74a20889c0",
+            "ID": "11e5deab97f8",
+            "MemPerc": "2.88%",
+            "MemUsage": "460.6MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "12.1MB / 12.8MB",
+            "PIDs": "49"
+          },
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.12%",
+            "Container": "a34006de71068428b1e46b013e66277ccbb9703686e08ccbd69eb50e283856e5",
+            "ID": "a34006de7106",
+            "MemPerc": "2.27%",
+            "MemUsage": "363MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "77.3kB / 45kB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "67.8MB / 456MB",
+            "CPUPerc": "0.32%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.09%",
+            "MemUsage": "493.6MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "22.2MB / 40.1MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 116MB",
+            "CPUPerc": "0.32%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.17%",
+            "MemUsage": "506.4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "12MB / 4.1MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.09%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "110.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "6.19kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "20.5kB / 0B",
+            "CPUPerc": "0.37%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.047MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "1.55MB / 4.07MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "5.266MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "3.87MB / 4.35MB",
+            "PIDs": "5"
+          }
+        ]
+      }
+    },
+    {
+      "round": 1,
+      "scenario": "dual_primary_cache_off",
+      "metrics": {
+        "url": "http://127.0.0.1:8088/api/statistics/overview",
+        "requests": 1074,
+        "duration_target_seconds": 12.0,
+        "concurrency": 8,
+        "business_data_validated": true,
+        "load_model": "closed_loop",
+        "warmup_requests": 40,
+        "elapsed_seconds": 12.0469,
+        "percentile_method": "nearest_rank_all_requests",
+        "p50_ms": 84.798,
+        "p95_ms": 152.958,
+        "throughput_rps": 89.151,
+        "successful_throughput_rps": 89.151,
+        "error_rate": 0.0,
+        "statuses": {
+          "200": 1074
+        },
+        "instances": {
+          "backend-1": 537,
+          "backend-2": 537
+        }
+      },
+      "before": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:21:53.973259518Z",
+          "uptimeMs": 20830,
+          "requests": {
+            "totalRequests": 3,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 3,
+            "capacityLimited": false,
+            "p50Ms": 346.767812,
+            "p95Ms": 952.549754,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 83169504,
+          "heapCommittedBytes": 150994944,
+          "nonHeapUsedBytes": 105076328,
+          "liveThreads": 30,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "waitingThreads": 0,
+              "started": true,
+              "total": 10,
+              "maximum": 10,
+              "idle": 10
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:21:54.146838309Z",
+          "uptimeMs": 21069,
+          "requests": {
+            "totalRequests": 3,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 3,
+            "capacityLimited": false,
+            "p50Ms": 256.661964,
+            "p95Ms": 833.536705,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 88549416,
+          "heapCommittedBytes": 159383552,
+          "nonHeapUsedBytes": 104379352,
+          "liveThreads": 30,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 10,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 8,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.11%",
+            "Container": "cb74d65a4ffadaab584eedb5da37c0e9f6eebdcf2268731ae94a000eb6db867d",
+            "ID": "cb74d65a4ffa",
+            "MemPerc": "2.35%",
+            "MemUsage": "376.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "70.2kB / 44.1kB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.11%",
+            "Container": "f6a6afb29883e4a88e0cb46769ca0d2af86df0ba0757b3d845265eacfe2ca3be",
+            "ID": "f6a6afb29883",
+            "MemPerc": "2.24%",
+            "MemUsage": "358.4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "73kB / 46.4kB",
+            "PIDs": "45"
+          },
+          {
+            "BlockIO": "67.8MB / 456MB",
+            "CPUPerc": "0.46%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.09%",
+            "MemUsage": "494MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "22.3MB / 40.2MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 116MB",
+            "CPUPerc": "0.28%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.17%",
+            "MemUsage": "506.7MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "12MB / 4.1MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.11%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "110.1MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "6.44kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "24.6kB / 0B",
+            "CPUPerc": "0.33%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.047MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "1.55MB / 4.07MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.789MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "6.2kB / 6.32kB",
+            "PIDs": "5"
+          }
+        ]
+      },
+      "after": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:22:11.086402496Z",
+          "uptimeMs": 37943,
+          "requests": {
+            "totalRequests": 564,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 564,
+            "capacityLimited": false,
+            "p50Ms": 76.587677,
+            "p95Ms": 139.992125,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 58959280,
+          "heapCommittedBytes": 150994944,
+          "nonHeapUsedBytes": 122338016,
+          "liveThreads": 29,
+          "processCpuRatio": 0.2726738203733647,
+          "systemCpuRatio": 0.8178430972020191,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "waitingThreads": 0,
+              "started": true,
+              "total": 10,
+              "maximum": 10,
+              "idle": 10
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:22:11.237475797Z",
+          "uptimeMs": 38160,
+          "requests": {
+            "totalRequests": 564,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 564,
+            "capacityLimited": false,
+            "p50Ms": 77.131865,
+            "p95Ms": 146.515911,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 50892032,
+          "heapCommittedBytes": 159383552,
+          "nonHeapUsedBytes": 119377304,
+          "liveThreads": 29,
+          "processCpuRatio": 0.24885945548197205,
+          "systemCpuRatio": 0.8176289426714415,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 1128,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 1126,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.20%",
+            "Container": "cb74d65a4ffadaab584eedb5da37c0e9f6eebdcf2268731ae94a000eb6db867d",
+            "ID": "cb74d65a4ffa",
+            "MemPerc": "2.51%",
+            "MemUsage": "400.6MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "3.94MB / 4.23MB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.24%",
+            "Container": "f6a6afb29883e4a88e0cb46769ca0d2af86df0ba0757b3d845265eacfe2ca3be",
+            "ID": "f6a6afb29883",
+            "MemPerc": "2.57%",
+            "MemUsage": "410MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "3.94MB / 4.23MB",
+            "PIDs": "45"
+          },
+          {
+            "BlockIO": "67.8MB / 456MB",
+            "CPUPerc": "0.34%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.32%",
+            "MemUsage": "530.6MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "29MB / 47.2MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 117MB",
+            "CPUPerc": "0.29%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.17%",
+            "MemUsage": "506.8MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "12MB / 4.1MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.08%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "110MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "6.44kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "24.6kB / 0B",
+            "CPUPerc": "0.35%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.297MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "1.55MB / 4.07MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "5.375MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "2.5MB / 2.62MB",
+            "PIDs": "5"
+          }
+        ]
+      }
+    },
+    {
+      "round": 2,
+      "scenario": "dual_primary_cache_off",
+      "metrics": {
+        "url": "http://127.0.0.1:8088/api/statistics/overview",
+        "requests": 2042,
+        "duration_target_seconds": 12.0,
+        "concurrency": 8,
+        "business_data_validated": true,
+        "load_model": "closed_loop",
+        "warmup_requests": 40,
+        "elapsed_seconds": 12.0324,
+        "percentile_method": "nearest_rank_all_requests",
+        "p50_ms": 42.261,
+        "p95_ms": 87.796,
+        "throughput_rps": 169.708,
+        "successful_throughput_rps": 169.708,
+        "error_rate": 0.0,
+        "statuses": {
+          "200": 2042
+        },
+        "instances": {
+          "backend-2": 1021,
+          "backend-1": 1021
+        }
+      },
+      "before": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:22:18.192744434Z",
+          "uptimeMs": 45049,
+          "requests": {
+            "totalRequests": 569,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 569,
+            "capacityLimited": false,
+            "p50Ms": 76.573541,
+            "p95Ms": 139.992125,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 63153584,
+          "heapCommittedBytes": 150994944,
+          "nonHeapUsedBytes": 119689544,
+          "liveThreads": 30,
+          "processCpuRatio": 0.012926391382405745,
+          "systemCpuRatio": 0.16802239810759828,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "waitingThreads": 0,
+              "started": true,
+              "total": 10,
+              "maximum": 10,
+              "idle": 10
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:22:18.323156870Z",
+          "uptimeMs": 45246,
+          "requests": {
+            "totalRequests": 569,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 569,
+            "capacityLimited": false,
+            "p50Ms": 76.735272,
+            "p95Ms": 146.515911,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 52989184,
+          "heapCommittedBytes": 159383552,
+          "nonHeapUsedBytes": 119433656,
+          "liveThreads": 30,
+          "processCpuRatio": 0.0025234318673395817,
+          "systemCpuRatio": 0.16287098764798685,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 1136,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 1132,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.26%",
+            "Container": "cb74d65a4ffadaab584eedb5da37c0e9f6eebdcf2268731ae94a000eb6db867d",
+            "ID": "cb74d65a4ffa",
+            "MemPerc": "2.51%",
+            "MemUsage": "401MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "3.96MB / 4.24MB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.62%",
+            "Container": "f6a6afb29883e4a88e0cb46769ca0d2af86df0ba0757b3d845265eacfe2ca3be",
+            "ID": "f6a6afb29883",
+            "MemPerc": "2.57%",
+            "MemUsage": "410.4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "3.96MB / 4.24MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "67.8MB / 457MB",
+            "CPUPerc": "0.34%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.32%",
+            "MemUsage": "530.4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "29.1MB / 47.3MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 118MB",
+            "CPUPerc": "0.33%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.17%",
+            "MemUsage": "506.7MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "12MB / 4.1MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.36%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "110.3MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "6.44kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "28.7kB / 0B",
+            "CPUPerc": "0.35%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.332MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "1.55MB / 4.07MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.777MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "6.2kB / 6.32kB",
+            "PIDs": "5"
+          }
+        ]
+      },
+      "after": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:22:34.320803945Z",
+          "uptimeMs": 61177,
+          "requests": {
+            "totalRequests": 1614,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 1614,
+            "capacityLimited": false,
+            "p50Ms": 49.247405,
+            "p95Ms": 120.998155,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 63171872,
+          "heapCommittedBytes": 150994944,
+          "nonHeapUsedBytes": 125673040,
+          "liveThreads": 30,
+          "processCpuRatio": 0.16580635069607383,
+          "systemCpuRatio": 0.7908322903629537,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "waitingThreads": 0,
+              "started": true,
+              "total": 10,
+              "maximum": 10,
+              "idle": 10
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:22:34.455482910Z",
+          "uptimeMs": 61378,
+          "requests": {
+            "totalRequests": 1614,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 1614,
+            "capacityLimited": false,
+            "p50Ms": 47.297438,
+            "p95Ms": 119.447272,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 103533872,
+          "heapCommittedBytes": 159383552,
+          "nonHeapUsedBytes": 123359912,
+          "liveThreads": 30,
+          "processCpuRatio": 0.14743589743589744,
+          "systemCpuRatio": 0.7912103995805142,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 3222,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 3219,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 49.2kB",
+            "CPUPerc": "0.10%",
+            "Container": "cb74d65a4ffadaab584eedb5da37c0e9f6eebdcf2268731ae94a000eb6db867d",
+            "ID": "cb74d65a4ffa",
+            "MemPerc": "2.63%",
+            "MemUsage": "420.6MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "11.2MB / 12MB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "0B / 49.2kB",
+            "CPUPerc": "0.11%",
+            "Container": "f6a6afb29883e4a88e0cb46769ca0d2af86df0ba0757b3d845265eacfe2ca3be",
+            "ID": "f6a6afb29883",
+            "MemPerc": "2.74%",
+            "MemUsage": "438.5MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "11.2MB / 12MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "67.8MB / 457MB",
+            "CPUPerc": "0.34%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.32%",
+            "MemUsage": "530.4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "41.7MB / 60.3MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 118MB",
+            "CPUPerc": "0.31%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.17%",
+            "MemUsage": "506.5MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "12MB / 4.1MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.08%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "109.7MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "6.51kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "28.7kB / 0B",
+            "CPUPerc": "0.32%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.047MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "1.55MB / 4.07MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "5.156MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "4.59MB / 4.85MB",
+            "PIDs": "5"
+          }
+        ]
+      }
+    },
+    {
+      "round": 2,
+      "scenario": "single_replica_cache_off",
+      "metrics": {
+        "url": "http://127.0.0.1:8088/api/statistics/overview",
+        "requests": 1555,
+        "duration_target_seconds": 12.0,
+        "concurrency": 8,
+        "business_data_validated": true,
+        "load_model": "closed_loop",
+        "warmup_requests": 40,
+        "elapsed_seconds": 12.0335,
+        "percentile_method": "nearest_rank_all_requests",
+        "p50_ms": 59.183,
+        "p95_ms": 96.187,
+        "throughput_rps": 129.223,
+        "successful_throughput_rps": 129.223,
+        "error_rate": 0.0,
+        "statuses": {
+          "200": 1555
+        },
+        "instances": {
+          "backend-1": 1555
+        }
+      },
+      "before": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:22:59.388146014Z",
+          "uptimeMs": 20453,
+          "requests": {
+            "totalRequests": 4,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 4,
+            "capacityLimited": false,
+            "p50Ms": 183.988918,
+            "p95Ms": 822.006721,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 82873696,
+          "heapCommittedBytes": 167772160,
+          "nonHeapUsedBytes": 105986384,
+          "liveThreads": 32,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10
+            },
+            "replica": {
+              "total": 1,
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 1,
+              "maximum": 5
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:22:59.717616583Z",
+          "uptimeMs": 20838,
+          "requests": {
+            "totalRequests": 2,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 2,
+            "capacityLimited": false,
+            "p50Ms": 8.280826,
+            "p95Ms": 944.63055,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 107426080,
+          "heapCommittedBytes": 197132288,
+          "nonHeapUsedBytes": 103202104,
+          "liveThreads": 30,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "waitingThreads": 0,
+              "started": true,
+              "total": 10,
+              "maximum": 10,
+              "idle": 10
+            },
+            "replica": {
+              "started": false
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": true,
+            "primaryConnections": 11,
+            "replicaConnections": 1,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": true,
+            "primaryConnections": 6,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.12%",
+            "Container": "636ed285a0f4f203a34879ee168f8bf8c41864dc9ccf79ade39d5657f2b51a47",
+            "ID": "636ed285a0f4",
+            "MemPerc": "2.51%",
+            "MemUsage": "401MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "84kB / 55.6kB",
+            "PIDs": "48"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.39%",
+            "Container": "4d2c2e5a715774e5ed7a7d3c88ece0af9fa3df243544cfd8d95624e647353a40",
+            "ID": "4d2c2e5a7157",
+            "MemPerc": "2.61%",
+            "MemUsage": "416.6MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "65.8kB / 38.8kB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "67.8MB / 458MB",
+            "CPUPerc": "0.32%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.32%",
+            "MemUsage": "530.4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "41.8MB / 60.4MB",
+            "PIDs": "55"
+          },
+          {
+            "BlockIO": "41.4MB / 119MB",
+            "CPUPerc": "4.65%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.17%",
+            "MemUsage": "507.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "12MB / 4.11MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.15%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "109.8MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "6.76kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "32.8kB / 0B",
+            "CPUPerc": "0.38%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.047MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "1.55MB / 4.07MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.684MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "6.33kB / 6.54kB",
+            "PIDs": "5"
+          }
+        ]
+      },
+      "after": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:23:16.308979048Z",
+          "uptimeMs": 37374,
+          "requests": {
+            "totalRequests": 1603,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 1603,
+            "capacityLimited": false,
+            "p50Ms": 52.751068,
+            "p95Ms": 91.25957,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 46007016,
+          "heapCommittedBytes": 167772160,
+          "nonHeapUsedBytes": 123554112,
+          "liveThreads": 32,
+          "processCpuRatio": 0.4033313503866746,
+          "systemCpuRatio": 0.8190708561989881,
+          "connectionPools": {
+            "primary": {
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10
+            },
+            "replica": {
+              "total": 5,
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 5,
+              "maximum": 5
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:23:16.440939172Z",
+          "uptimeMs": 37561,
+          "requests": {
+            "totalRequests": 6,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 6,
+            "capacityLimited": false,
+            "p50Ms": 11.172952,
+            "p95Ms": 944.63055,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 109523232,
+          "heapCommittedBytes": 197132288,
+          "nonHeapUsedBytes": 104153384,
+          "liveThreads": 29,
+          "processCpuRatio": 0.010082768999247555,
+          "systemCpuRatio": 0.8178503101756502,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "waitingThreads": 0,
+              "started": true,
+              "total": 10,
+              "maximum": 10,
+              "idle": 10
+            },
+            "replica": {
+              "started": false
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": true,
+            "primaryConnections": 1610,
+            "replicaConnections": 1596,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": true,
+            "primaryConnections": 10,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.13%",
+            "Container": "636ed285a0f4f203a34879ee168f8bf8c41864dc9ccf79ade39d5657f2b51a47",
+            "ID": "636ed285a0f4",
+            "MemPerc": "2.71%",
+            "MemUsage": "433.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "11.8MB / 12.5MB",
+            "PIDs": "49"
+          },
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.18%",
+            "Container": "4d2c2e5a715774e5ed7a7d3c88ece0af9fa3df243544cfd8d95624e647353a40",
+            "ID": "4d2c2e5a7157",
+            "MemPerc": "2.57%",
+            "MemUsage": "410.4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "77.9kB / 45.2kB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "67.8MB / 458MB",
+            "CPUPerc": "0.30%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.32%",
+            "MemUsage": "531MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "44.9MB / 66.6MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 119MB",
+            "CPUPerc": "0.29%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.18%",
+            "MemUsage": "507.6MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "18.9MB / 8.09MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.09%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "110.1MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "6.76kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "32.8kB / 0B",
+            "CPUPerc": "0.34%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.289MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "1.55MB / 4.07MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "5.395MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "3.79MB / 4.26MB",
+            "PIDs": "5"
+          }
+        ]
+      }
+    },
+    {
+      "round": 2,
+      "scenario": "single_primary_cache_on",
+      "metrics": {
+        "url": "http://127.0.0.1:8088/api/statistics/overview",
+        "requests": 4440,
+        "duration_target_seconds": 12.0,
+        "concurrency": 8,
+        "business_data_validated": true,
+        "load_model": "closed_loop",
+        "warmup_requests": 40,
+        "elapsed_seconds": 12.0125,
+        "percentile_method": "nearest_rank_all_requests",
+        "p50_ms": 20.277,
+        "p95_ms": 34.884,
+        "throughput_rps": 369.615,
+        "successful_throughput_rps": 369.615,
+        "error_rate": 0.0,
+        "statuses": {
+          "200": 4440
+        },
+        "instances": {
+          "backend-1": 4440
+        }
+      },
+      "before": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:23:41.801513073Z",
+          "uptimeMs": 21126,
+          "requests": {
+            "totalRequests": 4,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 4,
+            "capacityLimited": false,
+            "p50Ms": 160.54043,
+            "p95Ms": 1857.587953,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 89441720,
+          "heapCommittedBytes": 182452224,
+          "nonHeapUsedBytes": 113129952,
+          "liveThreads": 31,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:23:42.119136358Z",
+          "uptimeMs": 21474,
+          "requests": {
+            "totalRequests": 2,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 2,
+            "capacityLimited": false,
+            "p50Ms": 5.269346,
+            "p95Ms": 1771.489462,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 64557232,
+          "heapCommittedBytes": 176160768,
+          "nonHeapUsedBytes": 109676904,
+          "liveThreads": 31,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.25,
+          "connectionPools": {
+            "primary": {
+              "idle": 10,
+              "active": 0,
+              "waitingThreads": 0,
+              "started": true,
+              "total": 10,
+              "maximum": 10
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 1,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 12,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 6,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.18%",
+            "Container": "8aaf22047f25cb68b3849ab92211c18d163ccac48ac5744cb87264b218b815ec",
+            "ID": "8aaf22047f25",
+            "MemPerc": "2.67%",
+            "MemUsage": "426.7MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "79.1kB / 54.8kB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.12%",
+            "Container": "914d24a19f3c8e8923bc87c2265e662a3ea43c35d76859f103e0f26bb917b531",
+            "ID": "914d24a19f3c",
+            "MemPerc": "2.58%",
+            "MemUsage": "412.6MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "66.7kB / 40kB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "67.8MB / 459MB",
+            "CPUPerc": "0.34%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.32%",
+            "MemUsage": "530.6MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "45MB / 66.7MB",
+            "PIDs": "55"
+          },
+          {
+            "BlockIO": "41.4MB / 120MB",
+            "CPUPerc": "0.31%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.18%",
+            "MemUsage": "508.1MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "18.9MB / 8.09MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.09%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "109.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "7.1kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "41kB / 0B",
+            "CPUPerc": "0.36%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.555MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "1.55MB / 4.08MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.699MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "6.23kB / 6.48kB",
+            "PIDs": "5"
+          }
+        ]
+      },
+      "after": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:23:58.669119738Z",
+          "uptimeMs": 37993,
+          "requests": {
+            "totalRequests": 4488,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 4096,
+            "capacityLimited": true,
+            "p50Ms": 14.645484,
+            "p95Ms": 24.802833,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 90692824,
+          "heapCommittedBytes": 182452224,
+          "nonHeapUsedBytes": 134833064,
+          "liveThreads": 33,
+          "processCpuRatio": 0.515409934171155,
+          "systemCpuRatio": 0.8079879009739435,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:23:58.799700293Z",
+          "uptimeMs": 38155,
+          "requests": {
+            "totalRequests": 6,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 6,
+            "capacityLimited": false,
+            "p50Ms": 14.905129,
+            "p95Ms": 1771.489462,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 68751536,
+          "heapCommittedBytes": 176160768,
+          "nonHeapUsedBytes": 110543016,
+          "liveThreads": 30,
+          "processCpuRatio": 0.010894235133908307,
+          "systemCpuRatio": 0.8070812546422222,
+          "connectionPools": {
+            "primary": {
+              "idle": 10,
+              "active": 0,
+              "waitingThreads": 0,
+              "started": true,
+              "total": 10,
+              "maximum": 10
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 4480,
+            "misses": 1,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 4496,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 10,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.35%",
+            "Container": "8aaf22047f25cb68b3849ab92211c18d163ccac48ac5744cb87264b218b815ec",
+            "ID": "8aaf22047f25",
+            "MemPerc": "2.92%",
+            "MemUsage": "466.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "25.8MB / 16.8MB",
+            "PIDs": "50"
+          },
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.26%",
+            "Container": "914d24a19f3c8e8923bc87c2265e662a3ea43c35d76859f103e0f26bb917b531",
+            "ID": "914d24a19f3c",
+            "MemPerc": "2.38%",
+            "MemUsage": "381.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "79kB / 47.3kB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "67.8MB / 459MB",
+            "CPUPerc": "0.29%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.32%",
+            "MemUsage": "530.7MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "53.3MB / 84MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 121MB",
+            "CPUPerc": "0.31%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.18%",
+            "MemUsage": "507.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "18.9MB / 8.09MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.08%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "110.4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "7.1kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "41kB / 0B",
+            "CPUPerc": "0.37%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.141MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "3.07MB / 8.08MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.04%",
+            "MemUsage": "6.027MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "10.7MB / 12MB",
+            "PIDs": "5"
+          }
+        ]
+      }
+    },
+    {
+      "round": 2,
+      "scenario": "single_primary_cache_off",
+      "metrics": {
+        "url": "http://127.0.0.1:8088/api/statistics/overview",
+        "requests": 1627,
+        "duration_target_seconds": 12.0,
+        "concurrency": 8,
+        "business_data_validated": true,
+        "load_model": "closed_loop",
+        "warmup_requests": 40,
+        "elapsed_seconds": 12.0308,
+        "percentile_method": "nearest_rank_all_requests",
+        "p50_ms": 56.665,
+        "p95_ms": 95.142,
+        "throughput_rps": 135.237,
+        "successful_throughput_rps": 135.237,
+        "error_rate": 0.0,
+        "statuses": {
+          "200": 1627
+        },
+        "instances": {
+          "backend-1": 1627
+        }
+      },
+      "before": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:24:24.125918032Z",
+          "uptimeMs": 21001,
+          "requests": {
+            "totalRequests": 4,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 4,
+            "capacityLimited": false,
+            "p50Ms": 132.843957,
+            "p95Ms": 1371.558913,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 83551040,
+          "heapCommittedBytes": 134217728,
+          "nonHeapUsedBytes": 105995776,
+          "liveThreads": 30,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:24:24.529645506Z",
+          "uptimeMs": 21343,
+          "requests": {
+            "totalRequests": 2,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 2,
+            "capacityLimited": false,
+            "p50Ms": 4.80607,
+            "p95Ms": 1255.523936,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 79917952,
+          "heapCommittedBytes": 150994944,
+          "nonHeapUsedBytes": 103077912,
+          "liveThreads": 30,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 12,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 6,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.12%",
+            "Container": "c0d9517aea3759ea083add7a759d0983b0a8565f231bcf335ecb4da19b28f27f",
+            "ID": "c0d9517aea37",
+            "MemPerc": "2.23%",
+            "MemUsage": "357.1MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "78.5kB / 52kB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.14%",
+            "Container": "d171672cbcaa3a88c2f66736092d29c7a7ae894a3e9c2824864de74a2f91f6a6",
+            "ID": "d171672cbcaa",
+            "MemPerc": "2.14%",
+            "MemUsage": "341.5MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "65.2kB / 38.6kB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "67.8MB / 460MB",
+            "CPUPerc": "4.54%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.32%",
+            "MemUsage": "530.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "53.4MB / 84.2MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 122MB",
+            "CPUPerc": "0.36%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.18%",
+            "MemUsage": "507.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "18.9MB / 8.09MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.08%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "110MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "7.35kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "45.1kB / 4.1kB",
+            "CPUPerc": "0.35%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.551MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "3.07MB / 8.08MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.664MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "6.3kB / 6.48kB",
+            "PIDs": "5"
+          }
+        ]
+      },
+      "after": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:24:41.034963676Z",
+          "uptimeMs": 37910,
+          "requests": {
+            "totalRequests": 1675,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 1675,
+            "capacityLimited": false,
+            "p50Ms": 51.156537,
+            "p95Ms": 88.830367,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 107738128,
+          "heapCommittedBytes": 134217728,
+          "nonHeapUsedBytes": 123707808,
+          "liveThreads": 29,
+          "processCpuRatio": 0.40280053627290335,
+          "systemCpuRatio": 0.8020880595754086,
+          "connectionPools": {
+            "primary": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:24:41.187928032Z",
+          "uptimeMs": 38001,
+          "requests": {
+            "totalRequests": 6,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 6,
+            "capacityLimited": false,
+            "p50Ms": 15.33368,
+            "p95Ms": 1255.523936,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 84112256,
+          "heapCommittedBytes": 150994944,
+          "nonHeapUsedBytes": 103897696,
+          "liveThreads": 29,
+          "processCpuRatio": 0.005594194133655882,
+          "systemCpuRatio": 0.7984309091619569,
+          "connectionPools": {
+            "primary": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 3350,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 10,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.23%",
+            "Container": "c0d9517aea3759ea083add7a759d0983b0a8565f231bcf335ecb4da19b28f27f",
+            "ID": "c0d9517aea37",
+            "MemPerc": "2.44%",
+            "MemUsage": "390.3MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "12.1MB / 12.7MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.16%",
+            "Container": "d171672cbcaa3a88c2f66736092d29c7a7ae894a3e9c2824864de74a2f91f6a6",
+            "ID": "d171672cbcaa",
+            "MemPerc": "2.14%",
+            "MemUsage": "342.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "77.2kB / 45kB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "67.8MB / 460MB",
+            "CPUPerc": "0.28%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.32%",
+            "MemUsage": "531.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "63.5MB / 94.6MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 122MB",
+            "CPUPerc": "4.52%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.18%",
+            "MemUsage": "508.4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "18.9MB / 8.09MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.08%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "109.7MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "7.35kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "45.1kB / 4.1kB",
+            "CPUPerc": "0.38%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.309MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "3.07MB / 8.08MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "5.254MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "3.96MB / 4.46MB",
+            "PIDs": "5"
+          }
+        ]
+      }
+    },
+    {
+      "round": 3,
+      "scenario": "single_replica_cache_off",
+      "metrics": {
+        "url": "http://127.0.0.1:8088/api/statistics/overview",
+        "requests": 1580,
+        "duration_target_seconds": 12.0,
+        "concurrency": 8,
+        "business_data_validated": true,
+        "load_model": "closed_loop",
+        "warmup_requests": 40,
+        "elapsed_seconds": 12.0465,
+        "percentile_method": "nearest_rank_all_requests",
+        "p50_ms": 56.995,
+        "p95_ms": 101.08,
+        "throughput_rps": 131.159,
+        "successful_throughput_rps": 131.159,
+        "error_rate": 0.0,
+        "statuses": {
+          "200": 1580
+        },
+        "instances": {
+          "backend-1": 1580
+        }
+      },
+      "before": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:25:06.431330993Z",
+          "uptimeMs": 20923,
+          "requests": {
+            "totalRequests": 4,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 4,
+            "capacityLimited": false,
+            "p50Ms": 168.013542,
+            "p95Ms": 847.759183,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 82594816,
+          "heapCommittedBytes": 161480704,
+          "nonHeapUsedBytes": 106835960,
+          "liveThreads": 32,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10
+            },
+            "replica": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 1,
+              "maximum": 5,
+              "total": 1
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:25:06.739066272Z",
+          "uptimeMs": 21193,
+          "requests": {
+            "totalRequests": 2,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 2,
+            "capacityLimited": false,
+            "p50Ms": 5.322748,
+            "p95Ms": 907.888667,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 57239248,
+          "heapCommittedBytes": 155189248,
+          "nonHeapUsedBytes": 102957224,
+          "liveThreads": 30,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10
+            },
+            "replica": {
+              "started": false
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": true,
+            "primaryConnections": 11,
+            "replicaConnections": 1,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": true,
+            "primaryConnections": 6,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.11%",
+            "Container": "5f3494431d4593afdf2bf6e7f938aaaeaaecd8dc00841ae2dcf206c609b44c2d",
+            "ID": "5f3494431d45",
+            "MemPerc": "2.52%",
+            "MemUsage": "402.6MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "83.6kB / 55.3kB",
+            "PIDs": "48"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.15%",
+            "Container": "8da165a0edc8de1cf86c5daa7ce09d3630ec8e91d895ea7e026fffd6c960d5f7",
+            "ID": "8da165a0edc8",
+            "MemPerc": "2.35%",
+            "MemUsage": "375.5MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "65.8kB / 38.5kB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "67.8MB / 461MB",
+            "CPUPerc": "0.31%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.33%",
+            "MemUsage": "531.7MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "63.6MB / 94.7MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 123MB",
+            "CPUPerc": "0.34%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.18%",
+            "MemUsage": "508MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "18.9MB / 8.09MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.10%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "109.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "7.6kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "49.2kB / 8.19kB",
+            "CPUPerc": "0.38%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.301MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "3.08MB / 8.08MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.723MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "6.33kB / 6.54kB",
+            "PIDs": "5"
+          }
+        ]
+      },
+      "after": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:25:23.329459173Z",
+          "uptimeMs": 37821,
+          "requests": {
+            "totalRequests": 1628,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 1628,
+            "capacityLimited": false,
+            "p50Ms": 51.681388,
+            "p95Ms": 93.676738,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 94623488,
+          "heapCommittedBytes": 161480704,
+          "nonHeapUsedBytes": 124540728,
+          "liveThreads": 32,
+          "processCpuRatio": 0.4021447721179625,
+          "systemCpuRatio": 0.7983306694287367,
+          "connectionPools": {
+            "primary": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10
+            },
+            "replica": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 5,
+              "maximum": 5,
+              "total": 5
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:25:23.459532163Z",
+          "uptimeMs": 37913,
+          "requests": {
+            "totalRequests": 6,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 6,
+            "capacityLimited": false,
+            "p50Ms": 12.624115,
+            "p95Ms": 907.888667,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 61433552,
+          "heapCommittedBytes": 155189248,
+          "nonHeapUsedBytes": 103866904,
+          "liveThreads": 29,
+          "processCpuRatio": 0.008733624454148473,
+          "systemCpuRatio": 0.7977429938975265,
+          "connectionPools": {
+            "primary": {
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10
+            },
+            "replica": {
+              "started": false
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": true,
+            "primaryConnections": 1635,
+            "replicaConnections": 1621,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": true,
+            "primaryConnections": 10,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.18%",
+            "Container": "5f3494431d4593afdf2bf6e7f938aaaeaaecd8dc00841ae2dcf206c609b44c2d",
+            "ID": "5f3494431d45",
+            "MemPerc": "2.66%",
+            "MemUsage": "425.3MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "12MB / 12.7MB",
+            "PIDs": "49"
+          },
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.17%",
+            "Container": "8da165a0edc8de1cf86c5daa7ce09d3630ec8e91d895ea7e026fffd6c960d5f7",
+            "ID": "8da165a0edc8",
+            "MemPerc": "2.35%",
+            "MemUsage": "375.4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "77.8kB / 45kB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "67.8MB / 461MB",
+            "CPUPerc": "4.49%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.33%",
+            "MemUsage": "532.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "66.7MB / 101MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 123MB",
+            "CPUPerc": "0.29%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.18%",
+            "MemUsage": "508.1MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "25.9MB / 12.1MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "76.56%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "110.1MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "7.6kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "49.2kB / 8.19kB",
+            "CPUPerc": "0.36%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.543MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "3.08MB / 8.08MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "5.301MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "3.84MB / 4.33MB",
+            "PIDs": "5"
+          }
+        ]
+      }
+    },
+    {
+      "round": 3,
+      "scenario": "single_primary_cache_off",
+      "metrics": {
+        "url": "http://127.0.0.1:8088/api/statistics/overview",
+        "requests": 1624,
+        "duration_target_seconds": 12.0,
+        "concurrency": 8,
+        "business_data_validated": true,
+        "load_model": "closed_loop",
+        "warmup_requests": 40,
+        "elapsed_seconds": 12.025,
+        "percentile_method": "nearest_rank_all_requests",
+        "p50_ms": 55.759,
+        "p95_ms": 99.486,
+        "throughput_rps": 135.052,
+        "successful_throughput_rps": 135.052,
+        "error_rate": 0.0,
+        "statuses": {
+          "200": 1624
+        },
+        "instances": {
+          "backend-1": 1624
+        }
+      },
+      "before": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:25:48.254202482Z",
+          "uptimeMs": 20572,
+          "requests": {
+            "totalRequests": 4,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 4,
+            "capacityLimited": false,
+            "p50Ms": 216.018332,
+            "p95Ms": 955.859353,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 89049928,
+          "heapCommittedBytes": 150994944,
+          "nonHeapUsedBytes": 105964112,
+          "liveThreads": 30,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:25:48.534306360Z",
+          "uptimeMs": 20816,
+          "requests": {
+            "totalRequests": 2,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 2,
+            "capacityLimited": false,
+            "p50Ms": 4.104572,
+            "p95Ms": 874.203531,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 71860736,
+          "heapCommittedBytes": 186646528,
+          "nonHeapUsedBytes": 103149368,
+          "liveThreads": 30,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 12,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 6,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.11%",
+            "Container": "f3bf3e4c5af79826fe11723c8fa5eaaec292437e5e2098fe3b1cf6f0ef3ddab5",
+            "ID": "f3bf3e4c5af7",
+            "MemPerc": "2.24%",
+            "MemUsage": "358.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "77.9kB / 51.9kB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.15%",
+            "Container": "072e7ee7aceb7bbf4fda8008669b13164741119cb42bc8a9c3850582902219ef",
+            "ID": "072e7ee7aceb",
+            "MemPerc": "2.61%",
+            "MemUsage": "417.7MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "66.3kB / 38.7kB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "67.8MB / 461MB",
+            "CPUPerc": "0.30%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.33%",
+            "MemUsage": "532MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "66.8MB / 101MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 123MB",
+            "CPUPerc": "0.44%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.18%",
+            "MemUsage": "508.4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "25.9MB / 12.1MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "0B / 172kB",
+            "CPUPerc": "0.27%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "109.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "7.86kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "53.2kB / 12.3kB",
+            "CPUPerc": "2.94%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.367MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "3.08MB / 8.08MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.684MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "6.36kB / 6.54kB",
+            "PIDs": "5"
+          }
+        ]
+      },
+      "after": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:26:05.311311845Z",
+          "uptimeMs": 37629,
+          "requests": {
+            "totalRequests": 1672,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 1672,
+            "capacityLimited": false,
+            "p50Ms": 49.50727,
+            "p95Ms": 93.913655,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 94909952,
+          "heapCommittedBytes": 150994944,
+          "nonHeapUsedBytes": 124603208,
+          "liveThreads": 32,
+          "processCpuRatio": 0.3942165830628504,
+          "systemCpuRatio": 0.8100563906844547,
+          "connectionPools": {
+            "primary": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:26:05.440267814Z",
+          "uptimeMs": 37721,
+          "requests": {
+            "totalRequests": 6,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 6,
+            "capacityLimited": false,
+            "p50Ms": 16.664768,
+            "p95Ms": 874.203531,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 76055040,
+          "heapCommittedBytes": 186646528,
+          "nonHeapUsedBytes": 104246264,
+          "liveThreads": 29,
+          "processCpuRatio": 0.02604941947008038,
+          "systemCpuRatio": 0.8105388207431752,
+          "connectionPools": {
+            "primary": {
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 3344,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 10,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.25%",
+            "Container": "f3bf3e4c5af79826fe11723c8fa5eaaec292437e5e2098fe3b1cf6f0ef3ddab5",
+            "ID": "f3bf3e4c5af7",
+            "MemPerc": "2.44%",
+            "MemUsage": "389.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "12.1MB / 12.7MB",
+            "PIDs": "49"
+          },
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.11%",
+            "Container": "072e7ee7aceb7bbf4fda8008669b13164741119cb42bc8a9c3850582902219ef",
+            "ID": "072e7ee7aceb",
+            "MemPerc": "2.45%",
+            "MemUsage": "391.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "78.3kB / 45.1kB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "67.8MB / 462MB",
+            "CPUPerc": "0.32%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.33%",
+            "MemUsage": "532.5MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "76.8MB / 112MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 124MB",
+            "CPUPerc": "0.34%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.18%",
+            "MemUsage": "508.1MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "25.9MB / 12.1MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "12.3kB / 172kB",
+            "CPUPerc": "0.09%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "109.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "7.86kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "53.2kB / 12.3kB",
+            "CPUPerc": "0.32%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.043MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "3.08MB / 8.08MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "5.277MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "3.95MB / 4.45MB",
+            "PIDs": "5"
+          }
+        ]
+      }
+    },
+    {
+      "round": 3,
+      "scenario": "dual_primary_cache_off",
+      "metrics": {
+        "url": "http://127.0.0.1:8088/api/statistics/overview",
+        "requests": 1546,
+        "duration_target_seconds": 12.0,
+        "concurrency": 8,
+        "business_data_validated": true,
+        "load_model": "closed_loop",
+        "warmup_requests": 40,
+        "elapsed_seconds": 12.0195,
+        "percentile_method": "nearest_rank_all_requests",
+        "p50_ms": 54.486,
+        "p95_ms": 126.99,
+        "throughput_rps": 128.625,
+        "successful_throughput_rps": 128.625,
+        "error_rate": 0.0,
+        "statuses": {
+          "200": 1546
+        },
+        "instances": {
+          "backend-2": 773,
+          "backend-1": 773
+        }
+      },
+      "before": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:26:12.678745830Z",
+          "uptimeMs": 44997,
+          "requests": {
+            "totalRequests": 1677,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 1677,
+            "capacityLimited": false,
+            "p50Ms": 49.492903,
+            "p95Ms": 93.913655,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 99104256,
+          "heapCommittedBytes": 150994944,
+          "nonHeapUsedBytes": 121551488,
+          "liveThreads": 31,
+          "processCpuRatio": 0.007268951194184839,
+          "systemCpuRatio": 0.18114610170163487,
+          "connectionPools": {
+            "primary": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:26:12.838607022Z",
+          "uptimeMs": 45120,
+          "requests": {
+            "totalRequests": 11,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 11,
+            "capacityLimited": false,
+            "p50Ms": 13.761129,
+            "p95Ms": 874.203531,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 82346496,
+          "heapCommittedBytes": 186646528,
+          "nonHeapUsedBytes": 105956712,
+          "liveThreads": 29,
+          "processCpuRatio": 0.022750775594622543,
+          "systemCpuRatio": 0.1823405687948934,
+          "connectionPools": {
+            "primary": {
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 3352,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 16,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.13%",
+            "Container": "f3bf3e4c5af79826fe11723c8fa5eaaec292437e5e2098fe3b1cf6f0ef3ddab5",
+            "ID": "f3bf3e4c5af7",
+            "MemPerc": "2.45%",
+            "MemUsage": "391.1MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "12.1MB / 12.7MB",
+            "PIDs": "48"
+          },
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.16%",
+            "Container": "072e7ee7aceb7bbf4fda8008669b13164741119cb42bc8a9c3850582902219ef",
+            "ID": "072e7ee7aceb",
+            "MemPerc": "2.51%",
+            "MemUsage": "401.4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "97.8kB / 59.7kB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "67.8MB / 462MB",
+            "CPUPerc": "0.29%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.33%",
+            "MemUsage": "532.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "76.8MB / 112MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 125MB",
+            "CPUPerc": "0.37%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.18%",
+            "MemUsage": "508.5MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "25.9MB / 12.1MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "12.3kB / 172kB",
+            "CPUPerc": "0.35%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "109.8MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "7.86kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "57.3kB / 16.4kB",
+            "CPUPerc": "0.33%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.043MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "3.08MB / 8.08MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.812MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "6.2kB / 6.32kB",
+            "PIDs": "5"
+          }
+        ]
+      },
+      "after": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:26:29.187655130Z",
+          "uptimeMs": 61505,
+          "requests": {
+            "totalRequests": 2474,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 2474,
+            "capacityLimited": false,
+            "p50Ms": 47.352582,
+            "p95Ms": 92.77041,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 55469072,
+          "heapCommittedBytes": 150994944,
+          "nonHeapUsedBytes": 125135128,
+          "liveThreads": 31,
+          "processCpuRatio": 0.11573650503202196,
+          "systemCpuRatio": 0.7990833590240174,
+          "connectionPools": {
+            "primary": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:26:29.327581603Z",
+          "uptimeMs": 61609,
+          "requests": {
+            "totalRequests": 808,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 808,
+            "capacityLimited": false,
+            "p50Ms": 60.679654,
+            "p95Ms": 136.007145,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 51132160,
+          "heapCommittedBytes": 182452224,
+          "nonHeapUsedBytes": 120598008,
+          "liveThreads": 29,
+          "processCpuRatio": 0.30662393162393164,
+          "systemCpuRatio": 0.8006064592901649,
+          "connectionPools": {
+            "primary": {
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 4943,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 1607,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 49.2kB",
+            "CPUPerc": "0.10%",
+            "Container": "f3bf3e4c5af79826fe11723c8fa5eaaec292437e5e2098fe3b1cf6f0ef3ddab5",
+            "ID": "f3bf3e4c5af7",
+            "MemPerc": "2.59%",
+            "MemUsage": "414.7MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "17.6MB / 18.6MB",
+            "PIDs": "48"
+          },
+          {
+            "BlockIO": "0B / 49.2kB",
+            "CPUPerc": "0.10%",
+            "Container": "072e7ee7aceb7bbf4fda8008669b13164741119cb42bc8a9c3850582902219ef",
+            "ID": "072e7ee7aceb",
+            "MemPerc": "2.85%",
+            "MemUsage": "455.1MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "5.59MB / 6MB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "67.8MB / 462MB",
+            "CPUPerc": "0.30%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.33%",
+            "MemUsage": "532.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "86.5MB / 121MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 125MB",
+            "CPUPerc": "0.27%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.18%",
+            "MemUsage": "508.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "25.9MB / 12.1MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "12.3kB / 172kB",
+            "CPUPerc": "117.39%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "109.8MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "7.93kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "57.3kB / 16.4kB",
+            "CPUPerc": "2.97%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.344MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "3.08MB / 8.08MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "5.195MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "3.53MB / 3.71MB",
+            "PIDs": "5"
+          }
+        ]
+      }
+    },
+    {
+      "round": 3,
+      "scenario": "single_primary_cache_on",
+      "metrics": {
+        "url": "http://127.0.0.1:8088/api/statistics/overview",
+        "requests": 4429,
+        "duration_target_seconds": 12.0,
+        "concurrency": 8,
+        "business_data_validated": true,
+        "load_model": "closed_loop",
+        "warmup_requests": 40,
+        "elapsed_seconds": 12.0095,
+        "percentile_method": "nearest_rank_all_requests",
+        "p50_ms": 19.887,
+        "p95_ms": 36.991,
+        "throughput_rps": 368.79,
+        "successful_throughput_rps": 368.79,
+        "error_rate": 0.0,
+        "statuses": {
+          "200": 4429
+        },
+        "instances": {
+          "backend-1": 4429
+        }
+      },
+      "before": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:26:54.809736364Z",
+          "uptimeMs": 21270,
+          "requests": {
+            "totalRequests": 4,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 4,
+            "capacityLimited": false,
+            "p50Ms": 169.821144,
+            "p95Ms": 1688.198713,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 90701312,
+          "heapCommittedBytes": 171966464,
+          "nonHeapUsedBytes": 113025808,
+          "liveThreads": 31,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.25,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:26:55.147698851Z",
+          "uptimeMs": 21565,
+          "requests": {
+            "totalRequests": 2,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 2,
+            "capacityLimited": false,
+            "p50Ms": 4.758481,
+            "p95Ms": 1906.152425,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 51189104,
+          "heapCommittedBytes": 144703488,
+          "nonHeapUsedBytes": 109559672,
+          "liveThreads": 31,
+          "processCpuRatio": 0.0,
+          "systemCpuRatio": 0.0,
+          "connectionPools": {
+            "primary": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 0,
+            "misses": 1,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 12,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 6,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.12%",
+            "Container": "ede0cf626c69daea4cfac57de379f566bd3800a5899da5f6d738fb997c20fdeb",
+            "ID": "ede0cf626c69",
+            "MemPerc": "2.50%",
+            "MemUsage": "400.1MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "79.2kB / 54.8kB",
+            "PIDs": "47"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.13%",
+            "Container": "cab2b4ee2ed1bff0df6f69cf7b8b1429d48bf548cf6d48083bf23b86d87ab853",
+            "ID": "cab2b4ee2ed1",
+            "MemPerc": "2.30%",
+            "MemUsage": "366.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "66.7kB / 40.1kB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "67.8MB / 463MB",
+            "CPUPerc": "4.43%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.34%",
+            "MemUsage": "533.3MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "86.6MB / 122MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 126MB",
+            "CPUPerc": "0.35%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.18%",
+            "MemUsage": "508.4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "25.9MB / 12.1MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "12.3kB / 172kB",
+            "CPUPerc": "0.13%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "109.9MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "8.26kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "65.5kB / 24.6kB",
+            "CPUPerc": "0.39%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.551MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "3.08MB / 8.08MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.66MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "6.42kB / 6.41kB",
+            "PIDs": "5"
+          }
+        ]
+      },
+      "after": {
+        "backend": {
+          "instanceId": "backend-1",
+          "sampledAt": "2026-11-15T09:27:11.278856900Z",
+          "uptimeMs": 37739,
+          "requests": {
+            "totalRequests": 4477,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 4096,
+            "capacityLimited": true,
+            "p50Ms": 14.196016,
+            "p95Ms": 26.785344,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 81510280,
+          "heapCommittedBytes": 171966464,
+          "nonHeapUsedBytes": 134453808,
+          "liveThreads": 33,
+          "processCpuRatio": 0.5246278962712905,
+          "systemCpuRatio": 0.7950904042161251,
+          "connectionPools": {
+            "primary": {
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10,
+              "started": true,
+              "waitingThreads": 0
+            }
+          }
+        },
+        "backend2": {
+          "instanceId": "backend-2",
+          "sampledAt": "2026-11-15T09:27:11.419942911Z",
+          "uptimeMs": 37837,
+          "requests": {
+            "totalRequests": 6,
+            "totalServerErrors": 0,
+            "windowSeconds": 60,
+            "capacity": 4096,
+            "samples": 6,
+            "capacityLimited": false,
+            "p50Ms": 12.309772,
+            "p95Ms": 1906.152425,
+            "serverErrorRate": 0.0,
+            "percentileMethod": "nearest_rank"
+          },
+          "heapUsedBytes": 55383408,
+          "heapCommittedBytes": 144703488,
+          "nonHeapUsedBytes": 110461264,
+          "liveThreads": 30,
+          "processCpuRatio": 0.00574980574980575,
+          "systemCpuRatio": 0.7943445405788395,
+          "connectionPools": {
+            "primary": {
+              "started": true,
+              "waitingThreads": 0,
+              "active": 0,
+              "idle": 10,
+              "maximum": 10,
+              "total": 10
+            }
+          }
+        },
+        "cache": {
+          "backend": {
+            "hits": 4469,
+            "misses": 1,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          },
+          "backend2": {
+            "hits": 0,
+            "misses": 0,
+            "readErrors": 0,
+            "writeErrors": 0,
+            "evictionErrors": 0
+          }
+        },
+        "routing": {
+          "backend": {
+            "replicaEnabled": false,
+            "primaryConnections": 4485,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          },
+          "backend2": {
+            "replicaEnabled": false,
+            "primaryConnections": 10,
+            "replicaConnections": 0,
+            "fallbacks": 0
+          }
+        },
+        "docker_stats": [
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.15%",
+            "Container": "ede0cf626c69daea4cfac57de379f566bd3800a5899da5f6d738fb997c20fdeb",
+            "ID": "ede0cf626c69",
+            "MemPerc": "2.81%",
+            "MemUsage": "449.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend-1",
+            "NetIO": "25.7MB / 16.8MB",
+            "PIDs": "51"
+          },
+          {
+            "BlockIO": "0B / 32.8kB",
+            "CPUPerc": "0.16%",
+            "Container": "cab2b4ee2ed1bff0df6f69cf7b8b1429d48bf548cf6d48083bf23b86d87ab853",
+            "ID": "cab2b4ee2ed1",
+            "MemPerc": "2.30%",
+            "MemUsage": "367.4MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-backend2-1",
+            "NetIO": "79kB / 47.3kB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "67.8MB / 463MB",
+            "CPUPerc": "0.31%",
+            "Container": "10404aa9d0c918fcb0cb7da9802c1ccc33669100e94ebfaa91703a90aaf18578",
+            "ID": "10404aa9d0c9",
+            "MemPerc": "3.34%",
+            "MemUsage": "533.3MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-primary-1",
+            "NetIO": "94.9MB / 139MB",
+            "PIDs": "56"
+          },
+          {
+            "BlockIO": "41.4MB / 126MB",
+            "CPUPerc": "0.33%",
+            "Container": "3906a7b079a55ce9fbe90bce999639febdbfddddfae721734b8932c658f0aef6",
+            "ID": "3906a7b079a5",
+            "MemPerc": "3.18%",
+            "MemUsage": "508.2MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-mysql-replica-1",
+            "NetIO": "25.9MB / 12.1MB",
+            "PIDs": "46"
+          },
+          {
+            "BlockIO": "12.3kB / 172kB",
+            "CPUPerc": "0.08%",
+            "Container": "f7ce5df3e6aaefbd9b0dd91b709a9614a1f729d82d1ba17e44f0ca558375c1f8",
+            "ID": "f7ce5df3e6aa",
+            "MemPerc": "0.69%",
+            "MemUsage": "110.1MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-rabbitmq-1",
+            "NetIO": "8.26kB / 5.4kB",
+            "PIDs": "29"
+          },
+          {
+            "BlockIO": "65.5kB / 24.6kB",
+            "CPUPerc": "0.35%",
+            "Container": "876d6d64e64c4ac4d8c1b908cc8ef1190dcd85d39a551bdf622ec2c74b9e9966",
+            "ID": "876d6d64e64c",
+            "MemPerc": "0.03%",
+            "MemUsage": "4.797MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-redis-1",
+            "NetIO": "4.6MB / 12.1MB",
+            "PIDs": "7"
+          },
+          {
+            "BlockIO": "0B / 0B",
+            "CPUPerc": "0.00%",
+            "Container": "3eb77f55f07779f5570e9259b4d4fabf87858cb0b6791f7d1ae543ed508fb4d2",
+            "ID": "3eb77f55f077",
+            "MemPerc": "0.04%",
+            "MemUsage": "5.988MiB / 15.61GiB",
+            "Name": "population-cloud-43698366906-1-web-1",
+            "NetIO": "10.7MB / 12MB",
+            "PIDs": "5"
+          }
+        ]
+      }
+    }
+  ],
+  "medians": {
+    "single_primary_cache_off": {
+      "p50_ms": 56.665,
+      "p95_ms": 99.283,
+      "successful_throughput_rps": 135.052,
+      "error_rate": 0.0
+    },
+    "single_primary_cache_on": {
+      "p50_ms": 20.155,
+      "p95_ms": 36.37,
+      "successful_throughput_rps": 368.79,
+      "error_rate": 0.0
+    },
+    "single_replica_cache_off": {
+      "p50_ms": 57.044,
+      "p95_ms": 98.354,
+      "successful_throughput_rps": 131.159,
+      "error_rate": 0.0
+    },
+    "dual_primary_cache_off": {
+      "p50_ms": 54.486,
+      "p95_ms": 126.99,
+      "successful_throughput_rps": 128.625,
+      "error_rate": 0.0
+    }
+  }
+}

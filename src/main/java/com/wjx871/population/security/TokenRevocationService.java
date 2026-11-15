@@ -14,6 +14,7 @@ import java.util.UUID;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpStatus;
@@ -383,7 +384,14 @@ public class TokenRevocationService {
         }
     }
 
+    @Value("${population.scheduling.enabled:true}")
+    private boolean scheduledEnabled = true;
+
     @Scheduled(fixedDelayString = "${security.jwt.revocation.cleanup-interval:PT30S}")
+    public void scheduledCleanup() {
+        if (scheduledEnabled) cleanupExpired();
+    }
+
     public void cleanupExpired() {
         if (durable()) {
             if (durableStore == null) {

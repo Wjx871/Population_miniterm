@@ -22,6 +22,7 @@ public class DashboardService {
     private final DashboardMapper mapper;
     private final Clock clock;
 
+    @com.wjx871.population.dataops.ReplicaRead
     @Transactional(readOnly = true)
     public DashboardOverviewView overview(int periodDays, int expiryDays) {
         DataScopeCriteria scope = scopeForDashboard();
@@ -47,6 +48,7 @@ public class DashboardService {
         return view;
     }
 
+    @com.wjx871.population.dataops.ReplicaRead
     @Transactional(readOnly = true)
     public DashboardChartsView charts(int days, int regionLimit) {
         DataScopeCriteria scope = scopeForDashboard();

@@ -1,0 +1,138 @@
+[
+  {
+    "check": "nginx_two_instances",
+    "passed": true,
+    "instances": [
+      "backend-1",
+      "backend-2"
+    ]
+  },
+  {
+    "check": "runtime_metrics_rbac_and_units",
+    "passed": true
+  },
+  {
+    "check": "gzip_static_cache_spa_and_api_cache",
+    "passed": true
+  },
+  {
+    "check": "actual_mysql_replica_routing",
+    "passed": true,
+    "before": {
+      "backend": {
+        "replicaEnabled": true,
+        "primaryConnections": 21,
+        "replicaConnections": 0,
+        "fallbacks": 0
+      },
+      "backend2": {
+        "replicaEnabled": true,
+        "primaryConnections": 17,
+        "replicaConnections": 0,
+        "fallbacks": 0
+      }
+    },
+    "after": {
+      "backend": {
+        "replicaEnabled": true,
+        "primaryConnections": 23,
+        "replicaConnections": 0,
+        "fallbacks": 0
+      },
+      "backend2": {
+        "replicaEnabled": true,
+        "primaryConnections": 19,
+        "replicaConnections": 1,
+        "fallbacks": 0
+      }
+    }
+  },
+  {
+    "check": "replication_delay_and_primary_read_after_write",
+    "passed": true
+  },
+  {
+    "check": "replica_caught_up_after_resume",
+    "passed": true
+  },
+  {
+    "check": "shared_volume_authorized_file_download",
+    "passed": true
+  },
+  {
+    "check": "replica_down_primary_fallback",
+    "passed": true,
+    "before": {
+      "backend": {
+        "replicaEnabled": true,
+        "primaryConnections": 29,
+        "replicaConnections": 0,
+        "fallbacks": 0
+      },
+      "backend2": {
+        "replicaEnabled": true,
+        "primaryConnections": 27,
+        "replicaConnections": 1,
+        "fallbacks": 0
+      }
+    },
+    "after": {
+      "backend": {
+        "replicaEnabled": true,
+        "primaryConnections": 32,
+        "replicaConnections": 0,
+        "fallbacks": 1
+      },
+      "backend2": {
+        "replicaEnabled": true,
+        "primaryConnections": 28,
+        "replicaConnections": 1,
+        "fallbacks": 0
+      }
+    }
+  },
+  {
+    "check": "redis_down_mysql_fallback_and_shared_revocation",
+    "passed": true
+  },
+  {
+    "check": "revocation_survives_instance_restart_without_redis",
+    "passed": true
+  },
+  {
+    "check": "file_persistence_after_container_restart",
+    "passed": true
+  },
+  {
+    "check": "single_instance_failure_continued_service",
+    "passed": true,
+    "statuses": [
+      200,
+      200,
+      200,
+      504,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      504
+    ],
+    "note": "Passive upstream detection can fail individual requests; no write replay is configured."
+  },
+  {
+    "check": "small_cloud_baseline_completed",
+    "passed": true,
+    "capacity_claim": false
+  }
+]

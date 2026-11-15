@@ -46,8 +46,13 @@ data/uploads/
 data/exports/
 .env
 .env.local
+config/docker/.env
+services/ocr/.venv/
+services/ocr/__pycache__/
+scripts/ops/__pycache__/
+scripts/perf/__pycache__/
 tmp/
-cache/
+/cache/
 *.log
 login.json
 

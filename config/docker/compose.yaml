@@ -1,0 +1,112 @@
+name: population-ops
+
+# Phase 1 uses an explicitly supplied, already migrated database.
+# No production database initialization or migrations are run by this file.
+services:
+  redis:
+    image: redis:7.4-alpine
+    # JWT revocation markers also live here; preserve them across normal restarts.
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [cache]
+
+  backend: &backend-service
+    image: population-miniterm-backend:local
+    build:
+      context: ../..
+      dockerfile: config/docker/backend.Dockerfile
+    restart: unless-stopped
+    environment: &backend-environment
+      DB_URL: ${DB_URL:?Set DB_URL for an isolated, already migrated database}
+      DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set a JWT_SECRET of at least 32 bytes}
+      INSTANCE_ID: backend-1
+      SERVER_PORT: "8080"
+      APP_UPLOAD_DIR: /app/data/uploads
+      EXPORT_DIR: /app/data/exports
+      LOG_DIR: /app/logs/backend-1
+      REDIS_ENABLED: ${REDIS_ENABLED:-true}
+      REDIS_HOST: redis
+      REDIS_TIMEOUT: 500ms
+      REDIS_DICTIONARY_TTL: ${REDIS_DICTIONARY_TTL:-30m}
+      IDCARD_OCR_URL: ${IDCARD_OCR_URL:-}
+      IDCARD_OCR_TIMEOUT_MS: "60000"
+      POLICY_AI_ENABLED: "false"
+      REPLICA_ENABLED: ${REPLICA_ENABLED:-false}
+      REPLICA_DB_URL: ${REPLICA_DB_URL:-}
+      REPLICA_DB_USERNAME: ${REPLICA_DB_USERNAME:-}
+      REPLICA_DB_PASSWORD: ${REPLICA_DB_PASSWORD:-}
+      SCHEDULING_ENABLED: "true"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - uploads:/app/data/uploads
+      - exports:/app/data/exports
+      - logs:/app/logs
+    healthcheck:
+      # /api/health currently returns HTTP 200 even if the database is DOWN.
+      test: ["CMD-SHELL", "curl -fsS --max-time 8 http://127.0.0.1:8080/api/health | grep -Eq '\"database\"[[:space:]]*:[[:space:]]*\"UP\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 6
+      start_period: 90s
+    networks: [edge, cache]
+
+  backend2:
+    <<: *backend-service
+    profiles: [dual]
+    environment:
+      <<: *backend-environment
+      INSTANCE_ID: backend-2
+      SCHEDULING_ENABLED: "false"
+      LOG_DIR: /app/logs/backend-2
+
+  web:
+    build:
+      context: ../..
+      dockerfile: config/docker/frontend.Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${WEB_BIND_IP:-127.0.0.1}:${WEB_PORT:-8088}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+        restart: true
+    networks: [edge]
+
+  ocr:
+    image: population-miniterm-ocr:local
+    profiles: [ocr]
+    build:
+      context: ../../services/ocr
+    restart: unless-stopped
+    environment:
+      OCR_AK: ${OCR_AK:-}
+      OCR_SK: ${OCR_SK:-}
+      OCR_TIMEOUT: "30"
+      OCR_PORT: "8866"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json,urllib.request; d=json.load(urllib.request.urlopen('http://127.0.0.1:8866/health',timeout=3)); assert d['ok']"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks: [edge]
+
+volumes:
+  redis-data:
+  uploads:
+  exports:
+  logs:
+
+networks:
+  edge:
+  cache:
+    internal: true

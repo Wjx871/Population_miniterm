@@ -1,0 +1,44 @@
+name: Data ops cloud validation
+
+on:
+  push:
+    branches: ['codex/cloud-validation-*']
+    paths:
+      - '.github/workflows/data-ops-cloud.yml'
+      - 'config/**'
+      - 'src/**'
+      - 'frontend/**'
+      - 'services/**'
+      - 'scripts/**'
+      - 'doc/database/**'
+      - 'pom.xml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: data-ops-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  containers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe Linux container runtime
+        run: |
+          docker version
+          docker compose version
+          df -h .
+      - name: Build and verify isolated stack
+        run: bash scripts/ops/run-cloud-validation.sh
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-ops-cloud-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/cloud-evidence/
+          if-no-files-found: warn
+          retention-days: 14

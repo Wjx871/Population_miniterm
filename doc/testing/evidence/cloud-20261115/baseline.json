@@ -1,0 +1,622 @@
+{
+  "url": "http://127.0.0.1:8088/api/statistics/overview",
+  "requests": 100,
+  "concurrency": 4,
+  "warmup_requests": 10,
+  "elapsed_seconds": 0.768,
+  "percentile_method": "nearest_rank_all_requests",
+  "p50_ms": 28.386,
+  "p95_ms": 50.976,
+  "throughput_rps": 130.2,
+  "successful_throughput_rps": 130.2,
+  "error_rate": 0.0,
+  "statuses": {
+    "200": 100
+  },
+  "instances": {
+    "backend-1": 50,
+    "backend-2": 50
+  },
+  "samples": [
+    {
+      "ms": 20.376,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 51.34,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 29.82,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 53.868,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 39.449,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 54.649,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 30.261,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 35.69,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 23.397,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 28.386,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 41.605,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 42.191,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 9.7,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 12.625,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 23.426,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 14.792,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 23.888,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 27.918,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 21.346,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 66.19,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 21.525,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 22.114,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 50.976,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 35.067,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 28.065,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 17.479,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 41.771,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 14.084,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 32.917,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 28.139,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 21.204,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 46.685,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 15.418,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 52.167,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 23.495,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 23.902,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 29.862,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 40.58,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 24.14,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 27.906,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 24.897,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 25.945,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 27.303,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 26.881,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 35.447,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 32.564,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 30.706,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 37.193,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 17.994,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 31.955,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 22.916,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 20.73,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 27.551,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 22.432,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 34.176,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 34.339,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 25.935,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 19.701,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 27.01,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 24.262,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 50.963,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 24.945,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 38.595,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 37.717,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 21.161,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 30.046,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 28.411,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 29.19,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 27.086,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 22.97,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 27.095,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 31.005,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 24.761,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 34.642,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 30.563,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 24.392,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 26.661,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 32.813,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 28.488,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 29.258,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 18.321,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 36.808,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 38.623,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 25.051,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 10.862,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 47.954,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 14.434,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 35.326,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 22.896,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 47.781,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 20.727,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 43.086,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 33.482,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 29.483,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 41.797,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 30.03,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 41.007,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 32.324,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    },
+    {
+      "ms": 30.949,
+      "status": 200,
+      "success": true,
+      "instance": "backend-2"
+    },
+    {
+      "ms": 22.658,
+      "status": 200,
+      "success": true,
+      "instance": "backend-1"
+    }
+  ]
+}

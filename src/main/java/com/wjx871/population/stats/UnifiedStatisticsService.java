@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service @RequiredArgsConstructor
+@com.wjx871.population.dataops.ReplicaRead
+@org.springframework.transaction.annotation.Transactional(readOnly = true)
 public class UnifiedStatisticsService {
  private final DashboardService dashboard;private final StatisticsMapper mapper;private final OptionalRedisService cache;private final RedisProperties properties;
  public DashboardOverviewView overview(int period,int expiry){String key=key("overview",period,expiry);return cached(key,new TypeReference<>(){},properties.getOverviewTtl(),()->dashboard.overview(period,expiry));}
@@ -21,6 +23,6 @@ public class UnifiedStatisticsService {
  public Map<String,Object> floatingPopulation(){DashboardOverviewView v=overview(30,30);return Map.of("active",v.getActiveFloatingPopulation(),"generatedDate",LocalDate.now());}
  public Map<String,Object> certificateExpiry(int days){DashboardOverviewView v=overview(30,days);return Map.of("expiryDays",days,"expiringResidencePermits",v.getExpiringResidencePermits());}
  public Map<String,Object> keyPopulation(){Map<String,Object> result=new LinkedHashMap<>();result.put("active",mapper.countKeyPopulation(DataScopeCriteria.current()));result.put("definition","ACTIVE records only");result.put("generatedDate",LocalDate.now());return result;}
- private String key(String type,Object...args){DataScopeCriteria s=DataScopeCriteria.current();return cache.key("statistics:"+type+":"+s.dataScope()+":"+Objects.toString(s.userId(),"-")+":"+Objects.toString(s.regionCode(),"-")+":"+s.regionCodes()+":"+Objects.toString(s.departmentId(),"-")+":"+LocalDate.now()+":"+Arrays.toString(args));}
+ private String key(String type,Object...args){DataScopeCriteria s=DataScopeCriteria.current();String role=com.wjx871.population.security.CurrentUserContext.requireUser().roleCode();return cache.key("statistics:v3:"+type+":"+role+":"+s.dataScope()+":"+Objects.toString(s.userId(),"-")+":"+Objects.toString(s.regionCode(),"-")+":"+s.regionCodes()+":"+Objects.toString(s.departmentId(),"-")+":"+LocalDate.now()+":"+Arrays.toString(args));}
  private <T>T cached(String key,TypeReference<T> type,java.time.Duration ttl,Supplier<T> db){Optional<T> hit=cache.get(key,type);if(hit.isPresent())return hit.get();T value=db.get();cache.put(key,value,ttl);return value;}
 }

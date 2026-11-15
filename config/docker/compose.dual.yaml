@@ -1,0 +1,17 @@
+# Merge after compose.yaml and enable --profile dual.
+# Both instances share DB, JWT secret, Redis and file volumes.
+services:
+  backend:
+    environment:
+      JWT_REVOCATION_MODE: DURABLE_DB_REQUIRED
+  backend2:
+    environment:
+      JWT_REVOCATION_MODE: DURABLE_DB_REQUIRED
+  web:
+    build:
+      args:
+        NGINX_CONFIG: config/nginx/population.dual.conf
+    depends_on:
+      backend2:
+        condition: service_healthy
+        restart: true

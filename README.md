@@ -16,6 +16,10 @@
 
 后端已进入 Phase 11：提供综合人口/家庭户/迁移历史查询、统一统计口径、只读日志查询，以及默认关闭、故障可降级的 Redis 缓存与 JWT 注销撤销。MySQL 始终是唯一事实来源；Redis 不保存人口敏感业务数据。详见 `doc/development/phase-11-query-redis-summary.md`。
 
+数据与运维改造新增共享 JWT 撤销和显式读写路由。部署本轮代码前，必须先在目标主库执行 `doc/database/migrations/V4_014_shared_token_revocation.sql`；撤销状态持久化失败或查询不可用时，认证返回 503。单库模式默认保留，只有明确标记的统计查询可在启用配置后走从库。双实例、主从实验环境和验证记录见 `doc/deployment/data-ops-phase2.md`。
+
+后续交付新增 RabbitMQ 私有部署/队列监控、双实例读请求切换及写请求不重放、三轮性能对照和 `V4_021_floating_statistics_index.sql` 覆盖索引。最新执行清单见 `doc/deployment/data-ops-execution-checklist.md`，配置与恢复说明见 `doc/deployment/data-ops-handoff.md`，实测见 `doc/testing/data-ops-completion-20261115.md`。既有库按实际版本增量升级至 V4_015；云端 CI 使用独立合成数据，不依赖本机 WSL。
+
 人口数据库管理系统课程项目。后端使用 Java 17、Spring Boot 3.5.3、Spring Web、Spring Security、普通 MyBatis 和 MySQL；前端使用 Vue 3、Vite、Element Plus、Pinia、Vue Router 和 Axios。
 
 ## 第三阶段：户籍迁移闭环

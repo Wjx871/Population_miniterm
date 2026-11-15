@@ -1,0 +1,324 @@
+[
+  {
+    "check": "nginx_two_instances",
+    "passed": true,
+    "instances": [
+      "backend-1",
+      "backend-2"
+    ]
+  },
+  {
+    "check": "proxy_get_retry_and_mutation_exactly_once",
+    "passed": true,
+    "fixture_counts": [
+      {
+        "GET": [
+          "",
+          ""
+        ],
+        "POST": [
+          "{\"proof\":\"preserve-body\"}"
+        ],
+        "PUT": [],
+        "DELETE": [],
+        "PATCH": [
+          "{\"proof\":\"preserve-body\"}"
+        ]
+      },
+      {
+        "GET": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "POST": [],
+        "PUT": [
+          "{\"proof\":\"preserve-body\"}"
+        ],
+        "DELETE": [
+          "{\"proof\":\"preserve-body\"}"
+        ],
+        "PATCH": []
+      }
+    ]
+  },
+  {
+    "check": "runtime_metrics_rbac_and_units",
+    "passed": true
+  },
+  {
+    "check": "redis_real_hit_expiry_invalidation_rollback_and_scope",
+    "passed": true,
+    "ttl_ms": 2355,
+    "before": {
+      "backend": {
+        "hits": 0,
+        "misses": 0,
+        "readErrors": 0,
+        "writeErrors": 0,
+        "evictionErrors": 0
+      },
+      "backend2": {
+        "hits": 0,
+        "misses": 0,
+        "readErrors": 0,
+        "writeErrors": 0,
+        "evictionErrors": 0
+      }
+    },
+    "after": {
+      "backend": {
+        "hits": 1,
+        "misses": 0,
+        "readErrors": 0,
+        "writeErrors": 0,
+        "evictionErrors": 0
+      },
+      "backend2": {
+        "hits": 0,
+        "misses": 1,
+        "readErrors": 0,
+        "writeErrors": 0,
+        "evictionErrors": 0
+      }
+    }
+  },
+  {
+    "check": "rabbitmq_private_metrics_durable_queue_and_message",
+    "passed": true,
+    "before": {
+      "enabled": true,
+      "status": "UP",
+      "queueCount": 1,
+      "sampledQueues": 1,
+      "complete": true,
+      "aggregationScope": "virtual_host",
+      "messagesReady": 1,
+      "messagesUnacknowledged": 0,
+      "consumers": 0,
+      "queues": [
+        {
+          "state": "running",
+          "messagesUnacknowledged": 0,
+          "consumers": 0,
+          "messagesReady": 1,
+          "name": "ops.validation.7b89015d"
+        }
+      ]
+    },
+    "after": {
+      "enabled": true,
+      "status": "UP",
+      "queueCount": 1,
+      "sampledQueues": 1,
+      "complete": true,
+      "aggregationScope": "virtual_host",
+      "messagesReady": 1,
+      "messagesUnacknowledged": 0,
+      "consumers": 0,
+      "queues": [
+        {
+          "consumers": 0,
+          "messagesReady": 1,
+          "name": "ops.validation.7b89015d",
+          "state": "running",
+          "messagesUnacknowledged": 0
+        }
+      ]
+    }
+  },
+  {
+    "check": "rabbitmq_failure_is_reported_without_breaking_business",
+    "passed": true
+  },
+  {
+    "check": "gzip_static_cache_spa_and_api_cache",
+    "passed": true
+  },
+  {
+    "check": "actual_mysql_replica_routing",
+    "passed": true,
+    "before": {
+      "backend": {
+        "replicaEnabled": true,
+        "primaryConnections": 47,
+        "replicaConnections": 0,
+        "fallbacks": 0
+      },
+      "backend2": {
+        "replicaEnabled": true,
+        "primaryConnections": 44,
+        "replicaConnections": 0,
+        "fallbacks": 0
+      }
+    },
+    "after": {
+      "backend": {
+        "replicaEnabled": true,
+        "primaryConnections": 49,
+        "replicaConnections": 0,
+        "fallbacks": 0
+      },
+      "backend2": {
+        "replicaEnabled": true,
+        "primaryConnections": 46,
+        "replicaConnections": 1,
+        "fallbacks": 0
+      }
+    }
+  },
+  {
+    "check": "replication_delay_and_primary_read_after_write",
+    "passed": true
+  },
+  {
+    "check": "replica_caught_up_after_resume",
+    "passed": true
+  },
+  {
+    "check": "shared_volume_authorized_file_download",
+    "passed": true
+  },
+  {
+    "check": "replica_down_primary_fallback",
+    "passed": true,
+    "before": {
+      "backend": {
+        "replicaEnabled": true,
+        "primaryConnections": 55,
+        "replicaConnections": 0,
+        "fallbacks": 0
+      },
+      "backend2": {
+        "replicaEnabled": true,
+        "primaryConnections": 54,
+        "replicaConnections": 1,
+        "fallbacks": 0
+      }
+    },
+    "after": {
+      "backend": {
+        "replicaEnabled": true,
+        "primaryConnections": 59,
+        "replicaConnections": 0,
+        "fallbacks": 1
+      },
+      "backend2": {
+        "replicaEnabled": true,
+        "primaryConnections": 56,
+        "replicaConnections": 1,
+        "fallbacks": 0
+      }
+    }
+  },
+  {
+    "check": "redis_down_mysql_fallback_and_shared_revocation",
+    "passed": true
+  },
+  {
+    "check": "revocation_survives_instance_restart_without_redis",
+    "passed": true
+  },
+  {
+    "check": "file_persistence_after_container_restart",
+    "passed": true
+  },
+  {
+    "check": "single_instance_failure_read_retry",
+    "passed": true,
+    "observations": [
+      {
+        "status": 200,
+        "elapsed_ms": 2009.577
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.934
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.6
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.187
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.155
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.074
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.049
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.452
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.202
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.483
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.573
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.14
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.003
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.195
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.486
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.351
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 2.877
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.2
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 3.204
+      },
+      {
+        "status": 200,
+        "elapsed_ms": 2.988
+      }
+    ],
+    "note": "GET/HEAD may try one alternate upstream; mutation requests use a no-retry named location."
+  },
+  {
+    "check": "small_cloud_baseline_completed",
+    "passed": true,
+    "capacity_claim": false
+  },
+  {
+    "check": "controlled_performance_comparison_completed",
+    "passed": true,
+    "capacity_claim": false
+  }
+]

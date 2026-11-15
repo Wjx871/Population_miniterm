@@ -19,8 +19,8 @@ public class IdCardOcrProperties {
     /** Provider 标识。 */
     private String provider = "PADDLE_LOCAL";
 
-    /** HTTP 超时毫秒。 */
-    private int timeoutMs = 8000;
+    /** HTTP 超时毫秒，覆盖云端鉴权及识别的正常等待窗口。 */
+    private int timeoutMs = 60000;
 
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }
