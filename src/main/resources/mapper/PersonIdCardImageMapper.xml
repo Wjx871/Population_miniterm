@@ -74,7 +74,7 @@
             ocr_gender = #{gender},
             ocr_ethnicity = #{ethnicity},
             ocr_address = #{address},
-            ocr_raw_json = #{rawJson}
+            ocr_raw_json = #{rawJson}, ocr_error = NULL
         WHERE image_id = #{imageId} AND user_id = #{userId} AND person_id IS NULL
     </update>
 
@@ -84,13 +84,23 @@
             ocr_provider = #{ocrProvider},
             ocr_engine_version = #{ocrEngineVersion},
             ocr_elapsed_ms = #{elapsedMs},
-            ocr_error = #{error}
+            ocr_error = #{error},
+            <include refid="clearOcrFields"/>
         WHERE image_id = #{imageId} AND user_id = #{userId} AND person_id IS NULL
     </update>
 
     <update id="markOcrSkipped">
-        UPDATE person_idcard_image SET ocr_status = 'SKIPPED' WHERE image_id = #{imageId} AND user_id = #{userId} AND person_id IS NULL
+        UPDATE person_idcard_image SET
+            ocr_status = 'SKIPPED', ocr_provider = NULL, ocr_engine_version = NULL,
+            ocr_elapsed_ms = NULL, ocr_error = NULL,
+            <include refid="clearOcrFields"/>
+        WHERE image_id = #{imageId} AND user_id = #{userId} AND person_id IS NULL
     </update>
+
+    <sql id="clearOcrFields">
+        ocr_confidence = NULL, ocr_idcard_full = NULL, ocr_idcard_masked = NULL, ocr_name = NULL,
+        ocr_birth_date = NULL, ocr_gender = NULL, ocr_ethnicity = NULL, ocr_address = NULL, ocr_raw_json = NULL
+    </sql>
 
     <update id="bindPerson">
         UPDATE person_idcard_image SET person_id = #{personId}

@@ -52,17 +52,13 @@ class Issue7OcrResponseCharacterizationTest {
     }
 
     @Test
-    void maskingAndRawPayloadRedactionHandleShortAndNullValues() {
+    void maskingHandlesShortAndNullValues() {
         SensitiveDataMaskingService masking = new SensitiveDataMaskingService();
         assertThat(masking.identityAlways(null)).isNull();
         assertThat(masking.identityAlways("")).isEqualTo("****");
         assertThat(masking.identityAlways("1234567")).isEqualTo("****");
         assertThat(masking.addressAlways(null)).isNull();
         assertThat(masking.addressAlways("合成地址")).isEqualTo("详细地址已隐藏");
-        OcrLogRedactor redactor = new OcrLogRedactor();
-        assertThat(redactor.redact(null)).isNull();
-        assertThat(redactor.redact("{\"nested\":{\"address\":\"合成地址\"}}"))
-                .isEqualTo("{\"redacted\":true}");
     }
 
     @ParameterizedTest
@@ -80,14 +76,19 @@ class Issue7OcrResponseCharacterizationTest {
 
     private IdCardOcrProperties.OcrResult recognize(String response) {
         IdCardOcrProperties properties = new IdCardOcrProperties();
-        properties.setUrl("http://ocr.test");
-        PaddleOcrHttpClient client = new PaddleOcrHttpClient(properties);
+        properties.setUrl("https://ocr.test");
+        PaddleOcrHttpClient client = new PaddleOcrHttpClient(properties, new com.wjx871.population.person.IdCardValidator());
         RestTemplate rest = (RestTemplate) ReflectionTestUtils.getField(client, "restTemplate");
         MockRestServiceServer stub = MockRestServiceServer.bindTo(rest).build();
         stub.expect(org.springframework.test.web.client.match.MockRestRequestMatchers.anything())
                 .andRespond(withSuccess(response, MediaType.APPLICATION_JSON));
         try {
-            return client.recognize(new byte[]{1}, "image/jpeg");
+            var buffer = new java.io.ByteArrayOutputStream();
+            javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(32, 32,
+                    java.awt.image.BufferedImage.TYPE_INT_RGB), "png", buffer);
+            return client.recognize(buffer.toByteArray(), "image/png");
+        } catch (java.io.IOException failure) {
+            throw new java.io.UncheckedIOException(failure);
         } finally {
             stub.verify();
         }

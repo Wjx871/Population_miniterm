@@ -112,6 +112,7 @@ class Issue3OcrTransactionIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired DataSource dataSource;
+    @Autowired @org.springframework.beans.factory.annotation.Qualifier("primaryDataSource") HikariDataSource primaryPool;
     @Autowired JdbcTemplate jdbc;
     @Autowired PlatformTransactionManager transactionManager;
     @Autowired PersonIdCardImageService service;
@@ -153,7 +154,7 @@ class Issue3OcrTransactionIntegrationTest {
             assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
             tx = transactionAtOcr.get();
             bound = resourceAtOcr.get();
-            active = dataSource.unwrap(HikariDataSource.class).getHikariPoolMXBean().getActiveConnections();
+            active = primaryPool.getHikariPoolMXBean().getActiveConnections();
             System.out.printf("ISSUE3_OCR_OBSERVATION springTransaction=%s resourceBound=%s activeConnections=%d%n", tx, bound, active);
         } finally { release.countDown(); }
         try {
@@ -229,7 +230,7 @@ class Issue3OcrTransactionIntegrationTest {
         assertThat(row.get("ocr_idcard_masked")).isEqualTo("1101**********0010");
         assertThat(row.get("ocr_name")).isEqualTo("合成样例");
         assertThat(row.get("ocr_address")).isEqualTo("SYNTHETIC_PRIVATE_ADDRESS");
-        assertThat(row.get("ocr_raw_json").toString()).doesNotContain(ID, "SYNTHETIC_PRIVATE_ADDRESS", "合成样例");
+        assertThat(row.get("ocr_raw_json")).isNull();
         assertThat(result.path("ocrIdcardFull").asText()).isEqualTo(ID);
         assertThat(observed).containsExactly(true, true);
         assertThat(completions).containsExactly(TransactionSynchronization.STATUS_COMMITTED);
@@ -272,7 +273,7 @@ class Issue3OcrTransactionIntegrationTest {
             assertThat(result.path("ocrStatus").asText()).isEqualTo("FAILED");
             assertThat(result.path("ocrError").asText()).isEqualTo("OCR_UNAVAILABLE");
             assertThat(transactionAtOcr.get()).isFalse();
-            assertThat(dataSource.unwrap(HikariDataSource.class).getHikariPoolMXBean().getActiveConnections()).isZero();
+            assertThat(primaryPool.getHikariPoolMXBean().getActiveConnections()).isZero();
         } finally { release.countDown(); }
     }
 
@@ -292,7 +293,7 @@ class Issue3OcrTransactionIntegrationTest {
         int calls = requests.get();
         responseCode = 200;
         assertThat(first.path("ocrStatus").asText()).isEqualTo(expected.name());
-        assertThat(data(upload(bytes, token, true))).isEqualTo(first);
+        assertThat(data(upload(bytes, token, expected == OcrStatus.SKIPPED))).isEqualTo(first);
         assertThat(data(upload(bytes, token, false))).isEqualTo(first);
         assertThat(count(bytes)).isOne();
         assertThat(requests.get()).isEqualTo(calls);
@@ -556,7 +557,22 @@ class Issue3OcrTransactionIntegrationTest {
                         + "\",\"gender\":\"" + gender + "\",\"idCardImageId\":" + image + "}")).andReturn();
     }
 
-    byte[] content() { return ("issue3-synthetic-" + UUID.randomUUID()).getBytes(StandardCharsets.UTF_8); }
+    byte[] content() {
+        var image = new java.awt.image.BufferedImage(320, 32, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        var graphics = image.createGraphics();
+        try {
+            graphics.setColor(java.awt.Color.WHITE);
+            graphics.drawString(UUID.randomUUID().toString(), 4, 18);
+        } finally {
+            graphics.dispose();
+        }
+        try (var output = new java.io.ByteArrayOutputStream()) {
+            javax.imageio.ImageIO.write(image, "jpeg", output);
+            return output.toByteArray();
+        } catch (java.io.IOException failure) {
+            throw new java.io.UncheckedIOException(failure);
+        }
+    }
 
     MvcResult upload(byte[] bytes, String token, boolean skip) throws Exception {
         return mvc.perform(multipart("/api/persons/idcard-image")

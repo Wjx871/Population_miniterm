@@ -94,7 +94,7 @@ class Issue3CommitOutcomeIntegrationTest {
         @Bean static BeanPostProcessor commitFaultDataSource() {
             return new BeanPostProcessor() {
                 @Override public Object postProcessAfterInitialization(Object bean, String name) {
-                    if (!(bean instanceof DataSource source)) return bean;
+                    if (!"dataSource".equals(name) || !(bean instanceof DataSource source)) return bean;
                     return new DelegatingDataSource(source) {
                         @Override public Connection getConnection() throws SQLException { return wrap(super.getConnection()); }
                         @Override public Connection getConnection(String user, String password) throws SQLException {

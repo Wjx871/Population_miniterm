@@ -19,6 +19,7 @@ export function getMigrationMaterialOptions(direction, migrationType) {
         { value: 'IDENTITY_PROOF', label: '身份证明', required: true },
         { value: 'HOUSEHOLD_BOOK', label: '户口簿', required: true },
         { value: 'ADDRESS_PROOF', label: '地址证明', required: true },
+        { value: 'APPLICATION_FORM', label: '迁入申请表', required: false },
       ]
     : [
         { value: 'IDENTITY_PROOF', label: '身份证明', required: true },

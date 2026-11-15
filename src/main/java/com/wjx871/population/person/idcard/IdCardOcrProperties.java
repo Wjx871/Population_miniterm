@@ -22,6 +22,10 @@ public class IdCardOcrProperties {
     /** HTTP 超时毫秒，覆盖云端鉴权及识别的正常等待窗口。 */
     private int timeoutMs = 60000;
 
+    /** 百度 OCR 应用凭证，由后端通过 OAuth 换取访问令牌。 */
+    private String baiduApiKey = "";
+    private String baiduSecretKey = "";
+
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }
     public String getPath() { return path; }
@@ -32,6 +36,16 @@ public class IdCardOcrProperties {
     public void setProvider(String provider) { this.provider = provider; }
     public int getTimeoutMs() { return timeoutMs; }
     public void setTimeoutMs(int timeoutMs) { this.timeoutMs = timeoutMs; }
+    public String getBaiduApiKey() { return baiduApiKey; }
+    public void setBaiduApiKey(String baiduApiKey) { this.baiduApiKey = baiduApiKey; }
+
+    public String getBaiduSecretKey() { return baiduSecretKey; }
+    public void setBaiduSecretKey(String baiduSecretKey) { this.baiduSecretKey = baiduSecretKey; }
+
+    public boolean useBaiduDirect() {
+        return (baiduApiKey != null && !baiduApiKey.isBlank()) || (baiduSecretKey != null && !baiduSecretKey.isBlank());
+    }
+    public boolean isConfigured() { return useBaiduDirect() || (url != null && !url.isBlank()); }
 
     /** OCR 子结果。 */
     public record OcrResult(
@@ -41,7 +55,6 @@ public class IdCardOcrProperties {
             String gender,
             String ethnicity,
             String address,
-            Double confidence,
-            String rawJson
+            Double confidence
     ) {}
 }

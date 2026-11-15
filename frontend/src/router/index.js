@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { routes } from './routes.js'
 import { resolveLandingPath } from '../utils/routeAccess.js'
 import { useUserStore } from '../stores/user.js'
+import { BRAND } from '../constants/brand.js'
 
 const router = createRouter({ history: createWebHistory(), routes })
 
@@ -10,7 +11,7 @@ function resolveAuthedLanding(userStore) {
 }
 
 router.beforeEach(async (to, from, next) => {
-  const baseTitle = '人口数据库管理系统'
+  const baseTitle = BRAND.shortName
   document.title = to.meta.title ? `${to.meta.title} - ${baseTitle}` : baseTitle
 
   const userStore = useUserStore()

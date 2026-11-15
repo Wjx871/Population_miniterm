@@ -20,7 +20,7 @@ test.describe('认证生命周期', () => {
     expect((await responsePromise).status()).toBe(401)
     await expect(page).toHaveURL(/\/login$/)
     await expect(page.locator('.error-alert')).toBeVisible()
-    expect(await page.evaluate(() => localStorage.getItem('population_user_v2'))).toBeNull()
+    expect(await page.evaluate(() => sessionStorage.getItem('population_user_v2'))).toBeNull()
   })
 
   test('退出登录清理会话并返回登录页', async ({ page }) => {
@@ -30,7 +30,7 @@ test.describe('认证生命周期', () => {
     await page.getByRole('button', { name: '确定退出' }).click()
     expect((await logoutResponse).status()).toBe(200)
     await expect(page).toHaveURL(/\/login$/)
-    expect(await page.evaluate(() => localStorage.getItem('population_user_v2'))).toBeNull()
+    expect(await page.evaluate(() => sessionStorage.getItem('population_user_v2'))).toBeNull()
     await page.goto('/persons')
     await expect(page).toHaveURL(/\/login\?redirect=/)
   })

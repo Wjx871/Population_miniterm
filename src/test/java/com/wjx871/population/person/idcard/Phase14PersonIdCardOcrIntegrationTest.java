@@ -45,14 +45,14 @@ import org.springframework.web.client.RestTemplate;
 /** Phase 14 OCR transport, response validation and persistence behavior using a local HTTP stub. */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SpringBootTest(properties = {
-        "population.person.idcard.ocr.url=http://ocr.test",
+        "population.person.idcard.ocr.url=https://ocr.test",
         "population.person.idcard.ocr.path=/recognize/idcard",
         "application.upload.dir=./target/test-uploads"
 })
 @AutoConfigureMockMvc
 class Phase14PersonIdCardOcrIntegrationTest {
 
-    private static final String OCR_URL = "http://ocr.test/recognize/idcard";
+    private static final String OCR_URL = "https://ocr.test/recognize/idcard";
     private static final String SYNTHETIC_ID_CARD = "110105199001010010";
     private static final String MASKED_ID_CARD = "1101**********0010";
 
@@ -93,8 +93,8 @@ class Phase14PersonIdCardOcrIntegrationTest {
                             "idCard": "110105199001010010",
                             "name": "合成样例",
                             "birthDate": "1990-01-01",
-                            "gender": "F",
-                            "ethnicity": "测试",
+                            "gender": "M",
+                            "ethnicity": "汉族",
                             "address": "测试地址",
                             "confidence": 0.99
                           }
@@ -118,8 +118,8 @@ class Phase14PersonIdCardOcrIntegrationTest {
         assertThat(upload.path("ocrIdcardFull").asText()).isEqualTo(SYNTHETIC_ID_CARD);
         assertThat(row.get("name")).isEqualTo("合成样例");
         assertThat(((Date) row.get("birth_date")).toLocalDate()).isEqualTo(LocalDate.of(1990, 1, 1));
-        assertThat(row.get("gender")).isEqualTo("F");
-        assertThat(row.get("ethnicity")).isEqualTo("测试");
+        assertThat(row.get("gender")).isEqualTo("M");
+        assertThat(row.get("ethnicity")).isEqualTo("汉族");
         assertThat(row.get("address")).isEqualTo("测试地址");
     }
 
@@ -133,8 +133,8 @@ class Phase14PersonIdCardOcrIntegrationTest {
                             "idCard": "110105199001010010",
                             "name": "合成样例",
                             "birthDate": "1990-01-01",
-                            "gender": "F",
-                            "ethnicity": "测试",
+                            "gender": "M",
+                            "ethnicity": "汉族",
                             "address": "测试地址",
                             "confidence": 0.99
                           }
@@ -204,7 +204,7 @@ class Phase14PersonIdCardOcrIntegrationTest {
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess(syntheticOcrResponse(), MediaType.APPLICATION_JSON));
 
-        byte[] content = "phase14-ocr-security-bound-image".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] content = imageBytes();
         String filename = "phase14-ocr-security-bound.jpg";
         long imageId = uploadedImageId(filename, content, "population", false);
         createScopedPerson(imageId);
@@ -236,7 +236,7 @@ class Phase14PersonIdCardOcrIntegrationTest {
 
         String filename = "phase14-ocr-security-http-error.jpg";
         var uploadResponse = uploadImage(filename,
-                "synthetic HTTP error sample".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                imageBytes(),
                 "population", false);
         assertThat(uploadResponse.getResponse().getStatus()).isEqualTo(200);
         JsonNode uploadData = json.readTree(uploadResponse.getResponse().getContentAsString()).path("data");
@@ -322,13 +322,28 @@ class Phase14PersonIdCardOcrIntegrationTest {
 
     private JsonNode uploadWithoutSkippingOcr() throws Exception {
         String fileName = "phase14-ocr-" + UUID.randomUUID() + ".jpg";
-        byte[] content = ("synthetic image " + fileName).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] content = imageBytes();
         var response = uploadImage(fileName, content, "population", false);
         assertThat(response.getResponse().getStatus()).isEqualTo(200);
         JsonNode data = json.readTree(response.getResponse().getContentAsString()).path("data");
         JsonNode imageId = data.path("imageId");
         assertThat(imageId.isNumber()).isTrue();
         return data;
+    }
+
+    private byte[] imageBytes() throws IOException {
+        var image = new java.awt.image.BufferedImage(320, 32, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        var graphics = image.createGraphics();
+        try {
+            graphics.setColor(java.awt.Color.WHITE);
+            graphics.drawString(UUID.randomUUID().toString(), 4, 18);
+        } finally {
+            graphics.dispose();
+        }
+        try (var output = new java.io.ByteArrayOutputStream()) {
+            javax.imageio.ImageIO.write(image, "jpeg", output);
+            return output.toByteArray();
+        }
     }
 
     private org.springframework.test.web.servlet.MvcResult uploadImage(
@@ -398,7 +413,7 @@ class Phase14PersonIdCardOcrIntegrationTest {
                     "name": "合成样例",
                     "birthDate": "1990-01-01",
                     "gender": "M",
-                    "ethnicity": "测试",
+                    "ethnicity": "汉族",
                     "address": "测试地址",
                     "confidence": 0.99
                   }

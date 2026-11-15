@@ -73,6 +73,7 @@ class Issue3ResourceObservationIntegrationTest {
     }
     @AfterAll static void stop() { server.stop(0); }
     @Autowired DataSource dataSource;
+    @Autowired @org.springframework.beans.factory.annotation.Qualifier("primaryDataSource") HikariDataSource primaryPool;
     @Autowired JdbcTemplate jdbc;
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
@@ -116,7 +117,7 @@ class Issue3ResourceObservationIntegrationTest {
         return values;
     }
     void sample(int index, long started) throws Exception {
-        int active = dataSource.unwrap(HikariDataSource.class).getHikariPoolMXBean().getActiveConnections();
+        int active = primaryPool.getHikariPoolMXBean().getActiveConnections();
         Map<String,Long> snapshot = databaseSnapshot();
         assertThat(active).isZero();
         assertThat(boundaries).isNotEmpty().allSatisfy(b -> {

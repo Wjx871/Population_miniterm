@@ -1,0 +1,212 @@
+{
+  "input_sha256": "6ce435e6348c4ddc58526095ffab548a489a362f0b51a38d772dc35ee5fb697e",
+  "knowledge_version": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+  "cases": 40,
+  "grounded_segments": 49,
+  "checks": [
+    {
+      "id": "H01",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 2
+    },
+    {
+      "id": "H02",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 2
+    },
+    {
+      "id": "H03",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 3
+    },
+    {
+      "id": "H04",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 1
+    },
+    {
+      "id": "H05",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 3
+    },
+    {
+      "id": "H06",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 3
+    },
+    {
+      "id": "H07",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 3
+    },
+    {
+      "id": "H08",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 2
+    },
+    {
+      "id": "H09",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 1
+    },
+    {
+      "id": "H10",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 2
+    },
+    {
+      "id": "H11",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 3
+    },
+    {
+      "id": "H12",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 2
+    },
+    {
+      "id": "H13",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 2
+    },
+    {
+      "id": "H14",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 1
+    },
+    {
+      "id": "H15",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 3
+    },
+    {
+      "id": "H16",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 2
+    },
+    {
+      "id": "H17",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 3
+    },
+    {
+      "id": "H18",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 3
+    },
+    {
+      "id": "H19",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 2
+    },
+    {
+      "id": "H20",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 2
+    },
+    {
+      "id": "H21",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 2
+    },
+    {
+      "id": "H22",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 2
+    },
+    {
+      "id": "H23",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H24",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H25",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H26",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H27",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H28",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H29",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H30",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H31",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H32",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H33",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H34",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H35",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H36",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H37",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H38",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H39",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    },
+    {
+      "id": "H40",
+      "source_and_quote_integrity": true,
+      "verified_answer_segments": 0
+    }
+  ],
+  "limitations": [
+    "逐字来源回核不等于答案充分或正式政策适用性评分。",
+    "助手阅读发现部分回答存在重复、跨业务的通用补充引文；尚无独立人工评分。"
+  ]
+}

@@ -185,15 +185,17 @@ public class PolicyAssistantService {
                      Map<String, String> sectionContentsInDoc) {
         String content = text.toString().trim();
         if (!content.isBlank()) {
-            chunks.add(new Chunk(
-                    meta.getOrDefault("title", "业务办理指南"),
-                    section,
-                    meta.getOrDefault("category", "业务办理"),
-                    meta.getOrDefault("sourceType", "PROJECT_GUIDE"),
-                    meta.getOrDefault("version", "V1"),
-                    meta.getOrDefault("logicalPath", "policy-guide"),
-                    content
-            ));
+            if (!Set.of("OFFICIAL_POLICY", "POLICY_STATUS").contains(meta.getOrDefault("sourceType", ""))) {
+                chunks.add(new Chunk(
+                        meta.getOrDefault("title", "业务办理指南"),
+                        section,
+                        meta.getOrDefault("category", "业务办理"),
+                        meta.getOrDefault("sourceType", "PROJECT_GUIDE"),
+                        meta.getOrDefault("version", "V1"),
+                        meta.getOrDefault("logicalPath", "policy-guide"),
+                        content
+                ));
+            }
             sectionsInDoc.add(section);
             sectionContentsInDoc.merge(section, content, (oldVal, newVal) -> oldVal + "\n" + newVal);
         }
@@ -784,8 +786,21 @@ public class PolicyAssistantService {
             String effectiveFrom,
             String effectiveTo,
             String regionCode,
-            String retrievedAt
+            String retrievedAt,
+            String sourceUrl,
+            String effectiveDate
     ) {
+        public Citation(int index, String title, String section, String category, String sourceType, String version,
+                        String logicalPath, String summary, String effectiveFrom, String effectiveTo,
+                        String regionCode, String retrievedAt) {
+            this(index, title, section, category, sourceType, version, logicalPath, summary,
+                    effectiveFrom, effectiveTo, regionCode, retrievedAt, null, effectiveFrom);
+        }
+        public Citation(int index, String title, String section, String category, String sourceType, String version,
+                        String logicalPath, String summary, String sourceUrl, String effectiveDate) {
+            this(index, title, section, category, sourceType, version, logicalPath, summary,
+                    effectiveDate, null, null, null, sourceUrl, effectiveDate);
+        }
         public Citation(int index, String title, String section, String category,
                         String sourceType, String version, String logicalPath, String summary) {
             this(index, title, section, category, sourceType, version, logicalPath, summary, null, null, null, null);

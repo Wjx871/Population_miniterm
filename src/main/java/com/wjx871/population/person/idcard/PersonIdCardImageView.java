@@ -38,7 +38,8 @@ public record PersonIdCardImageView(
                                                    boolean canViewFull,
                                                    SensitiveDataMaskingService masking) {
         String full = canViewFull && row.getOcrStatus() == OcrStatus.SUCCESS ? row.getOcrIdcardFull() : null;
-        String address = canViewFull ? row.getOcrAddress() : masking.address(row.getOcrAddress());
+        String address = row.getPersonId() == null ? null :
+                (canViewFull ? row.getOcrAddress() : masking.addressAlways(row.getOcrAddress()));
         return build(row, full, address, safeMaskedIdentity(row, masking));
     }
 

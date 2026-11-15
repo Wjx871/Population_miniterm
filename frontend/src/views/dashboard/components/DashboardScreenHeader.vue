@@ -9,9 +9,9 @@
     
     <div class="header-center">
       <div class="header-title-wrapper">
-        <h1 class="header-title">人口数据库管理系统数据统计大屏</h1>
+        <h1 class="header-title">{{ BRAND.name }} · 人口治理数据大屏</h1>
         <div class="header-subtitle">
-          <span class="eyebrow">Population Data Visualization Center</span>
+          <span class="eyebrow">{{ BRAND.latin }} · Population Insights</span>
         </div>
       </div>
       <!-- CSS绘制的机甲底座 -->
@@ -69,6 +69,7 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { Refresh, FullScreen, Close, Back, Clock } from '@element-plus/icons-vue'
 import { formatDateTime } from '../../../utils/date'
+import { BRAND } from '../../../constants/brand.js'
 
 const props = defineProps({
   loading: Boolean,

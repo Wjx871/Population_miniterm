@@ -39,19 +39,25 @@ public class IdCardImageTransactions {
         this.transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
-    public Optional<PersonIdCardImage> reuse(String sha, Long userId, HttpServletRequest http) {
-        return transaction.execute(status -> reuseWithinTransaction(sha, userId, http));
+    public Optional<PersonIdCardImage> reuse(String sha, Long userId, boolean skipOcr, HttpServletRequest http) {
+        return transaction.execute(status -> reuseWithinTransaction(sha, userId, skipOcr, http));
     }
 
-    private Optional<PersonIdCardImage> reuseWithinTransaction(String sha, Long userId, HttpServletRequest http) {
-        Optional<PersonIdCardImage> found = mapper.selectBySha256ForUpdate(sha);
-        found.ifPresent(row -> {
+    private Optional<PersonIdCardImage> reuseWithinTransaction(String sha, Long userId, boolean skipOcr, HttpServletRequest http) {
+        return mapper.selectBySha256ForUpdate(sha).map(row -> {
             if (!Objects.equals(row.getUserId(), userId) || row.getPersonId() != null) {
                 throw new BusinessException(HttpStatus.CONFLICT, "该身份证影印本不可重复使用");
             }
-            recordAudit(userId, "PERSON_IDCARD_IMAGE_UPLOAD", row.getOcrStatus().name(), null, http);
+            PersonIdCardImage current = row;
+            if (skipOcr && row.getOcrStatus() != OcrStatus.SKIPPED) {
+                if (mapper.markOcrSkipped(row.getImageId(), userId) != 1) {
+                    throw new BusinessException(HttpStatus.CONFLICT, "身份证影印本状态已变化，请重新上传");
+                }
+                current = mapper.selectById(row.getImageId()).orElseThrow();
+            }
+            recordAudit(userId, "PERSON_IDCARD_IMAGE_UPLOAD", current.getOcrStatus().name(), null, http);
+            return current;
         });
-        return found;
     }
 
     public PersonIdCardImage persist(PersonIdCardImage row, Completion completion, HttpServletRequest http) {

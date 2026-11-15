@@ -1,0 +1,190 @@
+[
+  {
+    "id": "M01",
+    "label": "一致材料",
+    "synthetic": true,
+    "fixture_level": "FIELD_CONTRACT_ONLY",
+    "notes": "仅为接口/规则设计样例；没有图像，不用于声称 OCR 实测效果。",
+    "business_type": "MIGRATION_IN",
+    "materials": [
+      {
+        "material_id": 1,
+        "document_type": "ID_CARD",
+        "ground_truth_fields": {
+          "name": "虚构甲",
+          "address": "虚构市示例区测试路1号"
+        },
+        "image_path": null
+      },
+      {
+        "material_id": 2,
+        "document_type": "HOUSEHOLD_BOOK",
+        "ground_truth_fields": {
+          "name": "虚构甲",
+          "address": "虚构市示例区测试路1号"
+        },
+        "image_path": null
+      },
+      {
+        "material_id": 3,
+        "document_type": "APPLICATION_FORM",
+        "ground_truth_fields": {
+          "name": "虚构甲",
+          "address": "虚构市示例区测试路1号"
+        },
+        "image_path": null
+      }
+    ],
+    "expected_flags": [],
+    "required_document_types": [
+      "ID_CARD",
+      "HOUSEHOLD_BOOK",
+      "APPLICATION_FORM"
+    ]
+  },
+  {
+    "id": "M02",
+    "label": "姓名冲突",
+    "synthetic": true,
+    "fixture_level": "FIELD_CONTRACT_ONLY",
+    "notes": "仅为接口/规则设计样例；没有图像，不用于声称 OCR 实测效果。",
+    "business_type": "MIGRATION_IN",
+    "materials": [
+      {
+        "material_id": 1,
+        "document_type": "ID_CARD",
+        "ground_truth_fields": {
+          "name": "虚构甲",
+          "address": "虚构市示例区测试路1号"
+        },
+        "image_path": null
+      },
+      {
+        "material_id": 2,
+        "document_type": "HOUSEHOLD_BOOK",
+        "ground_truth_fields": {
+          "name": "虚构甲",
+          "address": "虚构市示例区测试路1号"
+        },
+        "image_path": null
+      },
+      {
+        "material_id": 3,
+        "document_type": "APPLICATION_FORM",
+        "ground_truth_fields": {
+          "name": "虚构乙",
+          "address": "虚构市示例区测试路1号"
+        },
+        "image_path": null
+      }
+    ],
+    "expected_flags": [
+      {
+        "kind": "FIELD_CONFLICT",
+        "field": "name",
+        "material_ids": [
+          1,
+          2,
+          3
+        ]
+      }
+    ],
+    "required_document_types": [
+      "ID_CARD",
+      "HOUSEHOLD_BOOK",
+      "APPLICATION_FORM"
+    ]
+  },
+  {
+    "id": "M03",
+    "label": "缺少户口簿",
+    "synthetic": true,
+    "fixture_level": "FIELD_CONTRACT_ONLY",
+    "notes": "仅为接口/规则设计样例；没有图像，不用于声称 OCR 实测效果。",
+    "business_type": "MIGRATION_IN",
+    "materials": [
+      {
+        "material_id": 1,
+        "document_type": "ID_CARD",
+        "ground_truth_fields": {
+          "name": "虚构甲",
+          "address": "虚构市示例区测试路1号"
+        },
+        "image_path": null
+      },
+      {
+        "material_id": 3,
+        "document_type": "APPLICATION_FORM",
+        "ground_truth_fields": {
+          "name": "虚构甲",
+          "address": "虚构市示例区测试路1号"
+        },
+        "image_path": null
+      }
+    ],
+    "expected_flags": [
+      {
+        "kind": "MISSING_MATERIAL",
+        "document_type": "HOUSEHOLD_BOOK"
+      }
+    ],
+    "required_document_types": [
+      "ID_CARD",
+      "HOUSEHOLD_BOOK",
+      "APPLICATION_FORM"
+    ]
+  },
+  {
+    "id": "M04",
+    "label": "待人工确认",
+    "synthetic": true,
+    "fixture_level": "FIELD_CONTRACT_ONLY",
+    "notes": "仅为接口/规则设计样例；没有图像，不用于声称 OCR 实测效果。",
+    "business_type": "MIGRATION_IN",
+    "materials": [
+      {
+        "material_id": 1,
+        "document_type": "ID_CARD",
+        "ground_truth_fields": {
+          "name": "虚构甲",
+          "address": "虚构市示例区测试路1号"
+        },
+        "image_path": null,
+        "simulated_observation": {
+          "address": null,
+          "reason": "UNREADABLE"
+        }
+      },
+      {
+        "material_id": 2,
+        "document_type": "HOUSEHOLD_BOOK",
+        "ground_truth_fields": {
+          "name": "虚构甲",
+          "address": "虚构市示例区测试路1号"
+        },
+        "image_path": null
+      },
+      {
+        "material_id": 3,
+        "document_type": "APPLICATION_FORM",
+        "ground_truth_fields": {
+          "name": "虚构甲",
+          "address": "虚构市示例区测试路1号"
+        },
+        "image_path": null
+      }
+    ],
+    "expected_flags": [
+      {
+        "kind": "NEEDS_REVIEW",
+        "field": "address",
+        "material_id": 1
+      }
+    ],
+    "required_document_types": [
+      "ID_CARD",
+      "HOUSEHOLD_BOOK",
+      "APPLICATION_FORM"
+    ]
+  }
+]

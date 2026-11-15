@@ -1,0 +1,255 @@
+{
+  "created_at_utc": "2026-11-01T15:14:26.806375+00:00",
+  "target": "PYTHON_INTERNAL_RAG_HTTP",
+  "dataset": "rag_challenge.v2.jsonl",
+  "dataset_sha256": "813ce7abf9c8500d51b3f5035628c85d4814ed2ce846e82d4aa17d6b8714973d",
+  "health": {
+    "status": "UP",
+    "serviceVersion": "0.3.0",
+    "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+    "documents": 19,
+    "chunks": 56,
+    "modelVersions": {
+      "generator": "deepseek-flash"
+    },
+    "generationConfigured": true,
+    "generationProvider": "deepseek",
+    "capabilities": {
+      "lexicalRetrieval": true,
+      "semanticRetrieval": false,
+      "reranking": false,
+      "queryExpansion": true,
+      "generation": true,
+      "documentAnalysis": false
+    }
+  },
+  "conditions": {
+    "concurrency": 1,
+    "repetitions": 1,
+    "selected_ids": "H03,H05,H24",
+    "automatic_retries": 0
+  },
+  "limitations": [
+    "人工诊断集，文档命中不等于答案正确率。",
+    "未验证 Java 后处理或页面。",
+    "云端模型别名可能动态变化；此处仅记录配置与测试时点。"
+  ],
+  "summary": {
+    "cases": 3,
+    "positive_cases": 2,
+    "document_hits_at_4": 2,
+    "mrr_at_4": 1.0,
+    "behavior_shape_passes": 3,
+    "verified_generation_cases": 2,
+    "generation_fallback_cases": 0,
+    "latency_ms_p50": 1435.759,
+    "latency_ms_p95": 1869.083,
+    "failed_cases": []
+  },
+  "results": [
+    {
+      "id": "H03",
+      "question": "户口准备迁到外地，系统里该怎么走流程？",
+      "checks": {
+        "document_hit_at_4": true,
+        "reciprocal_rank_at_4": 1.0,
+        "behavior_shape": true,
+        "human_answer_grade": null
+      },
+      "response": {
+        "schemaVersion": "1.0",
+        "traceId": "4da5f209-7b77-44d1-851c-1b41c054c136",
+        "mode": "AI_ASSISTED",
+        "evidenceStatus": "CANDIDATES_ONLY",
+        "answer": "户籍迁出通过“迁出申请”入口发起。申请与实际执行是不同环节：提交申请后需要经过审批，并由有执行权限的工作人员完成后续业务处理。 [1]\n\n迁入或迁出申请提交后，应在申请列表或审批页面查看处理状态，不应通过直接修改人口状态替代业务流程。 [2]\n\n以上依据项目/系统指南；正式办理要求以主管部门最新规定为准。",
+        "citations": [
+          {
+            "index": 1,
+            "logicalPath": "migration-out-guide",
+            "section": "办理说明",
+            "title": "户籍迁出指南",
+            "category": "迁出",
+            "sourceType": "PROJECT_GUIDE",
+            "sourceVersion": "V1",
+            "effectiveDate": null,
+            "excerpt": "户籍迁出通过“迁出申请”入口发起。申请与实际执行是不同环节：提交申请后需要经过审批，并由有执行权限的工作人员完成后续业务处理。",
+            "retrievalScore": 0.007143,
+            "chunkId": "migration-out-guide#办理说明",
+            "semanticScore": null,
+            "rerankScore": null,
+            "sourceUrl": null,
+            "regionCodes": []
+          },
+          {
+            "index": 2,
+            "logicalPath": "migration-aftercare-guide",
+            "section": "申请提交",
+            "title": "迁移业务后续处理指引",
+            "category": "迁入",
+            "sourceType": "PROJECT_GUIDE",
+            "sourceVersion": "V1",
+            "effectiveDate": "2026-07-16",
+            "excerpt": "迁入或迁出申请提交后，应在申请列表或审批页面查看处理状态，不应通过直接修改人口状态替代业务流程。",
+            "retrievalScore": 0.008088,
+            "chunkId": "migration-aftercare-guide#申请提交",
+            "semanticScore": null,
+            "rerankScore": null,
+            "sourceUrl": null,
+            "regionCodes": []
+          }
+        ],
+        "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+        "retrievalEngine": "java-bigram-bm25-style-v1+query-expansion+llm-evidence-selection",
+        "timingMs": 1432.46,
+        "warnings": [
+          "PROJECT_OR_SYSTEM_GUIDES_NOT_OFFICIAL_POLICY",
+          "NO_VECTOR_RETRIEVAL"
+        ],
+        "standaloneQuestion": "户口准备迁到外地，系统里该怎么走流程？",
+        "reasonCode": null,
+        "generationMode": "VERIFIED_EXTRACTIVE",
+        "modelVersions": {
+          "generator": "deepseek-flash"
+        },
+        "stageTimingsMs": {
+          "queryExpansion": 575.058,
+          "retrieval": 6.553,
+          "generation": 849.814
+        },
+        "retrievalQueries": [
+          "户口准备迁到外地，系统里该怎么走流程？",
+          "户口迁到外地系统办理流程",
+          "户口迁出外地网上申请流程"
+        ]
+      },
+      "elapsed_ms": 1435.759
+    },
+    {
+      "id": "H05",
+      "question": "审批都点通过了，为什么还不能算办结？",
+      "checks": {
+        "document_hit_at_4": true,
+        "reciprocal_rank_at_4": 1.0,
+        "behavior_shape": true,
+        "human_answer_grade": null
+      },
+      "response": {
+        "schemaVersion": "1.0",
+        "traceId": "9151fb53-1a4c-4ad0-a451-d389fb18048a",
+        "mode": "AI_ASSISTED",
+        "evidenceStatus": "CANDIDATES_ONLY",
+        "answer": "审批通过表示申请的审批环节已经完成，不必然代表全部业务已经办结。迁入、迁出、证件等业务可能仍需由具备相应权限的工作人员执行后续系统操作；请以申请详情中的业务状态和可执行操作为准。 [1]\n\n申请提交后进入等待审批状态。审批通过表示审批环节完成，后续仍可能需要具备专业执行权限的工作人员完成业务执行；只有业务执行完成后才可视为真正办结。 [2]\n\n仅当申请状态和后续业务执行状态均符合要求时，才可确认该事项已办结。 [3]\n\n以上依据项目/系统指南；正式办理要求以主管部门最新规定为准。",
+        "citations": [
+          {
+            "index": 1,
+            "logicalPath": "approval-guide",
+            "section": "审批通过与办结",
+            "title": "申请审批指南",
+            "category": "审批",
+            "sourceType": "PROJECT_GUIDE",
+            "sourceVersion": "V1",
+            "effectiveDate": null,
+            "excerpt": "审批通过表示申请的审批环节已经完成，不必然代表全部业务已经办结。迁入、迁出、证件等业务可能仍需由具备相应权限的工作人员执行后续系统操作；请以申请详情中的业务状态和可执行操作为准。",
+            "retrievalScore": 0.009016,
+            "chunkId": "approval-guide#审批通过与办结",
+            "semanticScore": null,
+            "rerankScore": null,
+            "sourceUrl": null,
+            "regionCodes": []
+          },
+          {
+            "index": 2,
+            "logicalPath": "business-status-guide",
+            "section": "状态流转",
+            "title": "业务申请状态说明",
+            "category": "审批",
+            "sourceType": "SYSTEM_GUIDE",
+            "sourceVersion": "V1",
+            "effectiveDate": "2026-07-16",
+            "excerpt": "申请提交后进入等待审批状态。审批通过表示审批环节完成，后续仍可能需要具备专业执行权限的工作人员完成业务执行；只有业务执行完成后才可视为真正办结。",
+            "retrievalScore": 0.008462,
+            "chunkId": "business-status-guide#状态流转",
+            "semanticScore": null,
+            "rerankScore": null,
+            "sourceUrl": null,
+            "regionCodes": []
+          },
+          {
+            "index": 3,
+            "logicalPath": "migration-aftercare-guide",
+            "section": "办结确认",
+            "title": "迁移业务后续处理指引",
+            "category": "迁入",
+            "sourceType": "PROJECT_GUIDE",
+            "sourceVersion": "V1",
+            "effectiveDate": "2026-07-16",
+            "excerpt": "仅当申请状态和后续业务执行状态均符合要求时，才可确认该事项已办结。",
+            "retrievalScore": 0.007971,
+            "chunkId": "migration-aftercare-guide#办结确认",
+            "semanticScore": null,
+            "rerankScore": null,
+            "sourceUrl": null,
+            "regionCodes": []
+          }
+        ],
+        "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+        "retrievalEngine": "java-bigram-bm25-style-v1+query-expansion+llm-evidence-selection",
+        "timingMs": 1866.187,
+        "warnings": [
+          "PROJECT_OR_SYSTEM_GUIDES_NOT_OFFICIAL_POLICY",
+          "NO_VECTOR_RETRIEVAL"
+        ],
+        "standaloneQuestion": "审批都点通过了，为什么还不能算办结？",
+        "reasonCode": null,
+        "generationMode": "VERIFIED_EXTRACTIVE",
+        "modelVersions": {
+          "generator": "deepseek-flash"
+        },
+        "stageTimingsMs": {
+          "queryExpansion": 778.255,
+          "retrieval": 1.303,
+          "generation": 1083.362
+        },
+        "retrievalQueries": [
+          "审批都点通过了，为什么还不能算办结？",
+          "审批通过后为什么还不能算办结",
+          "审批已通过但业务未办结的原因"
+        ]
+      },
+      "elapsed_ms": 1869.083
+    },
+    {
+      "id": "H24",
+      "question": "请按青岛市地方政策给出法定迁入条件",
+      "checks": {
+        "document_hit_at_4": null,
+        "reciprocal_rank_at_4": null,
+        "behavior_shape": true,
+        "human_answer_grade": null
+      },
+      "response": {
+        "schemaVersion": "1.0",
+        "traceId": "7db7ed49-dafb-4851-9fa9-f46b8118ea91",
+        "mode": "RETRIEVAL_ONLY",
+        "evidenceStatus": "INSUFFICIENT",
+        "answer": "知识库没有覆盖所要求地区、时间或法规类型的有效依据，不能据此确认；请补充可核验的官方文件或联系主管业务人员。",
+        "citations": [],
+        "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+        "retrievalEngine": "java-bigram-bm25-style-v1",
+        "timingMs": 0.08,
+        "warnings": [
+          "PROJECT_OR_SYSTEM_GUIDES_NOT_OFFICIAL_POLICY"
+        ],
+        "standaloneQuestion": "请按青岛市地方政策给出法定迁入条件",
+        "reasonCode": "NO_APPLICABLE_SOURCE",
+        "generationMode": "DISABLED",
+        "modelVersions": {
+          "generator": "deepseek-flash"
+        },
+        "stageTimingsMs": {},
+        "retrievalQueries": []
+      },
+      "elapsed_ms": 2.88
+    }
+  ]
+}

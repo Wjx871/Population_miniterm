@@ -29,20 +29,18 @@ public class PersonIdCardImageService {
     private final LocalFileStorageService storage;
     private final PaddleOcrHttpClient ocrClient;
     private final IdCardOcrProperties ocrProperties;
-    private final OcrLogRedactor ocrLogRedactor;
     private final SensitiveDataMaskingService masking;
     private final IdCardImageTransactions transactions;
 
     public PersonIdCardImageService(PersonIdCardImageMapper mapper, PersonMapper personMapper,
                                     LocalFileStorageService storage, PaddleOcrHttpClient ocrClient,
-                                    IdCardOcrProperties ocrProperties, OcrLogRedactor ocrLogRedactor,
+                                    IdCardOcrProperties ocrProperties,
                                     SensitiveDataMaskingService masking, IdCardImageTransactions transactions) {
         this.mapper = mapper;
         this.personMapper = personMapper;
         this.storage = storage;
         this.ocrClient = ocrClient;
         this.ocrProperties = ocrProperties;
-        this.ocrLogRedactor = ocrLogRedactor;
         this.masking = masking;
         this.transactions = transactions;
     }
@@ -62,7 +60,7 @@ public class PersonIdCardImageService {
         }
         IdCardImageTransactions.Completion completion = null;
         try {
-            Optional<PersonIdCardImage> existing = transactions.reuse(stored.sha256(), userId, http);
+            Optional<PersonIdCardImage> existing = transactions.reuse(stored.sha256(), userId, skipOcr, http);
             if (existing.isPresent()) return PersonIdCardImageView.fromUpload(existing.get(), masking);
 
             PersonIdCardImage row = draft(stored, userId);
@@ -74,7 +72,7 @@ public class PersonIdCardImageService {
             } catch (DuplicateKeyException duplicate) {
                 // The failed insert TransactionTemplate has completed before we inspect the winner.
                 if (!completion.safeToDiscard()) throw persistenceFailure();
-                PersonIdCardImage winner = transactions.reuse(stored.sha256(), userId, http)
+                PersonIdCardImage winner = transactions.reuse(stored.sha256(), userId, skipOcr, http)
                         .orElseThrow(PersonIdCardImageService::persistenceFailure);
                 return PersonIdCardImageView.fromUpload(winner, masking);
             }
@@ -112,8 +110,8 @@ public class PersonIdCardImageService {
             return;
         }
         long started = System.nanoTime();
-        row.setOcrProvider(ocrProperties.getProvider());
-        row.setOcrEngineVersion(ocrProperties.getEngineVersion());
+        row.setOcrProvider(ocrProperties.useBaiduDirect() ? "BAIDU_AI_PLATFORM" : ocrProperties.getProvider());
+        row.setOcrEngineVersion(ocrProperties.useBaiduDirect() ? "baidu-ocr-idcard-v1" : ocrProperties.getEngineVersion());
         try {
             IdCardOcrProperties.OcrResult result = ocrClient.recognize(file.getBytes(), file.getContentType());
             row.setOcrStatus(OcrStatus.SUCCESS);
@@ -125,7 +123,6 @@ public class PersonIdCardImageService {
             row.setOcrGender(result.gender());
             row.setOcrEthnicity(result.ethnicity());
             row.setOcrAddress(result.address());
-            row.setOcrRawJson(ocrLogRedactor.redact(result.rawJson()));
         } catch (Exception failure) {
             row.setOcrStatus(OcrStatus.FAILED);
             row.setOcrError(safeOcrError(failure));
@@ -149,17 +146,7 @@ public class PersonIdCardImageService {
 
     private String safeOcrError(Exception failure) {
         if (failure instanceof PaddleOcrHttpClient.OcrRequestException requestFailure) {
-            return requestFailure.errorCode();
-        }
-        if (failure instanceof IllegalStateException) {
-            String message = failure.getMessage();
-            if ("OCR endpoint is not configured (population.person.idcard.ocr.url is empty)".equals(message)) {
-                return "OCR_NOT_CONFIGURED";
-            }
-            if ("OCR response body is null".equals(message)
-                    || (message != null && message.startsWith("OCR response missing"))) {
-                return "OCR_INVALID_RESPONSE";
-            }
+            return requestFailure.getMessage();
         }
         if (failure instanceof java.io.IOException) return "OCR_INPUT_READ_FAILED";
         return "OCR_FAILED";
@@ -174,7 +161,7 @@ public class PersonIdCardImageService {
                 : personMapper.selectScopedById(row.getPersonId(), DataScopeCriteria.current()).isPresent();
         if (!canAccess) throw notFound();
         return PersonIdCardImageView.fromDetail(
-                row, user.permissions().contains("sensitive-data:view-full"), masking);
+                row, row.getPersonId() != null && user.permissions().contains("sensitive-data:view-full"), masking);
     }
 
     private BusinessException notFound() {

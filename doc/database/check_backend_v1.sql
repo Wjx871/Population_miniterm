@@ -1,4 +1,5 @@
 -- Every result must be zero. Run after initialization or upgrade.
+-- Login events share operation_log; LogQueryMapper filters them by operation_type.
 SELECT 'orphan_residence_person' check_name,COUNT(*) abnormal_count FROM residence r LEFT JOIN person p ON p.person_id=r.person_id WHERE p.person_id IS NULL
 UNION ALL SELECT 'orphan_member_person',COUNT(*) FROM household_member m LEFT JOIN person p ON p.person_id=m.person_id WHERE p.person_id IS NULL
 UNION ALL SELECT 'orphan_member_household',COUNT(*) FROM household_member m LEFT JOIN household h ON h.household_id=m.household_id WHERE h.household_id IS NULL
@@ -34,6 +35,7 @@ UNION ALL SELECT 'required_column_missing',COUNT(*) FROM (
     UNION ALL SELECT 'migration_in','active_transfer_batch_no'
     UNION ALL SELECT 'residence','status' UNION ALL SELECT 'business_application','status'
     UNION ALL SELECT 'key_population','active_flag' UNION ALL SELECT 'operation_log','operation_time'
+    UNION ALL SELECT 'operation_log','operation_type' UNION ALL SELECT 'operation_log','operation_result'
 ) required LEFT JOIN information_schema.columns actual ON actual.table_schema=DATABASE() AND actual.table_name=required.table_name AND actual.column_name=required.column_name WHERE actual.column_name IS NULL
 UNION ALL SELECT 'required_index_missing',COUNT(*) FROM (
     SELECT 'idx_household_member_person_status' object_name UNION ALL SELECT 'idx_household_member_household_status'

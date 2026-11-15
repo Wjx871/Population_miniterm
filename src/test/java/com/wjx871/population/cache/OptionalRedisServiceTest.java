@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -147,7 +148,8 @@ class OptionalRedisServiceTest {
 
     private final RedisProperties properties = new RedisProperties();
     private final StringRedisTemplate redis = mock(StringRedisTemplate.class);
-    private final OptionalRedisService service = new OptionalRedisService(redis, new ObjectMapper(), properties);
+    private final ObjectMapper json = new ObjectMapper();
+    private final OptionalRedisService service = new OptionalRedisService(redis, json, properties);
 
     @Test void disabledReadsDoNotContactRedisOrCountAsMisses() {
         assertThat(service.get("x", new TypeReference<List<String>>() {})).isEmpty();

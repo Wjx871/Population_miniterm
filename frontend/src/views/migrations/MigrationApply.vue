@@ -31,8 +31,9 @@
       </el-form>
     </el-card>
     <template v-if="applicationId">
-      <MaterialUploader v-if="!isReadonly && canUpload" :application-id="applicationId" :material-options="materialOptions" :material-rule-text="materialRuleText" @uploaded="refreshDetail" />
+      <MaterialUploader v-if="!isReadonly && canUpload" :application-id="applicationId" :material-options="materialOptions" :material-rule-text="materialRuleText" :enable-migration-ocr="isIn" @uploaded="refreshDetail" />
       <el-card shadow="never"><template #header>已上传材料</template><MaterialList :materials="detail?.materials || []" :can-delete="!isReadonly && canDelete" @changed="refreshDetail" /></el-card>
+      <MigrationMaterialCheck v-if="isIn && !isReadonly && canUpload" :application-id="applicationId" :materials="detail?.materials || []" />
       <ApplicationActionBar :application="detail?.application" :loading="submitting" @submit="submit" @withdraw="withdraw" @cancel="cancelDraft" />
     </template>
   </div>
@@ -47,6 +48,7 @@ import HouseholdSelect from '../../components/business/HouseholdSelect.vue'
 import MemberCandidateSelect from '../../components/business/MemberCandidateSelect.vue'
 import MaterialUploader from '../../components/business/MaterialUploader.vue'
 import MaterialList from '../../components/business/MaterialList.vue'
+import MigrationMaterialCheck from './components/MigrationMaterialCheck.vue'
 import ApplicationActionBar from '../../components/business/ApplicationActionBar.vue'
 import RegionCascader from '../../components/business/RegionCascader.vue'
 import { createMigrationInApplication, createMigrationOutApplication, getMigrationApplicationDetail, updateMigrationInApplication, updateMigrationOutApplication } from '../../api/migrations'

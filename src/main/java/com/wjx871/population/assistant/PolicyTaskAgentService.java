@@ -41,6 +41,10 @@ public class PolicyTaskAgentService {
     }
 
     public AgentResponse execute(String question, List<ConversationTurn> history, String traceId) {
+        return execute(question, history, traceId, true);
+    }
+
+    AgentResponse execute(String question, List<ConversationTurn> history, String traceId, boolean useConfiguredPolicyService) {
         String effectiveTraceId = S2TraceContext.resolveTraceId(
                 traceId != null ? traceId : ThreadContext.get("traceId")
         );
@@ -58,9 +62,9 @@ public class PolicyTaskAgentService {
             String businessType = intent == Intent.APPLICATION ? null : intent.code;
             String regionCode = resolveTrustedRegionCode();
 
-            PolicyAssistantService.QueryResponse primary = policyService.queryPrimary(
-                    queries.get(0), history, businessType, regionCode, effectiveTraceId
-            );
+            PolicyAssistantService.QueryResponse primary = useConfiguredPolicyService
+                    ? policyService.queryPrimary(queries.get(0), history, businessType, regionCode, effectiveTraceId)
+                    : policyService.queryLocalOnly(queries.get(0), effectiveTraceId, null);
 
             if (PolicyAssistantService.MODE_SAFE_REFUSAL.equals(primary.mode())) {
                 return buildSafeRefusalResponse(intent, standaloneQuestion, primary, effectiveTraceId);

@@ -1,0 +1,313 @@
+{
+  "created_at_utc": "2026-11-15T07:24:28.157257+00:00",
+  "target": "PYTHON_INTERNAL_RAG_HTTP",
+  "dataset": "qingdao_policy_pilot.v1.jsonl",
+  "dataset_sha256": "3e186d0c419e4188198729bbb730874acfbaa09055bc6b67adc8a8bdc76dea61",
+  "health": {
+    "status": "UP",
+    "serviceVersion": "0.3.0",
+    "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+    "documents": 19,
+    "chunks": 56,
+    "modelVersions": {
+      "generator": "deepseek-flash"
+    },
+    "generationConfigured": true,
+    "generationProvider": "deepseek",
+    "capabilities": {
+      "lexicalRetrieval": true,
+      "semanticRetrieval": false,
+      "reranking": false,
+      "queryExpansion": true,
+      "generation": true,
+      "documentAnalysis": false
+    }
+  },
+  "conditions": {
+    "concurrency": 1,
+    "repetitions": 1,
+    "selected_ids": "QD01,QD02,QD03,QD04,QD05,QD06",
+    "automatic_retries": 0
+  },
+  "limitations": [
+    "人工诊断集，文档命中不等于答案正确率。",
+    "未验证 Java 后处理或页面。",
+    "云端模型别名可能动态变化；此处仅记录配置与测试时点。"
+  ],
+  "summary": {
+    "cases": 6,
+    "positive_cases": 3,
+    "document_hits_at_4": 0,
+    "mrr_at_4": 0,
+    "behavior_shape_passes": 3,
+    "verified_generation_cases": 0,
+    "generation_fallback_cases": 0,
+    "latency_ms_p50": 1925.533,
+    "latency_ms_p95": 2297.679,
+    "failed_cases": [
+      "QD01",
+      "QD02",
+      "QD03"
+    ]
+  },
+  "results": [
+    {
+      "id": "QD01",
+      "question": "我在青岛租房，居住登记已经办了，但房屋租赁合同尚未备案。能按租房落户吗？",
+      "checks": {
+        "document_hit_at_4": false,
+        "reciprocal_rank_at_4": 0,
+        "section_hit_at_4": false,
+        "reason_match": null,
+        "behavior_shape": false,
+        "human_answer_grade": null
+      },
+      "response": {
+        "schemaVersion": "1.0",
+        "traceId": "2f0eda1d-2c54-4d63-b58c-89a651bedef3",
+        "mode": "RETRIEVAL_ONLY",
+        "evidenceStatus": "INSUFFICIENT",
+        "answer": "候选指南没有直接回答这个问题，无法据此确认；请补充具体情况或联系业务人员。",
+        "citations": [],
+        "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+        "retrievalEngine": "java-bigram-bm25-style-v1+query-expansion",
+        "timingMs": 1500.45,
+        "warnings": [
+          "PROJECT_OR_SYSTEM_GUIDES_NOT_OFFICIAL_POLICY"
+        ],
+        "standaloneQuestion": "我在青岛租房，居住登记已经办了，但房屋租赁合同尚未备案。能按租房落户吗？",
+        "reasonCode": "NO_DIRECT_EVIDENCE",
+        "generationMode": "MODEL_ABSTENTION",
+        "modelVersions": {
+          "generator": "deepseek-flash"
+        },
+        "stageTimingsMs": {
+          "queryExpansion": 773.693,
+          "retrieval": 1.809,
+          "generation": 724.52
+        },
+        "retrievalQueries": [
+          "我在青岛租房，居住登记已经办了，但房屋租赁合同尚未备案。能按租房落户吗？",
+          "青岛租房落户居住登记已办租赁合同未备案能否办理",
+          "青岛租房落户要求租赁合同备案吗"
+        ]
+      },
+      "elapsed_ms": 1729.292
+    },
+    {
+      "id": "QD02",
+      "question": "我在青岛有稳定工作，人在这里住但还没办居住登记，可以直接按就业落户吗？",
+      "checks": {
+        "document_hit_at_4": false,
+        "reciprocal_rank_at_4": 0,
+        "section_hit_at_4": false,
+        "reason_match": null,
+        "behavior_shape": false,
+        "human_answer_grade": null
+      },
+      "response": {
+        "schemaVersion": "1.0",
+        "traceId": "d31f567f-7383-474d-bcc6-a34f2822f6d6",
+        "mode": "RETRIEVAL_ONLY",
+        "evidenceStatus": "INSUFFICIENT",
+        "answer": "候选指南没有直接回答这个问题，无法据此确认；请补充具体情况或联系业务人员。",
+        "citations": [],
+        "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+        "retrievalEngine": "java-bigram-bm25-style-v1+query-expansion",
+        "timingMs": 1905.613,
+        "warnings": [
+          "PROJECT_OR_SYSTEM_GUIDES_NOT_OFFICIAL_POLICY"
+        ],
+        "standaloneQuestion": "我在青岛有稳定工作，人在这里住但还没办居住登记，可以直接按就业落户吗？",
+        "reasonCode": "NO_DIRECT_EVIDENCE",
+        "generationMode": "MODEL_ABSTENTION",
+        "modelVersions": {
+          "generator": "deepseek-flash"
+        },
+        "stageTimingsMs": {
+          "queryExpansion": 956.131,
+          "retrieval": 1.683,
+          "generation": 947.426
+        },
+        "retrievalQueries": [
+          "我在青岛有稳定工作，人在这里住但还没办居住登记，可以直接按就业落户吗？",
+          "青岛就业落户未办居住登记能否直接申请",
+          "青岛稳定工作就业落户需要居住登记吗"
+        ]
+      },
+      "elapsed_ms": 2037.6
+    },
+    {
+      "id": "QD03",
+      "question": "我和配偶在青岛都没有产权房，准备落在亲属家，亲属那套房已经登记了别人的户口，还能用购房这条吗？",
+      "checks": {
+        "document_hit_at_4": false,
+        "reciprocal_rank_at_4": 0,
+        "section_hit_at_4": false,
+        "reason_match": null,
+        "behavior_shape": false,
+        "human_answer_grade": null
+      },
+      "response": {
+        "schemaVersion": "1.0",
+        "traceId": "4c956a1d-c7fd-4413-bcc7-b729d6502e8b",
+        "mode": "RETRIEVAL_ONLY",
+        "evidenceStatus": "INSUFFICIENT",
+        "answer": "候选指南没有直接回答这个问题，无法据此确认；请补充具体情况或联系业务人员。",
+        "citations": [],
+        "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+        "retrievalEngine": "java-bigram-bm25-style-v1+query-expansion",
+        "timingMs": 1785.841,
+        "warnings": [
+          "PROJECT_OR_SYSTEM_GUIDES_NOT_OFFICIAL_POLICY"
+        ],
+        "standaloneQuestion": "我和配偶在青岛都没有产权房，准备落在亲属家，亲属那套房已经登记了别人的户口，还能用购房这条吗？",
+        "reasonCode": "NO_DIRECT_EVIDENCE",
+        "generationMode": "MODEL_ABSTENTION",
+        "modelVersions": {
+          "generator": "deepseek-flash"
+        },
+        "stageTimingsMs": {
+          "queryExpansion": 1054.545,
+          "retrieval": 2.076,
+          "generation": 728.759
+        },
+        "retrievalQueries": [
+          "我和配偶在青岛都没有产权房，准备落在亲属家，亲属那套房已经登记了别人的户口，还能用购房这条吗？",
+          "青岛无产权房落户亲属家 亲属房已有他人户口 能否按购房落户",
+          "青岛夫妻无房落亲属户 房屋已登记他人户口 购房落户条件"
+        ]
+      },
+      "elapsed_ms": 1954.11
+    },
+    {
+      "id": "QD04",
+      "question": "上一问说的是青岛，换成潍坊还能照这个条件办吗？",
+      "checks": {
+        "document_hit_at_4": null,
+        "reciprocal_rank_at_4": null,
+        "section_hit_at_4": null,
+        "reason_match": false,
+        "behavior_shape": true,
+        "human_answer_grade": null
+      },
+      "response": {
+        "schemaVersion": "1.0",
+        "traceId": "af7c0bfb-25bc-4e04-9861-ce5cc3df8645",
+        "mode": "RETRIEVAL_ONLY",
+        "evidenceStatus": "INSUFFICIENT",
+        "answer": "候选指南没有直接回答这个问题，无法据此确认；请补充具体情况或联系业务人员。",
+        "citations": [],
+        "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+        "retrievalEngine": "java-bigram-bm25-style-v1+query-expansion",
+        "timingMs": 1683.839,
+        "warnings": [
+          "PROJECT_OR_SYSTEM_GUIDES_NOT_OFFICIAL_POLICY"
+        ],
+        "standaloneQuestion": "上一问说的是青岛，换成潍坊还能照这个条件办吗？",
+        "reasonCode": "NO_DIRECT_EVIDENCE",
+        "generationMode": "MODEL_ABSTENTION",
+        "modelVersions": {
+          "generator": "deepseek-flash"
+        },
+        "stageTimingsMs": {
+          "queryExpansion": 800.666,
+          "retrieval": 1.443,
+          "generation": 881.337
+        },
+        "retrievalQueries": [
+          "上一问说的是青岛，换成潍坊还能照这个条件办吗？",
+          "潍坊户籍迁出申请办理流程",
+          "潍坊办理户籍迁出需要什么条件"
+        ]
+      },
+      "elapsed_ms": 1896.956
+    },
+    {
+      "id": "QD05",
+      "question": "请用 2023 年的青岛通知判断我在 2022 年能不能按租房落户。",
+      "checks": {
+        "document_hit_at_4": null,
+        "reciprocal_rank_at_4": null,
+        "section_hit_at_4": null,
+        "reason_match": false,
+        "behavior_shape": true,
+        "human_answer_grade": null
+      },
+      "response": {
+        "schemaVersion": "1.0",
+        "traceId": "99d6cb03-23ab-4523-a656-98dadd691b04",
+        "mode": "RETRIEVAL_ONLY",
+        "evidenceStatus": "INSUFFICIENT",
+        "answer": "候选指南没有直接回答这个问题，无法据此确认；请补充具体情况或联系业务人员。",
+        "citations": [],
+        "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+        "retrievalEngine": "java-bigram-bm25-style-v1+query-expansion",
+        "timingMs": 1653.364,
+        "warnings": [
+          "PROJECT_OR_SYSTEM_GUIDES_NOT_OFFICIAL_POLICY"
+        ],
+        "standaloneQuestion": "请用 2023 年的青岛通知判断我在 2022 年能不能按租房落户。",
+        "reasonCode": "NO_DIRECT_EVIDENCE",
+        "generationMode": "MODEL_ABSTENTION",
+        "modelVersions": {
+          "generator": "deepseek-flash"
+        },
+        "stageTimingsMs": {
+          "queryExpansion": 890.07,
+          "retrieval": 1.867,
+          "generation": 760.896
+        },
+        "retrievalQueries": [
+          "请用 2023 年的青岛通知判断我在 2022 年能不能按租房落户。",
+          "2023年青岛通知能否判断2022年租房落户",
+          "青岛2022年租房落户政策是否适用2023年通知"
+        ]
+      },
+      "elapsed_ms": 1831.127
+    },
+    {
+      "id": "QD06",
+      "question": "2026 年 11 月 8 日还能把山东“1+6”那份通知当作现行依据吗？",
+      "checks": {
+        "document_hit_at_4": null,
+        "reciprocal_rank_at_4": null,
+        "section_hit_at_4": null,
+        "reason_match": false,
+        "behavior_shape": true,
+        "human_answer_grade": null
+      },
+      "response": {
+        "schemaVersion": "1.0",
+        "traceId": "fab4f6c2-5f85-4f8a-b94e-0f983006802b",
+        "mode": "RETRIEVAL_ONLY",
+        "evidenceStatus": "INSUFFICIENT",
+        "answer": "候选指南没有直接回答这个问题，无法据此确认；请补充具体情况或联系业务人员。",
+        "citations": [],
+        "knowledgeVersion": "0a576251adbbcf697d32ed70728f28df60ba2d1a87952efcb4bb646d44982388",
+        "retrievalEngine": "java-bigram-bm25-style-v1+query-expansion",
+        "timingMs": 2103.451,
+        "warnings": [
+          "PROJECT_OR_SYSTEM_GUIDES_NOT_OFFICIAL_POLICY"
+        ],
+        "standaloneQuestion": "2026 年 11 月 8 日还能把山东“1+6”那份通知当作现行依据吗？",
+        "reasonCode": "NO_DIRECT_EVIDENCE",
+        "generationMode": "MODEL_ABSTENTION",
+        "modelVersions": {
+          "generator": "deepseek-flash"
+        },
+        "stageTimingsMs": {
+          "queryExpansion": 1364.647,
+          "retrieval": 1.946,
+          "generation": 736.43
+        },
+        "retrievalQueries": [
+          "2026 年 11 月 8 日还能把山东“1+6”那份通知当作现行依据吗？",
+          "2026年11月8日山东1+6通知是否仍为现行有效依据",
+          "山东1+6通知在2026年11月8日的现行效力"
+        ]
+      },
+      "elapsed_ms": 2297.679
+    }
+  ]
+}

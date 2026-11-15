@@ -2,7 +2,7 @@
   <footer class="dashboard-footer">
     <div class="footer-left">
       <span class="label">数据来源：</span>
-      <span class="value">{{ isDemo ? '内置演示数据' : '人口数据库管理系统' }}</span>
+      <span class="value">{{ isDemo ? '内置演示数据' : BRAND.shortName }}</span>
     </div>
     <div class="footer-center">
       <span class="label">数据更新时间：</span>
@@ -21,6 +21,7 @@
 <script setup>
 import { computed } from 'vue'
 import { formatDateTime } from '../../../utils/date'
+import { BRAND } from '../../../constants/brand.js'
 
 const props = defineProps({
   updateTime: String,

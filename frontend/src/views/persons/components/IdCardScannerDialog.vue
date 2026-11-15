@@ -3,20 +3,23 @@
     :model-value="visible"
     @update:model-value="(v) => $emit('update:visible', v)"
     title="上传身份证影印本"
-    width="640px"
+    width="min(800px, 94vw)"
+    :show-close="!uploading"
+    :close-on-click-modal="false"
+    :close-on-press-escape="!uploading"
     destroy-on-close
     @closed="resetAll"
   >
     <div class="scanner-body" v-loading="uploading" :element-loading-text="loadingText">
       <el-alert
-        v-if="!imagePreviewUrl"
+        v-if="!selectedFile"
         type="info"
         :closable="false"
-        title="使用说明"
-        description="支持 JPG / PNG / PDF 文件，建议分辨率 ≥ 1024×720。OCR 模块将尝试识别身份证号、姓名、性别、出生日期、地址与民族（仅供录入参考）。"
+        title="上传身份证正面"
+        description="支持单张 JPG 或 PNG，最大 10MB。上传并识别会将图片发送给后端配置的 OCR 服务。"
       />
       <el-upload
-        v-if="!imagePreviewUrl"
+        v-if="!selectedFile"
         class="scanner-uploader"
         drag
         :auto-upload="false"
@@ -27,198 +30,145 @@
         <el-icon class="scanner-uploader__icon"><UploadFilled /></el-icon>
         <div class="el-upload__text">点击或拖拽身份证正面照至此处</div>
         <template #tip>
-          <div class="el-upload__tip">单张 JPG / PNG，最大 10MB。识别失败可继续手工录入。</div>
+          <div class="el-upload__tip">百度 OCR 对编码后图片另有大小限制。请拍清证件四角及文字。</div>
         </template>
       </el-upload>
 
-      <div v-else class="scanner-preview">
-        <img v-if="isImagePreview" :src="imagePreviewUrl" alt="身份证影印本预览" class="scanner-preview__img" />
-        <el-icon v-else class="scanner-preview__icon"><Document /></el-icon>
-        <div class="scanner-preview__meta">
-          <div>文件名：{{ fileMeta?.name || '已上传文件' }}</div>
-          <div>大小：{{ formatBytes(fileMeta?.size || 0) }}</div>
-          <div>
-            OCR 状态：
-            <el-tag :type="statusTagType" size="small">{{ statusText }}</el-tag>
-          </div>
-          <div v-if="ocrResult?.confidence" class="confidence">识别置信度：{{ (ocrResult.confidence * 100).toFixed(1) }}%</div>
+      <div v-else class="scanner-content" :class="{ 'scanner-content--review': recognized }">
+        <div>
+          <img :src="previewUrl" alt="身份证正面原图" class="scanner-preview__img" />
+          <p class="scanner-preview__name">{{ selectedFile.name }}</p>
         </div>
-        <div v-if="errorMessage" class="scanner-preview__error">
-          <el-alert type="warning" :closable="false" :title="errorMessage" />
+        <div v-if="recognized" class="scanner-review">
+          <h3>核对识别字段</h3>
+          <p>对照原图逐项核对，确认后回填到建档表单。</p>
+          <dl class="scanner-fields">
+            <template v-for="field in reviewFields" :key="field.label">
+              <dt>{{ field.label }}</dt>
+              <dd>{{ field.value || '未识别' }}</dd>
+            </template>
+          </dl>
+          <p>证件住址仅供核对。现居住地址由你填写。</p>
+          <p v-if="result.ocrConfidence != null">识别置信度 {{ (result.ocrConfidence * 100).toFixed(1) }}%</p>
         </div>
       </div>
+
+      <el-alert v-if="errorMessage" class="scanner-alert" type="warning" :closable="false" :title="errorMessage" show-icon />
     </div>
 
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="handleSkip" :disabled="uploading">跳过 OCR</el-button>
-        <el-button @click="handleReupload" :disabled="uploading">重新上传</el-button>
-        <el-button type="primary" :loading="uploading" :disabled="!fileMeta" @click="handleUpload">上传并识别</el-button>
+        <el-button v-if="selectedFile" @click="resetAll" :disabled="uploading">重新选择</el-button>
+        <el-button v-if="selectedFile" @click="useManual" :disabled="uploading">跳过 OCR，手工录入</el-button>
+        <el-button v-if="recognized" type="primary" :disabled="uploading" @click="confirmResult">核对无误，回填表单</el-button>
+        <el-button v-else-if="!result" type="primary" :loading="uploading" :disabled="!selectedFile" @click="upload(false)">上传并识别</el-button>
       </span>
     </template>
   </el-dialog>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { UploadFilled, Document } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { computed, onBeforeUnmount, ref } from 'vue'
+import { UploadFilled } from '@element-plus/icons-vue'
 import { uploadIdCardImage } from '../../../api/persons'
 
-const props = defineProps({
-  visible: { type: Boolean, default: false },
-})
-const emit = defineEmits(['update:visible', 'recognized', 'skipped'])
+defineProps({ visible: { type: Boolean, default: false } })
+const emit = defineEmits(['update:visible', 'recognized'])
 
-const fileMeta = ref(null)
-const imagePreviewUrl = ref('')
+const selectedFile = ref(null)
+const previewUrl = ref('')
 const uploading = ref(false)
-const ocrResult = ref(null)
+const loadingText = ref('')
+const result = ref(null)
 const errorMessage = ref('')
-
-const isImagePreview = computed(() => {
-  const type = fileMeta.value?.type || ''
-  return type.startsWith('image/')
+const recognized = computed(() => result.value?.ocrStatus === 'SUCCESS')
+const reviewFields = computed(() => {
+  const ocr = result.value
+  if (!ocr) return []
+  return [
+    { label: '姓名', value: ocr.ocrName },
+    { label: '身份证号', value: ocr.ocrIdcardFull },
+    { label: '性别', value: { M: '男', F: '女' }[ocr.ocrGender] },
+    { label: '出生日期', value: ocr.ocrBirthDate },
+    { label: '民族', value: ocr.ocrEthnicity },
+    { label: '证件住址', value: ocr.ocrAddress },
+  ]
 })
-
-const loadingText = computed(() => (fileMeta.value ? '正在上传并执行 OCR...' : ''))
-
-const statusText = computed(() => {
-  const status = ocrResult.value?.ocrStatus
-  if (status === 'SUCCESS') return '识别成功'
-  if (status === 'FAILED') return '识别失败（可手工录入）'
-  if (status === 'SKIPPED') return '已跳过识别'
-  return '未识别'
-})
-
-const statusTagType = computed(() => {
-  const status = ocrResult.value?.ocrStatus
-  if (status === 'SUCCESS') return 'success'
-  if (status === 'FAILED') return 'warning'
-  if (status === 'SKIPPED') return 'info'
-  return 'info'
-})
-
-watch(
-  () => props.visible,
-  (val) => {
-    if (!val) resetAll()
-  },
-)
 
 function onFileSelected(file) {
-  if (!file?.raw) return
-  fileMeta.value = { name: file.name, size: file.size, type: file.raw.type || 'application/octet-stream', raw: file.raw }
-  if (file.raw.type?.startsWith('image/')) {
-    if (imagePreviewUrl.value) URL.revokeObjectURL(imagePreviewUrl.value)
-    imagePreviewUrl.value = URL.createObjectURL(file.raw)
-  } else {
-    imagePreviewUrl.value = ''
-  }
-  errorMessage.value = ''
-  ocrResult.value = null
-}
-
-async function handleUpload() {
-  if (!fileMeta.value?.raw) {
-    ElMessage.warning('请先选择身份证图片')
+  const raw = file?.raw
+  if (!raw || uploading.value) return
+  resetAll()
+  if (!['image/jpeg', 'image/png'].includes(raw.type) || raw.size === 0 || raw.size >= 10 * 1024 * 1024) {
+    errorMessage.value = '请选择小于 10MB 的 JPG 或 PNG 图片'
     return
   }
+  selectedFile.value = raw
+  previewUrl.value = URL.createObjectURL(raw)
+}
+
+async function upload(skipOcr) {
+  if (!selectedFile.value || uploading.value) return
   uploading.value = true
+  loadingText.value = skipOcr ? '正在上传影印本…' : '正在上传并识别…'
   errorMessage.value = ''
   try {
-    const formData = new FormData()
-    formData.append('file', fileMeta.value.raw, fileMeta.value.name)
-    const result = await uploadIdCardImage(formData, { skipOcr: false })
-    ocrResult.value = result
-    if (result.ocrStatus === 'FAILED') {
-      errorMessage.value = result.ocrError || 'OCR 识别失败，请检查图片清晰度'
-    } else if (result.ocrStatus === 'SUCCESS' && result.ocrIdcardMasked) {
-      ElMessage.success(`已识别（${result.ocrIdcardMasked}），请核对后保存`)
+    const body = new FormData()
+    body.append('file', selectedFile.value, selectedFile.value.name)
+    result.value = await uploadIdCardImage(body, { skipOcr, silent: true })
+    if (skipOcr) {
+      emit('recognized', result.value)
+    } else if (result.value.ocrStatus === 'FAILED') {
+      errorMessage.value = result.value.ocrError || '识别失败，可使用影印本继续手工录入'
+    } else if (result.value.ocrStatus === 'SKIPPED') {
+      errorMessage.value = '当前未配置 OCR，可使用影印本继续手工录入'
     }
-    emit('recognized', result)
   } catch (error) {
-    const message = error?.response?.data?.message || error?.message || '身份证上传失败'
-    errorMessage.value = message
+    errorMessage.value = error?.response?.data?.message || '身份证上传失败，请重试'
   } finally {
     uploading.value = false
   }
 }
 
-async function handleSkip() {
-  if (!fileMeta.value?.raw) {
-    emit('skipped', null)
-    emit('update:visible', false)
-    return
-  }
-  uploading.value = true
-  errorMessage.value = ''
-  try {
-    const formData = new FormData()
-    formData.append('file', fileMeta.value.raw, fileMeta.value.name)
-    const result = await uploadIdCardImage(formData, { skipOcr: true })
-    ocrResult.value = result
-    emit('recognized', result)
-  } catch (error) {
-    const message = error?.response?.data?.message || error?.message || '身份证上传失败'
-    errorMessage.value = message
-  } finally {
-    uploading.value = false
+function useManual() {
+  if (result.value?.ocrStatus === 'FAILED' || result.value?.ocrStatus === 'SKIPPED') {
+    emit('recognized', result.value)
+  } else {
+    void upload(true)
   }
 }
 
-function handleReupload() {
-  fileMeta.value = null
-  if (imagePreviewUrl.value) {
-    URL.revokeObjectURL(imagePreviewUrl.value)
-    imagePreviewUrl.value = ''
-  }
-  ocrResult.value = null
-  errorMessage.value = ''
+function confirmResult() {
+  if (recognized.value && !uploading.value) emit('recognized', result.value)
 }
 
 function resetAll() {
-  handleReupload()
+  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+  previewUrl.value = ''
+  selectedFile.value = null
+  result.value = null
+  errorMessage.value = ''
 }
 
-function formatBytes(value) {
-  if (!value) return '0 B'
-  const units = ['B', 'KB', 'MB']
-  let bytes = Number(value)
-  let unit = 0
-  while (bytes >= 1024 && unit < units.length - 1) {
-    bytes /= 1024
-    unit += 1
-  }
-  return `${bytes.toFixed(1)} ${units[unit]}`
-}
-
-defineExpose({
-  fillOcrResult,
-})
-
-function fillOcrResult(target = {}) {
-  if (!ocrResult.value) return target
-  const ocr = ocrResult.value
-  if (ocr.ocrName) target.name = ocr.ocrName
-  if (ocr.ocrGender === 'M') target.gender = '男'
-  else if (ocr.ocrGender === 'F') target.gender = '女'
-  if (ocr.ocrBirthDate) target.birthDate = ocr.ocrBirthDate
-  if (ocr.ocrEthnicity) target.ethnicity = ocr.ocrEthnicity
-  if (ocr.ocrAddress) target.currentAddress = ocr.ocrAddress
-  return target
-}
+onBeforeUnmount(resetAll)
 </script>
 
 <style scoped>
-.scanner-body { min-height: 200px; padding: 4px 0; }
-.scanner-uploader { width: 100%; }
+.scanner-body { min-height: 180px; }
+.scanner-uploader { width: 100%; margin-top: 12px; }
 .scanner-uploader__icon { font-size: 48px; color: var(--el-color-primary); }
-.scanner-preview { display: flex; flex-direction: column; gap: 12px; }
-.scanner-preview__img { max-width: 100%; max-height: 320px; object-fit: contain; border-radius: 4px; border: 1px solid var(--el-border-color-lighter); }
-.scanner-preview__icon { font-size: 64px; color: var(--el-color-info); text-align: center; }
-.scanner-preview__meta { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--el-text-color-regular); }
-.scanner-preview__error { margin-top: 8px; }
-.confidence { color: var(--el-color-info); }
-.dialog-footer { display: flex; gap: 8px; justify-content: flex-end; }
+.scanner-content { display: grid; gap: 16px; }
+.scanner-content--review { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.scanner-preview__img { display: block; width: 100%; max-height: 360px; object-fit: contain; border-radius: 6px; border: 1px solid var(--el-border-color-lighter); }
+.scanner-preview__name, .scanner-review p { color: var(--el-text-color-secondary); margin: 8px 0; overflow-wrap: anywhere; }
+.scanner-review h3 { margin: 0; }
+.scanner-fields { display: grid; grid-template-columns: max-content 1fr; gap: 8px 12px; }
+.scanner-fields dt { color: var(--el-text-color-secondary); }
+.scanner-fields dd { margin: 0; overflow-wrap: anywhere; }
+.scanner-alert { margin-top: 12px; }
+.dialog-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.dialog-footer :deep(.el-button) { margin: 0; }
+@media (max-width: 640px) {
+  .scanner-content--review { grid-template-columns: 1fr; }
+}
 </style>

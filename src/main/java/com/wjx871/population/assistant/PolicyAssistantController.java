@@ -29,6 +29,7 @@ public class PolicyAssistantController {
     private final PolicyAssistantService service;
     private final PolicyWorkflowService workflowService;
     private final PolicyTaskAgentService taskAgentService;
+    private final PolicyRagService ragService;
 
     @PostMapping("/query")
     public ApiResponse<PolicyTaskAgentService.AgentResponse> query(@Valid @RequestBody QueryRequest request,
@@ -42,7 +43,8 @@ public class PolicyAssistantController {
             if (httpResponse != null) {
                 httpResponse.setHeader(S2TraceContext.TRACE_HEADER, traceId);
             }
-            return ApiResponse.ok(taskAgentService.execute(request.question(), request.history(), traceId));
+            var baseline = taskAgentService.execute(request.question(), request.history(), traceId, !ragService.isEnabled());
+            return ApiResponse.ok(ragService.enhance(request.question(), request.history(), baseline));
         }
     }
 

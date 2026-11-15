@@ -111,7 +111,7 @@ class ReferenceCacheTransactionIntegrationTest {
         warm(); store.observations.clear();
         dictionaries.update(id(), new DictionaryUpdateRequest("committed", 1, 0), request);
         assertThat(store.observations).anyMatch(o -> o.operation().equals("DB:update") && o.active() && !o.readOnly());
-        assertThat(store.observations).filteredOn(o -> o.operation().equals("KEYS") || o.operation().equals("DELETE"))
+        assertThat(store.observations).filteredOn(o -> o.operation().equals("SCAN") || o.operation().equals("DELETE"))
                 .isNotEmpty().allMatch(o -> !o.active());
         assertThat(jdbc.queryForObject("SELECT dict_name FROM data_dictionary WHERE dict_id=?", String.class, id())).isEqualTo("committed");
     }
@@ -152,10 +152,10 @@ class ReferenceCacheTransactionIntegrationTest {
         assertThat(store.evictions.get()).isZero(); assertThat(store.values).isEqualTo(before);
         assertThat(dictionaryName()).isEqualTo("before");
     }
-    @Test void evictionKeysFailureDoesNotBreakSuccessfulCommit() { evictionFailure(true); }
+    @Test void evictionScanFailureDoesNotBreakSuccessfulCommit() { evictionFailure(true); }
     @Test void evictionDeleteFailureDoesNotBreakSuccessfulCommit() { evictionFailure(false); }
     private void evictionFailure(boolean keys) {
-        warm(); store.failKeys = keys; store.failDelete = !keys;
+        warm(); store.failScan = keys; store.failDelete = !keys;
         assertThatCode(() -> dictionaries.update(id(), new DictionaryUpdateRequest("db committed", 1, 0), request)).doesNotThrowAnyException();
         assertThat(jdbc.queryForObject("SELECT dict_name FROM data_dictionary WHERE dict_id=?", String.class, id())).isEqualTo("db committed");
         store.failGet = true;

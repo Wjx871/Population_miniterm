@@ -52,6 +52,7 @@ export function uploadIdCardImage(formData, options = {}) {
     // Cloud OCR can include token acquisition and inference; keep the normal API timeout unchanged.
     timeout: 90000,
     params: options.skipOcr ? { skipOcr: 'true' } : undefined,
+    timeout: options.skipOcr ? 10000 : 45000,
     silent: options.silent,
   })
 }
