@@ -1,0 +1,11 @@
+# Merge after compose.yaml and enable --profile dual.
+# Both instances share DB, JWT secret, Redis and file volumes.
+services:
+  web:
+    build:
+      args:
+        NGINX_CONFIG: config/nginx/population.dual.conf
+    depends_on:
+      backend2:
+        condition: service_healthy
+        restart: true

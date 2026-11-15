@@ -1,0 +1,58 @@
+[
+  {
+    "rule": "redis_fallback",
+    "original_file": "target/cloud-evidence/fault-window.log",
+    "line": 604,
+    "traceId": "85637759fc3c019076ce22bcaefbcedc",
+    "text": "backend-1        | 2026-11-15 09:47:13.711 WARN  [http-nio-8080-exec-2] [instance=backend-1 traceId=85637759fc3c019076ce22bcaefbcedc taskId=] com.wjx871.population.cache.OptionalRedisService - Redis unavailable; falling back to MySQL/local mode: Redis command timed out"
+  },
+  {
+    "rule": "redis_fallback",
+    "original_file": "target/cloud-evidence/fault-window.log",
+    "line": 631,
+    "traceId": "a3c0b71725313c369550e3cb0392325d",
+    "text": "backend2-1       | 2026-11-15 09:47:12.136 WARN  [http-nio-8080-exec-1] [instance=backend-2 traceId=a3c0b71725313c369550e3cb0392325d taskId=] com.wjx871.population.cache.OptionalRedisService - Redis unavailable; falling back to MySQL/local mode: Redis command timed out"
+  },
+  {
+    "rule": "replica_fallback",
+    "original_file": "target/cloud-evidence/fault-window.log",
+    "line": 598,
+    "traceId": "46d9c2a6a744382bd647f5d5a1030aea",
+    "text": "backend-1        | 2026-11-15 09:47:09.844 WARN  [http-nio-8080-exec-10] [instance=backend-1 traceId=46d9c2a6a744382bd647f5d5a1030aea taskId=] com.wjx871.population.dataops.ReadWriteDataSource - replica_connection_failed action=primary_fallback sqlState=08S01"
+  },
+  {
+    "rule": "http_latency",
+    "original_file": "target/cloud-evidence/fault-window.log",
+    "line": 368,
+    "traceId": "a9e6301618c0124907847d07a734f81e",
+    "text": "backend2-1       | 2026-11-15 09:46:52.611 INFO  [http-nio-8080-exec-3] [instance=backend-2 traceId=a9e6301618c0124907847d07a734f81e taskId=] com.wjx871.population.system.RequestTraceFilter - http_request method=GET status=200 elapsedMs=2014 exception=false"
+  },
+  {
+    "rule": "http_latency",
+    "original_file": "target/cloud-evidence/fault-window.log",
+    "line": 660,
+    "traceId": "a3c0b71725313c369550e3cb0392325d",
+    "text": "backend2-1       | 2026-11-15 09:47:13.206 INFO  [http-nio-8080-exec-1] [instance=backend-2 traceId=a3c0b71725313c369550e3cb0392325d taskId=] com.wjx871.population.system.RequestTraceFilter - http_request method=GET status=200 elapsedMs=1573 exception=false"
+  },
+  {
+    "rule": "http_latency",
+    "original_file": "target/cloud-evidence/fault-window.log",
+    "line": 286,
+    "traceId": "3539c5b6-3fa4-4590-899c-5b67a180bb32",
+    "text": "backend-1        | 2026-11-15 09:46:22.780 INFO  [http-nio-8080-exec-1] [instance=backend-1 traceId=3539c5b6-3fa4-4590-899c-5b67a180bb32 taskId=] com.wjx871.population.system.RequestTraceFilter - http_request method=GET status=200 elapsedMs=1275 exception=false"
+  },
+  {
+    "rule": "http_latency",
+    "original_file": "target/cloud-evidence/fault-window.log",
+    "line": 338,
+    "traceId": "07d8dd4c-e18b-4a43-ae4c-a542cb92363f",
+    "text": "backend2-1       | 2026-11-15 09:46:22.281 INFO  [http-nio-8080-exec-1] [instance=backend-2 traceId=07d8dd4c-e18b-4a43-ae4c-a542cb92363f taskId=] com.wjx871.population.system.RequestTraceFilter - http_request method=GET status=200 elapsedMs=1137 exception=false"
+  },
+  {
+    "rule": "http_latency",
+    "original_file": "target/cloud-evidence/fault-window.log",
+    "line": 600,
+    "traceId": "46d9c2a6a744382bd647f5d5a1030aea",
+    "text": "backend-1        | 2026-11-15 09:47:09.863 INFO  [http-nio-8080-exec-10] [instance=backend-1 traceId=46d9c2a6a744382bd647f5d5a1030aea taskId=] com.wjx871.population.system.RequestTraceFilter - http_request method=GET status=200 elapsedMs=1052 exception=false"
+  }
+]

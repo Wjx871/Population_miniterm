@@ -1,0 +1,8 @@
+{
+  "kernel": "7.0.0-1017-azure",
+  "architecture": "x86_64",
+  "logical_cpus": 4,
+  "memory_total": "16366504 kB",
+  "run_id": "43700677353",
+  "source_commit": "9e6cadfb3eb6d12e06df48fe00c2410e7585e645"
+}

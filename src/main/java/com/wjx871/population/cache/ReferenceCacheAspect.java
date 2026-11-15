@@ -17,7 +17,7 @@ public class ReferenceCacheAspect {
  public Object cached(ProceedingJoinPoint p) throws Throwable{Method method=((MethodSignature)p.getSignature()).getMethod();String key;Duration ttl;
   if(method.getName().equals("tree")){key=cache.key("region:tree");ttl=properties.getRegionTtl();}
   else if(method.getName().equals("children")){key=cache.key("region:children:"+p.getArgs()[0]);ttl=properties.getRegionTtl();}
-  else{key=cache.key("dictionary:"+String.valueOf(p.getArgs()[0]).toUpperCase());ttl=properties.getDictionaryTtl();}
+  else{boolean manage=com.wjx871.population.security.CurrentUserContext.requireUser().permissions().contains("dictionary:manage");key=cache.key("dictionary:"+(manage?"manage:":"enabled:")+String.valueOf(p.getArgs()[0]).toUpperCase(java.util.Locale.ROOT));ttl=properties.getDictionaryTtl();}
   Optional<?> hit=cache.get(key,json.getTypeFactory().constructType(method.getGenericReturnType()));if(hit.isPresent())return hit.get();Object value=p.proceed();cache.put(key,value,ttl);return value;}
  @AfterReturning("execution(* com.wjx871.population.reference.AdminRegionService.create(..)) || execution(* com.wjx871.population.reference.AdminRegionService.update(..)) || execution(* com.wjx871.population.reference.AdminRegionService.enable(..)) || execution(* com.wjx871.population.reference.AdminRegionService.disable(..))")
  public void regionChanged(){CacheInvalidation.afterCommit(()->cache.evictPattern(cache.key("region:*") ));}

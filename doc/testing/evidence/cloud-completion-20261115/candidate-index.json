@@ -1,0 +1,26 @@
+{
+  "query": "SELECT COUNT(*) FROM floating_population f WHERE f.status='ACTIVE' AND f.current_flag=1",
+  "index": "ops_candidate_floating_status_current(status,current_flag)",
+  "scope": "disposable_lab_only",
+  "before": {
+    "explain_analyze": [
+      "-> Aggregate: count(0)  (cost=2065 rows=1) (actual time=5.43..5.43 rows=1 loops=1)\\n    -> Filter: ((f.current_flag = 1) and (f.`status` = 'ACTIVE'))  (cost=2045 rows=199) (actual time=0.03..5.24 rows=5000 loops=1)\\n        -> Table scan on f  (cost=2045 rows=19890) (actual time=0.0219..3.87 rows=20000 loops=1)\\n",
+      "-> Aggregate: count(0)  (cost=2065 rows=1) (actual time=5.47..5.47 rows=1 loops=1)\\n    -> Filter: ((f.current_flag = 1) and (f.`status` = 'ACTIVE'))  (cost=2045 rows=199) (actual time=0.0269..5.27 rows=5000 loops=1)\\n        -> Table scan on f  (cost=2045 rows=19890) (actual time=0.022..3.9 rows=20000 loops=1)\\n",
+      "-> Aggregate: count(0)  (cost=2065 rows=1) (actual time=5.43..5.43 rows=1 loops=1)\\n    -> Filter: ((f.current_flag = 1) and (f.`status` = 'ACTIVE'))  (cost=2045 rows=199) (actual time=0.0268..5.25 rows=5000 loops=1)\\n        -> Table scan on f  (cost=2045 rows=19890) (actual time=0.0219..3.85 rows=20000 loops=1)\\n",
+      "-> Aggregate: count(0)  (cost=2065 rows=1) (actual time=5.48..5.48 rows=1 loops=1)\\n    -> Filter: ((f.current_flag = 1) and (f.`status` = 'ACTIVE'))  (cost=2045 rows=199) (actual time=0.025..5.3 rows=5000 loops=1)\\n        -> Table scan on f  (cost=2045 rows=19890) (actual time=0.0202..3.88 rows=20000 loops=1)\\n",
+      "-> Aggregate: count(0)  (cost=2065 rows=1) (actual time=5.42..5.42 rows=1 loops=1)\\n    -> Filter: ((f.current_flag = 1) and (f.`status` = 'ACTIVE'))  (cost=2045 rows=199) (actual time=0.0269..5.24 rows=5000 loops=1)\\n        -> Table scan on f  (cost=2045 rows=19890) (actual time=0.0221..3.87 rows=20000 loops=1)\\n"
+    ],
+    "count": 5000
+  },
+  "after": {
+    "explain_analyze": [
+      "-> Aggregate: count(0)  (cost=1055 rows=1) (actual time=1.25..1.25 rows=1 loops=1)\\n    -> Covering index lookup on f using ops_candidate_floating_status_current (status='ACTIVE', current_flag=1)  (cost=555 rows=5000) (actual time=0.0164..1.08 rows=5000 loops=1)\\n",
+      "-> Aggregate: count(0)  (cost=1055 rows=1) (actual time=1.31..1.31 rows=1 loops=1)\\n    -> Covering index lookup on f using ops_candidate_floating_status_current (status='ACTIVE', current_flag=1)  (cost=555 rows=5000) (actual time=0.0196..1.11 rows=5000 loops=1)\\n",
+      "-> Aggregate: count(0)  (cost=1055 rows=1) (actual time=1.28..1.28 rows=1 loops=1)\\n    -> Covering index lookup on f using ops_candidate_floating_status_current (status='ACTIVE', current_flag=1)  (cost=555 rows=5000) (actual time=0.0181..1.11 rows=5000 loops=1)\\n",
+      "-> Aggregate: count(0)  (cost=1055 rows=1) (actual time=1.27..1.27 rows=1 loops=1)\\n    -> Covering index lookup on f using ops_candidate_floating_status_current (status='ACTIVE', current_flag=1)  (cost=555 rows=5000) (actual time=0.0516..1.09 rows=5000 loops=1)\\n",
+      "-> Aggregate: count(0)  (cost=1055 rows=1) (actual time=1.26..1.26 rows=1 loops=1)\\n    -> Covering index lookup on f using ops_candidate_floating_status_current (status='ACTIVE', current_flag=1)  (cost=555 rows=5000) (actual time=0.0182..1.06 rows=5000 loops=1)\\n"
+    ],
+    "count": 5000
+  },
+  "slow_log_matches": 10
+}

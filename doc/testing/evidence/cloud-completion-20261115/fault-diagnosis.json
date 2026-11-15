@@ -1,0 +1,111 @@
+{
+  "sources": [
+    "target/cloud-evidence/fault-window.log"
+  ],
+  "time_range": [
+    "2026-11-15 09:46:08.031",
+    "2026-11-15 09:47:15.399"
+  ],
+  "request_count": 96,
+  "server_error_count": 0,
+  "p95_ms": 1052,
+  "window": "all parsed records in supplied files; rotate/select files for comparable windows",
+  "findings": [
+    {
+      "rule": "redis_fallback",
+      "observed": {
+        "warning_events": 2,
+        "rate_limited": true
+      },
+      "evidence": [
+        {
+          "file": "target/cloud-evidence/fault-window.log",
+          "line": 604,
+          "traceId": "85637759fc3c019076ce22bcaefbcedc"
+        },
+        {
+          "file": "target/cloud-evidence/fault-window.log",
+          "line": 631,
+          "traceId": "a3c0b71725313c369550e3cb0392325d"
+        }
+      ],
+      "possible_cause": "Redis 连接、超时或数据处理异常触发回源，日志不能单独确定根因。",
+      "suggested_checks": [
+        "按 traceId 核对同一请求日志",
+        "核对缓存 readErrors/writeErrors 增量",
+        "检查 Redis 连通性、超时和资源"
+      ]
+    },
+    {
+      "rule": "replica_fallback",
+      "observed": {
+        "connection_failure_events": 1
+      },
+      "evidence": [
+        {
+          "file": "target/cloud-evidence/fault-window.log",
+          "line": 598,
+          "traceId": "46d9c2a6a744382bd647f5d5a1030aea"
+        }
+      ],
+      "possible_cause": "从库连接获取失败；代码已进入受控回主路径。",
+      "suggested_checks": [
+        "核对路由 fallbacks 增量",
+        "检查从库连接、连接池和复制线程",
+        "观察回主后的主库连接压力"
+      ]
+    },
+    {
+      "rule": "http_latency",
+      "observed": {
+        "p95_ms": 1052,
+        "threshold_ms": 1000,
+        "requests": 96,
+        "percentile_method": "nearest_rank"
+      },
+      "evidence": [
+        {
+          "file": "target/cloud-evidence/fault-window.log",
+          "line": 368,
+          "traceId": "a9e6301618c0124907847d07a734f81e",
+          "status": 200,
+          "ms": 2014
+        },
+        {
+          "file": "target/cloud-evidence/fault-window.log",
+          "line": 660,
+          "traceId": "a3c0b71725313c369550e3cb0392325d",
+          "status": 200,
+          "ms": 1573
+        },
+        {
+          "file": "target/cloud-evidence/fault-window.log",
+          "line": 286,
+          "traceId": "3539c5b6-3fa4-4590-899c-5b67a180bb32",
+          "status": 200,
+          "ms": 1275
+        },
+        {
+          "file": "target/cloud-evidence/fault-window.log",
+          "line": 338,
+          "traceId": "07d8dd4c-e18b-4a43-ae4c-a542cb92363f",
+          "status": 200,
+          "ms": 1137
+        },
+        {
+          "file": "target/cloud-evidence/fault-window.log",
+          "line": 600,
+          "traceId": "46d9c2a6a744382bd647f5d5a1030aea",
+          "status": 200,
+          "ms": 1052
+        }
+      ],
+      "possible_cause": "请求延迟超过配置阈值，需继续检查依赖等待或应用处理耗时。",
+      "suggested_checks": [
+        "关联慢请求 traceId",
+        "检查慢 SQL 与连接池等待",
+        "检查 Redis/从库超时和 OCR 上游耗时"
+      ]
+    }
+  ]
+}

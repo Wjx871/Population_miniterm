@@ -1,0 +1,57 @@
+# Optional isolated MySQL lab. Bootstrap explicitly before starting backend/web.
+services:
+  mysql-primary:
+    image: mysql:8.4
+    command: ["--server-id=101", "--log-bin=mysql-bin", "--binlog-format=ROW", "--gtid-mode=ON", "--enforce-gtid-consistency=ON"]
+    environment: &mysql-environment
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set an isolated MySQL root password}
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: population_ops
+      MYSQL_USER: ${DB_USERNAME:?Set an application database username, not root}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set an application database password}
+    volumes: ["mysql-primary-data:/var/lib/mysql"]
+    networks: [edge]
+    healthcheck: &mysql-health
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_ROOT_PASSWORD\" mysqladmin ping -h 127.0.0.1 -uroot --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+  mysql-replica:
+    image: mysql:8.4
+    # read_only blocks the app account; the initializer temporarily needs root write access.
+    command: ["--server-id=102", "--log-bin=mysql-bin", "--relay-log=relay-bin", "--log-replica-updates=ON", "--read-only=ON", "--gtid-mode=ON", "--enforce-gtid-consistency=ON"]
+    environment: *mysql-environment
+    volumes: ["mysql-replica-data:/var/lib/mysql"]
+    networks: [edge]
+    healthcheck: *mysql-health
+    restart: unless-stopped
+  db-bootstrap:
+    image: mysql:8.4
+    profiles: [dbinit]
+    entrypoint: ["/bin/bash", "/ops/bootstrap-replication.sh"]
+    environment:
+      MYSQL_PWD: ${MYSQL_ROOT_PASSWORD:?Set an isolated MySQL root password}
+      REPLICATION_PASSWORD: ${REPLICATION_PASSWORD:?Use 20-32 alphanumeric/underscore/hyphen characters}
+    volumes:
+      - "../../doc/database:/schema:ro"
+      - "./mysql/bootstrap-replication.sh:/ops/bootstrap-replication.sh:ro"
+    depends_on:
+      mysql-primary:
+        condition: service_healthy
+      mysql-replica:
+        condition: service_healthy
+    networks: [edge]
+  backend:
+    environment: &lab-application-database
+      DB_URL: jdbc:mysql://mysql-primary:3306/population_ops?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+      REPLICA_ENABLED: "true"
+      REPLICA_DB_URL: jdbc:mysql://mysql-replica:3306/population_ops?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+      REPLICA_DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME}
+      REPLICA_DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+  backend2:
+    environment: *lab-application-database
+
+volumes:
+  mysql-primary-data:
+  mysql-replica-data:

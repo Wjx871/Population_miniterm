@@ -379,3 +379,10 @@ CREATE INDEX idx_person_idcard_image_user_date ON person_idcard_image(user_id, c
 INSERT INTO sys_permission(permission_id,permission_code,permission_name,module_name,permission_type,status)
  VALUES(62,'person:create-with-idcard','新增人口并附身份证影印本','PERSON','API','ENABLED');
 INSERT INTO sys_role_permission(role_id,permission_id) VALUES(2,62),(3,62);
+
+CREATE TABLE security_token_revocation (
+    token_hash CHAR(64) PRIMARY KEY,
+    expires_at TIMESTAMP(6) NOT NULL,
+    created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_token_revocation_expires_at ON security_token_revocation(expires_at);

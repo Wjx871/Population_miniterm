@@ -51,6 +51,8 @@ public class PaddleOcrHttpClient {
             throw new IllegalStateException("OCR endpoint is not configured (population.person.idcard.ocr.url is empty)");
         }
         HttpHeaders headers = new HttpHeaders();
+        String traceId = org.apache.logging.log4j.ThreadContext.get("traceId");
+        if (traceId != null) headers.set("X-Trace-Id", traceId);
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();

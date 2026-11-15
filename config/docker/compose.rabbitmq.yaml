@@ -1,0 +1,33 @@
+# Optional broker infrastructure. Business producers/consumers are owned by the backend module.
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    hostname: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-population}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Set a broker password}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks: [cache]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+  backend:
+    environment: &broker-client
+      RABBITMQ_ENABLED: "true"
+      RABBITMQ_MANAGEMENT_URL: http://rabbitmq:15672
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-population}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Set a broker password}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST:-/}
+  backend2:
+    environment: *broker-client
+
+volumes:
+  rabbitmq-data:

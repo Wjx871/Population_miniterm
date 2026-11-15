@@ -6,7 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
+import org.springframework.data.redis.core.ScanOptions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -21,6 +24,11 @@ public class OptionalRedisService {
     private final ObjectMapper json;
     private final RedisProperties properties;
     private final AtomicLong lastWarning = new AtomicLong();
+    private final LongAdder hits = new LongAdder();
+    private final LongAdder misses = new LongAdder();
+    private final LongAdder readErrors = new LongAdder();
+    private final LongAdder writeErrors = new LongAdder();
+    private final LongAdder evictionErrors = new LongAdder();
 
     public boolean enabled() { return properties.isEnabled(); }
     public String key(String suffix) { return properties.getKeyPrefix() + ":" + suffix; }
@@ -29,8 +37,9 @@ public class OptionalRedisService {
         if (!enabled()) return Optional.empty();
         try {
             String value = redis.opsForValue().get(key);
-            return value == null ? Optional.empty() : Optional.of(json.readValue(value, type));
+            return recordRead(value == null ? null : json.readValue(value, type));
         } catch (RuntimeException | JsonProcessingException ex) {
+            readErrors.increment();
             warn(ex); return Optional.empty();
         }
     }
@@ -38,15 +47,16 @@ public class OptionalRedisService {
         if (!enabled()) return Optional.empty();
         try {
             String value = redis.opsForValue().get(key);
-            return value == null ? Optional.empty() : Optional.of(json.readValue(value, type));
+            return recordRead(value == null ? null : json.readValue(value, type));
         } catch (RuntimeException | JsonProcessingException ex) {
+            readErrors.increment();
             warn(ex); return Optional.empty();
         }
     }
     public void put(String key, Object value, Duration ttl) {
         if (!enabled()) return;
         try { redis.opsForValue().set(key, json.writeValueAsString(value), ttl); }
-        catch (RuntimeException | JsonProcessingException ex) { warn(ex); }
+        catch (RuntimeException | JsonProcessingException ex) { writeErrors.increment(); warn(ex); }
     }
     public boolean contains(String key) {
         if (!enabled()) return false;
@@ -56,24 +66,42 @@ public class OptionalRedisService {
     public void putMarker(String key, Duration ttl) {
         if (!enabled()) return;
         try { redis.opsForValue().set(key, "1", ttl); }
-        catch (RuntimeException ex) { warn(ex); }
+        catch (RuntimeException ex) { writeErrors.increment(); warn(ex); }
     }
     public void evict(String... keys) {
         if (!enabled()) return;
-        for (String key : keys) try { redis.delete(key); } catch (RuntimeException ex) { warn(ex); }
+        for (String key : keys) try { redis.delete(key); } catch (RuntimeException ex) { evictionErrors.increment(); warn(ex); }
     }
     public void evictPattern(String pattern) {
         if (!enabled()) return;
-        try {
-            var keys = redis.keys(pattern);
-            if (keys != null && !keys.isEmpty()) redis.delete(keys);
-        } catch (RuntimeException ex) { warn(ex); }
+        // SCAN avoids a blocking KEYS call. This remains best-effort invalidation,
+        // not a strong-consistency guarantee against concurrent cache writers.
+        try (var cursor = redis.scan(ScanOptions.scanOptions().match(pattern).count(256).build())) {
+            var batch = new ArrayList<String>(128);
+            while (cursor.hasNext()) {
+                batch.add(cursor.next());
+                if (batch.size() == 128) { redis.delete(batch); batch.clear(); }
+            }
+            if (!batch.isEmpty()) redis.delete(batch);
+        } catch (RuntimeException ex) { evictionErrors.increment(); warn(ex); }
     }
     public boolean ping() {
         if (!enabled()) return false;
-        try { return "PONG".equalsIgnoreCase(redis.getConnectionFactory().getConnection().ping()); }
+        try (var connection = redis.getConnectionFactory().getConnection()) {
+            return "PONG".equalsIgnoreCase(connection.ping());
+        }
         catch (RuntimeException ex) { warn(ex); return false; }
     }
+    private <T> Optional<T> recordRead(T value) {
+        if (value == null) { misses.increment(); return Optional.empty(); }
+        hits.increment();
+        return Optional.of(value);
+    }
+    /** Per-process cumulative counters since startup; disabled reads are excluded. */
+    public CacheSnapshot snapshot() {
+        return new CacheSnapshot(hits.sum(), misses.sum(), readErrors.sum(), writeErrors.sum(), evictionErrors.sum());
+    }
+    public record CacheSnapshot(long hits, long misses, long readErrors, long writeErrors, long evictionErrors) {}
     private void warn(Exception ex) {
         long now = System.currentTimeMillis(), previous = lastWarning.get();
         if (now - previous >= WARNING_INTERVAL_MS && lastWarning.compareAndSet(previous, now)) {

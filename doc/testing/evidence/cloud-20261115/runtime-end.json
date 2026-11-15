@@ -1,0 +1,36 @@
+{
+  "instanceId": "backend-2",
+  "sampledAt": "2026-11-15T08:29:19.137634616Z",
+  "uptimeMs": 12978,
+  "requests": {
+    "totalRequests": 56,
+    "totalServerErrors": 0,
+    "windowSeconds": 60,
+    "capacity": 4096,
+    "samples": 56,
+    "capacityLimited": false,
+    "p50Ms": 26.309083,
+    "p95Ms": 47.614177,
+    "serverErrorRate": 0.0,
+    "percentileMethod": "nearest_rank"
+  },
+  "heapUsedBytes": 135010720,
+  "heapCommittedBytes": 186646528,
+  "nonHeapUsedBytes": 115976528,
+  "liveThreads": 29,
+  "processCpuRatio": 0.0,
+  "systemCpuRatio": 0.0,
+  "connectionPools": {
+    "primary": {
+      "waitingThreads": 0,
+      "started": true,
+      "total": 10,
+      "maximum": 10,
+      "idle": 10,
+      "active": 0
+    },
+    "replica": {
+      "started": false
+    }
+  }
+}
