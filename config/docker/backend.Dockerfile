@@ -9,7 +9,7 @@ FROM eclipse-temurin:17-jre-jammy
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 app && useradd --uid 10001 --gid app app \
-    && mkdir -p /app/data/uploads /app/data/exports /app/logs \
+    && mkdir -p /app/data/uploads /app/data/exports /app/data/private-ai-stage /app/logs \
     && chown -R app:app /app
 WORKDIR /app
 COPY --from=build --chown=app:app /build/target/population-miniterm-1.0.0.jar app.jar

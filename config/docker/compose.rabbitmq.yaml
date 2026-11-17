@@ -26,8 +26,18 @@ services:
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-population}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Set a broker password}
       RABBITMQ_VHOST: ${RABBITMQ_VHOST:-/}
+      AI_PRECHECK_ENABLED: ${AI_PRECHECK_ENABLED:-false}
+      AI_PRECHECK_RABBIT_ENABLED: ${AI_PRECHECK_RABBIT_ENABLED:-false}
+      AI_PRECHECK_STORAGE_DIR: /app/data/private-ai-stage
+      AI_PRECHECK_ANALYSIS_CLIENT: ${AI_PRECHECK_ANALYSIS_CLIENT:-MOCK}
+      AI_PRECHECK_MOCK_FAILS_BEFORE_SUCCESS: ${AI_PRECHECK_MOCK_FAILS_BEFORE_SUCCESS:-0}
+    volumes:
+      - ai-stage:/app/data/private-ai-stage
   backend2:
     environment: *broker-client
+    volumes:
+      - ai-stage:/app/data/private-ai-stage
 
 volumes:
   rabbitmq-data:
+  ai-stage:

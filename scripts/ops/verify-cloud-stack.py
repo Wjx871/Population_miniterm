@@ -54,14 +54,15 @@ def request(path, token=None, method="GET", body=None, headers=None):
         return response.status, response.headers, response.read()
 
 
-def api(path, token=None, method="GET", body=None):
-    status, headers, raw = request(path, token, method, body)
-    if status not in (200, 201):
-        raise RuntimeError(f"API failed: {method} {path} HTTP {status}")
+def api(path, token=None, method="GET", body=None, *, headers=None, expected=(200, 201)):
+    status, response_headers, raw = request(path, token, method, body, headers)
+    if status not in expected:
+        message = json.loads(raw).get("message", "") if raw.startswith(b"{") else ""
+        raise RuntimeError(f"API failed: {method} {path} HTTP {status} {message}")
     payload = json.loads(raw)
     if payload.get("code") not in (200, 201):
         raise RuntimeError("Business response failed: " + path)
-    return payload["data"], headers
+    return payload["data"], response_headers
 
 
 def login(user="admin"):
@@ -277,6 +278,121 @@ def check_broker(token, viewer):
     wait_ready()
 
 
+def submit_precheck(token):
+    suffix = uuid.uuid4().hex
+    boundary = f"fixture-{suffix}"
+    pdf = b"%PDF-1.7\n% Synthetic RabbitMQ acceptance fixture.\n%%EOF\n"
+    multipart = (f"--{boundary}\r\n"
+                 "Content-Disposition: form-data; name=\"file\"; filename=\"synthetic-proof.pdf\"\r\n"
+                 "Content-Type: application/pdf\r\n\r\n").encode() + pdf + f"\r\n--{boundary}--\r\n".encode()
+    staged, upload_headers = api(
+        "/api/ai/materials?businessType=MIGRATION_IN&documentRoleHint=IDENTITY_CARD_FRONT",
+        token, "POST", multipart, expected=(201,),
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}", "Idempotency-Key": f"upload-{suffix}"},
+    )
+    stage_id = staged["stageMaterialId"]
+    assert re.fullmatch(r"stg_[a-f0-9]{32}", stage_id) and staged["status"] == "READY", staged
+    payload = {"requestSchemaVersion": "1.0", "taskType": "DOCUMENT_PRECHECK", "businessType": "MIGRATION_IN",
+               "migrationType": "OUTSIDE_CITY", "stageMaterialIds": [stage_id], "idempotencyKey": f"task-{suffix}"}
+    task, task_headers = api("/api/ai/tasks", token, "POST", payload, expected=(202,))
+    assert re.fullmatch(r"task_[a-f0-9]{32}", task["taskId"]) and task["status"] == "PENDING", task
+    assert task["traceId"] == task_headers["X-Trace-Id"]
+    replay, _ = api("/api/ai/tasks", token, "POST", payload, expected=(202,))
+    assert replay["taskId"] == task["taskId"] and replay["traceId"] == task["traceId"], replay
+    return {"task_id": task["taskId"], "trace_id": task["traceId"], "stage_id": stage_id,
+            "upload_instance": upload_headers["X-Instance-Id"], "submit_instance": task_headers["X-Instance-Id"],
+            "accepted_http_status": 202, "accepted_status": task["status"], "same_task_on_replay": True}
+
+
+def precheck_audit(task_id):
+    rows = sql("mysql-primary", f"""
+        SELECT event_type, COALESCE(event_id,'-'), COALESCE(instance_id,'-'), COALESCE(trace_id,'-'),
+               COALESCE(to_status,'-'), COALESCE(attempt_count,0), COALESCE(safe_error_code,'-')
+        FROM ai_precheck_audit WHERE task_id='{task_id}' ORDER BY audit_id;
+    """)
+    fields = ("event_type", "event_id", "instance_id", "trace_id", "to_status", "attempt", "error")
+    return [dict(zip(fields, row.split("\t"))) for row in rows.splitlines()]
+
+
+def finish_precheck(token, case):
+    task_id = case["task_id"]
+    path = f"/api/ai/tasks/{task_id}"
+    for _ in range(75):
+        result, _ = api(path, token)
+        if result["status"] == "FAILED":
+            raise RuntimeError(f"{task_id} failed: {result['failure']['code']}")
+        if result["status"] == "SUCCEEDED":
+            # A consumer may commit before the publisher persists the broker's confirmation.
+            remaining = sql("mysql-primary", f"SELECT COUNT(*) FROM ai_precheck_outbox "
+                            f"WHERE task_id='{task_id}' AND status<>'PUBLISHED';")
+            if remaining == "0":
+                break
+        time.sleep(1)
+    else:
+        raise RuntimeError(f"{task_id} did not complete: status={result['status']}, "
+                           f"audit={precheck_audit(task_id)}")
+
+    assert result["traceId"] == case["trace_id"] and result["completedAt"]
+    assert result["result"]["mode"] == "MOCK" and result["result"]["analysisDisposition"] == "INSUFFICIENT_INPUT"
+    attempts = int(sql("mysql-primary", f"SELECT attempt_count FROM ai_precheck_task WHERE task_id='{task_id}';"))
+    assert 2 <= attempts <= 3, attempts  # The fixture fails once per consumer process.
+    inbox = sql("mysql-primary", f"SELECT outcome FROM ai_precheck_inbox WHERE task_id='{task_id}';").splitlines()
+    assert sorted(inbox) == sorted(["RETRY_SCHEDULED"] * (attempts - 1) + ["SUCCEEDED"]), inbox
+    audit = precheck_audit(task_id)
+    assert all(row["trace_id"] == case["trace_id"] for row in audit), audit
+    events = [row["event_type"] for row in audit]
+    assert events.count("TASK_ACCEPTED") == events.count("TASK_SUCCEEDED") == 1, events
+    assert events.count("TASK_STARTED") == events.count("OUTBOX_PUBLISHED") == attempts, events
+    assert events.count("TASK_RETRY_SCHEDULED") == attempts - 1, events
+    consumers = sorted({row["instance_id"] for row in audit if row["event_type"] == "TASK_STARTED"})
+    assert set(consumers) <= {"backend-1", "backend-2"}, consumers
+    stage = case["stage_id"]
+    stage_status = sql("mysql-primary", f"SELECT status, active_task_id IS NULL FROM ai_stage_material "
+                       f"WHERE stage_material_id='{stage}';")
+    assert stage_status == "READY\t1", stage_status
+    status, raw = internal("backend2", path, token)
+    assert status == 200 and json.loads(raw)["data"]["status"] == "SUCCEEDED"
+    return {**case, "final_status": result["status"], "analysis_mode": result["result"]["mode"],
+            "analysis_status": result["result"]["analysisDisposition"], "consumer_instances": consumers,
+            "result_read_from": "backend2", "attempts": attempts, "inbox_outcomes": inbox, "audit": audit}
+
+
+def check_rabbit_precheck():
+    token = login("household")
+    business_count = sql("mysql-primary", "SELECT COUNT(*) FROM business_application;")
+    healthy = finish_precheck(token, submit_precheck(token))
+    (OUT / "rabbitmq-precheck-retry.json").write_text(json.dumps(healthy, indent=2) + "\n")
+    record("rabbitmq_business_precheck_confirm_consume_and_retry", task_id=healthy["task_id"],
+           attempts=healthy["attempts"], consumer_instances=healthy["consumer_instances"])
+
+    command("stop", "rabbitmq")
+    try:
+        outage = submit_precheck(token)
+        for _ in range(30):
+            during = precheck_audit(outage["task_id"])
+            failure = next((row for row in during if row["event_type"] == "OUTBOX_PUBLISH_FAILED"), None)
+            if failure:
+                break
+            time.sleep(1)
+        else:
+            raise RuntimeError(f"Task accepted during broker outage has no failed publication: {during}")
+        task_id = outage["task_id"]
+        current, _ = api(f"/api/ai/tasks/{task_id}", token)
+        assert current["status"] == "PENDING" and failure["error"] == "BROKER_UNAVAILABLE", during
+        assert not any(row["event_type"] in {"TASK_STARTED", "OUTBOX_PUBLISHED"} for row in during), during
+    finally:
+        command("start", "rabbitmq")
+
+    recovered = finish_precheck(token, outage)
+    recovered["during_outage"] = {"task_status": current["status"], "publish_failure": failure}
+    (OUT / "rabbitmq-precheck-recovery.json").write_text(json.dumps(recovered, indent=2) + "\n")
+    assert sql("mysql-primary", "SELECT outstanding_count FROM ai_precheck_capacity "
+               "WHERE capacity_key='DOCUMENT_PRECHECK';") == "0"
+    assert sql("mysql-primary", "SELECT COUNT(*) FROM business_application;") == business_count
+    record("rabbitmq_business_precheck_outbox_survives_broker_outage", task_id=task_id,
+           before_recovery=current["status"], after_recovery=recovered["final_status"])
+
+
 def main():
     token = login()
     seen = set()
@@ -300,6 +416,7 @@ def main():
     record("runtime_metrics_rbac_and_units")
     check_cache(token, viewer)
     check_broker(token, viewer)
+    check_rabbit_precheck()
 
     status, headers, html = request("/index.html")
     assert status == 200 and "no-cache" in headers.get("Cache-Control", "")

@@ -1,6 +1,12 @@
 # S3 演示与验收记录
 
-## 当前实际验证
+## 云端 Compose 验收
+
+运行 `Data ops cloud validation` 的隔离容器验收。脚本显式开启 AI 预审与 AMQP worker。两台 Java 实例挂载同一个私有 `ai-stage` 卷，合成文件从上传接口进入业务流程，文档分析使用 `MOCK`。
+
+在运行产物中查看 `rabbitmq-precheck-retry.json` 和 `rabbitmq-precheck-recovery.json`。两个用例分别验证业务重试和 Broker 停机后恢复。证据包含任务 ID、Trace ID、发布确认、消费实例、Outbox/Inbox 状态和终态审计。
+
+## 早期本机验证
 
 本轮环境未发现 Docker、Podman、RabbitMQ CLI/Server，也未发现 AMQP/管理端口监听。因此没有启动或安装 Broker，没有修改系统配置。结论：H2/Mock 已验证；真实 RabbitMQ 发布确认、真实消费、DLQ、Broker 停止/恢复均为 `NOT_VERIFIED`。Python OCR/RAG 真实联调同样 `NOT_VERIFIED`，Mock 不作为其替代证据。
 

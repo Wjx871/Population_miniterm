@@ -16,7 +16,9 @@ values={"DB_URL":"jdbc:mysql://mysql-primary:3306/population_ops", "DB_USERNAME"
         "DB_PASSWORD":secrets.token_hex(20), "JWT_SECRET":secrets.token_hex(32),
         "MYSQL_ROOT_PASSWORD":secrets.token_hex(24), "REPLICATION_PASSWORD":secrets.token_hex(16),
         "WEB_PORT":"8088", "WEB_BIND_IP":"127.0.0.1", "IDCARD_OCR_URL":"",
-        "REDIS_DICTIONARY_TTL":"3s", "RABBITMQ_USERNAME":"population", "RABBITMQ_PASSWORD":secrets.token_hex(20)}
+        "REDIS_DICTIONARY_TTL":"3s", "RABBITMQ_USERNAME":"population", "RABBITMQ_PASSWORD":secrets.token_hex(20),
+        "AI_PRECHECK_ENABLED":"true", "AI_PRECHECK_RABBIT_ENABLED":"true",
+        "AI_PRECHECK_ANALYSIS_CLIENT":"MOCK", "AI_PRECHECK_MOCK_FAILS_BEFORE_SUCCESS":"1"}
 pathlib.Path(os.environ['OPS_ENV_FILE']).write_text(''.join(f'{k}={v}\n' for k,v in values.items()))
 for key in ('DB_PASSWORD','JWT_SECRET','MYSQL_ROOT_PASSWORD','REPLICATION_PASSWORD','RABBITMQ_PASSWORD'):
     print('::add-mask::'+values[key])
