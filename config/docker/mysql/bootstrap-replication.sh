@@ -20,11 +20,11 @@ if [[ -n "$(replica --execute='SHOW REPLICA STATUS')" ]]; then
   exit 1
 fi
 
-# Snapshot is already V4_010; replaying historical rename migrations is invalid.
+# The snapshot includes V4_001 through V4_010 and V4_014 initial person ownership.
 sed 's/population_miniterm/population_ops/g' /schema/population_miniterm.sql | primary
 for migration in /schema/migrations/V4_*.sql; do
   name=$(basename "$migration")
-  if [[ "$name" < V4_011 ]]; then continue; fi
+  if [[ "$name" < V4_011 || "$name" == V4_014_person_initial_scope.sql ]]; then continue; fi
   sed 's/population_miniterm/population_ops/g' "$migration" | primary population_ops
 done
 primary population_ops < /schema/activate_jwt_revocation_checkpoint.sql
