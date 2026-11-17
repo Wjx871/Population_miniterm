@@ -158,7 +158,7 @@ def check_cache(token, viewer):
     kind = "OPS_CACHE_" + uuid.uuid4().hex[:8].upper()
     item, _ = api("/api/dictionaries", token, "POST", {"dictionaryType": kind, "dictionaryCode": "ONE", "displayName": "initial", "sortNo": 0})
     path = "/api/dictionaries/" + kind
-    key = "population:dictionary:manage:" + kind
+    key = "population:dictionary:v2:MANAGE:" + kind
     before = cache_counts(token)
     assert api(path, token)[0][0]["dictName"] == "initial"
     assert api(path, token)[0][0]["dictName"] == "initial"
