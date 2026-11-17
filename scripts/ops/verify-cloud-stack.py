@@ -97,12 +97,57 @@ def flush_cache():
     command("exec", "-T", "redis", "redis-cli", "FLUSHDB")
 
 
+def proxy_config(upstream, listen):
+    config = Path("config/nginx/population.dual.conf").read_text()
+    config = re.sub(r"^log_format.*?;\s*", "", config, count=1, flags=re.S)
+    return config.replace("population_backend", upstream).replace("listen 80;", f"listen {listen};")
+
+
+def check_nginx_strategies():
+    evidence = OUT / "nginx-strategies"
+    evidence.mkdir(exist_ok=True)
+    policies = ("round_robin", "least_conn", "ip_hash", "least_conn")
+    installed = []
+    try:
+        for port, policy in enumerate(policies, start=18180):
+            config = proxy_config(f"population_probe_{port}", f"127.0.0.1:{port}")
+            include = "/etc/nginx/upstream/population-strategy.conf"
+            fragment = Path(f"config/nginx/strategies/{policy}.conf").read_text().strip()
+            config = config.replace(f"include {include};", fragment)
+            if port == 18183:
+                # Use controlled upstreams to keep exactly one connection active.
+                config = config.replace("backend:8080", "127.0.0.1:18184")
+                config = config.replace("backend2:8080", "127.0.0.1:18185")
+            local = evidence / f"{policy}-{port}.conf"
+            local.write_text(config)
+            remote = f"/etc/nginx/conf.d/proof-strategy-{port}.conf"
+            installed.append(remote)
+            command("cp", str(local), "web:" + remote)
+        command("exec", "-T", "web", "nginx", "-t")
+        command("exec", "-T", "web", "nginx", "-s", "reload")
+        web = command("ps", "-q", "web").decode().strip()
+        probe = Path("scripts/ops/nginx-strategy-probe.py").resolve()
+        result = subprocess.run(
+            ["docker", "run", "--rm", "--network", f"container:{web}",
+             "-v", f"{probe}:/app/nginx-strategy-probe.py:ro", "--entrypoint", "python",
+             "population-miniterm-ocr:local", "/app/nginx-strategy-probe.py"],
+            capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode:
+            raise RuntimeError(f"Nginx strategy probe failed: {result.stderr[-2000:]}")
+        observations = json.loads(result.stdout)
+        (evidence / "routes.json").write_text(json.dumps(observations, indent=2) + "\n")
+        record("nginx_round_robin_least_conn_and_ip_hash", **observations)
+    finally:
+        if installed:
+            command("exec", "-T", "web", "rm", "-f", *installed)
+            command("exec", "-T", "web", "nginx", "-s", "reload")
+
+
 def check_proxy_retry_policy():
     names = [os.environ["OPS_PROJECT_NAME"] + "-proxy-proof-" + suffix for suffix in ("a", "b")]
     proof = Path("target/cloud-evidence/proxy-proof.conf")
-    config = Path("config/nginx/population.dual.conf").read_text()
-    config = re.sub(r"^log_format.*?;\s*", "", config, count=1, flags=re.S)
-    config = config.replace("population_backend", "proxy_proof").replace("listen 80;", "listen 81;")
+    config = proxy_config("proxy_proof", 81)
     config = config.replace("backend:8080", "retry-fixture-a:8080").replace("backend2:8080", "retry-fixture-b:8080")
     config = config.replace("max_fails=1 fail_timeout=5s", "max_fails=0")
     proof.write_text(config)
@@ -242,6 +287,7 @@ def main():
         seen.add(headers["X-Instance-Id"])
     assert seen == {"backend-1", "backend-2"}, seen
     record("nginx_two_instances", instances=sorted(seen))
+    check_nginx_strategies()
     check_proxy_retry_policy()
 
     assert request("/api/ops/runtime")[0] == 401

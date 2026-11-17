@@ -11,6 +11,7 @@ services:
     build:
       args:
         NGINX_CONFIG: config/nginx/population.dual.conf
+        NGINX_LB_STRATEGY: ${NGINX_LB_STRATEGY:-round_robin}
     depends_on:
       backend2:
         condition: service_healthy

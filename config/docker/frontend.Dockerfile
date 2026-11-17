@@ -8,6 +8,8 @@ RUN npm run build
 
 FROM nginx:stable-alpine
 ARG NGINX_CONFIG=config/nginx/population.container.conf
+ARG NGINX_LB_STRATEGY=round_robin
 COPY ${NGINX_CONFIG} /etc/nginx/conf.d/default.conf
+COPY config/nginx/strategies/${NGINX_LB_STRATEGY}.conf /etc/nginx/upstream/population-strategy.conf
 COPY --from=build /build/dist/ /usr/share/nginx/html/
 EXPOSE 80
