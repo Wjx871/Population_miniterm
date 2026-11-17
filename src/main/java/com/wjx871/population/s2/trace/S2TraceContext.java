@@ -33,6 +33,9 @@ public final class S2TraceContext {
 
     private static String resolveInstanceId() {
         String configured = System.getProperty("s2.instanceId");
+        if (configured == null) {
+            configured = System.getenv("INSTANCE_ID");
+        }
         if (configured != null && SAFE_TRACE_ID.matcher(configured).matches()) {
             return configured;
         }

@@ -2,7 +2,7 @@
 services:
   mysql-primary:
     image: mysql:8.4
-    command: ["--server-id=101", "--log-bin=mysql-bin", "--binlog-format=ROW", "--gtid-mode=ON", "--enforce-gtid-consistency=ON"]
+    command: ["--server-id=101", "--log-bin=mysql-bin", "--binlog-format=ROW", "--gtid-mode=ON", "--enforce-gtid-consistency=ON", "--default-time-zone=+00:00"]
     environment: &mysql-environment
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set an isolated MySQL root password}
       MYSQL_ROOT_HOST: "%"
@@ -20,7 +20,7 @@ services:
   mysql-replica:
     image: mysql:8.4
     # read_only blocks the app account; the initializer temporarily needs root write access.
-    command: ["--server-id=102", "--log-bin=mysql-bin", "--relay-log=relay-bin", "--log-replica-updates=ON", "--read-only=ON", "--gtid-mode=ON", "--enforce-gtid-consistency=ON"]
+    command: ["--server-id=102", "--log-bin=mysql-bin", "--relay-log=relay-bin", "--log-replica-updates=ON", "--read-only=ON", "--gtid-mode=ON", "--enforce-gtid-consistency=ON", "--default-time-zone=+00:00"]
     environment: *mysql-environment
     volumes: ["mysql-replica-data:/var/lib/mysql"]
     networks: [edge]
@@ -44,9 +44,10 @@ services:
     networks: [edge]
   backend:
     environment: &lab-application-database
-      DB_URL: jdbc:mysql://mysql-primary:3306/population_ops?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+      # Match JDBC timestamp encoding to the MySQL clock used by SQL timer predicates.
+      DB_URL: jdbc:mysql://mysql-primary:3306/population_ops?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
       REPLICA_ENABLED: "true"
-      REPLICA_DB_URL: jdbc:mysql://mysql-replica:3306/population_ops?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+      REPLICA_DB_URL: jdbc:mysql://mysql-replica:3306/population_ops?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
       REPLICA_DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME}
       REPLICA_DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
   backend2:

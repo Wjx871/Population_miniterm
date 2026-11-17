@@ -6,6 +6,8 @@
 
 在运行产物中查看 `rabbitmq-precheck-retry.json` 和 `rabbitmq-precheck-recovery.json`。两个用例分别验证业务重试和 Broker 停机后恢复。证据包含任务 ID、Trace ID、发布确认、消费实例、Outbox/Inbox 状态和终态审计。
 
+隔离 MySQL 的会话时区与 JDBC 连接统一为 UTC，保证 Outbox 定时判断和数据库时钟一致。Java 审计使用容器的 `INSTANCE_ID`，可以与响应头及容器日志对应。
+
 ## 早期本机验证
 
 本轮环境未发现 Docker、Podman、RabbitMQ CLI/Server，也未发现 AMQP/管理端口监听。因此没有启动或安装 Broker，没有修改系统配置。结论：H2/Mock 已验证；真实 RabbitMQ 发布确认、真实消费、DLQ、Broker 停止/恢复均为 `NOT_VERIFIED`。Python OCR/RAG 真实联调同样 `NOT_VERIFIED`，Mock 不作为其替代证据。
